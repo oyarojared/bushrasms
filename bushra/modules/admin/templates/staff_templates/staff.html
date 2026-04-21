@@ -1,0 +1,565 @@
+{% extends "super_admin_dash.html" %} {% from "_macros.html" import
+render_flash_messages, sidebar, form_input %} {% block side_nav %} {{
+sidebar("School Staff", current_user) }} {% endblock %} {% block main_content %}
+<h6 class="fw-bold staff-title">
+  <i class="bi bi-person-workspace me-2"></i> SCHOOL STAFF
+</h6>
+
+<!-- Flash messages -->
+{{ render_flash_messages() }}
+
+<div class="container w-100-sm">
+  <!-- Nav Tabs -->
+  <div class="bg-white p-4 pb-0 px-1 mb-3 mt-3 border-top">
+    <ul class="nav nav-tabs" id="staffTab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link active fw-bold"
+          id="teachers-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#teachers"
+          type="button"
+          role="tab"
+          aria-controls="teachers"
+          aria-selected="true"
+        >
+          TEACHERS
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link fw-bold"
+          id="support-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#support"
+          type="button"
+          role="tab"
+          aria-controls="support"
+          aria-selected="false"
+        >
+          SUPPORT STAFF
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="tab-content mt-3 bg-white p-4 mb-2" id="staffTabContent">
+    <!-- Teachers Tab -->
+    <div
+      class="tab-pane fade show active border-bottom"
+      id="teachers"
+      role="tabpanel"
+      aria-labelledby="teachers-tab"
+    >
+      <div class="row align-items-center mb-3">
+        <div class="col-sm-1"><h6 class="text-orange">TEACHERS</h6></div>
+        <div class="col-sm-8"></div>
+        <div class="col-sm-3 d-flex justify-content-end">
+          <!-- Add Teacher -->
+          <a
+            href="#"
+            data-bs-toggle="modal"
+            data-bs-target="#addTeacherModal"
+            class="me-2"
+          >
+            <div
+              class="nav-div px-2 text-white d-flex align-items-center bg-danger p-1 btn btn-sm"
+            >
+              <i class="bi bi-plus-circle-dotted me-2"></i> Add
+            </div>
+          </a>
+          <a href="#">
+            <div
+              class="nav-div px-2 text-white d-flex align-items-center bg-danger p-1 btn btn-sm"
+            >
+              <i class="bi bi-printer me-2"></i> Print
+            </div>
+          </a>
+        </div>
+      </div>
+      <hr class="border-danger border" />
+
+      <div class="col-auto d-flex justify-content-end mb-0">
+        <span class="me-2"><i class="bi bi-filter"></i> </span>
+        {% if current_user.is_super_admin %}
+        <form method="GET" id="filter-branches-form">
+          {{ filter_branches_form.hidden_tag() }}
+
+          <div class="input-group input-group-sm">
+            <span class="input-group-text">
+              <i class="bi bi-house-fill"></i>
+            </span>
+
+            {{ filter_branches_form.branches( class="form-select
+            form-select-sm", id="selected-branch", onchange="this.form.submit()"
+            ) }}
+          </div>
+        </form>
+        {% endif %}
+      </div>
+
+      <!-- Display Teachers List -->
+      {% if teachers %}
+      <div class="table-scroll-container table-responsive border-bottom">
+        <table class="table table-striped table-bordered small">
+          <caption id="branch_name">
+            <span class="fw-bold">Total No. of Teachers: </span
+            >{{ teachers | length }}
+          </caption>
+          <thead class="bg-secondary text-white">
+            <tr>
+              <th class="text-center">#</th>
+              <th class="text-center">Code</th>
+              <th>Name</th>
+              <th>ID No</th>
+              <th>TSC No</th>
+              <th>Employer</th>
+              <th>Phone</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for teacher in teachers %}
+            <tr>
+              <td class="text-center">{{ loop.index }}</td>
+              <td class="text-center">
+                {% if teacher.staff_id %} {{ teacher.staff_id | upper }} {% else
+                %} {{ "---" }} {% endif %}
+              </td>
+              <td>{{ teacher.title }} {{ teacher.fullname | upper }}</td>
+              <td>{{ teacher.id_no or "---" }}</td>
+              <td>{{ teacher.tsc_no or "---" }}</td>
+              <td>{{ teacher.employer }}</td>
+              <td>{{ teacher.phone or "---" }}</td>
+              <td class="text-center">
+                <div class="dropdown">
+                  <button
+                    class="btn btn-secondary btn-sm border dropdown-toggle p-1"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                  >
+                    <i class="bi bi-gear me-2"></i>
+                  </button>
+                  <ul class="dropdown-menu bg-light-green">
+                    <li>
+                      <a
+                        class="dropdown-item"
+                        href="{{ url_for('admin.teacher_profile', teacher_id=teacher.id) }}"
+                      >
+                        <i class="bi bi-person-badge me-2"></i> Profile
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        class="dropdown-item editTeacherBtn"
+                        href="#"
+                        data-bs-toggle="modal"
+                        data-bs-target="#addTeacherModal"
+                        data-id="{{ teacher.id }}"
+                        data-staff_id="{{ teacher.staff_id }}"
+                        data-employer="{{ teacher.employer }}"
+                        data-gender="{{ teacher.gender }}"
+                        data-title="{{ teacher.title }}"
+                        data-fullname="{{ teacher.fullname }}"
+                        data-id_no="{{ teacher.id_no }}"
+                        data-tsc_no="{{ teacher.tsc_no }}"
+                        data-phone="{{ teacher.phone }}"
+                        data-email="{{ teacher.email }}"
+                        data-branch_id="{{ teacher.branch_id }}"
+                      >
+                        <i class="bi bi-pencil me-2"></i> Edit
+                      </a>
+                    </li>
+
+                    <li>
+                      <button
+                        type="button"
+                        class="dropdown-item text-white fw-bold"
+                        data-bs-toggle="modal"
+                        data-bs-target="#confirmDeleteModal"
+                        data-teacher-id="{{ teacher.id }}"
+                        data-teacher-name="{{ teacher.fullname }}"
+                      >
+                        <i class="bi bi-trash me-2"></i> Delete
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <h6 class="text-center text-orange">No teachers records to show yet!</h6>
+      {% endif %}
+    </div>
+
+    <!-- Support Staff Tab -->
+    <div
+      class="tab-pane fade"
+      id="support"
+      role="tabpanel"
+      aria-labelledby="support-tab"
+    >
+      <div class="row align-items-center mb-3">
+        <div class="col-sm-2"><h6>SUPPORT STAFF</h6></div>
+        <div class="col-sm-7"></div>
+        <div class="col-sm-3 d-flex justify-content-end">
+          <!-- Add Support Staff -->
+          <a
+            href="#"
+            data-bs-toggle="modal"
+            data-bs-target="#addSupportStaffModal"
+            class="me-2"
+          >
+            <div
+              class="nav-div px-2 text-white d-flex align-items-center bg-danger p-1"
+            >
+              <i class="bi bi-plus-circle-dotted me-2"></i> Add
+            </div>
+          </a>
+
+          <!-- Excel -->
+          <a href="#" class="me-2">
+            <div
+              class="nav-div px-2 text-white d-flex align-items-center bg-danger p-1"
+            >
+              <i class="bi bi-file-earmark-excel me-2"></i> Excel
+            </div>
+          </a>
+
+          <!-- Print -->
+          <a href="#">
+            <div
+              class="nav-div px-2 text-white d-flex align-items-center bg-danger p-1"
+            >
+              <i class="bi bi-printer me-2"></i> Print
+            </div>
+          </a>
+        </div>
+      </div>
+      <hr class="border-danger border" />
+
+      {% if support_staffs %} {% else %}
+      <h6 class="text-center text-orange">
+        No support staff records to show yet!
+      </h6>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- ===== Add Staff Modal ===== -->
+<div
+  class="modal fade"
+  id="addSupportStaffModal"
+  tabindex="-1"
+  aria-labelledby="addSupportStaffModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addSupportStaffModalLabel">
+          Add Support Staff
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div class="modal-body">
+        <form>
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" class="form-control" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" />
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button class="btn btn-primary">Save Staff</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Add Teacher Modal ===== -->
+<div
+  class="modal fade"
+  id="addTeacherModal"
+  tabindex="-1"
+  aria-labelledby="addTeacherModalLabel"
+  aria-hidden="true"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white p-2">
+        <h5 class="modal-title" id="addTeacherModalLabel">
+          <i class="bi bi-plus-circle-dotted me-2"></i> Add Teaching Staff
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div class="modal-body p-4">
+        <h5 class="fw-light text-center mb-2 border bg-light p-3">
+          Teacher Biodata Entry
+        </h5>
+
+        <form action="" method="post">
+          {{ add_teacher_form.hidden_tag() }} {{ add_teacher_form.teacher_id }}
+          <div class="row">
+            <div class="col-sm-6">
+              <label>Teacher Code</label>
+              <div class="input-group">
+                <div class="input-group-text bg-secondary text-white">
+                  <i class="bi bi-person-workspace"></i>
+                </div>
+                <div style="width: 140px">
+                  {{ add_teacher_form.employer(class="form-select") }}
+                </div>
+                {{ add_teacher_form.staff_id(class="form-control
+                text-uppercase", placeholder="T12") }}
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <label>Gender</label>
+              <div class="input-group">
+                <div class="input-group-text bg-secondary text-white">
+                  <i class="bi bi-gender-male"></i>
+                </div>
+                {{ add_teacher_form.gender(class="form-select") }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Name & ID -->
+          <div class="row mt-2">
+            <div class="col-sm-6">
+              <label>Name</label>
+              <div class="input-group">
+                <div class="input-group-text bg-secondary text-white">
+                  <i class="bi bi-person-workspace"></i>
+                </div>
+                <div style="width: 90px">
+                  {{ add_teacher_form.title(class="form-select") }}
+                </div>
+                {{ add_teacher_form.fullname(class="form-control") }}
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <label>National ID</label>
+              <div class="input-group">
+                <div class="input-group-text bg-secondary text-white">
+                  <i class="bi bi-person-vcard-fill"></i>
+                </div>
+                {{ add_teacher_form.id_no(class="form-control") }}
+              </div>
+            </div>
+          </div>
+
+          <!-- TSC & Phone -->
+          <div class="row mt-2">
+            <div class="col-sm-6">
+              <label>TSC Number</label>
+              <div class="input-group">
+                <div class="input-group-text bg-secondary text-white">
+                  <i class="bi bi-person-vcard-fill"></i>
+                </div>
+                {{ add_teacher_form.tsc_no(class="form-control") }}
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <label>Phone Number</label>
+              <div class="input-group">
+                <div class="input-group-text bg-secondary text-white">
+                  <i class="bi bi-phone-fill"></i>
+                </div>
+                {{ add_teacher_form.phone(class="form-control") }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Email & Branch -->
+          <div class="row mt-2">
+            <div class="col-sm-6">
+              <label>Email</label>
+              <div class="input-group">
+                <div class="input-group-text bg-secondary text-white">
+                  <i class="bi bi-envelope-check"></i>
+                </div>
+                {{ add_teacher_form.email(class="form-control") }}
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <label>Teaching School</label>
+              <div class="input-group">
+                <div class="input-group-text bg-secondary text-white">
+                  <i class="bi bi-building"></i>
+                </div>
+                {{ add_teacher_form.branches(class="form-control") }}
+              </div>
+            </div>
+          </div>
+
+          <div class="row mt-3 mb-2 justify-content-end">
+            <div class="col-auto">
+              <button
+                class="btn btn-dark px-4"
+                name="add-teacher"
+                type="submit"
+              >
+                <i class="bi bi-send me-2"></i> Submit
+              </button>
+            </div>
+          </div>
+        </form>
+        <hr class="border border-danger" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SINGLE DYNAMIC DELETE CONFIRMATION MODAL ===== -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header p-1 bg-danger text-white">
+        <h5 class="modal-title fw-bold px-3">
+          <i class="bi bi-exclamation-circle me-2"></i> Confirm Deletion
+        </h5>
+        <button
+          type="button"
+          class="btn-close me-2"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+
+      <div class="modal-body">
+        <h2 class="text-center text-warning">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+        </h2>
+        <small class="h6 fw-light">
+          Are you sure you want to delete
+          <strong id="deleteTeacherName"></strong>? This action cannot be
+          undone.
+        </small>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-sm btn-secondary"
+          data-bs-dismiss="modal"
+        >
+          <i class="bi bi-recycle me-2"></i>Cancel
+        </button>
+        <form id="deleteTeacherForm" method="POST">
+          <button type="submit" class="btn btn-sm btn-danger">
+            <i class="bi bi-trash me-2"></i>Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DYNAMIC MODAL LOGIC -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("confirmDeleteModal");
+
+    modal.addEventListener("show.bs.modal", function (event) {
+      const button = event.relatedTarget;
+
+      const teacherId = button.getAttribute("data-teacher-id");
+      const teacherName = button.getAttribute("data-teacher-name");
+
+      document.getElementById("deleteTeacherName").textContent = teacherName;
+
+      const form = document.getElementById("deleteTeacherForm");
+      form.action = `/admin/delete_teacher/${teacherId}`;
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const addTeacherModal = document.getElementById("addTeacherModal");
+
+    function safeValue(v) {
+      return v === "None" || v === null || v === undefined ? "" : v;
+    }
+
+    addTeacherModal.addEventListener("show.bs.modal", function (event) {
+      const button = event.relatedTarget;
+
+      // If opened using EDIT button
+      if (button.classList.contains("editTeacherBtn")) {
+        const form = addTeacherModal.querySelector("form");
+
+        // Fill fields
+        form.teacher_id.value = safeValue(button.dataset.id);
+        form.staff_id.value = safeValue(button.dataset.staff_id);
+        form.employer.value = safeValue(button.dataset.employer);
+        form.gender.value = safeValue(button.dataset.gender);
+        form.title.value = safeValue(button.dataset.title);
+        form.fullname.value = safeValue(button.dataset.fullname);
+        form.id_no.value = safeValue(button.dataset.id_no);
+        form.tsc_no.value = safeValue(button.dataset.tsc_no);
+        form.phone.value = safeValue(button.dataset.phone);
+        form.email.value = safeValue(button.dataset.email);
+        form.branches.value = safeValue(button.dataset.branch_id);
+
+        // Change modal title
+        document.getElementById("addTeacherModalLabel").innerHTML =
+          `<i class="bi bi-pencil me-2"></i> Update Teacher`;
+
+        // Change button text
+        addTeacherModal.querySelector("button[type='submit']").innerHTML =
+          `<i class="bi bi-check-circle me-2"></i> Update`;
+
+        // Change form action
+        form.action = `/admin/update_teacher/${button.dataset.id}`;
+      } else {
+        // OPENED AS ADD MODE
+        const form = addTeacherModal.querySelector("form");
+
+        form.reset();
+        form.action = "/admin/school_staff";
+
+        document.getElementById("addTeacherModalLabel").innerHTML =
+          `<i class="bi bi-plus-circle-dotted me-2"></i> Add Teaching Staff`;
+
+        addTeacherModal.querySelector("button[type='submit']").innerHTML =
+          `<i class="bi bi-send me-2"></i> Submit`;
+      }
+    });
+  });
+</script>
+<script src="{{ url_for('static', filename='js/make_tableheaders_static.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/set_branch_id_for_excel.js') }}"></script>
+{% endblock %}

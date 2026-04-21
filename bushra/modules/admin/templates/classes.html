@@ -1,0 +1,321 @@
+{% extends "admin_dash_layout.html" %} {% from "_macros.html" import
+render_flash_messages, sidebar, form_input %} {% block side_nav %} {{
+sidebar("Classes", current_user) }} {% endblock %} {% block main_content %} {{
+render_flash_messages() }}
+
+<h5 class="fw-bold classes-grps-title">
+  <i class="bi bi-buildings me-2"></i> Classes & Groups
+</h5>
+
+<!-- School Selector -->
+<div class="container bg-white pt-0 pb-3 px-0 mb-2 shadow-sm rounded-6">
+  <div class="container orange-line"></div>
+  <div class="px-3">
+    <form action="" method="post">
+      {{ load_branches_form.hidden_tag() }}
+      <div class="row">
+        {{ form_input(load_branches_form.branches, icon_class="bi bi-house",
+        input_class="form-select branch-select") }}
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="container-fluid mb-2">
+  <div class="row text-white rounded-2 px-2">
+    <div class="col-sm-9"></div>
+    <div class="col-sm-3 d-flex">
+      <!-- Add Class & Stream Modal Trigger -->
+      <button
+        class="btn btn-sm btn-danger small"
+        data-bs-toggle="modal"
+        data-bs-target="#addClassModal"
+      >
+        <span><i class="bi bi-plus-circle-dotted"></i></span>
+        <span>Add</span>
+      </button>
+
+      <!-- Export Excel -->
+      <a href="">
+        <div class="btn btn-sm btn-danger small mx-2 border-end">
+          <span><i class="bi bi-file-earmark-excel"></i></span>
+          <span>Excel</span>
+        </div>
+      </a>
+
+      <!-- Print -->
+      <a href="">
+        <div class="btn btn-sm btn-danger small">
+          <span><i class="bi bi-printer"></i></span>
+          <span>Print</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- spinner & alert message -->
+<div id="statusBox" class="alert d-none align-items-center" role="alert">
+  <span id="statusSpinner" class="spinner-border spinner-border-sm me-2"></span>
+  <span id="statusText" class="small">Loading...</span>
+</div>
+
+<div class="container bg-white pt-2 pb-2 shadow-sm rounded-6">
+  <ul class="nav nav-tabs" id="myTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link active tab-small"
+        id="tab-one-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#tab-one"
+        type="button"
+        role="tab"
+      >
+        <i class="bi bi-database me-2"></i>STUDENTS DATA
+      </button>
+    </li>
+
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link tab-small"
+        id="tab-two-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#tab-two"
+        type="button"
+        role="tab"
+      >
+        <i class="bi bi-book me-2"></i>SUBJECT ASSIGNMENT
+      </button>
+    </li>
+
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link tab-small"
+        id="tab-three-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#tab-three"
+        type="button"
+        role="tab"
+      >
+        <i class="bi bi-book me-2"></i>LESSONS ASSIGNMENT
+      </button>
+    </li>
+
+    <li class="nav-item" role="presentation">
+      <button
+        class="nav-link tab-small"
+        id="tab-four-tab"
+        data-bs-toggle="tab"
+        data-bs-target="#tab-four"
+        type="button"
+        role="tab"
+      >
+        <i class="bi bi-gear me-2"></i>CLASS MANAGEMENT
+      </button>
+    </li>
+  </ul>
+
+  <!-- Tabs Content -->
+  <div class="tab-content p-3" id="myTabContent">
+    <div class="tab-pane fade show active" id="tab-one" role="tabpanel">
+      <div id="academicDataContainer" class="small text-muted">
+        Select a branch to view academic data.
+      </div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-two" role="tabpanel">
+      <!-- Handle student subject allocation -->
+      <input type="text" id="selected-branch-id" hidden />
+      <div class="row border p-2">
+        <div class="container orange-line"></div>
+        <div class="col-md-3">
+          <div class="form-select-div"></div>
+        </div>
+        <div class="col-md-3">
+          <div class="subject-select-div"></div>
+        </div>
+      </div>
+      <div class="students-allocation-div mt-3"></div>
+    </div>
+
+    <div class="tab-pane fade" id="tab-three" role="tabpanel">
+      <h6 class="text-center fw-light">
+        <span id="selected-branch-name"></span>
+      </h6>
+      <input type="text" id="target-branch" hidden />
+
+      <div id="x" class="border p-3">
+        <div class="container orange-line mb-2"></div>
+        <div class="row">
+          <div class="col-md-6">
+            <div id="grade-container"></div>
+          </div>
+          <div class="col-md-6">
+            <div id="stream-container"></div>
+          </div>
+        </div>
+        <div class="row d-flex justify-content-end">
+          <div id="proceed-btn-container" class="col-auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Class Management Tab -->
+    <div
+      class="tab-pane fade"
+      id="tab-four"
+      role="tabpanel"
+      aria-labelledby="tab-four-tab"
+    >
+      <h5 class="text-center fw-light">
+        <i class="bi bi-filter me-2"></i>Filter class to Manage
+      </h5>
+
+      <div class="row border p-2">
+        <div class="container orange-line mb-2"></div>
+        <div class="col-md-6">
+          <div id="grade-container-2"></div>
+        </div>
+        <div class="col-md-6">
+          <div id="stream-container-2"></div>
+        </div>
+      </div>
+      <div class="row d-flex justify-content-end mt-2">
+        <div id="class-manage-btn-container" class="col-auto"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================
+     Add Class & Stream Modal
+========================= -->
+<div
+  class="modal fade"
+  id="addClassModal"
+  tabindex="-1"
+  aria-labelledby="addClassModalLabel"
+  aria-hidden="true"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+>
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+      <!-- Modal Header -->
+      <div class="modal-header bg-danger pt-2 pb-2 px-3 text-white">
+        <h6 class="modal-title fw-bold" id="addClassModalLabel">
+          <i class="bi bi-plus-circle me-2"></i>ADD GRADE / FORM & (STREAMS)
+        </h6>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="px-4 pt-2 pb-2">
+        <h6 class="text-center border-bottom bg-light p-2 fw-light">
+          Class Details Entry
+        </h6>
+        <div class="border p-3">
+          <form action="{{ url_for('admin.grades_forms') }}" method="POST">
+            {{ load_branches_form.hidden_tag() }}
+
+            <!-- Year -->
+            {{ form_input(load_branches_form.class_year,
+            input_class="form-select", icon_class="bi bi-calendar-date") }}
+
+            <!-- Branch -->
+            {{ form_input(load_branches_form.branches,
+            input_class="form-select", icon_class="bi bi-building") }}
+
+            <!-- Grade/Form -->
+            {{ form_input(load_branches_form.grade_form, icon_class="bi
+            bi-journal-text", placeholder="Grade 9") }}
+
+            <!-- Streams -->
+            {{ form_input(load_branches_form.streams, icon_class="bi bi-house",
+            placeholder="North, South, East") }}
+
+            <div class="d-flex justify-content-end mt-2">
+              <button class="btn btn-secondary" type="submit">
+                <i class="bi bi-send-plus me-2"></i> Submit
+              </button>
+            </div>
+          </form>
+        </div>
+        <hr />
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================
+    Manage Class Modal
+========================= -->
+<div
+  class="modal fade"
+  id="manageClassModal"
+  tabindex="-1"
+  aria-labelledby="manageClassModalLabel"
+  aria-hidden="true"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+>
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+      <!-- Modal Header -->
+      <div class="modal-header bg-danger pt-2 pb-2 px-3 text-white">
+        <h6 class="modal-title fw-bold" id="addClassModalLabel">
+          <i class="bi bi-gear me-2"></i>MANAGE CLASS
+        </h6>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="px-4 pt-2 pb-2">
+        <h6 class="text-center border-bottom bg-light p-2 fw-light">
+          Manage class
+        </h6>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if load_branches_form.errors %}
+<script>
+  // Wait for the page to load, then show the modal if there are errors
+  document.addEventListener("DOMContentLoaded", function () {
+    var addModal = new bootstrap.Modal(
+      document.getElementById("addClassModal"),
+    );
+    addModal.show();
+  });
+</script>
+{% endif %}
+<script src="{{ url_for('admin.static', filename='js/fetch_academic_data.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/lessons.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/manage_class.js') }}"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+
+      const hasBranch = {{ has_branch if has_branch else 'null' }};
+      const branchSelect = document.querySelector('.branch-select');
+
+      if (hasBranch && branchSelect) {
+          branchSelect.value = hasBranch;
+
+          // Trigger the existing change handler
+          branchSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+  });
+</script>
+
+{% endblock %}

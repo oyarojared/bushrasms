@@ -1,0 +1,198 @@
+{% extends "super_admin_dash.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar, form_input %}
+
+
+{% block side_nav %}
+ <div class="sidebar">
+    {{ sidebar("School Staff", current_user) }}
+</div>
+{% endblock %}
+
+{% block main_content %}
+
+<!-- Flash messages -->
+{{ render_flash_messages() }}
+
+<!-- Teacher Profile -->
+<div class="container bg-white pt-0 px-0 pb-2 border-bottom border-success">
+    <div class="w-100 bg-danger" style="height: 10px;"></div>
+    <div class="row d-flex justify-content-center mt-2">
+        <div class="col-auto">
+            <div class="profile-photo-md mx-auto my-3"> 
+                <img src="{% if teacher.passport_url %}{{ url_for('static', filename='uploads/passports/' + teacher.passport_url) }}
+                {% else %}{{ url_for('static', filename='uploads/passports/default.JPG') }}
+                {% endif %}" class="img-fluid" alt="Photo">
+            </div>
+        </div>
+    </div>
+    <h4 class="text-center mt-2 text-orange">
+        {{ teacher.title }} {{ teacher.fullname | upper }} 
+        <span class="text-dark" style="font-size: 0.9rem">({{ teacher.username }})</span>
+    </h4>
+    <div class="row justify-content-center">
+        <div class="col-auto d-flex">
+            <small class="px-3">
+                Current Teaching Station: <span class="fw-bold">{{ branch_name }}</span>
+            </small>
+            <span class="small">
+                <a class="dropdown-item bg-secondary btn btn-sm text-white"
+                    href="#"
+                    data-bs-toggle="modal"
+                    data-bs-target="#moveModal">
+                    <i class="bi bi-arrow-left-right me-2"></i> Move
+                </a>
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Personal Details -->
+ <div class="container bg-white mt-4 pt-3 pb-3 px-5 border-top shadow-sm">
+    <h6 class="text-center mb-3 fw-light">PERSONAL INFO</h6>
+    <div class="row d-flex justify-content-center">
+        <div class="col-sm-5 d-flex justify-content-between border-bottom border-top px-6 pt-2 pb-2">
+            <span class="fw-bold">Teacher Code: </span> 
+            <span>
+                {% if teacher.staff_id %}
+                    {{ teacher.staff_id | upper }}
+                {% else %}
+                    ---
+                {% endif %}
+            </span>
+        </div>
+        <div class="col-sm-5 mx-4 d-flex justify-content-between border-bottom border-top px-6 pt-2 pb-2">
+            <span class="fw-bold">TSC Number: </span>
+            <span>{{ teacher.tsc_no or "---" }}</span>
+        </div>
+    </div>
+    <div class="row d-flex justify-content-center">
+        <div class="col-sm-5 d-flex justify-content-between border-bottom px-6 pt-2 pb-2">
+            <span class="fw-bold">Mobile Number: </span>
+            <span>{{ teacher.phone or "---"}}</span>
+        </div>
+        <div class="col-sm-5 mx-4 d-flex justify-content-between border-bottom px-6 pt-2 pb-2">
+            <span class="fw-bold">Email Address: </span>
+            <span>{{ teacher.email or "---" }}</span>
+        </div>
+    </div>
+    <div class="row d-flex justify-content-center">
+        <div class="col-sm-5 d-flex justify-content-between border-bottom px-6 pt-2 pb-2">
+            <span class="fw-bold">Gender: </span>
+            <span>{{ teacher.gender }}</span>
+        </div>
+        <div class="col-sm-5 mx-4 d-flex justify-content-between border-bottom px-6 pt-2 pb-2">
+            <span class="fw-bold">ID Number: </span>
+            <span>{{ teacher.id_no or "---" }}</span>
+        </div>
+    </div>
+ </div>
+
+ <!-- Lessons -->
+  <div class="container bg-white p-3 mt-3 shadow-sm border-top">
+    <h6 class="text-center mb-3 fw-light">LESSONS</h6>
+
+    <div class="table-scroll-container table-responsive">
+            
+        <table class="table table-striped table-bordered small">
+            <thead class="bg-secondary text-white">
+                <tr>
+                    <th class="text-center">#</th>
+                    <th>GRADE / FORM</th>
+                    <th>SUBJECT</th>
+                    <!-- <th>NO. STUDENTS</th> -->
+                    <th class="text-center">ACTION</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lesson in teacher.allocations %}
+                    <tr>
+                        <td class="text-center">{{ loop.index }}</td>
+                        <td>
+                            {{ lesson["class_name"] | upper }}
+                            {% if lesson["stream"] %}
+                                - {{ lesson["stream"] | upper }}
+                            {% endif %}
+                        </td>
+                        <td>{{ lesson["subject_name"] | upper }}</td>
+                        <!-- <td>{{ lesson["students"] }}</td>  -->
+                        <td class="text-center">
+                            <div class="dropdown">
+                                <button class="btn btn-secondary btn-sm border dropdown-toggle p-1"
+                                    type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-gear me-2"></i>
+                                </button>
+                                <ul class="dropdown-menu bg-light-green">
+                                    <li>
+                                        <a class="dropdown-item" href="">
+                                            <i class="bi bi-bookmarks"></i> Marks Entry
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="">
+                                            <i class="bi bi-graph-up-arrow"></i> Analysis
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+  </div>
+
+<!-- ===== Move Teacher Modal ===== -->
+<div class="modal fade"
+     id="moveModal"
+     tabindex="-1"
+     aria-labelledby="moveModalLabel"
+     aria-hidden="true"
+     data-bs-backdrop="static"
+     data-bs-keyboard="false">
+
+    <div class="modal-dialog modal-dialog-centered d-flex justify-content-center">
+        <div class="modal-content" style="min-width: 450px;">
+            <div class="modal-header bg-danger text-white px-2 pt-1 pb-2">
+                <h5 class="modal-title" id="moveModalLabel">
+                    <i class="bi bi-arrow-left-right me-2"></i>Move Teacher
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body px-4">
+                <h5 class="text-center p-2 fw-light bg-light border">
+                    Move Teacher to a different Branch / School.
+                </h5>
+                <div class="text-center mt-2">
+                    <h6>Current School: <span class="text-orange">{{ branch_name }}</span></h6>
+                    <div class="d-flex align-items-center my-4">
+                        <span class="flex-grow-1 border-bottom"></span>
+                        <h6 class="mx-3 mb-0 text-danger fw-bold">
+                            Move To <i class="bi bi-arrow-right"></i>
+                        </h6>
+                        <span class="flex-grow-1 border-bottom"></span>
+                    </div>
+                    <form action="{{ url_for('admin.move_teacher', teacher_id=teacher.id) }}" method="post">
+                        {{ move_form.hidden_tag() }}
+                        <div class="input-group">
+                            <div class="input-group-text">
+                                <i class="bi-house-fill"></i>
+                            </div>
+                            {{ move_form.branches(class="form-select") }}
+                        </div>
+                        <div class="row mt-2 d-flex justify-content-end">
+                            <div class="col-auto">
+                                <button class="btn btn-sm btn-secondary">
+                                    <i class="bi bi-arrow-left-right me-2"></i> Move
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

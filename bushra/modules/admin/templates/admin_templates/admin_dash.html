@@ -1,0 +1,234 @@
+{% extends "super_admin_dash.html" %} {% from "_macros.html" import
+render_flash_messages, sidebar, form_input %} {% block side_nav %} {{
+sidebar("Dashboard", current_user)}} {% endblock %} {% block main_content %}
+
+<!-- ====================== DASHBOARD HEADER ====================== -->
+<h6 class="fw-bold dashboard-title">
+  <i class="bi bi-speedometer2 me-2"></i>DASHBOARD
+</h6>
+
+<!-- Flash messages -->
+{{ render_flash_messages() }}
+
+<div class="container bg-white w-100 px-0 rounded-2 border welcome-shell">
+  <!-- subtle accent -->
+  <div class="welcome-line"></div>
+
+  <div class="row align-items-center py-3">
+    <!-- Profile -->
+    <div
+      class="col-sm-3 px-4 d-flex justify-content-sm-start justify-content-center"
+    >
+      <div
+        class="user-profile-pic"
+        style="background-image: url('{{ url_for('static', filename='uploads/passports/' + (current_user.passport_url or 'default.jpg')) }}');"
+      ></div>
+    </div>
+
+    <!-- Text -->
+    <div class="col-sm-8 px-0">
+      <div class="welcome-card px-4">
+        <div class="d-flex align-items-start gap-3">
+          <i class="bi bi-mortarboard-fill welcome-icon-min"></i>
+
+          <div>
+            <h4 class="mb-1 fw-semibold">
+              Welcome back,
+              <span class="user-name fw-bold text-danger"
+                >{{ current_user.fullname }}</span
+              >
+            </h4>
+
+            <p class="mb-2 text-muted small">
+              View student competencies, track assessment progress, and generate
+              CBC-aligned reports with ease.
+            </p>
+
+            <span class="badge bg-light text-dark border">
+              {% if current_user.is_super_admin %}
+              <i class="bi bi-person-badge me-1"></i> Super Admin {% elif
+              current_user.is_admin %}
+              <i class="bi bi-person-badge me-1"></i> Admin {% else %}
+              <i class="bi bi-person-badge me-1"></i> Teacher {% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== OVERALL DATA CARDS ====================== -->
+<div class="container bg-white mt-3 pt-3 pb-4 px-3 rounded-2 border">
+  <h5 class="text-center fw-light mb-4 text-muted">
+    {% if current_user.is_super_admin %}
+    <i class="bi bi-graph-up me-2"></i> Data Across All Branches {% else %}
+    <i class="bi bi-graph-up me-2"></i> {{ branches[0].name }} Data {% endif %}
+  </h5>
+
+  <div class="row g-4">
+    <!-- LEFT: Stats -->
+    <div class="col-md-8">
+      <div class="row g-3">
+        <!-- Students -->
+        <div class="col-12 col-md-6">
+          <div class="stat-card-modern accent-primary">
+            <div>
+              <div class="stat-label">Students</div>
+              <div class="stat-value count" data-count="{{ tot_students }}">
+                0
+              </div>
+            </div>
+            <i class="bi bi-people-fill stat-icon-modern"></i>
+          </div>
+        </div>
+
+        <!-- Teachers -->
+        <div class="col-12 col-md-6">
+          <div class="stat-card-modern accent-success">
+            <div>
+              <div class="stat-label">Teachers</div>
+              <div class="stat-value count" data-count="{{ total_teachers }}">
+                0
+              </div>
+            </div>
+            <i class="bi bi-person-badge-fill stat-icon-modern"></i>
+          </div>
+        </div>
+
+        <!-- Staff -->
+        <div class="col-12 col-md-6">
+          <div class="stat-card-modern accent-warning">
+            <div>
+              <div class="stat-label">Staff</div>
+              <div class="stat-value count" data-count="{{ total_staff }}">
+                0
+              </div>
+            </div>
+            <i class="bi bi-briefcase-fill stat-icon-modern"></i>
+          </div>
+        </div>
+
+        <!-- Branches -->
+        <div class="col-12 col-md-6">
+          <div class="stat-card-modern accent-dark">
+            <div>
+              <div class="stat-label">Branches</div>
+              <div
+                class="stat-value count"
+                data-count="{{ branches | length }}"
+              >
+                0
+              </div>
+            </div>
+            <i class="bi bi-diagram-3-fill stat-icon-modern"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Chart -->
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-header bg-white fw-semibold border-bottom">
+          Branch Population
+        </div>
+        <div class="card-body">
+          <div style="height: 260px">
+            <canvas id="branchPopulationChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====================== BRANCHES DETAILS ====================== -->
+<div class="container mt-3">
+  {% for branch in branches %}
+  <div class="border rounded shadow-sm mb-4 p-3 bg-white">
+    <!-- Branch Header -->
+    <div class="d-flex align-items-center bg-white p-2">
+      <hr class="flex-grow-1" />
+      <h5 class="text-center font-weight-bold text-orange">
+        <i class="bi bi-house-fill mx-1"></i>{{ branch.name }}
+      </h5>
+      <hr class="flex-grow-1" />
+    </div>
+
+    <!-- Branch Info & Overview Chart -->
+    <div class="row">
+      <!-- Branch Info List -->
+      <div class="col-md-7">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item fw-bold">
+            Manager: <span class="mx-3 fw-light">{{ branch.manager }}</span>
+          </li>
+          <li class="list-group-item fw-bold">
+            {% if branch.level == 'Primary' %}Headteacher: {% elif branch.level
+            == 'High School' %}Principal: {% else %}Principal/Headteacher:{%
+            endif %}
+            <span class="mx-3 fw-light">{{ branch.head }}</span>
+          </li>
+          <li class="list-group-item fw-bold">
+            Level: <span class="mx-3 fw-light">{{ branch.level }}</span>
+          </li>
+          <li class="list-group-item fw-bold">
+            Total Students:
+            <span class="mx-3 fw-light">{{ branch.population }}</span>
+          </li>
+          <li class="list-group-item fw-bold">
+            Total Teachers:
+            <span class="mx-3 fw-light">{{ branch.teacher_count }}</span>
+          </li>
+          <li class="list-group-item fw-bold">
+            Total Staff:
+            <span class="mx-3 fw-light">{{ branch.staff_count }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Branch Overview Bar Chart -->
+      <div class="col-md-5 d-flex justify-content-center align-items-center">
+        <canvas id="branchChart{{ branch.id }}"></canvas>
+      </div>
+    </div>
+
+    <!-- Accordion: Class Distribution -->
+    <div class="accordion accordion-flush mt-3" id="accordion{{ branch.id }}">
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button
+            class="accordion-button collapsed"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#collapse{{ branch.id }}"
+          >
+            <span class="fw-bold text-danger">More Stats</span>
+          </button>
+        </h2>
+        <div
+          id="collapse{{ branch.id }}"
+          class="accordion-collapse collapse"
+          data-bs-parent="#accordion{{ branch.id }}"
+        >
+          <div class="accordion-body">
+            <h6 class="text-center">Student Distribution per Class</h6>
+            <canvas id="classChart{{ branch.id }}" class="convas-size"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ====================== JS DATA INJECTION ====================== -->
+<script>
+  const branchData = {{ branches | tojson }};
+</script>
+
+<!-- External JS for Charts -->
+<script src="{{ url_for('admin.static', filename='js/graph_branch_data.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/countanimation.js') }}"></script>
+{% endblock %}

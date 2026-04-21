@@ -1,0 +1,452 @@
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar %}
+
+
+{% block side_nav %}
+ <div class="sidebar">
+    {{ sidebar("Schools", current_user) }}
+</div>
+{% endblock %}
+
+
+{% block main_content %}
+
+{{ render_flash_messages() }}
+
+<h5 class="branch-title fw-bold mb-2">
+    <i class="bi bi-building me-2"></i>Branches / Schools
+</h5>
+
+<!-- School Selector -->
+<div class="container bg-white p-4 mb-2 shadow-sm rounded-6">
+    <div class="container orange-line mb-2"></div>
+    <h6 class="fw-light mb-1">Select Branch / School to view details</h6>
+    <form id="branchForm" method="GET">
+        {{ select_branch_form.hidden_tag() }}
+        <div class="input-group">
+            <div class="input-group-text">
+                <i class="bi bi-building"></i>
+            </div>
+            {{ select_branch_form.branches(class="form-select", id="branchSelect") }}
+        </div>
+    </form>
+</div>
+
+<!-- Actions and Info Header -->
+<div class="container pb-2">
+    <div class="row text-white rounded-2 p-1">
+        <div class="col-sm-9"></div>
+        <div class="col-sm-3 d-flex">
+            <!-- Add Branch Trigger -->
+            <a href="#" data-bs-toggle="modal" data-bs-target="#addModal" id="add-branch-link">
+                <div class="nav-div btn btn-sm btn-danger px-2 me-1">
+                    <span><i class="bi bi-plus-circle-dotted"></i></span>
+                    <span>Add</span>
+                </div>
+            </a>
+            <button id="editBranchBtn" class="btn btn-sm btn-danger">
+                <i class="bi bi-pencil"></i> Edit
+            </button>
+            <button  
+                data-bs-toggle="modal"
+                data-bs-target="#deleteBranchModal"
+                class="btn btn-sm btn-danger small mx-1"
+            >
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </div>
+    </div>
+</div>
+
+{% if branch_id == 0 %} 
+{% else %}
+    <div class="container bg-white p-3 shadow-sm rounded-6">
+    
+        <div class="d-flex flex-column flex-md-row align-items-center gap-3">
+        {% if data.branch.logo %}
+            <img src="{{ url_for('static', filename='uploads/passports/' + data.branch.logo) }}"
+                alt="Logo"
+                class="img-fluid"
+                style="max-width: 120px; max-height: 120px;">
+        {% endif %}
+        
+        {% if data.branch.motto %}
+            <div class="text-center text-md-start">
+                <h5 class="mb-0 fw-bold">{{ data.branch.branch_name }}</h5>
+                <small class="text-muted">{{ data.branch.motto }}</small>
+            </div>
+        {% endif %}
+    </div>
+
+
+    <div class="floating-box">
+        <span class="floating-label h4">
+            <i class="bi bi-house-fill me-2"></i>{{ data.branch.branch_name | upper }}
+        </span>
+        <div class="floating-content">
+            <div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>School Code: <span class="fw-light">{{ data.branch.school_code or "---" }}</span></h6>
+                        <h6>School Gender: <span class="fw-light">{{ data.branch.school_gender or "---" }}</span></h6>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>School Type: <span class="fw-light">{{ data.branch.school_type or "---" }}</span></h6>
+                        <h6>School Manager: <span class="fw-light">{{ data.branch.branch_manager or "---" }}</span></h6>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>School Head: <span class="fw-light">{{ data.branch.branch_head or "---" }}</span></h6>
+                        <h6>Email: <span class="fw-light small text-primary fw-bold">{{ data.branch.email or "---" }}</span></h6>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-3 d-flex justify-content-center">
+                <div class="col-md-3 p-3  d-flex justify-content-center info-card-bg-success border rounded-2">
+                    <div>
+                        <h5 class="text-center">{{ data.total_students }}</h5>
+                        <span>Students</span>
+                    </div>
+                </div>
+                <div class="col-md-3 mx-5 p-3 rounded-2 d-flex justify-content-center info-card-bg-warning">
+                    <div class="info-card">
+                        <h5 class="text-center">{{ data.total_teachers }}</h5>
+                        <span>Teachers</span>
+                    </div>
+                </div>
+                <div class="col-md-3 p-3 rounded-2 d-flex justify-content-center info-card-bg-danger">
+                    <div class="info-card">
+                        <h5 class="text-center">0</h5>
+                        <span>Support Staff</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+<div class="container bg-white mt-3 pt-3 pb-3 shadow-sm rounded-6">
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold"
+                id="stats-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#stats"
+                type="button"
+                role="tab">
+                <i class="bi bi-bar-chart-line me-2"></i> Stats
+            </button>
+        </li>
+
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold"
+                id="academics-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#academics"
+                type="button"
+                role="tab">
+                <i class="bi bi-book me-2"></i> Academics
+            </button>
+        </li>
+
+    </ul>
+
+    <div class="tab-content mt-3" id="myTabContent">
+
+        <!-- STATS TAB -->
+        <div class="tab-pane fade show active"
+             id="stats"
+             role="tabpanel"
+             aria-labelledby="stats-tab">
+
+            <!-- STUDENT STATISTICS -->
+            <h5 class="fw-bold mb-3">Student Statistics</h5>
+
+            <div class="row g-4">
+
+                <!-- Student Gender Chart -->
+                <div class="col-md-4 col-12">
+                    <div class="p-3 shadow-sm rounded bg-light">
+                        <h6 class="text-center fw-bold">Student Gender</h6>
+                        <canvas id="studentGenderChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Teacher Gender Chart -->
+                <div class="col-md-4 col-12">
+                    <div class="p-3 shadow-sm rounded bg-light">
+                        <h6 class="text-center fw-bold">Teacher Gender</h6>
+                        <canvas id="teacherGenderChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Students Per Class Chart -->
+                <div class="col-md-4 col-12">
+                    <div class="p-3 shadow-sm rounded bg-light">
+                        <h6 class="text-center fw-bold">Students Per Class</h6>
+                        <canvas id="studentsPerClassChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ACADEMICS TAB -->
+        <div class="tab-pane fade"
+             id="academics"
+             role="tabpanel"
+             aria-labelledby="academics-tab">
+
+            <h5 class="fw-bold">Academic Performance</h5>
+            <p>Coming soon...</p>
+
+        </div>
+
+    </div>
+</div>
+
+
+ 
+<!-- =========================
+     Add Branch Modal
+========================= -->
+<div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" 
+data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
+
+    <div class="modal-content">
+      <!-- Modal Header -->
+      <div class="modal-header bg-danger text-white pt-2 pb-2 px-4">
+        <h6 class="modal-title">
+            <i class="bi bi-plus-circle me-1"></i>
+            <span id="modal-header-title">ADD BRANCH / SCHOOL</span>  
+        </h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        <h5 id="form-header" class="text-center bg-light fw-light border-bottom p-3">
+            Branch / School Data Entry
+        </h5>
+        <form id="addBranchForm" method="POST" enctype="multipart/form-data" class="px-4 border p-2">
+            {{ add_branch_form.hidden_tag() }}         
+            <!-- Row 1: Branch Name & School Code -->
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-light">Branch Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-bank"></i></span>
+                        {{ add_branch_form.branch_name(class="form-control", placeholder="Branch name") }}
+                    </div>
+                    {% if add_branch_form.branch_name.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ add_branch_form.branch_name.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-light">School Code</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-hash"></i></span>
+                        {{ add_branch_form.school_code(class="form-control", placeholder="Max 8 digits") }}
+                    </div>
+                    {% if add_branch_form.school_code.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ add_branch_form.school_code.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Row 2: Branch Manager & Branch Level -->
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-light">Branch Manager</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-person-workspace"></i></span>
+                        {{ add_branch_form.branch_manager(class="form-control", placeholder="Manager name") }}
+                    </div>
+                    {% if add_branch_form.branch_manager.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ add_branch_form.branch_manager.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-light">Branch Level</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-layers"></i></span>
+                        {{ add_branch_form.branch_level(class="form-select") }}
+                    </div>
+                    {% if add_branch_form.branch_level.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ add_branch_form.branch_level.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Row 3: Branch Head & School Gender -->
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-light">Branch Head</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-person-badge"></i></span>
+                        {{ add_branch_form.branch_head(class="form-select") }}
+                    </div>
+                    {% if add_branch_form.branch_head.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ add_branch_form.branch_head.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-light">School Gender</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-people"></i></span>
+                        {{ add_branch_form.school_gender(class="form-select") }}
+                    </div>
+                    {% if add_branch_form.school_gender.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ add_branch_form.school_gender.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Row 4: School Type & Email -->
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-light">School Type</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-building"></i></span>
+                        {{ add_branch_form.school_type(class="form-select") }}
+                    </div>
+                    {% if add_branch_form.school_type.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ add_branch_form.school_type.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-light">Branch Email (optional)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-envelope"></i></span>
+                        {{ add_branch_form.email(class="form-control", placeholder="example@school.com") }}
+                    </div>
+                    {% if add_branch_form.email.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ add_branch_form.email.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Row 5: School motto & Logo -->
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-light">School motto</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-building"></i></span>
+                        {{ add_branch_form.motto(class="form-control", placeholder="School Motto") }}
+                    </div>
+                    {% if add_branch_form.motto.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ add_branch_form.motto.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-light">School Logo</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-building"></i></span>
+                        {{ add_branch_form.logo(class="form-control") }}
+                    </div>
+                    {% if add_branch_form.logo.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ add_branch_form.logo.errors[0] }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button id="submit-btn" type="submit" class="btn btn-sm btn-danger px-3">
+                    <i class="bi bi-send-plus me-2"></i> Submit
+                </button>
+            </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if branch_id == 0 %} 
+{% else %}
+    <!-- CONFIRM DELETE MODAL -->
+<div class="modal fade" id="deleteBranchModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header bg-danger text-white pt-2 pb-2 px-4">
+        <h6 class="modal-title"> 
+          CONFIRM DELETE BRANCH / SCHOOL 
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="d-flex justify-content-center">
+            <h5 class="text-danger">
+                <i class="bi bi-exclamation-triangle display-6"></i>
+            </h5>
+        </div>
+        <p class="text-muted small">
+          Are you sure you want to delete <strong>{{ data.branch.branch_name | upper }}</strong>?   
+          <br><strong>NB: </strong>You must move all students before deletion.
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-slash-circle-fill me-2"></i>Cancel
+        </button>
+
+        <form method="POST" action="{{ url_for('admin.delete_branch', branch_id=data.branch.id) }}">
+          <button type="submit" class="btn btn-sm btn-danger">
+            <i class="bi bi-x-octagon-fill me-1"></i> Yes, Delete 
+        </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script>
+    const data = {{ data.branch|tojson }}
+
+    // URLs
+    const baseUrl = "{{ url_for('admin.branch_profile', branch_id="1") }}"
+    const update_branch_url = "{{ url_for('admin.update_branch', branch_id=data.branch.id if data.branch else 0) }}";
+
+    // CHART.JS GRAPHS TO SHOW DATA.
+    const studentGender = {{ data["gender_counts"] | tojson }};
+    const teacherGender = {{ data["teacher_gender_counts"] | tojson }};
+    const studentsPerClass = {{ data["students_per_class"] | tojson }};
+    
+</script>
+{% endif %}
+<script>
+    const add_branch_url = "{{ url_for('admin.add_school') }}";
+</script>
+<script src="{{ url_for('admin.static', filename='js/branch.js')}}"></script> 
+{% endblock %}

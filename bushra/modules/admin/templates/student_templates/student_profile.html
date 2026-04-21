@@ -1,0 +1,476 @@
+{% extends "student_templates/student_dash_layout.html" %}
+
+{% block body %}
+<div class="container mb-2 go-back-btn">
+    <a href="{{ request.referrer or url_for('admin.student_dash') }}" class="text-secondary">
+        <i class="bi bi-arrow-left"></i> Go Back
+    </a>
+</div> 
+
+<!-- Student Card -->
+<div class="container mb-2">
+    <div class="shadow-sm bg-white rounded-6"> 
+        <div class="container orange-line"></div>
+        <div class="card-body">
+            <div class="row">
+
+                <!-- Left Panel -->
+                <div class="col-md-4">
+                    <div class="border-end"> 
+
+                        <div class="profile-photo-lg mx-auto my-1">
+                            <img src="{% if student.passport %}
+                                        {{ url_for('static', filename='uploads/passports/' + student.passport) }}
+                                     {% else %}
+                                        {{ url_for('static', filename='uploads/passports/default.JPG') }}
+                                     {% endif %}"
+                                 class="img-fluid" alt="Photo">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-center">
+                        <form id="photoUploadForm"
+                              action="{{ url_for('admin.student_profile', student_id=student.id) }}"
+                              method="POST"
+                              enctype="multipart/form-data"
+                              style="display:none;">
+
+                            {{ passport_form.hidden_tag() }}
+                            {{ passport_form.passport(id="passportInput") }}
+
+                        </form>
+
+                        <button id="triggerPassportUpload" class="btn btn-sm btn-secondary">
+                            <i class="bi bi-camera me-2"></i>Update Passport
+                        </button>
+                    </div>
+
+                    {% if passport_form.passport.errors %}
+                        <div class="text-danger mt-2 fw-bold d-flex justify-content-center" style="font-size: 0.9rem;">
+                            {% for error in passport_form.passport.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Right Panel -->
+                <div class="col-md-8 align-items-center d-flex flex-column justify-content-center">
+                    <h3 class="text-center text-orange">{{ student.fullname | upper }}</h3>
+                    <h6 class=" text-center">
+                        ({{ student_branch.branch_name }} {{ student_class.grade_form }}
+                        {{ student.stream if student.stream else ""}})
+                    </h6>
+                    <div class="border p-3 w-100 mt-2"> 
+                        {% if student_class.grade_form == "Grade 9" %}
+                            <h6 class="fw-light">
+                                <span class="fw-bold">Pathway: </span>
+                                {{ student.pathway | default('N/A') }}
+                            </h6>
+                        {% endif %} 
+                        <h6 class="fw-bold">Total Learning Areas/Subjects: {{ student.subjects_taken | length }}</h6>
+                        <div class="card p-2">
+                            <span class="text-muted small">
+                               {{ student.subjects_taken | join(', ') if student.subjects_taken else "No learning areas data available." }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row rounded-2 w-100 d-flex justify-content-center">
+                        <div class="col-sm-2"></div>
+                        <div class="col-sm-10 d-flex">
+
+                            <!-- Edit Student -->
+                            <a href="#" id="editStudentBtn" data-bs-toggle="modal"
+                                data-bs-target="#addStudentModal" class="border-end mt-2">
+                                <div class="btn btn-sm btn-danger">
+                                    <i class="bi bi-pencil"></i>
+                                    <span class="ms-1">Edit</span>
+                                </div>
+                            </a>
+
+                            <!-- Transfer Student -->
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#moveStudentModal" class="border-end mx-2 mt-2">
+                                <div class="btn-danger btn btn-sm small">
+                                    <i class="bi bi-arrow-left-right me-2"></i> Move
+                                </div>
+                            </a>
+
+                            <!-- Delete Student -->
+                            <a href="#">
+                                <div class="">
+                                    <form method="POST"
+                                            action="{{ url_for('admin.delete_student', student_id=student.id) }}"
+                                            onsubmit="return confirm('Are you sure you want to delete {{ student.fullname | upper }} from the system?');">
+
+                                        <button type="submit" class="btn-danger btn btn-sm small mt-2">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Tabs -->
+<div class="container bg-white shadow-sm pt-2 pb-2 rounded-6">
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <a class="nav-link active text-dark"
+               data-bs-toggle="tab" href="#student-info">Student Info</a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link text-dark"
+               data-bs-toggle="tab" href="#academics">Academics</a>
+        </li>
+    </ul>
+
+    <div class="tab-content px-5 pb-2">
+
+        <!-- Student Info Tab -->
+        <div class="tab-pane fade show active" id="student-info">
+
+            <form method="POST" action="{{ url_for('admin.update_student', student_id=student.id) }}">
+                <div class="row g-3">
+
+                    <!-- Admission Number (DISABLED) -->
+                    <div class="col-md-6">
+                        <label class="form-label">Admission Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-credit-card"></i>
+                            </span>
+                            <input type="text" class="form-control fw-bold"
+                                   value="{{ student.admission_number }}" disabled>
+                        </div>
+                    </div>
+
+                    <!-- Full Name -->
+                    <div class="col-md-6">
+                        <label class="form-label">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-person"></i>
+                            </span>
+                            <input type="text" name="fullname" class="form-control fw-bold"
+                                   value="{{ student.fullname }}">
+                        </div>
+                    </div>
+
+                    <!-- Branch -->
+                    <div class="col-md-6">
+                        <label class="form-label">Branch</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-building"></i>
+                            </span>
+                            <input type="text" class="form-control fw-bold"
+                                   value="{{ student_branch.branch_name }}" disabled>
+                        </div>
+                    </div>
+
+                    <!-- Grade/Form -->
+                    <div class="col-md-6">
+                        <label class="form-label">Grade/Form</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-card-list"></i>
+                            </span>
+                            <input type="text" class="form-control fw-bold"
+                                   value="{{ student_class.grade_form if student_class else '---' }}"
+                                   disabled>
+                        </div>
+                    </div>
+
+                    <!-- Stream -->
+                    <div class="col-md-6">
+                        <label class="form-label">Stream</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-diagram-3"></i>
+                            </span>
+                            <input type="text" class="form-control fw-bold"
+                                   value="{{ student.stream }}" disabled>
+                        </div>
+                    </div>
+
+                    <!-- Gender -->
+                    <div class="col-md-6">
+                        <label class="form-label">Gender</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-gender-ambiguous"></i>
+                            </span>
+                            <select name="gender" class="form-select fw-bold">
+                                <option value="">-- Select Gender --</option>
+                                <option value="Male"
+                                    {% if student.gender == 'Male' %}selected{% endif %}>Male</option>
+                                <option value="Female"
+                                    {% if student.gender == 'Female' %}selected{% endif %}>Female</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Date of Birth -->
+                    <div class="col-md-6">
+                        <label class="form-label">Date of Birth</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-calendar"></i>
+                            </span>
+                            <input type="date" name="dob" class="form-control fw-bold"
+                                   value="{{ student.dob }}">
+                        </div>
+                    </div>
+
+                    <!-- Boarding Status -->
+                    <div class="col-md-6">
+                        <label class="form-label">Boarding Status</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-house-door"></i>
+                            </span>
+                            <select name="boarding_status" class="form-select fw-bold">
+                                <option value="">-- Select --</option>
+                                <option value="Day"
+                                    {% if student.boarding_status == 'Day' %}selected{% endif %}>Day</option>
+                                <option value="Boarding"
+                                    {% if student.boarding_status == 'Boarding' %}selected{% endif %}>
+                                    Boarding
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Pathway -->
+                    <div class="col-md-6">
+                        <label class="form-label">Pathway</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-map"></i>
+                            </span>
+                            <input type="text" name="pathway" class="form-control fw-bold"
+                                   value="{{ student.pathway }}">
+                        </div>
+                    </div>
+
+                    <!-- KCPE Marks -->
+                    <div class="col-md-6">
+                        <label class="form-label">KCPE Marks</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-123"></i>
+                            </span>
+                            <input type="number" name="kcpe_marks" class="form-control fw-bold"
+                                   value="{{ student.kcpe_marks }}">
+                        </div>
+                    </div>
+
+                    <!-- KCPE Index -->
+                    <div class="col-md-6">
+                        <label class="form-label">KCPE Index Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-file-text"></i>
+                            </span>
+                            <input type="text" name="kcpe_index_no" class="form-control fw-bold"
+                                   value="{{ student.kcpe_index_no }}">
+                        </div>
+                    </div>
+
+                    <!-- KCPE Year -->
+                    <div class="col-md-6">
+                        <label class="form-label">KCPE Year</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-calendar-year"></i>
+                            </span>
+                            <select name="kcpe_year" class="form-select fw-bold">
+                                <option value="">-- Select Year --</option>
+                                {% for year in range(2000, 2030) %}
+                                    <option value="{{ year }}"
+                                        {% if student.kcpe_year == year %}selected{% endif %}>
+                                        {{ year }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- KNEC -->
+                    <div class="col-md-6">
+                        <label class="form-label">KNEC Assessment No.</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-123"></i>
+                            </span>
+                            <input type="text" name="knec_assessment_no" class="form-control fw-bold"
+                                   value="{{ student.knec_assessment_no }}">
+                        </div>
+                    </div>
+
+                    <!-- NEMIS -->
+                    <div class="col-md-6">
+                        <label class="form-label">NEMIS Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-card-heading"></i>
+                            </span>
+                            <input type="text" name="nemis_number" class="form-control fw-bold"
+                                   value="{{ student.nemis_number }}">
+                        </div>
+                    </div>
+
+                    <!-- Birth Cert -->
+                    <div class="col-md-6">
+                        <label class="form-label">Birth Certificate No.</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-file-earmark-text"></i>
+                            </span>
+                            <input type="text" name="birth_cert_no" class="form-control fw-bold"
+                                   value="{{ student.birth_cert_no }}">
+                        </div>
+                    </div>
+
+                    <!-- Date of Admission -->
+                    <div class="col-md-6">
+                        <label class="form-label">Date of Admission</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-calendar-check"></i>
+                            </span>
+                            <input type="date" class="form-control fw-bold"
+                                   value="{{ student.date_of_admission }}" disabled>
+                        </div>
+                    </div>
+
+                    <!-- Parent Name -->
+                    <div class="col-md-6">
+                        <label class="form-label">Parent/Guardian Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-person-lines-fill"></i>
+                            </span>
+                            <input type="text" name="parent_fullname" class="form-control fw-bold"
+                                   value="{{ student.parent_fullname }}">
+                        </div>
+                    </div>
+
+                    <!-- Parent Phone -->
+                    <div class="col-md-6">
+                        <label class="form-label">Parent/Guardian Phone</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-secondary text-white">
+                                <i class="bi bi-telephone"></i>
+                            </span>
+                            <input type="text" name="parent_phone" class="form-control fw-bold"
+                                   value="{{ student.parent_phone }}">
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="mt-3 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-secondary">
+                        <i class="bi bi-send"></i> Save Changes
+                    </button>
+                </div>
+                <hr>
+            </form>
+        </div>
+
+        <!-- Academics Tab -->
+        <div class="tab-pane fade" id="academics">
+            <p>Academic information will go here...</p>
+        </div>
+
+    </div>
+</div>
+<div  style="height: 70px;"></div>
+<!-- MOVE STUDENT MODAL -->
+ <div class="modal fade" id="moveStudentModal" tabindex="-1" aria-labelledby="moveStudentModalLabel"  data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header pt-2 pb-2 px-6 bg-danger text-white mb-0">
+        <h6 class="modal-title" id="moveStudentModalLabel">
+            <i class="bi bi-arrow-left-right me-3"></i>MOVE {{ student.fullname | upper }}
+        </h6>
+        <button
+            type="button" 
+            class="btn-close btn-close-white" 
+            data-bs-dismiss="modal" 
+            aria-label="Close">
+        </button>
+      </div>
+
+      <div class="modal-body mt-1 pt-0">
+         <div class="bg-light p-2 border-bottom">
+            <h6 class="text-center text-orange">
+                {{ student_branch.branch_name }}
+            </h6>
+            <h6 class="text-center text-orange">
+                {{ student_class.grade_form }}
+                {% if student.stream %}
+                    {{ " " ~ student.stream }}
+                {% endif %}
+            </h6>
+         </div>
+
+        <div class="d-flex align-items-center my-4">
+            <span class="flex-grow-1 border-bottom"></span>
+            <h6 class="mx-3 mb-0 text-danger fw-bold">
+                Move To <i class="bi bi-arrow-right"></i>
+            </h6>
+            <span class="flex-grow-1 border-bottom"></span>
+        </div>
+
+        <div class="card px-3 pt-2 pb-2 shadow-sm">
+            <form action="{{ url_for('admin.move_student', student_id=student.id) }}" method="post"> 
+                {{ transfer_form.hidden_tag() }}
+                <div class="row">
+                    <div class="col-md-6">
+                        {{ transfer_form.branches.label(class="fw-bold mb-2") }}
+                            {{ transfer_form.branches(class="form-control", id="select-branch-element") }}
+
+                            {% for error in transfer_form.branches.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <div id="grade-forms-container"></div>
+                    </div>
+                </div> 
+                <div class="row">
+                    <div id="stream-select-container"></div>
+                </div>
+                <div class="row">
+                    <div class="col-12 d-flex justify-content-end">
+                        <button class="btn btn-sm btn-secondary mt-2">
+                            <i class="bi bi-arrow-left-right me-2"></i>Move
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <hr>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script src="{{ url_for('admin.static', filename='js/remove_alerts.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/update_passport.js')}}"></script>
+<script src="{{ url_for('admin.static', filename='js/load_grade_streams.js') }}"></script>
+
+{% endblock %}

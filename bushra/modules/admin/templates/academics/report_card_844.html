@@ -1,0 +1,613 @@
+
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Report Card</title>
+
+<style>
+@page {
+    size: A4;
+    margin: 15mm;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    font-size: 11.5px;
+    line-height: 1.3;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+.report-card {
+    border: 3px solid #923006;
+    padding: 18px;
+    box-sizing: border-box;
+    page-break-inside: avoid;
+    position: relative;
+}
+
+/* ================= HEADER ================= */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.school-info {
+    text-align: center;
+    flex-grow: 1;
+}
+
+.school-info h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.school-info p {
+    margin: 1px 0;
+}
+
+.contact-blue {
+    color: #1e6bd6;
+    font-weight: 600;
+}
+
+.student-passport {
+    width: 90px;
+    height: 100px;
+    border: 1px solid #2c3e50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ================= STUDENT INFO ================= */
+.student-info {
+    background: #ecf0f1;
+    padding: 10px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+}
+
+/* ================= TABLE ================= */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+}
+
+th, td {
+    padding: 5px;
+    border: 1px solid #7f8c8d;
+    text-align: center;
+}
+
+th {
+    background-color: #923006;
+    color: white;
+}
+
+.text-left { text-align: left; }
+
+.subject-uppercase {
+    text-transform: uppercase;
+}
+
+/* ================= BAR CHART ================= */
+.subject-bar-container {
+    margin-top: 10px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    gap: 6px;
+    height: 180px;
+    overflow: hidden;   /* important */
+    border-left: 1px solid #000;
+    border-bottom: 1px solid #000;
+    padding: 6px;
+}
+
+.subject-bar {
+    width: 42px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.bar-label {
+    font-size: 9px;
+    color: #000;
+    margin-bottom: 4px;
+    text-align: center;
+    word-break: break-word;
+}
+
+/* FOOTER */
+.footer {
+    text-align: center;
+    font-size: 10px;
+    margin-top: 10px;
+    color: #7f8c8d;
+    border-top: 1px solid #ccc;
+    padding-top: 4px;
+}
+
+.bar-fill {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    font-size: 10px;
+    font-weight: bold;
+    color: #fff;
+    padding-bottom: 2px;
+}
+
+/* Bar colors */
+.excellent { background-color: #4CAF50; }
+.very-good { background-color: #8BC34A; }
+.good { background-color: #FFC107; color:#000; }
+.fair { background-color: #FF9800; }
+.poor { background-color: #F44336; }
+
+/* ================= WATERMARK ================= */
+.report-card::before {
+    content: "{{ data[0].branch_name }}";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 60px;
+    color: rgba(170, 170, 170, 0.25);
+    z-index: 0;
+    pointer-events: none;
+    white-space: nowrap;
+}
+/* ================= SUBTLE DECORATIONS ================= */
+
+/* Decorative corner lines */
+.report-card::after {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    border: 1px dashed rgba(146, 48, 6, 0.15);
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Corner accents */
+.report-card .corner {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(146, 48, 6, 0.25);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.corner.top-left {
+    top: 10px;
+    left: 10px;
+    border-right: none;
+    border-bottom: none;
+}
+
+.corner.bottom-right {
+    bottom: 10px;
+    right: 10px;
+    border-left: none;
+    border-top: none;
+}
+
+/* Subtle dotted paper texture */
+.report-card {
+    background-image: radial-gradient(
+        rgba(0,0,0,0.04) 0.6px,
+        transparent 0.6px
+    );
+    background-size: 14px 14px;
+}
+
+/* Decorative divider behind summary */
+.summary-signature-container::before {
+    content: "";
+    position: absolute;
+    left: 5%;
+    right: 5%;
+    top: -10px;
+    height: 1px;
+    background: linear-gradient(
+        to right,
+        transparent,
+        rgba(146, 48, 6, 0.3),
+        transparent
+    );
+}
+
+</style>
+</head>
+
+<body>
+
+{% for student in data %}
+
+<div class="report-card">
+    <div class="corner top-left"></div>
+    <div class="corner bottom-right"></div>
+
+    <!-- HEADER -->
+    <div class="header">
+        {% if student.school_logo %}
+        <img src="{{ student.school_logo }}" style="max-width:100px; max-height:100px;">
+        {% else %}
+        <div style="width:100px;height:100px;border:1px dashed #333;display:flex;align-items:center;justify-content:center;">
+            Logo
+        </div>
+        {% endif %}
+
+        <div class="school-info">
+            <h2>{{ student.branch_name }}</h2>
+            <p>P.O. BOX 28-70100, GARISSA - KENYA</p>
+            <p>
+                Email: <span class="contact-blue">bushraschools2021@gmail.com</span> |
+                Phone: <span class="contact-blue">0722339494</span>
+            </p>
+            <h5>STUDENT'S ASSESSMENT REPORT</h5>
+            <h5>{{ student.exam.name }} - {{ student.exam.year }} - Term: {{ student.exam.term }}</h5>
+        </div>
+
+        <div class="student-passport">
+            <img src="{{ student.passport_path }}" style="width:90px;height:100px;object-fit:cover;">
+        </div>
+    </div>
+
+    <!-- STUDENT INFO -->
+    <div class="student-info">
+        <strong>Name:</strong> {{ student.name }} |
+        <strong>Adm No:</strong> {{ student.admission_number }} |
+        <strong>Class:</strong> {{ student.class }} |
+        <strong>Stream:</strong> {{ student.stream }} |
+        <strong>Gender:</strong> {{ student.gender }}
+    </div>
+
+    <!-- SUBJECT TABLE -->
+    <table>
+        <thead>
+            <tr>
+                <th>Subject</th>
+                <th>Marks</th>
+                <th>Grade</th>
+                <th>Points</th>
+                <th>Comment</th>
+                <th>Teacher</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for s in student.subjects %}
+
+            <tr>
+                <td class="text-left subject-uppercase">{{ s.subject }}</td>
+                <td>{{ s.marks }}</td>
+                <td>{{ s.grade }}</td>
+                <td>{{ s.points }}</td>
+                <td class="text-left">{{ s.comment }}</td>
+                <td>{{ s.teacher_initials }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- BAR CHART -->
+    <div class="subject-bar-container">
+        {% for s in student.subjects %}
+            {% if s.marks >= 75 %}
+                {% set cls = "excellent" %}
+            {% elif s.marks >= 65 %}
+                {% set cls = "very-good" %}
+            {% elif s.marks >= 50 %}
+                {% set cls = "good" %}
+            {% elif s.marks >= 40 %}
+                {% set cls = "fair" %}
+            {% else %}
+                {% set cls = "poor" %}
+            {% endif %}
+
+            <div class="subject-bar">
+                <div class="bar-label subject-uppercase">{{ s.subject }}</div>
+                <div class="bar-fill {{ cls }}" style="height: {{ s.marks * 1.8 }}px;">
+                    {{ s.marks }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="summary-signature-container">
+
+    <!-- LEFT: SUMMARY -->
+    <div class="summary-box">
+        <h4>Summary</h4>
+
+        <div class="summary-grid">
+            <div class="summary-item highlight-points">
+                <span class="label">Total Points</span>
+                <span class="value">{{ student.summary.total_points }}</span>
+            </div>
+
+            <div class="summary-item highlight-grade">
+                <span class="label">Mean Grade</span>
+                 {{ student.summary.final_grade }}
+            </div>
+
+            <div class="summary-item">
+                <span class="label">Stream Rank</span>
+                <span class="rank-pill">
+                    {{ student.summary.position }} / {{ student.summary.out_of }}
+                </span>
+            </div>
+
+            <div class="summary-item">
+                <span class="label">Overall Rank</span>
+                <span class="rank-pill dark">
+                    {{ student.summary.general_position }} / {{ student.summary.general_out_of }}
+                </span>
+            </div>
+        </div>
+
+        <div class="summary-remarks">
+            <strong>Remarks:</strong>
+            {{ student.principal_comment or '_____________' }}
+        </div>
+    </div>
+
+    <!-- RIGHT: SIGNATURES & STAMP -->
+    <div class="signature-box">
+
+        <div class="signature-line">
+            <div class="signature-name">
+                {{ student.class_teacher }}
+            </div>
+            <div class="signature-title">
+                Class Teacher
+            </div>
+        </div>
+
+        <div class="signature-line">
+            <div class="signature-name">
+                ______________________
+            </div>
+            <div class="signature-title">
+                Principal
+            </div>
+        </div>
+
+        <div class="stamp-box">
+            OFFICIAL SCHOOL STAMP
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<div class="footer">
+        © 2026 {{ student.branch_name }}.
+        <br>Developed by Bushra Tech. All Rights Reserved.
+    </div>
+
+<style>
+/* ================= SUMMARY & SIGNATURE STYLING ================= */
+/* ================= SUMMARY + SIGNATURE LAYOUT ================= */
+
+.summary-signature-container {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    page-break-inside: avoid;
+}
+
+/* LEFT */
+.summary-box {
+    width: 60%;
+}
+
+/* RIGHT */
+.signature-box {
+    width: 40%;
+    border: 2px solid #923006;
+    border-radius: 6px;
+    padding: 12px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Signature lines */
+.signature-line {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.signature-name {
+    border-top: 1px solid #000;
+    padding-top: 4px;
+    font-weight: bold;
+}
+
+.signature-title {
+    font-size: 10px;
+    color: #555;
+    margin-top: 2px;
+}
+
+/* Stamp box */
+.stamp-box {
+    border: 2px dotted #000;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-style: italic;
+    color: #555;
+}
+
+.summary-signature-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    page-break-inside: avoid;
+    gap: 15px;
+}
+
+.summary-box, .signature-box {
+    border: 2px solid #923006;
+    border-radius: 6px;
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.summary-box {
+    width: 60%;
+    background: #fdf5e6; /* subtle cream background for clarity */
+}
+
+.summary-box h4 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    text-align: center;
+    color: #923006;
+    border-bottom: 1px solid #923006;
+    padding-bottom: 4px;
+}
+
+.signature-box {
+    width: 35%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.signature-line {
+    margin-bottom: 18px;
+}
+
+.signature {
+    border-top: 1px solid #000;
+    text-align: center;
+    padding-top: 4px;
+    font-weight: bold;
+}
+
+.stamp-line {
+    margin-top: 10px;
+    border-top: 1px dotted #000;
+    text-align: center;
+    padding-top: 4px;
+    font-style: italic;
+    font-size: 11px;
+    color: #555;
+}
+/* ================= SUMMARY VISUAL EMPHASIS ================= */
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.summary-item {
+    background: #fff;
+    border: 1px solid rgba(146, 48, 6, 0.25);
+    border-radius: 6px;
+    padding: 8px 10px;
+    text-align: center;
+}
+
+.summary-item .label {
+    display: block;
+    font-size: 10px;
+    color: #555;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.summary-item .value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #923006;
+}
+
+/* ===== TOTAL POINTS ===== */
+.highlight-points {
+    background: linear-gradient(135deg, #fff5e6, #fde2c7);
+    border: 2px solid #923006;
+}
+
+/* ===== GRADE BADGE ===== */
+.grade-badge {
+    display: inline-block;
+    font-size: 26px;
+    font-weight: bold;
+    padding: 8px 16px;
+    border-radius: 50%;
+    color: #fff;
+}
+
+/* Grade colors */
+.grade-a,
+.grade-a- { background: #2ecc71; }
+
+.grade-b,
+.grade-b- { background: #27ae60; }
+
+.grade-c,
+.grade-c- { background: #f1c40f; color: #000; }
+
+.grade-d,
+.grade-d- { background: #e67e22; }
+
+.grade-e { background: #e74c3c; }
+
+/* ===== RANK PILLS ===== */
+.rank-pill {
+    display: inline-block;
+    background: #3498db;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.rank-pill.dark {
+    background: #2c3e50;
+}
+
+/* ===== REMARKS ===== */
+.summary-remarks {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px dashed #923006;
+    font-size: 11px;
+}
+
+</style>
+
+</div>
+
+{% if not loop.last %}
+<div style="page-break-after: always;"></div>
+{% endif %}
+
+{% endfor %}
+
+</body>
+</html>

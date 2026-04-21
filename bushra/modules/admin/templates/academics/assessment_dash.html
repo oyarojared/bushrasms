@@ -1,0 +1,620 @@
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar, form_input %}
+
+{% block side_nav %}
+<div class="sidebar">
+    {{ sidebar("Exams", current_user) }}
+</div>
+{% endblock %}
+
+{% block main_content %}
+
+{{ render_flash_messages() }}
+
+<h6 class="fw-bold exams-header">
+    <i class="bi bi-journal-bookmark-fill me-2"></i>EXAMS / ASSESSMENTS
+</h6>
+
+<div class="card mt-3 shadow-sm">
+    <div class="orange-line"></div>
+    <div class="card-body">
+
+        <!-- Tabs navigation -->
+        <ul class="nav nav-tabs" id="examTabs" role="tablist">
+            <li class="nav-item" role="presentation" style="font-size: medium;">
+                <button class="nav-link active" id="exam-setup-tab" data-bs-toggle="tab" data-bs-target="#exam-setup"
+                    type="button" role="tab">
+                    {% if current_user.is_admin %}
+                    <i class="bi bi-gear-fill me-1"></i> Exam Setup
+                    {% else %}
+                    <i class="bi bi-gear-fill me-1"></i> Select Exam to Enter Marks
+                    {% endif %}
+                </button>
+            </li>
+
+            {% if current_user.is_admin %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="results-tab" data-bs-toggle="tab" data-bs-target="#results" type="button"
+                    role="tab">
+                    <i class="bi bi-file-earmark-bar-graph-fill me-1"></i> Results & Reports
+                </button>
+            </li>
+            {% endif %}
+
+            {% if current_user.is_admin %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="grading-tab" data-bs-toggle="tab" data-bs-target="#grading" type="button"
+                    role="tab">
+                    <i class="bi bi-award-fill me-1"></i> Grading & Rules
+                </button>
+            </li>
+            {% endif %}
+
+            {% if current_user.is_admin %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="marksheets-tab" data-bs-toggle="tab" data-bs-target="#marksheets"
+                    type="button" role="tab">
+                    <i class="bi bi-table me-1"></i> Marksheets & Classlists
+                </button>
+            </li>
+            {% endif %}
+
+            {% if current_user.is_admin %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="broadsheet-tab" data-bs-toggle="tab" data-bs-target="#broadsheet"
+                    type="button" role="tab">
+                    <i class="bi bi-file-earmark-text me-1"></i> Broadsheets & Analytics
+                </button>
+            </li>
+            {% endif %}
+
+        </ul>
+
+        <!-- TAB CONTENT -->
+        <div class="tab-content pt-3" id="examTabsContent">
+
+            <!-- ================= EXAM SETUP TAB ================= -->
+            <div class="tab-pane fade show active" id="exam-setup" role="tabpanel">
+
+                {% if current_user.is_admin %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0">Exam Configuration</h6>
+
+                    <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#createExamModal">
+                        <i class="bi bi-plus-circle me-1"></i> Create Exam
+                    </button>
+                </div>
+                {% endif %}
+                <hr>
+
+                <div class="container-fluid">
+                    {% if exams_list %}
+                    <div class="row g-4">
+                        {% for exam in exams_list %} 
+                        <div class="col-md-4 col-lg-3">
+                            <div class="card h-100 shadow border-0 exam-card">
+
+                                <!-- Card Header -->
+                                <div class="card-header bg-light d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="fw-bold mb-0">{{ exam.name }}</h6>
+                                        <small class="text-muted">
+                                            {{ exam.year }} · Term {{ exam.term }}
+                                        </small>
+                                    </div>
+
+                                    {% if exam.is_locked %}
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-lock-fill me-1"></i> Locked
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-unlock-fill me-1"></i> Open
+                                    </span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Card Body -->
+                                <div class="card-body pt-2">
+
+                                    <div class="mb-2">
+                                        <div class="small">
+                                            {% for eb in exam.exam_branches %}
+                                            {{ eb.branch.branch_name }}{% if not loop.last %}, {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <small class="text-muted fw-semibold">Marks Entry</small><br>
+                                        {% if exam.is_locked %}
+                                        <span class="text-danger small">
+                                            <i class="bi bi-x-circle-fill"></i> Closed
+                                        </span>
+                                        {% else %}
+                                        <span class="text-success small">
+                                            <i class="bi bi-check-circle-fill"></i> Open
+                                        </span>
+                                        {% endif %}
+                                    </div>
+
+                                </div>
+
+                                <!-- Card Footer -->
+                                <div class="card-footer bg-white border-top-0 pt-0">
+
+                                    <div class="d-grid gap-2">
+
+                                        <!-- Primary Actions -->
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            {% if not current_user.is_admin %}
+                                            <button class="btn btn-outline-primary" disabled>
+                                                <i class="bi bi-pencil-fill"></i> Edit
+                                            </button>
+                                            {% else %}
+                                            <button class="btn btn-outline-primary">
+                                                <i class="bi bi-pencil-fill"></i> Edit
+                                            </button>
+                                            {% endif %}
+
+                                            <a href="{{ url_for('admin.marks_entry', exam_id=exam.id) }}"
+                                                class="btn btn-secondary">
+                                                <i class="bi bi-table"></i> Marks
+                                            </a>
+
+                                        </div>
+
+                                        <!-- Lock / Unlock -->
+                                        {% if exam.is_locked %}
+                                        <form method="post"
+                                            action="{{ url_for('admin.unlock_exam', exam_id=exam.id) }}">
+                                            {% if not current_user.is_admin %}
+                                            <button class="btn btn-sm btn-success w-100" disabled>
+                                                <i class="bi bi-unlock-fill me-1"></i> Unlock Exam
+                                            </button>
+                                            {% else %}
+                                            <button class="btn btn-sm btn-success w-100">
+                                                <i class="bi bi-unlock-fill me-1"></i> Unlock Exam
+                                            </button>
+                                            {% endif %}
+                                        </form>
+                                        {% else %}
+                                        <form method="post" action="{{ url_for('admin.lock_exam', exam_id=exam.id) }}">
+                                            {% if not current_user.is_admin %}
+                                            <button class="btn btn-sm btn-warning w-100" disabled>
+                                                <i class="bi bi-lock-fill me-1"></i> Lock Exam
+                                            </button>
+                                            {% else %}
+                                            <button class="btn btn-sm btn-warning w-100">
+                                                <i class="bi bi-lock-fill me-1"></i> Lock Exam
+                                            </button>
+                                            {% endif %}
+                                        </form>
+                                        {% endif %}
+
+                                        <!-- Danger Zone -->
+                                        <form method="post" action="{{ url_for('admin.delete_exam', exam_id=exam.id) }}"
+                                            onsubmit="return confirm('Are you sure you want to delete this exam?');">
+                                            {% if not current_user.is_admin %}
+                                            <button class="btn btn-sm btn-outline-danger w-100" disabled>
+                                                <i class="bi bi-trash-fill me-1"></i> Delete Exam
+                                            </button>
+                                            {% else %}
+                                            <button class="btn btn-sm btn-outline-danger w-100">
+                                                <i class="bi bi-trash-fill me-1"></i> Delete Exam
+                                            </button>
+                                            {% endif %}
+                                        </form>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        </div>
+                        <!-- DELETE CONFIRMATION MODAL -->
+                        <div class="modal fade" id="deleteExamModal{{ exam.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-sm modal-dialog-centered">
+                                <div class="modal-content">
+                                    <form method="post" action="{{ url_for('admin.delete_exam', exam_id=exam.id) }}">
+                                        <div class="modal-header bg-danger text-white py-2">
+                                            <h6 class="modal-title">Delete Exam</h6>
+                                            <button type="button" class="btn-close btn-close-white"
+                                                data-bs-dismiss="modal"></button>
+                                        </div>
+
+                                        <div class="modal-body text-center">
+                                            <p class="mb-2">
+                                                Are you sure you want to delete:
+                                            </p>
+                                            <strong>{{ exam.name }}</strong>
+                                            <p class="text-danger small mt-2 mb-0">
+                                                This action cannot be undone.
+                                            </p>
+                                        </div>
+
+                                        <div class="modal-footer justify-content-center py-2">
+                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                Yes, Delete
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-secondary"
+                                                data-bs-dismiss="modal">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        No exams created yet.
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+            <!-- ================= RESULTS TAB ================= -->
+            <div class="tab-pane fade" id="results" role="tabpanel">
+                <!-- Filters Card -->
+                <div class="card p-3 shadow-sm mb-4">
+                    <h6 class="fw-bold mb-3 text-primary">
+                        <i class="bi bi-funnel-fill me-2"></i>Filter Results
+                    </h6>
+                    <div class="row g-3">
+                        <!-- Branch -->
+                        <div class="col-md-3">
+                            <label for="results-branch" class="form-label fw-semibold">
+                                <i class="bi bi-house-door me-1"></i>Branch
+                            </label>
+                            <select id="results-branch" class="form-select form-select-sm"></select>
+                        </div>
+
+                        <!-- Grade/Class -->
+                        <div class="col-md-3">
+                            <label for="results-grade" class="form-label fw-semibold">
+                                <i class="bi bi-building me-1"></i>Grade / Class
+                            </label>
+                            <select id="results-grade" class="form-select form-select-sm"></select>
+                        </div>
+
+                        <!-- Stream -->
+                        <div class="col-md-3">
+                            <label for="results-stream" class="form-label fw-semibold">
+                                <i class="bi bi-list-ul me-1"></i>Stream
+                            </label>
+                            <select id="results-stream" class="form-select form-select-sm">
+                                <option value="">All</option>
+                            </select>
+                        </div>
+
+                        <!-- Exam -->
+                        <div class="col-md-3">
+                            <label for="results-exam" class="form-label fw-semibold">
+                                <i class="bi bi-journal-text me-1"></i>Exam
+                            </label>
+                            <select id="results-exam" class="form-select form-select-sm">
+                                <option value="">--Select Exam--</option>
+                            </select>
+                        </div>
+
+                        <!-- Subject -->
+                        <div class="col-md-3 d-none">
+                            <label for="results-subject" class="form-label fw-semibold">
+                                <i class="bi bi-book me-1"></i>Subject
+                            </label>
+                            <select id="results-subject" class="form-select form-select-sm"></select>
+                        </div>
+
+                        <!-- Load Results Button -->
+                        <div id="fetchResultsDiv" class="row d-flex justify-content-end mt-2">
+
+                            <div class="col-auto">
+                                <label for="results-subject" class="form-label fw-semibold">
+                                    <button id="load-results" class="btn btn-sm btn-primary w-100">
+                                        <i class="bi bi-search me-1"></i> Fetch Results
+                                    </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Results Table -->
+                <div class="">
+                    <div id="resultsContainer"></div>
+                    <script>
+                        const STATIC_URL = "{{ url_for('static', filename='') }}";
+                    </script>
+
+                </div>
+            </div>
+
+
+            <!-- ================= GRADING TAB ================= -->
+
+            {% if current_user.is_admin %}
+            <div class="tab-pane fade" id="grading" role="tabpanel">
+
+                <div class="alert alert-secondary mb-2">
+                    <small>
+                        Configure grading rules. Select a system, customize boundaries, and assign to classes.
+                    </small>
+                </div>
+
+                <!-- Step 1: Choose Grading System -->
+                <div class="mb-2">
+                    <label for="grading-system" class="form-label"><strong>Select Grading System</strong></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-diagram-3-fill"></i></span>
+                        <select class="form-select" id="grading-system">
+                            <option value="">-- Choose --</option>
+                            <option value="8-4-4">8-4-4</option>
+                            <option value="CBC">CBC</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- CBC / Placeholder Inputs -->
+                <div id="grading-fields" class="mb-4" style="display:none;">
+                    <h6 class="mb-3 fw-light text-center">Customize CBC Grading Boundaries</h6>
+                    <div id="boundary-container" class="d-flex flex-column gap-3"></div>
+                    <button type="button" class="btn btn-secondary btn-sm mt-2" id="add-boundary-btn">
+                        <i class="bi bi-plus-circle"></i> Add Boundary
+                    </button>
+                </div>
+
+                <!-- Placeholder for 8-4-4 -->
+                <div id="grading-placeholder" class="alert alert-info" style="display:none;">
+                    8-4-4 grading configuration will be implemented later.
+                </div>
+
+                <!-- Step 2: Classes Selection -->
+                <div id="classes-section" class="mb-4 border p-2" style="display:none;">
+                    <label class="form-label fw-light small">
+                        <strong>Select Classes to Apply This Scheme</strong>
+                    </label>
+                    <div class="d-flex flex-wrap gap-3">
+                        {% for g in grades %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="{{ g.id }}" id="{{ g.id }}">
+                            <label class="form-check-label" for="{{ g.id }}">{{ g.grade_form }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Step 3: Save Button -->
+                <div class="mb-4">
+                    <div class="row d-flex justify-content-end">
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-danger btn-sm" id="save-grading">
+                                <i class="bi bi-save"></i> Save Grading Configuration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+
+            <!-- MARKSHEETS TAB -->
+            {% if current_user.is_admin %}
+            <div class="tab-pane fade" id="marksheets" role="tabpanel">
+                <div class="card p-3 shadow-sm mb-4">
+                    <h6 class="fw-bold mb-3 text-primary">
+                        <i class="bi bi-funnel-fill me-2"></i>Select Class
+                    </h6>
+
+                    <div class="row g-3">
+
+                        <!-- Branch -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Branch</label>
+                            <select id="marksheet-branch" class="form-select form-select-sm"></select>
+                        </div>
+
+                        <!-- Grade -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Grade / Class</label>
+                            <select id="marksheet-grade" class="form-select form-select-sm"></select>
+                        </div>
+
+                        <!-- Stream (hidden by default) -->
+                        <div class="col-md-4 d-none" id="marksheet-stream-wrapper">
+                            <label class="form-label fw-semibold">Stream</label>
+                            <select id="marksheet-stream" class="form-select form-select-sm">
+                                <option value="">All</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Subject</label>
+                            <select id="marksheet-subject" class="form-select form-select-sm"></select>
+                        </div>
+                        <!-- Button -->
+                        <div class="col-12 text-end">
+                            <button id="load-marksheet-students" class="btn btn-sm btn-primary">
+                                <i class="bi bi-search me-1"></i> Load Students
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Students Table -->
+                <div id="marksheetStudentsContainer"></div>
+
+            </div>
+            {% endif %}
+
+
+            <!-- ================= BROADSHEET TAB ================= -->
+            {% if current_user.is_admin %}
+            <div class="tab-pane fade" id="broadsheet" role="tabpanel">
+                <!-- Filters Card -->
+                <div class="card p-3 shadow-sm mb-4">
+                    <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-funnel-fill me-2"></i>Filter Broadsheet</h6>
+                    <div class="row g-3">
+                        <!-- Branch -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold"><i class="bi bi-house-door me-1"></i>Branch</label>
+                            <select id="bs-branch" class="form-select form-select-sm"></select>
+                        </div>
+
+                        <!-- Grade -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold"><i class="bi bi-building me-1"></i>Grade /
+                                Class</label>
+                            <select id="bs-grade" class="form-select form-select-sm"></select>
+                        </div>
+
+                        <!-- Stream -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold"><i class="bi bi-list-ul me-1"></i>Stream</label>
+                            <select id="bs-stream" class="form-select form-select-sm">
+                                <option value="">All</option>
+                            </select>
+                        </div>
+
+                        <!-- Exam -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold"><i class="bi bi-journal-text me-1"></i>Exam</label>
+                            <select id="bs-exam" class="form-select form-select-sm">
+                                <option value="">--Select Exam--</option>
+                            </select>
+                        </div>
+
+                        <!-- Button -->
+                        <div class="col-12 text-end mt-2">
+                            <button id="load-broadsheet" class="btn btn-sm btn-danger">
+                                <i class="bi bi-graph-up"></i> Generate Analytics
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Output -->
+                <div id="broadsheetContainer" class="p-3"></div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<!-- ================= CREATE EXAM MODAL ================= -->
+<div class="modal fade" id="createExamModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+    data-bs-keyboard="false">
+
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post">
+                {{ exam_form.hidden_tag() }}
+
+                <div class="modal-header bg-danger text-white pt-2 pb-2 px-3">
+                    <h6 class="modal-title fw-bold">
+                        <i class="bi bi-journal-plus me-2"></i>Create New Exam
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body pt-1">
+                    <h6 class="text-center fw-light bg-light border-bottom p-2">
+                        Exam Data Entry
+                    </h6>
+
+                    <div class="border p-2">
+                        {% if current_user.is_admin and not current_user.is_super_admin %}
+                        <div class="mb-3" style="display: none;">
+                            {{ form_input(
+                            exam_form.branch_id,
+                            select_class="form-select",
+                            icon_class="bi bi-house",
+                            help_text="Select one branch or All branches"
+                            ) }}
+                        </div>
+                        {% else %}
+                         <div class="mb-3">
+                            {{ form_input(
+                            exam_form.branch_id,
+                            select_class="form-select",
+                            icon_class="bi bi-house",
+                            help_text="Select one branch or All branches"
+                            ) }}
+                        </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            {{ form_input(
+                            exam_form.year,
+                            select_class="form-select",
+                            icon_class="bi bi-calendar"
+                            ) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form_input(
+                            exam_form.term,
+                            select_class="form-select",
+                            icon_class="bi bi-file-earmark-bar-graph"
+                            ) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form_input(
+                            exam_form.name,
+                            icon_class="bi bi-book"
+                            ) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer justify-content-center">
+                    {{ exam_form.submit(class="btn btn-sm btn-danger") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if exam_form.errors %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        new bootstrap.Modal(
+            document.getElementById("createExamModal")
+        ).show();
+    });
+</script>
+{% endif %}
+
+<script>
+    function blockUI(message = "Please wait…This may take a while!", sub = "Processing request") {
+        const blocker = document.getElementById("uiBlocker");
+        blocker.querySelector("h6").textContent = message;
+        blocker.querySelector("small").textContent = sub;
+        blocker.classList.remove("d-none");
+    }
+
+    function unblockUI() {
+        document.getElementById("uiBlocker").classList.add("d-none");
+    }
+</script>
+
+<!-- ================= UI BLOCKER ================= -->
+<div id="uiBlocker" class="ui-blocker d-none">
+    <div class="ui-blocker-content text-center">
+        <div class="spinner-border text-light mb-3" role="status"></div>
+        <h6 class="fw-bold text-light mb-1">Please wait…</h6>
+        <small class="text-light">Generating report cards</small>
+    </div>
+</div>
+
+<script src="{{ url_for('admin.static', filename='js/assessment/result_display.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/assessment/grading_config.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/assessment/results_reports.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/assessment/marksheets.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/assessment/broadsheet.js') }}"></script>
+{% endblock %}

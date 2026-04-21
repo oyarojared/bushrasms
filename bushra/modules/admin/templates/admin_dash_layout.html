@@ -1,0 +1,166 @@
+{% extends "base_layout.html" %}
+
+{% block head %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('admin.static', filename='admin_style.css') }}">
+{% endblock %}
+
+{% block template_body %}
+<!-- ======== FIXED TOP HEADER ======== -->
+<div class="container-fluid shadow-sm bg-white fixed-top-bar">
+    <div class="row align-items-center">
+        <!-- Left: Logo -->
+        <div class="col-sm-3 bg-bushra text-white mt-1 overflow-hidden text-truncate">
+            <h4 class="m-0 school-heading">
+                <span class="display-6 mx-2"><i class="bi bi-mortarboard-fill"></i></span>
+                Bushra Schools&TRADE; 
+            </h4>
+        </div>
+
+        <!-- Right section -->
+        <div class="col-sm-9 d-flex align-items-center justify-content-between right-section">
+            <div class="d-flex align-items-center flex-grow-1 me-3 search-div">
+                <!-- Search Form -->
+                <div class="search-form pt-2 flex-grow-1">
+                    {% if current_user.is_admin %}
+                        <form id="studentSearchForm" action="{{ url_for('admin.fetch_searched_student') }}" class="d-flex align-items-center" method="post">
+                            {{ form.hidden_tag() }}
+                            {{ form.query(class="form-input flex-grow-1", placeholder="Type Name, Adm No or Ass. No to search...") }}
+                            {% if form.query.errors %}
+                                {% for error in form.query.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                            <button type="submit" class="btn rounded-circle ms-2 search-btn">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Profile Dropdown -->
+            <div class="dropdown mt-1 profile-sec">
+                <a class="d-block link-dark text-decoration-none dropdown-toggle" href="#"   id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="user-profile-pic-sm"
+                        style="background-image: url('{{ url_for('static', filename='uploads/passports/' + (current_user.passport_url or 'default.JPG')) }}');">
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end text-small shadow-lg dropdown-text" aria-labelledby="dropdownUser" style="width: 200px">
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="bi bi-person-fill me-3"></i>Profile
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#">
+                            <i class="bi bi-gear-fill me-3"></i>Settings
+                        </a>
+                    </li>
+                    <li>
+                        <li>
+                            <form id="passportUploadForm" 
+                                action="{{ url_for('admin.upload_teacher_passport') }}" 
+                                method="POST" 
+                                enctype="multipart/form-data" 
+                                style="display:none;">
+                                {{ teacher_passport_upload_form.hidden_tag() }}
+                                {{ teacher_passport_upload_form.passport(class="form-control") }}
+                            </form>
+
+                            <!-- The visible button/link -->
+                            <a href="#" class="btn btn-sm mx-2" id="uploadPassportBtn">
+                                <span class="text-dark">
+                                    <i class="bi bi-camera-fill me-3"></i>Update Photo
+                                </span>
+                            </a>
+                        </li>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger mt-2 fw-bold" href="{{ url_for('auth.logout') }}">
+                            <i class="bi bi-box-arrow-left me-3"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ======== SIDEBAR / BOTTOM NAV ======== -->
+<nav class="sidebar-nav d-flex flex-column align-items-start bg-bushra text-white shadow-sm">
+    {% block side_nav %} {% endblock %}
+</nav>
+
+<!-- ======== MAIN CONTENT ======== -->
+<div class="main-content"> 
+    {% block main_content %} {% endblock %}
+    <div class="container" style="height: 50px; width: 100%;"></div>
+</div>
+
+<!-- ======== MODAL ======== -->
+<div class="modal fade" id="searchResultsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header pt-1 pb-1  px-3 bg-danger text-white">
+        <h5 class="modal-title">
+            <i class="bi bi-search me-2"></i>Search Results
+        </h5>
+        <button type="button" class="btn-close text-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modalBodyContent" style="overflow-y: scroll;">
+        <!-- Results will be injected here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ======== FOOTER (Hidden on Mobile) ======== -->
+<footer class="footer-line text-muted small" style="background: #e0dddd !important"> 
+    <div class="row">
+        <div class="col-md-9">
+            <span><i class="bi bi-code-slash"></i></span>
+             Developed by Bushra Tech | <strong>Tel: </strong>+254 701948782 or +254 782811403 &copy;2026 
+             ... All rights reserved.
+        </div>
+        <div class="col-md-3">
+            <div id="clock"></div>
+        </div>
+    </div>
+</footer>
+
+<script>
+function updateClock() {
+    const clock = document.getElementById("clock");
+
+    const now = new Date();
+
+    // Format day names
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const dayName = days[now.getDay()];
+
+    // Format date
+    const date = now.toLocaleDateString();  // e.g. 12/1/2025
+
+    // Format time
+    const time = now.toLocaleTimeString();  // e.g. 10:43:09 AM
+
+    // Display
+    clock.textContent = `${dayName}, ${date} — ${time}`;
+}
+
+// Update clock every second
+setInterval(updateClock, 1000);
+
+// Run immediately on load
+updateClock();
+</script>
+
+<script src="{{ url_for('admin.static', filename='js/upload_teacher_passport.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/display_searched_student.js')}}"></script>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "super_admin_dash.html" %} {% from "_macros.html" import
+render_flash_messages, sidebar %} {% block side_nav %} {{ sidebar("Accounts",
+current_user) }} {% endblock %} {% block main_content %}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h6 class="fw-bold dashboard-title mb-0">
+    <i class="bi bi-people-fill me-2"></i>Manage User Accounts
+  </h6>
+</div>
+
+{{ render_flash_messages() }}
+
+<!-- Accounts Card -->
+<div class="card shadow-sm border-0">
+  <div class="card-body px-4 py-3">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm align-middle mb-0">
+        <!-- HEADER -->
+        <thead class="table-light text-uppercase small">
+          <tr>
+            <th class="ps-2">#</th>
+            <th>User</th>
+            <th>Username</th>
+            <th>Phone</th>
+            <th>Role</th>
+            <th class="text-end pe-2">Actions</th>
+          </tr>
+        </thead>
+
+        <!-- BODY -->
+        <tbody>
+          {% for teacher in teachers %}
+          <tr>
+            <!-- INDEX -->
+            <td class="ps-2 text-muted">{{ loop.index }}</td>
+
+            <!-- USER INFO -->
+            <td>
+              <div class="d-flex align-items-center">
+                <div
+                  class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                  style="width: 42px; height: 42px; font-weight: 600"
+                >
+                  {{ teacher.fullname[0] }}
+                </div>
+
+                <div>
+                  <div class="fw-semibold">
+                    {{ teacher.title }} {{ teacher.fullname }}
+                  </div>
+                  <small class="text-muted">{{ teacher.employer }}</small>
+                </div>
+              </div>
+            </td>
+
+            <!-- USERNAME -->
+            <td class="text-muted">{{ teacher.username }}</td>
+
+            <!-- PHONE -->
+            <td class="text-muted">{{ teacher.phone }}</td>
+
+            <!-- ROLE BADGES -->
+            <td>
+              {% if teacher.is_super_admin %}
+              <span
+                class="badge rounded-pill bg-danger text-white px-3 py-2 me-1"
+              >
+                <i class="bi bi-crown-fill me-1"></i> Super Admin
+              </span>
+              {% endif %} {% if teacher.is_admin %}
+              <span
+                class="badge rounded-pill bg-success-subtle text-success px-3 py-2 me-1"
+              >
+                <i class="bi bi-shield-lock-fill me-1"></i> Admin
+              </span>
+              {% endif %} {% if not teacher.is_admin and not
+              teacher.is_super_admin %}
+              <span
+                class="badge rounded-pill bg-secondary-subtle text-secondary px-3 py-2"
+              >
+                <i class="bi bi-person-fill me-1"></i> Teacher
+              </span>
+              {% endif %}
+            </td>
+
+            <!-- ACTIONS -->
+            <td class="text-end pe-2">
+              <!-- ADMIN TOGGLE -->
+              <form
+                method="POST"
+                action="{{ url_for('admin.toggle_admin', teacher_id=teacher.id) }}"
+                class="d-inline"
+              >
+                {% if teacher.is_admin %}
+                <button
+                  type="submit"
+                  class="btn btn-sm btn-outline-danger"
+                  onclick="
+                    return confirm('Remove ADMIN rights from this user?');
+                  "
+                >
+                  <i class="bi bi-person-x-fill me-1"></i> Admin
+                </button>
+                {% else %}
+                <button
+                  type="submit"
+                  class="btn btn-sm btn-outline-primary"
+                  onclick="return confirm('Make this user an ADMIN?');"
+                >
+                  <i class="bi bi-shield-plus me-1"></i> Admin
+                </button>
+                {% endif %}
+              </form>
+
+              <!-- SUPER ADMIN TOGGLE -->
+              <form
+                method="POST"
+                action="{{ url_for('admin.toggle_super_admin', teacher_id=teacher.id) }}"
+                class="d-inline ms-1"
+              >
+                {% if teacher.is_super_admin %}
+                <button
+                  type="submit"
+                  class="btn btn-sm btn-outline-danger"
+                  onclick="return confirm('Remove SUPER ADMIN rights?');"
+                >
+                  <i class="bi bi-crown me-1"></i> Super
+                </button>
+                {% else %}
+                <button
+                  type="submit"
+                  class="btn btn-sm btn-outline-dark"
+                  onclick="return confirm('Make this user a SUPER ADMIN?');"
+                >
+                  <i class="bi bi-crown-fill me-1"></i> Super
+                </button>
+                {% endif %}
+              </form>
+            </td>
+          </tr>
+
+          {% else %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-5">
+              <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+              No teachers found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

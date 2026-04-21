@@ -1,0 +1,134 @@
+{% extends "super_admin_dash.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar %}
+
+{% block side_nav %}
+    {{ sidebar("School Staff", current_user) }}
+{% endblock %}
+
+{% block main_content %}
+<div class="container py-4">
+
+    <!-- Flash messages -->
+    {{ render_flash_messages() }}
+
+    <!-- Welcome Header -->
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">
+            <i class="bi bi-person-workspace me-2"></i>
+            Welcome <span class="text-primary">{{ teacher.fullname }}</span>
+        </h2>
+        <p class="text-muted">Teacher Dashboard</p>
+    </div>
+
+    <!-- Info Cards Row -->
+    <div class="row g-4">
+        <!-- Personal Info Card -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="orange-line"></div>
+                <div class="card-body text-center">
+                    <i class="bi bi-person-circle display-4 text-primary mb-3"></i>
+                    <h5 class="card-title">Personal Info</h5>
+                    <p class="card-text"><strong>Title:</strong> {{ teacher.title }}</p>
+                    <p class="card-text"><strong>Email:</strong> {{ teacher.email }}</p>
+                    <p class="card-text"><strong>Role:</strong> {{ "Admin" if teacher.is_admin else "Teacher" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Branch Info Card -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="orange-line"></div>
+                <div class="card-body text-center">
+                    <i class="bi bi-building display-4 text-warning mb-3"></i>
+                    <h5 class="card-title">School Info</h5>
+                    <p class="card-text"><strong>Branch:</strong> {{ branch.branch_name }}</p>
+                    <p class="card-text"><strong>Manager:</strong> {{ branch.branch_manager }}</p>
+                    <p class="card-text"><strong>Type:</strong> {{ branch.school_type }}</p>
+                    <p class="card-text"><strong>Gender:</strong> {{ branch.school_gender }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats Card -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="orange-line"></div>
+                <div class="card-body text-center">
+                    <i class="bi bi-bar-chart-line display-4 text-success mb-3"></i>
+                    <h5 class="card-title">Teaching Stats</h5>
+                    <p class="card-text"><strong>Classes Taught:</strong> {{ lessons|length }}</p>
+                    <p class="card-text"><strong>Total Students:</strong> {{ lessons|sum(attribute='num_students') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classes & Subjects Table -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <i class="bi bi-journal-bookmark me-2"></i> Classes & Subjects
+                </div>
+                <div class="card-body p-0">
+                    {% if lessons %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Class</th>
+                                <th>Streams</th>
+                                <th>Subject</th> 
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cls in lessons %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ cls.grade_form }}</td>
+                                <td>{% if cls.streams %}{{ cls.streams | join(", ") }}{% else %}-{% endif %}</td>
+                                <td>{{ cls.subject_name }}</td> 
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            No classes assigned yet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Action Buttons -->
+    <div class="row mt-5 g-3 text-center">
+        <div class="col-md-3">
+            <a href="{{ url_for('admin.assessment_dash') }}" class="btn btn-sm btn-primary w-100">
+                <i class="bi bi-pencil-square me-2"></i> Enter Marks
+            </a>
+        </div>
+         
+        <div class="col-md-3">
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-danger w-100">
+                <i class="bi bi-box-arrow-right me-2"></i> Logout
+            </a>
+        </div>
+    </div>
+    <div class="w-100 text-center mt-4 border-top pb-2">
+        <hr>
+        <small class="text-muted text-center">
+            <i class="bi bi-code-slash"></i> Developed by Oyaro Jared <i class="bi bi-code-slash"></i>
+        </small>
+        <br>
+        <small class="text-center text-muted">
+            <i class="bi bi-telephone"></i>  0701948782 / 0782811403 | Email: oyarojared278@gmail.com
+        </small>
+    </div>
+</div>
+{% endblock %}

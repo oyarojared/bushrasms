@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+
+<style>
+    @page {
+        size: A4 portrait;
+        margin: 12mm;
+    }
+
+    body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        font-size: 11px;
+        color: #222;
+        position: relative;
+    }
+
+    /* WATERMARK */
+    .watermark {
+        position: fixed;
+        top: 45%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-30deg);
+        font-size: 55px;
+        color: rgba(0,0,0,0.05);
+    }
+
+    .header {
+        text-align: center;
+        border-bottom: 2px solid #333;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+    }
+
+    .school {
+        font-size: 16px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .title {
+        font-size: 14px;
+        font-weight: bold;
+        color: #dc3545;
+    }
+
+    .meta {
+        font-size: 11px;
+        margin-top: 3px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    th, td {
+        border: 1px solid #999;
+        padding: 6px;
+    }
+
+    th {
+        background: #343a40;
+        color: white;
+    }
+
+    td {
+        vertical-align: top;
+    }
+
+    .subjects {
+        text-transform: uppercase;
+        font-size: 10px;
+        line-height: 1.4;
+    }
+
+    .count {
+        text-align: center;
+        font-weight: bold;
+        color: #dc3545;
+    }
+
+    .footer {
+        margin-top: 30px;
+        font-size: 11px;
+    }
+
+    .signature {
+        margin-top: 40px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .footer {
+    text-align: center;
+    font-size: 10px;
+    color: #555;
+    margin-top: 5px;
+    letter-spacing: 0.3px;
+}
+
+.h1 {
+        font-size: 24px;
+        font-weight: bold;
+        color: #4b4b4b;
+        text-transform: uppercase;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="watermark">{{ data.branch_name }}</div>
+
+<div class="header">
+    <div class="h1">{{ data.branch_name }}</div>
+    <div class="title">MISSING MARKS CHECKSHEET</div>
+    <div class="meta">
+        {{ data.class_name }} | {{ data.exam_name }}
+    </div>
+    <div class="meta">
+        Class Teacher: {{ data.class_teacher or "N/A" }}
+    </div>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th style="width:5%;">#</th>
+            <th style="width:35%;">Student Name</th>
+            <th style="width:10%;">Missing</th>
+            <th>Subjects / Learning Areas</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in missing %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s.student }}</td>
+            <td class="count">{{ s.subjects | length }}</td>
+            <td class="subjects">{{ s.subjects | join(", ") }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="footer">
+    <p><strong>Total Students with Missing Marks:</strong> {{ missing|length }}</p>
+</div>
+
+<div class="signature">
+    <div>
+        ___________________________<br>
+        Class Teacher
+    </div>
+    <div>
+        ___________________________<br>
+        Head of Department
+    </div>
+</div>
+<hr style="margin-top:20px; border: none; border-top: 1px solid #999;">
+
+<div class="footer">
+    Developed by <strong>Bushra Tech Solution</strong>. All rights reserved. 2026.
+</div>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!-- DEFINE MACROS -->
+
+{% macro render_flash_messages() %}
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-2">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <span class="small">{{ message | safe }}</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+</div>
+{% endmacro %}
+
+{% macro sidebar(active_page, current_user) %}
+<ul class="nav flex-column w-100">
+
+    {{ sidebar_item("Dashboard", "admin.admin_dash", "bi-speedometer2", active_page) }}
+    {{ sidebar_item("Exams", "admin.assessment_dash", "bi-book", active_page) }}
+     
+    {% if current_user.is_admin %}
+        {{ sidebar_item("Students", "admin.student_dash", "bi-people", active_page) }}
+        {{ sidebar_item("School Staff", "admin.school_staff", "bi-person-square", active_page) }}
+        {{ sidebar_item("Subjects", "admin.subjects_dash", "bi-journal-arrow-down", active_page) }}
+        {{ sidebar_item("Classes", "admin.grades_forms", "bi-buildings", active_page) }}
+    {% endif %}
+
+    {% if current_user.is_super_admin %}
+        {{ sidebar_item("Schools", "admin.branch_profile", "bi-house", active_page, branch_id=1) }}
+        {{ sidebar_item("Accounts", "admin.manage_accounts", "bi-person-lines-fill", active_page) }}
+    {% endif %}
+
+</ul>
+{% endmacro %}
+
+
+{% macro sidebar_item(label, endpoint, icon, active_page, branch_id=None) %}
+<li class="nav-item">
+    {% if branch_id %}
+    <a 
+        href="{{ endpoint if '#' in endpoint else url_for(endpoint, branch_id=branch_id) }}"
+        class="nav-link text-white d-flex align-items-center {% if active_page == label %}active{% endif %}">
+        <i class="bi {{ icon }} me-2"></i>
+        <span class="nav-label">{{ label }}</span>
+    </a>
+
+    {% else %}
+    <a 
+        href="{{ endpoint if '#' in endpoint else url_for(endpoint) }}"
+        class="nav-link text-white d-flex align-items-center {% if active_page == label %}active{% endif %}">
+        <i class="bi {{ icon }} me-2"></i>
+        <span class="nav-label">{{ label }}</span>
+    </a>
+    {% endif %}
+</li>
+{% endmacro %}
+
+
+
+{% macro form_input(field,
+                    wrapper_class="mb-3",
+                    label_class="form-label",
+                    input_class="form-control",
+                    select_class="form-select",
+                    checkbox_wrapper_class="form-check",
+                    checkbox_input_class="form-check-input",
+                    checkbox_label_class="form-check-label",
+                    error_class="text-danger small mt-1",
+                    help_text=None,
+                    placeholder=None,
+                    autocomplete=None,
+                    icon_class=None,
+                    icon_style=None) %}
+
+    <div class="{{ wrapper_class }}">
+
+        {# FIELD TYPE DETECTION #}
+        {% if field.type == 'BooleanField' %}
+            {# ============= CHECKBOX ============= #}
+            <div class="{{ checkbox_wrapper_class }}">
+                
+                {{ field(class=checkbox_input_class, autocomplete=autocomplete) }}
+
+                {% if field.label %}
+                    <label for="{{ field.id }}" class="{{ checkbox_label_class }}">
+                        {{ field.label.text }}
+                    </label>
+                {% endif %}
+            </div>
+
+            {# Errors for checkbox #}
+            {% if field.errors %}
+                <div class="{{ error_class }}">
+                    {% for err in field.errors %}
+                        <div>{{ err }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if help_text %}
+                <div class="form-text small text-muted">{{ help_text }}</div>
+            {% endif %}
+
+        {% elif field.type == 'SelectField' %}
+            {# ============== SELECT INPUT ============== #}
+
+            {% if field.label %}
+                <label class="{{ label_class }}" for="{{ field.id }}">
+                    {{ field.label.text }}
+                </label>
+            {% endif %}
+
+            {% if icon_class %}
+                <div class="input-group">
+                    <span class="input-group-text {{ icon_style }}"><i class="{{ icon_class }}"></i></span>
+                    {{ field(class=input_class, autocomplete=autocomplete) }}
+                </div>
+            {% else %}
+                {{ field(class=input_class, autocomplete=autocomplete) }}
+            {% endif %}
+
+
+            {% if field.errors %}
+                <div class="{{ error_class }}">
+                    {% for err in field.errors %}
+                        <div>{{ err }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if help_text %}
+                <div class="form-text small text-muted">{{ help_text }}</div>
+            {% endif %}
+
+        {% elif field.type == 'TextAreaField' %}
+            {# ============== TEXTAREA ============== #}
+
+            {% if field.label %}
+                <label class="{{ label_class }}" for="{{ field.id }}">
+                    {{ field.label.text }}
+                </label>
+            {% endif %}
+
+            {{ field(class=input_class, placeholder=placeholder, autocomplete=autocomplete, rows="4") }}
+
+            {% if field.errors %}
+                <div class="{{ error_class }}">
+                    {% for err in field.errors %}
+                        <div>{{ err }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if help_text %}
+                <div class="form-text small text-muted">{{ help_text }}</div>
+            {% endif %}
+
+        {% else %}
+            {# ============== STANDARD INPUT ============== #}
+
+            {% if field.label %}
+                <label class="{{ label_class }}" for="{{ field.id }}">
+                    {{ field.label.text }}
+                </label>
+            {% endif %}
+
+            {% if icon_class %}
+                <div class="input-group">
+                    <span class="input-group-text"><i class="{{ icon_class }}"></i></span>
+                    {{ field(class=input_class, placeholder=placeholder, autocomplete=autocomplete) }}
+                </div>
+            {% else %}
+                {{ field(class=input_class, placeholder=placeholder, autocomplete=autocomplete) }}
+            {% endif %}
+
+            {% if field.errors %}
+                <div class="{{ error_class }}">
+                    {% for err in field.errors %}
+                        <div>{{ err }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if help_text %}
+                <div class="form-text small text-muted">{{ help_text }}</div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+{% endmacro %}

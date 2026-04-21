@@ -1,0 +1,24 @@
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar, form_input %}
+
+{% block side_nav %}
+    {{ sidebar("Students", current_user) }}
+{% endblock %}
+   
+{% block main_content %}
+  {{ render_flash_messages() }}
+  
+ {% block body %}
+ {% endblock %}
+
+<script>
+    setTimeout(function () {
+        const alert = document.getElementById("alertDiv");
+        if (alert) {
+            alert.classList.remove('show');
+            setTimeout(() => alert.remove(), 500)
+        }
+    }, 2000)
+</script>
+
+{% endblock %}

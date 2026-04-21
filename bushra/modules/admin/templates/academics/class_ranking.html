@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ branch_name }} - {{ class_name }} Rankings</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        header img.logo {
+            max-height: 80px;
+        }
+        header h1 {
+            margin: 5px 0;
+            font-size: 18px;
+            text-transform: uppercase;
+        }
+        header h2 {
+            margin: 2px 0;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #555;
+            padding: 6px 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+        .student-name {
+            text-align: left;
+            padding-left: 10px;
+        }
+        .remarks {
+            text-align: left;
+            padding-left: 10px;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        {% if school_logo %}
+            <img src="{{ school_logo }}" alt="School Logo" class="logo">
+        {% endif %}
+        <h1>{{ branch_name }}</h1>
+        <h3>Class Rankings</h3>
+    </header>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Admission No.</th>
+                <th>Name</th>
+                <th>Gender</th>
+                <th>Total Points</th>
+                <th>Mean Score</th>
+                <th>Grade</th>
+                 <th>Position</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in reports %} 
+            <tr>
+                <td>{{ student.admission_number }}</td>
+                <td class="student-name">{{ student.name }}</td>
+                <td>{{ student.gender }}</td>
+                <td>{{ student.summary.total_points }}</td>
+                <td>{{ student.summary.mean_score }}</td>
+                <td>{{ student.summary.final_grade }}</td>
+                <td>{{ student.summary.general_position }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

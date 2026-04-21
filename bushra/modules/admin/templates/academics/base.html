@@ -1,0 +1,425 @@
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar, form_input %}
+
+{% block side_nav %}
+ <div class="sidebar">
+    {{ sidebar("Subjects", current_user) }}
+</div>
+{% endblock %}
+
+{% block main_content %}
+
+<!-- Catch and display any flashed message -->
+{{ render_flash_messages() }}
+
+<h6 class="fw-bold subject-header">
+    <i class="bi bi-journal-bookmark-fill me-2"></i>SUBJECTS / L. AREAS CATALOG
+</h6>
+
+<div class="container bg-white pt-0 pb-3 px-0 shadow-sm rounded-6">
+    <div class="container orange-line"></div>
+    <div class="accordion accordion-flush mt-2 mb-0 mx-4" id="accordionFlushExample">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="flush-headingOne">
+            <button class="accordion-button collapsed pt-1 pb-1 px-2 fw-light text-primary" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne" id="accordionBtn"
+            style="box-shadow: none !important;">
+                <span><i class="bi bi-plus h2 me-2"></i></span>Add Learning Area/Subject
+            </button>
+            </h2>
+            <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+            <div class="accordion-body"> 
+                <div class="card p-3"> 
+                    <form action="{{ url_for('admin.subjects_dash') }}" method="post" id="addSubjectForm">
+                        <input type="hidden" name="subject_id" id="subject_id">
+                        {{ subject_form.hidden_tag() }}
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form_input(subject_form.name, placeholder="eg. English", icon_class="bi bi-book") }}
+                            </div>
+                            <div class="col-md-6">
+                               {{ form_input(subject_form.code, placeholder="eg. 121", icon_class="bi bi-123")}}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form_input(subject_form.category, icon_class="bi bi-ui-checks-grid", input_class="form-select category") }}
+                            </div>
+                            <div class="col-md-6">
+                               {{ form_input(subject_form.is_examinable, input_class="btn-check")}}
+                               {{ form_input(subject_form.is_compulsory, input_class="btn-check")}}
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-3 border p-2">
+                            {% if grades %}
+                                {% for g in grades %}
+                                    <div class="form-check">
+                                        <input 
+                                            class="form-check-input grade-checkbox" 
+                                            type="checkbox" 
+                                            id="grade{{ g[0] }}" 
+                                            name="subject_grades"
+                                            value="{{ g[1] }}"
+                                        >
+                                        <label class="form-check-label" for="grade{{ g[0] }}">
+                                            {{ g[1] }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <small class="text-center text-danger">No Grades / Forms Found!</small>
+                            {% endif %}
+                        
+                        </div>
+                        {# ---- CHECK ALL ---- #}
+                        <div class="small text-danger d-none" id="grade-error">
+                            You must assign the subject to at least one class.
+                        </div>
+                        <div class="form-check ms-auto">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="checkAllGrades"
+                            >
+                            <label class="form-check-label fw-bold" for="checkAllGrades">
+                                Assign All Classes 
+                            </label>
+                        </div>
+                        <div class="row d-flex justify-content-center">
+                            <div id="formbtns" class="col-auto">
+                                <button id="submit-btn" type="submit" class="btn btn-sm btn-secondary">
+                                    <i class="bi bi-plus-circle me-2"></i>Submit
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            </div>
+            <div class="row d-flex justify-content-center">
+                <div class="col-auto">
+                    <small class="text-muted text-success">Subjects apply across branches</small>
+                </div>
+            </div>
+        </div>  
+    </div>
+</div>
+
+<div class="conatiner">
+    <div class="row d-flex justify-content-end mt-2">
+        <div class="col-auto">
+            {% if subjects %}
+                <div class="row d-flex justify-content-end">
+                    <div class="col-auto">
+                        <button
+                            type="button"
+                            class="btn btn-danger btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#assignBranchesModal"
+                        >
+                            <i class="bi bi-eye me-2"></i>View L. areas/subjects per Grade
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<div class="container bg-white pt-3 pb-2 mt-2 shadow-sm rounded-6">
+    <div class="d-flex align-items-center my-2">
+        <span class="flex-grow-1 border-bottom"></span>
+        <h6 class="mx-3 mb-0 fw-light">
+           SUBJECTS INFO
+        </h6>
+        <span class="flex-grow-1 border-bottom"></span>
+    </div>
+    {% if subjects %}
+        <div class="table-reponsive fix-top-customized">
+            <table class="table table-bordered table-striped small">
+                <thead class="bg-secondary text-white">
+                    <tr>
+                        <th class="text-center">Code</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th class="text-center">Compulsory</th>
+                        <th class="text-center">Examinable</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subject in subjects %}
+                        <tr>
+                            <td class="text-center">{{ subject.code or "---" }}</td>
+                            <td>{{ subject.name | upper }}</td>
+                            <td>{{ subject.category }}</td>
+                            <td class="text-center">
+                               {{ "✔" if subject.is_compulsory else "✖" }}
+                            </td>
+                           <td class="text-center">
+                                {{ "✔" if subject.is_examinable else "✖" }}
+                            </td>
+                            <td>
+                                <i
+                                    class="bi bi-pencil me-2 btn btn-sm btn-success edit-btn"
+                                    data-id="{{ subject.id }}"
+                                    data-name="{{ subject.name }}"
+                                    data-code="{{ subject.code or '' }}"
+                                    data-category="{{ subject.category }}"
+                                    data-examinable="{{ 1 if subject.is_examinable else 0 }}"
+                                    data-compulsory="{{ 1 if subject.is_compulsory else 0 }}"
+                                    data-grades='{{ subject.eligibility | map(attribute="grade_form") | list | tojson }}'
+                                ></i>
+
+                                <i
+                                    class="bi bi-trash btn btn-sm btn-danger delete-btn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteSubjectModal"
+                                    data-subject-id="{{ subject.id }}"
+                                    data-name="{{ subject.name }}" 
+                                ></i>
+
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+    <h4 class="text-danger text-center">
+        <i class="bi bi-exclamation-triangle"></i>
+    </h4>
+    <h6 class="text-danger text-center small">No subject to show data!</h6>
+    {% endif %}
+</div>
+
+<!-- DELETE CONFIRMATION MODAL -->
+<div
+  class="modal fade"
+  id="deleteSubjectModal"
+  tabindex="-1"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white py-2">
+        <h6 class="modal-title">
+            <i class="bi bi-trash me-2"></i>CONFIRM SUBJECT DELETION
+        </h6>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+
+      <div class="modal-body">
+        <h4 class="text-center text-danger display-4">
+            <i class="bi bi-exclamation-triangle"></i>
+        </h4>
+        <p class="mb-2">
+          Are you sure you want to delete
+          <span class="fw-bold" id="target-subject"></span> from the system?
+        </p>
+        <small class="text-muted">
+          N/B: This action cannot be undone.
+        </small>
+      </div>
+
+      <div class="modal-footer justify-content-end">
+        <form id="deleteSubjectForm" method="post">
+            {{ del_subject_form.hidden_tag() }}
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+            <i class="bi bi-slash-circle-fill me-2"></i>Cancel
+          </button>
+          <button type="submit" class="btn btn-danger btn-sm">
+            <i class="bi bi-x-octagon-fill me-2"></i>Yes, Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- BRANCH SUBJECT VIEW MODAL -->
+ <div
+  class="modal fade"
+  id="assignBranchesModal"
+  tabindex="-1"
+  aria-hidden="true"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+>
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header bg-danger text-white pb-2 pt-2">
+        <h6 class="modal-title">
+          <i class="bi bi-eye me-2"></i>VIEW SUBJECTS OF EACH GRADE / FORM
+        </h6>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body pt-0 mt-1">
+        <!-- Your form / UI goes here -->
+        <h6 class="text-center bg-light p-2 border-bottom">
+            Select Grade / Form to view specific subjects offered
+        </h6> 
+            <form action="">
+                {{ branch_grade_selection_form.hidden_tag() }}
+                <div class="row">
+                    {{ form_input(branch_grade_selection_form.grades, icon_class="bi bi-building", input_class="form-select") }}
+                </div>
+                <!-- Table showing subject info -->
+                 <div id="subjectsTableContainer" class="mt-1"
+                 style="max-height: 250px; top: 70px; overflow-y: scroll;">
+                    <div class="text-muted small text-center">
+                        Select a grade to view assigned subjects.
+                    </div>
+                </div>
+            </form>
+      </div>
+      <hr>
+    </div>
+  </div>
+</div>
+
+
+<script>
+    const subjectId =  `${subjectId}`;
+</script>
+ 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const accordionBtn = document.getElementById("accordionBtn");
+    const accordionCollapse = document.getElementById("flush-collapseOne");
+
+    const nameInput = document.getElementById("{{ subject_form.name.id }}");
+    const codeInput = document.getElementById("{{ subject_form.code.id }}");
+    const categoryInput = document.getElementById("{{ subject_form.category.id }}");
+    const examinableInput = document.getElementById("{{ subject_form.is_examinable.id }}");
+    const compulsoryInput = document.getElementById("{{ subject_form.is_compulsory.id }}");
+    const subjectIdInput = document.getElementById("subject_id");
+
+    const gradeCheckboxes = document.querySelectorAll(".grade-checkbox");
+
+    function scrollToForm() {
+        const target = document.getElementById("flush-collapseOne");
+
+        if (!target) return;
+
+        target.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
+
+
+    document.querySelectorAll(".edit-btn").forEach(btn => {
+        btn.addEventListener("click", function () {
+
+            const wasClosed = !accordionCollapse.classList.contains("show");
+
+            // Open accordion if closed
+            if (wasClosed) {
+                accordionBtn.click();
+            }
+
+            // Prefill fields
+            subjectIdInput.value = this.dataset.id;
+            nameInput.value = this.dataset.name;
+            codeInput.value = this.dataset.code;
+            categoryInput.value = this.dataset.category;
+
+            examinableInput.checked = this.dataset.examinable === "1";
+            compulsoryInput.checked = this.dataset.compulsory === "1";
+
+            gradeCheckboxes.forEach(cb => cb.checked = false);
+
+            const grades = JSON.parse(this.dataset.grades || "[]");
+            gradeCheckboxes.forEach(cb => {
+                if (grades.includes(cb.value)) {
+                    cb.checked = true;
+                }
+            });
+
+            accordionBtn.innerHTML = `
+                <span><i class="bi bi-pencil-square h5 me-2"></i></span>
+                Edit Learning Area/Subject
+            `;
+
+            const submitBtn = document.getElementById("submit-btn");
+            submitBtn.innerHTML = `
+                <i class="bi bi-pencil-square me-2"></i>Update Changes
+            `;
+            const fields = document.querySelectorAll(".form-control, .category");
+            fields.forEach(field => {
+                field.style.backgroundColor = "#fef3c7";
+            });
+
+            // 👇 Scroll AFTER accordion opens
+            if (wasClosed) {
+                setTimeout(scrollToForm, 300);
+            } else {
+                scrollToForm();
+            }
+
+        
+            const formBtns = document.getElementById("formbtns"); 
+            const resetBtn = document.createElement("button");
+            resetBtn.id = "resetBtn";
+            resetBtn.classList = "btn btn-sm btn-primary";
+            resetBtn.setAttribute("type", "button");
+            resetBtn.setAttribute("id", "resetBtn");
+            resetBtn.innerHTML = `
+             <i class="bi bi-plus-circle me-2"></i>Add new L.Area/Subject instead?
+            `
+            const isResetBtnPresent = document.getElementById("resetBtn");
+            if (isResetBtnPresent) {
+                formBtns.removeChild(isResetBtnPresent);
+            }
+            
+            formBtns.appendChild(resetBtn)
+
+            // Reset button 
+            resetBtn.addEventListener("click", () => { 
+                location.reload(); 
+            }); 
+
+        });
+    });
+
+    // OPEN ACCORDION AUTOMATICALLY IF SUBJECT FORM HAD ERRORS 
+    const formHasErrors = {{ form_has_errors | tojson }};
+
+    if (formHasErrors) {
+        accordionBtn.click();
+    }
+
+    // CUSTOMIZE CHECK INPUTS VALIDATION
+    const addSubjectForm = document.getElementById("addSubjectForm");
+    addSubjectForm.addEventListener("submit", e => {
+        const checked = document.querySelectorAll(
+            "input[name='subject_grades']:checked"
+        );
+        if (checked.length === 0) {
+            e.preventDefault()
+            document.getElementById("grade-error").classList.remove("d-none");
+        }    
+    });
+
+});
+</script>
+
+<script src="{{ url_for('admin.static', filename='js/subject.js') }}"></script> 
+
+
+{% endblock %}
+

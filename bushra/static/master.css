@@ -1,0 +1,230 @@
+.gowun-batang-regular {
+  font-family: "Gowun Batang", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.gowun-batang-bold {
+  font-family: "Gowun Batang", serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+a {
+    text-decoration: none !important;
+    color: white !important;
+}
+
+.text-orange {
+    color: #F30 !important;
+}
+
+.profile-photo-lg img {
+    width: 200px;   /* medium-large size */
+    height: 200px;  /* keep square for circle */
+    object-fit: cover;  
+    /* border-radius: 50%;    */
+    display: block;
+    margin: 0 auto; /* center horizontally */
+    border: 3px solid #dee2e6; /* optional border */
+}
+
+.profile-photo-sm img {
+    width: 150px;   /* medium-large size */
+    height: 150px;  /* keep square for circle */
+    object-fit: cover;   
+    border-radius: 3px;
+    padding: 10px;
+    display: block;
+    margin: 0 auto; /* center horizontally */
+    border: 1px solid #dee2e6; /* optional border */
+}
+.header-primary {
+    background-color: #ff9c9c;
+    color: #fff;
+}
+.report-card {
+    font-size: 0.85rem;
+}
+
+.report-card table th,
+.report-card table td {
+    vertical-align: middle;
+}
+
+.report-card .badge {
+    font-size: 0.75rem;
+}
+
+
+html, body {
+    height: 100%;
+    overflow: hidden; /* hide outer scroll */
+}
+
+.main-content {
+    height: 100vh;          /* viewport height */
+    overflow-y: auto;        /* only inner scroll */
+    /* padding: 20px;       */
+    box-sizing: border-box;
+}
+.user-profile-pic {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background-size: cover;        /* Makes the image fill the circle */
+    background-position: center;   /* Centers the image */
+    background-repeat: no-repeat;
+    background-color: #ccc;        /* fallback color */
+}
+
+.user-profile-pic-sm {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-size: cover;        /* Makes the image fill the circle */
+    background-position: center;   /* Centers the image */
+    background-repeat: no-repeat;
+    background-color: #ccc;        /* fallback color */
+    display: inline-block;  /* ensures correct toggle height */
+    cursor: pointer;
+
+}
+
+.profile-photo-md img {
+    width: 130px;   /* medium-large size */
+    height: 130px;  /* keep square for circle */
+    object-fit: cover;  
+    border-radius: 50%;   
+    display: block;
+    margin: 0 auto; /* center horizontally */
+    border: 2px solid #e7e7e7; 
+}
+
+/* Makes the table body scrollable */
+.scroll-table-wrapper {
+    max-height: 65vh;  /* Adjust height as you like */
+    overflow-y: auto;
+    position: relative;
+}
+
+/* Sticky table header */
+.sticky-header th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #d1e7dd; /* Same as table-success */
+}
+
+.profile-sec {
+    height: 50px;
+    width: 50px;
+    border-radius: 50%;
+}
+
+.profile-sec img {
+    object-fit: cover;  
+    border-radius: 50%;   
+    display: block;
+    margin: 0 auto; 
+}
+  
+/* Fixed footer line always visible at bottom */
+.footer-line {
+    width: 100%;
+    text-align: center;
+    border-top: 1px solid #5b5b5b;
+    padding: 10px 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    background-color: white;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.bg-light-green {
+    background-color: #586e64 !important; 
+    color: #fff !important;
+    font-weight: 600 !important;
+}
+
+/* Sticky table header */
+.sticky-header th {
+    position: sticky;
+    top: 0;             /* stick to the top */
+    z-index: 100;       /* above rows */
+    background-color: #6c757d; /* bg-secondary color */
+    color: #fff;
+}
+
+.profile-pic-lg {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background-color: #dde5e1;
+}
+
+.profile-pic-md {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background-color: #dde5e1;
+}
+footer-line
+.text-uppercase { 
+    text-transform: uppercase !important;
+}
+
+.chart-container { width: 100%; height: 220px; position: relative; }
+.data-card { 
+    border: solid gray 1px;
+    border-radius: 6px; 
+    background: #ffffff;  
+    display: flex; 
+    align-items: center; 
+}
+.welcome-card { 
+    background: #ffffff; 
+    border-radius: 12px; 
+    /* box-shadow: 0 4px 12px rgba(0,0,0,0.08);  */
+}
+.user-name { 
+    color: #4e73df; 
+    font-weight: 600; 
+}
+.welcome-icon i { 
+    animation: bounce 1.5s infinite; 
+    font-size: 2.5rem; 
+    color: #4e73df; 
+}
+.canvas-size {
+    height: 100px; 
+    width: 400px;
+}
+
+@keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@media (max-width: 576px) { 
+    .welcome-card { padding: 2rem 1rem; } 
+    .sm-center {
+        justify-content: center !important;
+    }
+}
+
+/* ===============================
+   MOBILE VIEW
+================================*/
+@media (max-width: 768px) {
+    /* .canvas-size {
+        width: 100%;
+        height: 100%;
+    } */
+}
+
+
+@media (max-width: 768px) {
+    .hid-mobile-view {
+        display: none;
+    }
+
+}

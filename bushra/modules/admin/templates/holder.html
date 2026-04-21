@@ -1,0 +1,1030 @@
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar, form_input %}
+
+{% block side_nav %}
+<div class="sidebar">
+    {{ sidebar("Exams", current_user) }}
+</div>
+{% endblock %}
+
+{% block main_content %}
+
+{{ render_flash_messages() }}
+
+<h6 class="fw-bold exams-header">
+    <i class="bi bi-journal-bookmark-fill me-2"></i>EXAMS / ASSESSMENTS
+</h6>
+
+<div class="card mt-3 shadow-sm">
+    <div class="orange-line"></div>
+    <div class="card-body">
+
+        <!-- Tabs navigation -->
+        <ul class="nav nav-tabs" id="examTabs" role="tablist">
+            <li class="nav-item" role="presentation" style="font-size: medium;">
+                <button class="nav-link active"
+                        id="exam-setup-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#exam-setup"
+                        type="button"
+                        role="tab">
+                    {% if current_user.is_admin %}
+                        <i class="bi bi-gear-fill me-1"></i> Exam Setup
+                    {% else %}
+                        <i class="bi bi-gear-fill me-1"></i> Select Exam to Enter Marks
+                    {% endif %}
+                </button>
+            </li>
+
+            {% if current_user.is_admin %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link"
+                            id="results-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#results"
+                            type="button"
+                            role="tab">
+                        <i class="bi bi-file-earmark-bar-graph-fill me-1"></i> Results & Reports
+                    </button>
+                </li>
+            {% endif %}
+
+            {% if current_user.is_admin %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link"
+                            id="grading-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#grading"
+                            type="button"
+                            role="tab">
+                        <i class="bi bi-award-fill me-1"></i> Grading & Rules
+                    </button>
+                </li>
+            {% endif %}
+
+        </ul>
+
+        <!-- TAB CONTENT -->
+        <div class="tab-content pt-3" id="examTabsContent">
+
+            <!-- ================= EXAM SETUP TAB ================= -->
+            <div class="tab-pane fade show active"
+                 id="exam-setup"
+                 role="tabpanel">
+
+                 {% if current_user.is_admin %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0">Exam Configuration</h6>
+
+                        <button class="btn btn-sm btn-secondary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#createExamModal">
+                            <i class="bi bi-plus-circle me-1"></i> Create Exam
+                        </button>
+                    </div>
+                 {% endif %}
+                <hr>
+
+                <div class="container-fluid">
+                     {% if exams_list %}
+                        <div class="row g-4">
+                            {% for exam in exams_list %}
+                            <div class="col-md-4 col-lg-3">
+                                <div class="card h-100 shadow border-0 exam-card">
+
+                                    <!-- Card Header -->
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="fw-bold mb-0">{{ exam.name }}</h6>
+                                            <small class="text-muted">
+                                                {{ exam.year }} · Term {{ exam.term }}
+                                            </small>
+                                        </div>
+
+                                        {% if exam.is_locked %}
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-lock-fill me-1"></i> Locked
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-unlock-fill me-1"></i> Open
+                                            </span>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Card Body -->
+                                    <div class="card-body pt-2">
+
+                                        <div class="mb-2">
+                                            <div class="small">
+                                                {% for eb in exam.exam_branches %}
+                                                    {{ eb.branch.branch_name }}{% if not loop.last %}, {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <small class="text-muted fw-semibold">Marks Entry</small><br>
+                                            {% if exam.is_locked %}
+                                                <span class="text-danger small">
+                                                    <i class="bi bi-x-circle-fill"></i> Closed
+                                                </span>
+                                            {% else %}
+                                                <span class="text-success small">
+                                                    <i class="bi bi-check-circle-fill"></i> Open
+                                                </span>
+                                            {% endif %}
+                                        </div>
+
+                                    </div>
+
+                                    <!-- Card Footer -->
+                                    <div class="card-footer bg-white border-top-0 pt-0">
+
+                                        <div class="d-grid gap-2">
+
+                                            <!-- Primary Actions -->
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                {% if not current_user.is_admin %}
+                                                <button class="btn btn-outline-primary" disabled>
+                                                    <i class="bi bi-pencil-fill"></i> Edit
+                                                </button>
+                                                {% else %}
+                                                <button class="btn btn-outline-primary">
+                                                    <i class="bi bi-pencil-fill"></i> Edit
+                                                </button>
+                                                {% endif %}
+
+                                                <a href="{{ url_for('admin.marks_entry', exam_id=exam.id) }}"
+                                                class="btn btn-secondary">
+                                                    <i class="bi bi-table"></i> Marks
+                                                </a>
+
+                                            </div>
+
+                                            <!-- Lock / Unlock -->
+                                            {% if exam.is_locked %}
+                                                <form method="post" action="{{ url_for('admin.unlock_exam', exam_id=exam.id) }}">
+                                                    {% if not current_user.is_admin %}
+                                                        <button class="btn btn-sm btn-success w-100" disabled>
+                                                            <i class="bi bi-unlock-fill me-1"></i> Unlock Exam
+                                                        </button>
+                                                    {% else %}
+                                                        <button class="btn btn-sm btn-success w-100">
+                                                            <i class="bi bi-unlock-fill me-1"></i> Unlock Exam
+                                                        </button>
+                                                    {% endif %}
+                                                </form>
+                                            {% else %}
+                                                <form method="post" action="{{ url_for('admin.lock_exam', exam_id=exam.id) }}">
+                                                    {% if not current_user.is_admin %}
+                                                        <button class="btn btn-sm btn-warning w-100" disabled>
+                                                            <i class="bi bi-lock-fill me-1"></i> Lock Exam
+                                                        </button>
+                                                    {% else %}
+                                                        <button class="btn btn-sm btn-warning w-100">
+                                                            <i class="bi bi-lock-fill me-1"></i> Lock Exam
+                                                        </button>
+                                                    {% endif %}
+                                                </form>
+                                            {% endif %}
+
+                                            <!-- Danger Zone -->
+                                            <form method="post"
+                                                action="{{ url_for('admin.delete_exam', exam_id=exam.id) }}"
+                                                onsubmit="return confirm('Are you sure you want to delete this exam?');">
+                                                {% if not current_user.is_admin %}
+                                                <button class="btn btn-sm btn-outline-danger w-100" disabled>
+                                                    <i class="bi bi-trash-fill me-1"></i> Delete Exam
+                                                </button>
+                                                {% else %}
+                                                <button class="btn btn-sm btn-outline-danger w-100">
+                                                    <i class="bi bi-trash-fill me-1"></i> Delete Exam
+                                                </button>
+                                                {% endif %}
+                                            </form>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            </div>
+                            <!-- DELETE CONFIRMATION MODAL -->
+                            <div class="modal fade"
+                                id="deleteExamModal{{ exam.id }}"
+                                tabindex="-1"
+                                aria-hidden="true">
+                                <div class="modal-dialog modal-sm modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <form method="post"
+                                            action="{{ url_for('admin.delete_exam', exam_id=exam.id) }}">
+                                            <div class="modal-header bg-danger text-white py-2">
+                                                <h6 class="modal-title">Delete Exam</h6>
+                                                <button type="button"
+                                                        class="btn-close btn-close-white"
+                                                        data-bs-dismiss="modal"></button>
+                                            </div>
+
+                                            <div class="modal-body text-center">
+                                                <p class="mb-2">
+                                                    Are you sure you want to delete:
+                                                </p>
+                                                <strong>{{ exam.name }}</strong>
+                                                <p class="text-danger small mt-2 mb-0">
+                                                    This action cannot be undone.
+                                                </p>
+                                            </div>
+
+                                            <div class="modal-footer justify-content-center py-2">
+                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                    Yes, Delete
+                                                </button>
+                                                <button type="button"
+                                                        class="btn btn-sm btn-secondary"
+                                                        data-bs-dismiss="modal">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            No exams created yet.
+                        </div>
+                        {% endif %}
+
+                </div>
+            </div>
+
+    <!-- ================= RESULTS TAB ================= -->
+     <div class="tab-pane fade" id="results" role="tabpanel">
+    <!-- Filters Card -->
+    <div class="card p-3 shadow-sm mb-4">
+        <h6 class="fw-bold mb-3 text-primary">
+            <i class="bi bi-funnel-fill me-2"></i>Filter Results
+        </h6>
+        <div class="row g-3">
+            <!-- Branch -->
+            <div class="col-md-3">
+                <label for="results-branch" class="form-label fw-semibold">
+                    <i class="bi bi-house-door me-1"></i>Branch
+                </label>
+                <select id="results-branch" class="form-select form-select-sm"></select>
+            </div>
+
+            <!-- Grade/Class -->
+            <div class="col-md-3">
+                <label for="results-grade" class="form-label fw-semibold">
+                    <i class="bi bi-building me-1"></i>Grade / Class
+                </label>
+                <select id="results-grade" class="form-select form-select-sm"></select>
+            </div>
+
+            <!-- Stream -->
+            <div class="col-md-3">
+                <label for="results-stream" class="form-label fw-semibold">
+                    <i class="bi bi-list-ul me-1"></i>Stream
+                </label>
+                <select id="results-stream" class="form-select form-select-sm">
+                    <option value="">All</option>
+                </select>
+            </div>
+
+            <!-- Exam -->
+            <div class="col-md-3">
+                <label for="results-exam" class="form-label fw-semibold">
+                    <i class="bi bi-journal-text me-1"></i>Exam
+                </label>
+                <select id="results-exam" class="form-select form-select-sm">
+                    <option value="">--Select Exam--</option>
+                </select>
+            </div>
+
+            <!-- Subject -->
+            <div class="col-md-3 d-none">
+                <label for="results-subject" class="form-label fw-semibold">
+                    <i class="bi bi-book me-1"></i>Subject
+                </label>
+                <select id="results-subject" class="form-select form-select-sm"></select>
+            </div>
+
+            <!-- Load Results Button -->
+            <div id="fetchResultsDiv" class="row d-flex justify-content-end mt-2">
+
+                <div class="col-auto">
+                    <label for="results-subject" class="form-label fw-semibold">
+                        <button id="load-results" class="btn btn-sm btn-primary w-100">
+                        <i class="bi bi-search me-1"></i> Fetch Results
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="">
+        <div id="resultsContainer"></div>
+<script>
+    const STATIC_URL = "{{ url_for('static', filename='') }}";
+</script>
+
+<script>
+async function loadReportCards(branchId, classId, examId, stream = null) {
+    const container = document.getElementById("resultsContainer");
+    container.innerHTML = `<p class="text-center">Loading report cards...</p>`;
+
+    try {
+        const res = await fetch(`/admin/api/exam-students-with-grades-all-subjects?branch_id=${branchId}&class_id=${classId}&exam_id=${examId}&stream=${stream}`);
+        const data = await res.json();
+        const students = data.students || [];
+
+        if (students.length === 0) {
+            container.innerHTML = `<p class="text-center text-muted">No students found for this selection.</p>`;
+            return;
+        }
+// No results found
+        container.innerHTML = ""; // Clear loading text
+
+        students.forEach(s => {
+            const card = document.createElement("div");
+            card.className = "mb-4 px-3"; // full width, separated by margin
+
+            const passportUrl = s.passport
+                ? `${STATIC_URL}uploads/passports/${s.passport}`
+                : `${STATIC_URL}uploads/passports/default.JPG`;
+
+
+        // Calculate total points
+const totalPoints = s.subjects.reduce((sum, sub) => sum + (sub.points || 0), 0);
+const maxPoints = s.subjects.length * 8;
+
+card.innerHTML = `
+        <div class="card shadow border-0 mb-4 report-card">
+
+            <!-- ===== SCHOOL HEADER ===== -->
+            <div class="header-primary text-white py-3 px-3 rounded-top">
+                <div class="row align-items-center">
+                    <div class="col-3 text-center">
+                <img src=""
+                    alt="Logo"
+                    class="img-fluid"
+                    style="max-width: 120px; max-height: 120px;">
+            </div>
+
+
+                    <div class="col-6 text-center">
+                        <h5 class="mb-1 fw-bold text-uppercase">${data.branch_name}</h5>
+                        <small class="d-block">P.O. BOX 28-70100 GARISSA, KENYA</small>
+                        <small class="d-block">Email: bushraschools2021@gmail.com | Tel: 0722339494</small>
+                    </div>
+
+                    <div class="col-3 text-center">
+                        <img src="${passportUrl}"
+                            class="rounded border"
+                            style="width:70px;height:70px;object-fit:cover"
+                            alt="Student Photo">
+                        <small class="d-block mt-1">Student</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== STUDENT INFO BAR ===== -->
+            <div class="px-3 py-2 border-bottom bg-light">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>${s.full_name}</strong><br>
+                        <small class="text-muted">
+                            Admission No: ${s.admission_number}
+                        </small>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <small class="text-muted">
+                            Assessment No: <strong>${s.assessment_no || '-'}</strong>
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== SUBJECT TABLE ===== -->
+            <div class="card-body pt-3">
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle table-bordered">
+                        <thead class="table-secondary text-center">
+                            <tr>
+                                <th>Code</th>
+                                <th class="text-start">Subject</th>
+                                <th>Marks</th>
+                                <th>Level</th>
+                                <th>Points</th>
+                                <th class="text-start">Descriptor</th>
+                                <th class="text-start">Teacher</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${s.subjects.map(sub => `
+                                <tr>
+                                    <td class="text-center">${sub.code}</td>
+                                    <td class="text-uppercase">${sub.name}</td>
+                                    <td class="text-center fw-semibold">${sub.marks ?? '-'}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info text-dark">
+                                            ${sub.performance_level ?? '-'}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">${sub.points ?? '-'}</td>
+                                    <td>${sub.descriptor ?? '-'}</td>
+                                    <td>${sub.teacher ?? '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ===== TOTAL POINTS ===== -->
+                <div class="mb-3 px-2">
+                    <h6 class="fw-bold">Total Points</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>${totalPoints}</span>
+                    </div>
+
+                </div>
+
+                <!-- ===== CLASS TEACHER & STAMP PLACEHOLDER ===== -->
+                <div class="mt-3 px-1">
+
+                    <!-- Class Teacher -->
+                    <div class="mb-2">
+                        <strong>Class Teacher:</strong>
+                        <span class="text-uppercase">${s.class_teacher || '____________________'}</span>
+                    </div>
+
+                    <div class="row g-3 align-items-stretch">
+
+                        <!-- Optional Remarks / Additional Info -->
+                        <div class="col-md-8">
+                            <div class="border rounded p-2 h-100">
+                                <h6 class="text-center mb-2 fw-bold">Remarks / Comments</h6>
+                                <p class="m-0">${s.remarks || ""}</p>
+                            </div>
+                        </div>
+
+                        <!-- School Stamp Placeholder -->
+                        <div class="col-md-4">
+                            <div class="border rounded h-100 d-flex align-items-center justify-content-center">
+                                <div class="text-center text-muted">
+                                    <small>Official School Stamp</small><br><br>
+                                    <div style="
+                                        width:140px;
+                                        height:90px;
+                                        border:2px dashed #999;
+                                    "></div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== FOOTER ===== -->
+            <div class="bg-light px-3 py-2 text-end border-top">
+                <small class="text-muted">
+                    Generated on ${new Date().toLocaleDateString()}
+                </small>
+            </div>
+
+        </div>
+        `;
+
+            container.appendChild(card);
+        });
+
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = `<p class="text-center text-danger">Failed to load report cards.</p>`;
+    }
+}
+
+
+
+// Trigger example
+document.getElementById("load-results").addEventListener("click", () => {
+    const branchId = document.getElementById("results-branch").value;
+    const classId = document.getElementById("results-grade").value;
+    const examId = document.getElementById("results-exam").value;
+    const stream = document.getElementById("results-stream").value || null;
+
+    if (!branchId || !classId || !examId) {
+        alert("Please select branch, grade, and exam.");
+        return;
+    }
+
+    loadReportCards(branchId, classId, examId, stream);
+
+    // Create Generate PDF button only once
+    let existingBtn = document.getElementById("generate-pdf-btn");
+    if (existingBtn) return;
+
+    const generatePdfBtn = document.createElement("button");
+    generatePdfBtn.id = "generate-pdf-btn";
+    generatePdfBtn.className = "btn btn-sm btn-danger mb-3 w-25";
+    generatePdfBtn.innerHTML = `<i class="bi bi-download me-1"></i> Download Report Cards`;
+
+    generatePdfBtn.addEventListener("click", () => {
+        const branchId = document.getElementById("results-branch").value;
+        const classId = document.getElementById("results-grade").value;
+        const examId = document.getElementById("results-exam").value;
+        const stream = document.getElementById("results-stream").value || null;
+        generatePDF(branchId, classId, examId, stream);
+    });
+
+    document.getElementById("fetchResultsDiv").appendChild(generatePdfBtn);
+});
+
+function generatePDF(branchId, classId, examId, stream) {
+    fetch("/admin/generate-reportcards-pdf", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+        },
+        body: JSON.stringify({
+            branch_id: branchId,
+            class_id: classId,
+            exam_id: examId,
+            stream: stream
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Failed to generate PDF");
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "report_cards.pdf";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(err => {
+        console.error(err);
+        alert("PDF generation failed.");
+    });
+}
+
+</script>
+
+    </div>
+</div>
+
+
+            <!-- ================= GRADING TAB ================= -->
+
+{% if current_user.is_admin %}
+ <div class="tab-pane fade" id="grading" role="tabpanel">
+
+    <div class="alert alert-secondary mb-2">
+        <small>
+            Configure grading rules. Select a system, customize boundaries, and assign to classes.
+        </small>
+    </div>
+
+    <!-- Step 1: Choose Grading System -->
+    <div class="mb-2">
+        <label for="grading-system" class="form-label"><strong>Select Grading System</strong></label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-diagram-3-fill"></i></span>
+            <select class="form-select" id="grading-system">
+                <option value="">-- Choose --</option>
+                <option value="8-4-4">8-4-4</option>
+                <option value="CBC">CBC</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- CBC / Placeholder Inputs -->
+    <div id="grading-fields" class="mb-4" style="display:none;">
+        <h6 class="mb-3 fw-light text-center">Customize CBC Grading Boundaries</h6>
+        <div id="boundary-container" class="d-flex flex-column gap-3"></div>
+        <button type="button" class="btn btn-secondary btn-sm mt-2" id="add-boundary-btn">
+            <i class="bi bi-plus-circle"></i> Add Boundary
+        </button>
+    </div>
+
+    <!-- Placeholder for 8-4-4 -->
+    <div id="grading-placeholder" class="alert alert-info" style="display:none;">
+        8-4-4 grading configuration will be implemented later.
+    </div>
+
+    <!-- Step 2: Classes Selection -->
+    <div id="classes-section" class="mb-4 border p-2" style="display:none;">
+        <label class="form-label fw-light small">
+            <strong>Select Classes to Apply This Scheme</strong>
+        </label>
+        <div class="d-flex flex-wrap gap-3">
+            {% for g in grades %}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="{{ g.id }}" id="{{ g.id }}">
+                    <label class="form-check-label" for="{{ g.id }}">{{ g.grade_form }}</label>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Step 3: Save Button -->
+    <div class="mb-4">
+        <div class="row d-flex justify-content-end">
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger btn-sm" id="save-grading">
+                    <i class="bi bi-save"></i> Save Grading Configuration
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+<script>
+const gradingSystemSelect = document.getElementById('grading-system');
+const gradingFields = document.getElementById('grading-fields');
+const gradingPlaceholder = document.getElementById('grading-placeholder');
+const boundaryContainer = document.getElementById('boundary-container');
+const addBoundaryBtn = document.getElementById('add-boundary-btn');
+const classesSection = document.getElementById('classes-section');
+
+// ---------------------
+// Add CBC row
+// ---------------------
+function addBoundaryRow() {
+    const row = document.createElement('div');
+    row.className = 'card p-3 shadow-sm boundary-row position-relative';
+    row.innerHTML = `
+        <div class="row g-2 align-items-center">
+            <div class="col-md-2">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-arrow-down-right-circle"></i></span>
+                    <input type="number" class="form-control" placeholder="Min Score" min="0" max="100">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-arrow-up-right-circle"></i></span>
+                    <input type="number" class="form-control" placeholder="Max Score" min="0" max="100">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-award"></i></span>
+                    <input type="text" class="form-control" placeholder="Performance Level (EE1, EE2)">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-star"></i></span>
+                    <input type="number" class="form-control" placeholder="Points" min="0">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-journal-text"></i></span>
+                    <input type="text" class="form-control" placeholder="Descriptor (Exceeding Expectation 1)">
+                </div>
+            </div>
+            <div class="col-md-1 d-flex justify-content-end">
+                <button type="button" class="btn btn-danger btn-sm remove-row" title="Remove">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    boundaryContainer.appendChild(row);
+
+    // Remove button
+    row.querySelector('.remove-row').addEventListener('click', () => {
+        row.remove();
+    });
+}
+
+// ---------------------
+// Grading system change
+// ---------------------
+gradingSystemSelect.addEventListener('change', function() {
+    const system = this.value;
+    boundaryContainer.innerHTML = ''; // clear existing CBC rows
+
+    if (!system) {
+        gradingFields.style.display = 'none';
+        gradingPlaceholder.style.display = 'none';
+        classesSection.style.display = 'none';
+        return;
+    }
+
+    classesSection.style.display = 'block';
+
+    if (system === 'CBC') {
+        gradingFields.style.display = 'block';
+        gradingPlaceholder.style.display = 'none';
+        addBoundaryRow(); // add first CBC row
+    } else {
+        gradingFields.style.display = 'none';
+        gradingPlaceholder.style.display = 'block';
+    }
+});
+
+// ---------------------
+// Add boundary button
+// ---------------------
+addBoundaryBtn.addEventListener('click', addBoundaryRow);
+
+// ---------------------
+// Save grading configuration
+// ---------------------
+document.getElementById('save-grading').addEventListener('click', function() {
+    const system = gradingSystemSelect.value;
+    if (!system) return alert('Please select a grading system.');
+
+    const boundaries = [];
+    if (system === 'CBC') {
+        boundaryContainer.querySelectorAll('.boundary-row').forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            boundaries.push({
+                min_score: Number(inputs[0].value),
+                max_score: Number(inputs[1].value),
+                performance_level: inputs[2].value,
+                points: inputs[3].value ? Number(inputs[3].value) : null,
+                descriptor: inputs[4].value || null
+            });
+        });
+    }
+    // Validate boundaries
+    if (boundaries.some(b => b.min_score > b.max_score)) {
+        return alert('Min score cannot be greater than max score in any boundary.');
+    }
+
+    if (boundaries.length === 0) {
+        return alert('Please add at least one grading boundary.');
+    }
+
+    const selectedClasses = [];
+    classesSection.querySelectorAll('input[type=checkbox]').forEach(chk => {
+        if (chk.checked) selectedClasses.push(chk.value);
+    });
+
+    if (selectedClasses.length === 0) {
+        return alert('Please select at least one class.');
+    }
+
+    // ---------------------
+    // Send to backend
+    // ---------------------
+    fetch('/admin/save_grading_config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            system,
+            boundaries,
+            selected_classes: selectedClasses
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            alert('Grading configuration saved successfully.');
+            boundaryContainer.innerHTML = ''; // optional: clear after save
+        } else {
+            alert(data.error || 'Failed to save grading configuration.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('An error occurred while saving the configuration.');
+    });
+});
+</script>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CREATE EXAM MODAL ================= -->
+<div class="modal fade"
+     id="createExamModal"
+     tabindex="-1"
+     aria-hidden="true"
+     data-bs-backdrop="static"
+     data-bs-keyboard="false">
+
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post">
+                {{ exam_form.hidden_tag() }}
+
+                <div class="modal-header bg-danger text-white pt-2 pb-2 px-3">
+                    <h6 class="modal-title fw-bold">
+                        <i class="bi bi-journal-plus me-2"></i>Create New Exam
+                    </h6>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body pt-1">
+                    <h6 class="text-center fw-light bg-light border-bottom p-2">
+                        Exam Data Entry
+                    </h6>
+
+                    <div class="border p-2">
+                        <div class="mb-3">
+                            {{ form_input(
+                                exam_form.branch_id,
+                                select_class="form-select",
+                                icon_class="bi bi-house",
+                                help_text="Select one branch or All branches"
+                            ) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form_input(
+                                exam_form.year,
+                                select_class="form-select",
+                                icon_class="bi bi-calendar"
+                            ) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form_input(
+                                exam_form.term,
+                                select_class="form-select",
+                                icon_class="bi bi-file-earmark-bar-graph"
+                            ) }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form_input(
+                                exam_form.name,
+                                icon_class="bi bi-book"
+                            ) }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer justify-content-center">
+                    {{ exam_form.submit(class="btn btn-sm btn-danger") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if exam_form.errors %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    new bootstrap.Modal(
+        document.getElementById("createExamModal")
+    ).show();
+});
+</script>
+{% endif %}
+
+<script>
+    // ================= RESULTS & REPORTS JS =================
+const branchSelect = document.getElementById('results-branch');
+const gradeSelect = document.getElementById('results-grade');
+const streamSelect = document.getElementById('results-stream');
+const examSelect = document.getElementById('results-exam');
+const subjectSelect = document.getElementById('results-subject');
+const loadResultsBtn = document.getElementById('load-results');
+const resultsContainer = document.querySelector('#resultsContainer');
+
+// Populate a select element
+function populateSelect(selectEl, items, placeholder = '--Select--', textKey = 'name') {
+    selectEl.innerHTML = `<option value="">${placeholder}</option>`;
+    items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        opt.textContent = item[textKey] || item.name || item.grade_form;
+        selectEl.appendChild(opt);
+    });
+}
+
+// Fetch branches
+fetch('/admin/api/branches')
+    .then(res => res.json())
+    .then(data => populateSelect(branchSelect, data, 'Select Branch'));
+
+// Fetch grades when branch changes
+branchSelect.addEventListener('change', function() {
+    const branchId = this.value;
+    gradeSelect.innerHTML = '<option value="">--Select Grade--</option>';
+    streamSelect.innerHTML = '<option value="">All</option>';
+    examSelect.innerHTML = '<option value="">--Select Exam--</option>';
+    subjectSelect.innerHTML = '<option value="">--Select Subject--</option>';
+
+    if (!branchId) return;
+
+    fetch(`/admin/api/grades/${branchId}`)
+        .then(res => res.json())
+        .then(data => populateSelect(gradeSelect, data, 'Select Grade', 'grade_form'));
+});
+
+// When grade changes, fetch streams and exams
+gradeSelect.addEventListener('change', function() {
+    const branchId = branchSelect.value;
+    const classId = this.value;
+    streamSelect.innerHTML = '<option value="">All</option>';
+    examSelect.innerHTML = '<option value="">--Select Exam--</option>';
+    subjectSelect.innerHTML = '<option value="">--Select Subject--</option>';
+
+    if (!branchId || !classId) return;
+
+    // Streams are part of grade object from /api/grades
+    fetch(`/admin/api/grades/${branchId}`)
+        .then(res => res.json())
+        .then(data => {
+            const gradeObj = data.find(g => g.id == classId);
+            const streams = gradeObj?.streams || [];
+            populateSelect(streamSelect, streams.map(s => ({ id: s, name: s })), 'All');
+        });
+
+    // Exams
+    fetch(`/admin/api/exams?branch_id=${branchId}&class_id=${classId}`)
+        .then(res => res.json())
+        .then(data => populateSelect(examSelect, data, '--Select Exam--'));
+});
+
+// When exam changes, fetch subjects
+examSelect.addEventListener('change', function() {
+    const branchId = branchSelect.value;
+    const classId = gradeSelect.value;
+    const stream = streamSelect.value || null;
+    const examId = this.value;
+
+    subjectSelect.innerHTML = '<option value="">--Select Subject--</option>';
+
+    if (!branchId || !classId || !examId) return;
+
+    fetch(`/admin/api/subjects?branch_id=${branchId}&class_id=${classId}&stream=${stream}`)
+        .then(res => res.json())
+        .then(data => populateSelect(subjectSelect, data, '--Select Subject--'));
+});
+
+// Load results on button click
+loadResultsBtn.addEventListener('click', function() {
+    const branchId = branchSelect.value;
+    const classId = gradeSelect.value;
+    const stream = streamSelect.value || null;
+    const examId = examSelect.value;
+    const subjectId = subjectSelect.value;
+
+    if (!branchId || !classId || !examId) {
+        alert('Please select branch, grade, and exam.');
+        return;
+    }
+
+    resultsContainer.innerHTML = `<tr><td colspan="6" class="text-center">Loading...</td></tr>`;
+
+    // Use your API that returns students with resolved grades
+    fetch(`/admin/api/exam-students-with-grades?branch_id=${branchId}&class_id=${classId}&exam_id=${examId}&subject_id=${subjectId}&stream=${stream}`)
+        .then(res => res.json())
+        .then(data => {
+            resultsContainer.innerHTML = '';
+            const students = data.students || [];
+
+            if (students.length === 0) {
+                resultsContainer.innerHTML = `
+                    <tr><td colspan="6" class="text-center">
+                       <div class="d-flex justify-content-center align-items-center py-4 text-success">
+                            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                            <span class="h6">Please wait, Generating result…</span>
+                        </div>
+                    </td></tr>
+                `;
+                return;
+            }
+
+            students.forEach(s => {
+                // report cards here
+            });
+        })
+        .catch(err => {
+            console.error(err);
+            resultsContainer.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error loading results.</td></tr>`;
+        });
+});
+
+// generatePDF
+</script>
+
+{% endblock %}

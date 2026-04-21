@@ -1,0 +1,18 @@
+/* Make the page fill the entire viewport */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: #f8f6f6;
+}
+
+.form-container {
+    max-width: 400px; 
+    background-color: white;
+}
+
+.cvh {
+    height: 80vh; 
+}
+ 
+

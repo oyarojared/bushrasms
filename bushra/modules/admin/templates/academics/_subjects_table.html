@@ -1,0 +1,35 @@
+<table class="table table-bordered table-striped small">
+    <thead class="bg-secondary text-white">
+        <tr>
+            <th class="text-center">Code</th>
+            <th>Subject Name</th>
+            <th>Category</th>
+            <th class="text-center">Compulsory</th>
+            <th class="text-center">Examinable</th>
+        </tr>
+    </thead>
+    <caption>Total Subjects offered: {{ subjects_data | length }}</caption>
+    <header class="small text-muted text-danger">Total Subjects offered: {{ subjects_data | length }}</header>
+    <tbody>
+        {% for subject in subjects_data %}
+        <tr>
+            <td class="text-center">{{ subject.code or "---" }}</td>
+            <td>{{ subject.name | upper }}</td>
+            <td>{{ subject.category }}</td>
+            <td class="text-center text-danger">
+                {{ "✔" if subject.is_compulsory else "✖" }}
+            </td>
+            <td class="text-center">
+                {{ "✔" if subject.is_examinable else "✖" }}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5" class="text-center text-muted">
+                No subjects assigned to this grade.
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
