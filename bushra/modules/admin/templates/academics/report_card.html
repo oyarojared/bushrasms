@@ -306,7 +306,7 @@
 
         <!-- HEADER -->
         <div class="header">
-            <div style="display:flex; flex-direction:column; 
+            <div style="display:flex; flex-direction:column;
             align-items:center; text-align:center; width:120px;">
                 <!-- School Logo -->
                 {% if data.branch.logo %}
@@ -321,7 +321,7 @@
                 {% endif %}
 
                 <!-- School Motto -->
-                {% if data.branch.motto %} 
+                {% if data.branch.motto %}
                 <p style="margin:4px 0 0 0; font-size:10px; line-height:1.2;">
                     {{ data.branch.motto|upper }}
                 </p>
@@ -338,7 +338,7 @@
                 </p>
                 <p>{{ data.exam.name }} <strong>Term: </strong>{{ data.exam.term }} {{ data.exam.year }}</p>
                 <h4 class="">LEARNER'S ASSESSMENT REPORT <br>
-                    <small>[Competence Based Education (CBE) Compliant]</small></br> 
+                    <small>[Competence Based Education (CBE) Compliant]</small></br>
                 </h4>
                 <h5>
                     <span class="text-upper">{{ data.branch.class_name }}</span>
@@ -397,7 +397,7 @@
                 {% for g in data.grading_boundaries %}
                 {% if percentage >= g.min_score and percentage <= g.max_score %} {% set
                     overall.grade=g.performance_level %} {% set overall.points=g.points %} {% set
-                    overall.remark=g.descriptor %} {% endif %} {% endfor %} 
+                    overall.remark=g.descriptor %} {% endif %} {% endfor %}
                     <!-- ADD TEACHER COMMENT -->
                     {% set missing_exams = student.subjects | selectattr("marks", "equalto", None) | list %}
                     {% set teacher_comment = '' %}

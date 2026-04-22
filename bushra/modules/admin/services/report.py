@@ -2,8 +2,8 @@ from ....modals.assessment_db import *
 from ....modals.branches_db import Branch, BranchClasses
 from ....modals.staff_db import ClassTeacher, Teacher
 from ....modals.students_db import Student
-from ....modals.subjects_db import * 
-from ..utils import resolve_grade 
+from ....modals.subjects_db import *
+from ..utils import resolve_grade
 from ....modals.students_db import StudentSubjectAllocation
 
 from pathlib import Path
@@ -17,12 +17,17 @@ from flask import current_app
 def build_static_image_path(filename, folder="uploads/passports", default="default-logo.PNG"):
     """
     Returns a file URI for WeasyPrint to use.
-    If filename is None or file doesn't exist, uses a default image.
+    Works with root-level uploads directory.
     """
-    base = Path(current_app.root_path, "static", folder)
+    # Move to /home/Bushraschools
+    project_root = Path(current_app.root_path).parents[2]
+
+    base = project_root / folder
 
     if filename:
-        path = base / filename
+        clean_name = filename.strip()
+        path = base / clean_name
+
         if path.exists():
             return path.resolve().as_uri()
 
@@ -31,20 +36,17 @@ def build_static_image_path(filename, folder="uploads/passports", default="defau
 
 
 def build_passport_path(student):
-    base = Path(
-        current_app.root_path,
-        "static",
-        "uploads",
-        "passports"
-    )
+    # Move up to /home/Bushraschools
+    base = Path(current_app.root_path).parents[2] / "uploads" / "passports"
 
-    if student.passport:
-        path = base / student.passport
+    filename = student.passport.strip() if student.passport else None
+
+    if filename:
+        path = base / filename
         if path.exists():
             return path.resolve().as_uri()
 
-    return (base / "default.JPG").resolve().as_uri()
-
+    return (base / "default.jpg").resolve().as_uri()
 
 
 def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=None):
@@ -61,7 +63,7 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
     class_ = BranchClasses.query.get(class_id)
     if not class_:
         raise ValueError("Class not found")
-    
+
     class_name = class_.grade_form
 
     # 3️⃣ Exam info
@@ -92,11 +94,12 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
             "pathway": s.pathway,
             "gender": s.gender,
             "stream": s.stream,
-            "passport_path": build_passport_path(s),  # ✅ rename
+            "passport_path": build_passport_path(s),
             "class_teacher": class_teacher_name,
+            "passport": s.passport.strip() if s.passport else None,
             "subjects": []
         }
- 
+
         for alloc in s.subject_allocations:
             subject = alloc.subject
             if not subject:

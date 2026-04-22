@@ -5,26 +5,23 @@
     <a href="{{ request.referrer or url_for('admin.student_dash') }}" class="text-secondary">
         <i class="bi bi-arrow-left"></i> Go Back
     </a>
-</div> 
+</div>
 
 <!-- Student Card -->
 <div class="container mb-2">
-    <div class="shadow-sm bg-white rounded-6"> 
+    <div class="shadow-sm bg-white rounded-6">
         <div class="container orange-line"></div>
         <div class="card-body">
             <div class="row">
 
                 <!-- Left Panel -->
                 <div class="col-md-4">
-                    <div class="border-end"> 
+                    <div class="border-end">
 
                         <div class="profile-photo-lg mx-auto my-1">
-                            <img src="{% if student.passport %}
-                                        {{ url_for('static', filename='uploads/passports/' + student.passport) }}
-                                     {% else %}
-                                        {{ url_for('static', filename='uploads/passports/default.JPG') }}
-                                     {% endif %}"
-                                 class="img-fluid" alt="Photo">
+                            {% set passport = student.passport or "default.jpg" %}
+                            <img src="{{ url_for('admin.serve_passport', filename=passport) }}"
+                                class="img-fluid" alt="Photo">
                         </div>
                     </div>
 
@@ -61,13 +58,13 @@
                         ({{ student_branch.branch_name }} {{ student_class.grade_form }}
                         {{ student.stream if student.stream else ""}})
                     </h6>
-                    <div class="border p-3 w-100 mt-2"> 
+                    <div class="border p-3 w-100 mt-2">
                         {% if student_class.grade_form == "Grade 9" %}
                             <h6 class="fw-light">
                                 <span class="fw-bold">Pathway: </span>
                                 {{ student.pathway | default('N/A') }}
                             </h6>
-                        {% endif %} 
+                        {% endif %}
                         <h6 class="fw-bold">Total Learning Areas/Subjects: {{ student.subjects_taken | length }}</h6>
                         <div class="card p-2">
                             <span class="text-muted small">
@@ -405,9 +402,9 @@
             <i class="bi bi-arrow-left-right me-3"></i>MOVE {{ student.fullname | upper }}
         </h6>
         <button
-            type="button" 
-            class="btn-close btn-close-white" 
-            data-bs-dismiss="modal" 
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="modal"
             aria-label="Close">
         </button>
       </div>
@@ -434,7 +431,7 @@
         </div>
 
         <div class="card px-3 pt-2 pb-2 shadow-sm">
-            <form action="{{ url_for('admin.move_student', student_id=student.id) }}" method="post"> 
+            <form action="{{ url_for('admin.move_student', student_id=student.id) }}" method="post">
                 {{ transfer_form.hidden_tag() }}
                 <div class="row">
                     <div class="col-md-6">
@@ -448,7 +445,7 @@
                     <div class="col-md-6">
                         <div id="grade-forms-container"></div>
                     </div>
-                </div> 
+                </div>
                 <div class="row">
                     <div id="stream-select-container"></div>
                 </div>
