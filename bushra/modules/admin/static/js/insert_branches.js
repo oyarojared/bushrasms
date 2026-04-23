@@ -75,6 +75,7 @@ selectedBranch.addEventListener("change", () => {
 
       if (admInput) {
         admInput.value = data.admission_no;
+        setAdmissionNumber(data.admission_no);
       }
     })
     .catch((err) => console.error(err));

@@ -26,7 +26,7 @@ class AddStudentForm(FlaskForm):
     )
 
     admission_number = IntegerField(
-            "Admission Number",
+            "Auto-generated admission number",
             render_kw={"readonly": True}
     )
 
