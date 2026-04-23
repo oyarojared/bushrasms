@@ -23,10 +23,13 @@ from flask_login import login_required
 
 from ..services.subs import auto_allocate_subjects 
 
+from ..services.studs import get_next_adm_no
+from flask_login import current_user
+
 @admin_bp.route("/student_dash", methods=["GET", "POST"])
 @login_required
 @admin_required
-def student_dash():
+def student_dash(): 
 
     # ----------- Define Route Forms ----------- #
     form = BranchGradeStreamForm()
@@ -34,6 +37,10 @@ def student_dash():
     muiltable_students_upload_form = MuiltapleStudentsUploadForm()
     
     add_student_form.branches.choices = load_branch_choices()
+
+    if not current_user.is_super_admin:
+        add_student_form.admission_number.data = get_next_adm_no(current_user.branch_id)
+
     muiltable_students_upload_form.branches.choices = load_branch_choices()
 
     students = []
@@ -104,6 +111,29 @@ def student_dash():
         selected_stream=selected_stream,
     )
 
+
+@admin_bp.route("/get_next_admission_no/<int:branch_id>")
+@login_required
+@admin_required
+def get_next_admission_no(branch_id):
+    """
+    Returns next admission number for a branch.
+    """
+
+    # super admin can query any branch
+    if current_user.is_super_admin:
+        target_branch_id = branch_id
+
+    # normal admin locked to own branch
+    elif current_user.is_admin:
+        target_branch_id = current_user.branch_id
+
+    else:
+        return jsonify({"error": "forbidden"}), 403
+
+    next_no = get_next_adm_no(target_branch_id)
+    return jsonify({"admission_no": next_no})
+        
 
 @admin_bp.route("/muiltaple_students_upload", methods=["POST"])
 @login_required
@@ -308,6 +338,10 @@ def muiltaple_students_upload():
 def add_student():
     form = AddStudentForm(request.form)
 
+    if not current_user.is_super_admin:
+        target_branch_id = current_user.branch_id
+        form.admission_number.data = get_next_adm_no(target_branch_id)
+    
     # Ensure form is being submitted
     if not form.is_submitted():
         flash("Invalid submission.", "danger")
@@ -339,7 +373,7 @@ def add_student():
         return redirect(url_for("admin.student_dash"))
 
     branch_id = form.branches.data
-    admission_no = form.admission_number.data
+    admission_no =  form.admission_number.data
 
     # ---- UNIQUE CHECK per branch ----
     existing_student = Student.query.filter_by(

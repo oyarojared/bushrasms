@@ -6,8 +6,7 @@ from wtforms import (DateField, IntegerField, SearchField, SelectField,
                      StringField, SubmitField)
 from wtforms.validators import DataRequired, Email, Length, Optional, Regexp
 from wtforms.validators import ValidationError
-import re
-
+import re 
 
 class StudentSearchForm(FlaskForm):
     query = SearchField(
@@ -27,9 +26,8 @@ class AddStudentForm(FlaskForm):
     )
 
     admission_number = IntegerField(
-        "Admission Number",
-        validators=[DataRequired(message="Please provide an adm no!")],
-        render_kw={"placeholder": "Adm no"}
+            "Admission Number",
+            render_kw={"readonly": True}
     )
 
     fullname = StringField(
@@ -134,9 +132,6 @@ class AddStudentForm(FlaskForm):
         ],
         render_kw={"placeholder": "Parent phone"}
     )
-    
-    import re
-    from wtforms.validators import ValidationError
 
     def validate_fullname(self, field):
         name = field.data.strip()

@@ -1,519 +1,672 @@
-{% extends "student_templates/student_dash_layout.html" %}
-{% from "_macros.html" import sidebar, form_input %}
-
-{% block body %}
+{% extends "student_templates/student_dash_layout.html" %} {% from
+"_macros.html" import sidebar, form_input %} {% block body %}
 <h5 class="fw-bold student-dash-title">
-    <i class="bi bi-database-fill-add"></i> 
-    <span class="h6" style="font-weight: 700 !important;">STUDENTS DATA</span>
+  <i class="bi bi-database-fill-add"></i>
+  <span class="h6" style="font-weight: 700 !important">STUDENTS DATA</span>
 </h5>
 
 <!-- School Selector -->
-<div class="container bg-white pt-0 pb-3 px-0 mb-2 shadow-sm rounded-6"> 
-    <div class="container orange-line"></div>
-    <h6 class="fw-light text-center border-bottom pb-2 mt-2">
-        <i class="bi bi-filter me-2"></i> Filter Students
-    </h6>
-    <form method="POST" action="" id="branchForm">
-        {{ select_branch_form.hidden_tag() }}
+<div class="container bg-white pt-0 pb-3 px-0 mb-2 shadow-sm rounded-6">
+  <div class="container orange-line"></div>
+  <h6 class="fw-light text-center border-bottom pb-2 mt-2">
+    <i class="bi bi-filter me-2"></i> Filter Students
+  </h6>
+  <form method="POST" action="" id="branchForm">
+    {{ select_branch_form.hidden_tag() }}
 
-        <div class="row px-5 align-items-end">
-            <!-- Branch Field -->
-            <div class="col-md-4">
-                {{ form_input(select_branch_form.branch, input_class="form-select", label_class="form-label fw-bold",
-                    icon_class="bi bi-house", icon_style="bg-secondary text-white", 
-                    wrapper_class="mb-0") }}
-            </div>
+    <div class="row px-5 align-items-end">
+      <!-- Branch Field -->
+      <div class="col-md-4">
+        {{ form_input(select_branch_form.branch, input_class="form-select",
+        label_class="form-label fw-bold", icon_class="bi bi-house",
+        icon_style="bg-secondary text-white", wrapper_class="mb-0") }}
+      </div>
 
-            <!-- Grade/Form Field -->
-            <div class="col-md-4">
-                <div class="mb-3 mb-lg-0">
-                    {{ select_branch_form.grade_form.label(class="form-label fw-bold") }}
-                    <div class="input-group">
-                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-building"></i></span>
-                        {{ select_branch_form.grade_form(class="form-select") }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Stream Field -->
-            <div class="col-md-4" id="stream-container" style="display:none;">
-                <div class="mb-3 mb-lg-0">
-                    {{ select_branch_form.stream.label(class="form-label fw-bold") }}
-                    <div class="input-group">
-                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-diagram-3"></i></span>
-                        {{ select_branch_form.stream(class="form-select") }}
-                    </div>
-                </div>
-            </div>
+      <!-- Grade/Form Field -->
+      <div class="col-md-4">
+        <div class="mb-3 mb-lg-0">
+          {{ select_branch_form.grade_form.label(class="form-label fw-bold") }}
+          <div class="input-group">
+            <span class="input-group-text bg-secondary text-white"
+              ><i class="bi bi-building"></i
+            ></span>
+            {{ select_branch_form.grade_form(class="form-select") }}
+          </div>
         </div>
+      </div>
 
-        <div class="col-12 d-flex justify-content-center px-4 w-100">
-            <button class="btn btn-sm btn-dark mt-2">
-                <i class="bi bi-opencollective me-1"></i> Fetch Data
-            </button>
+      <!-- Stream Field -->
+      <div class="col-md-4" id="stream-container" style="display: none">
+        <div class="mb-3 mb-lg-0">
+          {{ select_branch_form.stream.label(class="form-label fw-bold") }}
+          <div class="input-group">
+            <span class="input-group-text bg-secondary text-white"
+              ><i class="bi bi-diagram-3"></i
+            ></span>
+            {{ select_branch_form.stream(class="form-select") }}
+          </div>
         </div>
-    </form>
+      </div>
+    </div>
+
+    <div class="col-12 d-flex justify-content-center px-4 w-100">
+      <button class="btn btn-sm btn-dark mt-2">
+        <i class="bi bi-opencollective me-1"></i> Fetch Data
+      </button>
+    </div>
+  </form>
 </div>
 
 <div class="container mb-2">
-     <div class="row rounded-2 px-2">
-        <div class="col-sm-8"></div>
-        <div class="col-sm-4 d-flex bg-danger p-1">
-            <a href="#" data-bs-toggle="modal" data-bs-target="#addStudentModal" class="border-end">
-                <div class="nav-div small">
-                    <span><i class="bi bi-plus-circle-dotted"></i></span>
-                    <span>Add</span>
-                </div>
-            </a>
-
-            <a href="#" data-bs-toggle="modal" data-bs-target="#uploadModal" class="border-end">
-                <div class="nav-div d-flex mx-2 small">
-                    <span><i class="bi bi-upload me-1"></i></span>
-                    <span>Upload</span>
-                </div>
-            </a>
-
-            <a href="#" id="excel-btn" class="border-end">
-                <div class="nav-div mx-2 small">
-                    <span><i class="bi bi-file-earmark-excel"></i></span>
-                    <span>Excel</span>
-                </div>
-            </a>
-
-            <a href="" class="border-end">
-                <div class="nav-div small">
-                    <span><i class="bi bi-printer"></i></span>
-                    <span>Print</span>
-                </div>
-            </a>
+  <div class="row rounded-2 px-2">
+    <div class="col-sm-8"></div>
+    <div class="col-sm-4 d-flex bg-danger p-1">
+      <a
+        href="#"
+        data-bs-toggle="modal"
+        data-bs-target="#addStudentModal"
+        class="border-end"
+      >
+        <div class="nav-div small">
+          <span><i class="bi bi-plus-circle-dotted"></i></span>
+          <span>Add</span>
         </div>
+      </a>
+
+      <a
+        href="#"
+        data-bs-toggle="modal"
+        data-bs-target="#uploadModal"
+        class="border-end"
+      >
+        <div class="nav-div d-flex mx-2 small">
+          <span><i class="bi bi-upload me-1"></i></span>
+          <span>Upload</span>
+        </div>
+      </a>
+
+      <a href="#" id="excel-btn" class="border-end">
+        <div class="nav-div mx-2 small">
+          <span><i class="bi bi-file-earmark-excel"></i></span>
+          <span>Excel</span>
+        </div>
+      </a>
+
+      <a href="" class="border-end">
+        <div class="nav-div small">
+          <span><i class="bi bi-printer"></i></span>
+          <span>Print</span>
+        </div>
+      </a>
     </div>
+  </div>
 </div>
 
 <!-- DISPLAY STUDENT OF THE SELECTED CLASS (& STREAM) -->
- {% if students %}
- <div class="container bg-white pt-3 pb-2 rounded-6">
-    <h5 class="text-center fw-light">
-        {% if selected_stream %}
-            {{ selected_grade.grade_form }} ({{ selected_stream }}) students of {{ selected_branch.branch_name }}
-        {% else %}
-            {{ selected_grade.grade_form }} students of {{ selected_branch.branch_name }}
-        {% endif %}
-        <span class="badge bg-success small fw-light">
-            {{ students | length }} students
-        </span> 
-    </h5>
+{% if students %}
+<div class="container bg-white pt-3 pb-2 rounded-6">
+  <h5 class="text-center fw-light">
+    {% if selected_stream %} {{ selected_grade.grade_form }} ({{ selected_stream
+    }}) students of {{ selected_branch.branch_name }} {% else %} {{
+    selected_grade.grade_form }} students of {{ selected_branch.branch_name }}
+    {% endif %}
+    <span class="badge bg-success small fw-light">
+      {{ students | length }} students
+    </span>
+  </h5>
 
-    <form id="excel-download-form" action="{{ url_for('admin.download_students_excel') }}" method="post">
-        <input type="text" name="branch" value="{{ selected_branch.id }}" hidden>
-        <input type="text" name="grade" value="{{ selected_grade.grade_form }}" hidden>
-        <input type="text" name="gradeid" value="{{ selected_grade.id }}" hidden>
-        <input type="text" name="stream" value="{{ selected_stream if selected_stream is not none else '' }}" hidden>
-    </form>
-    
-    <!-- Table -->
-    <div class="table-responsive mt-3">
-        <div class="scroll-table-wrapper">
-            {% if students %} 
-                <table class="table table-bordered table-striped small">
-                    <thead class="text-white bg-secondary">
-                        <tr class="sticky-header">
-                            <th class="text-center">#</th>
-                            <th class="text-center">Adm No</th>
-                            <th>Name</th>
-                            <th>Gender</th>
-                            <th>Ass. No</th>
-                            {% if selected_grade.grade_form | lower == "grade 10" %}
-                                <th>Pathway</th>
-                            {% endif %}
-                            <th>DOB</th>
-                            <th>Phone</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for student in students %}
-                            <tr>
-                                <td class="text-center">{{ loop.index }}</td>
-                                <td class="text-center">{{ student.admission_number }}</td>
-                                <td>{{ student.fullname | upper }}</td>
-                                <td>{{ student.gender }}</td>
-                                <td>{{ student.knec_assessment_no or "---"}}</td>
-                                {% if selected_grade.grade_form | lower == "grade 10" %}
-                                    <td>{{ student.pathway or "---"}}</td>
-                                {% endif %}
-                                <td>{{ student.dob or "---"}}</td>
-                                <td>{{ student.parent_phone or "---" }}</td>
-                                <td class="text-center">
-                                    <div class="dropdown">
-                                        <button class="btn btn-secondary btn-sm border dropdown-toggle p-1"
-                                                type="button" data-bs-toggle="dropdown">
-                                            <i class="bi bi-gear me-2"></i>   
-                                        </button>
-                                        <ul class="dropdown-menu bg-light-green">
-                                            <li>
-                                                <a class="dropdown-item"
-                                                href="{{ url_for('admin.student_profile', student_id=student.id) }}">
-                                                    <i class="bi bi-pencil-square me-2"></i> Edit
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item"
-                                                href="{{ url_for('admin.student_profile', student_id=student.id) }}">
-                                                    <i class="bi bi-person-badge me-2"></i> Profile
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <form method="POST" action="{{ url_for('admin.delete_student', student_id=student.id) }}" 
-                                                    onsubmit="return confirm('Are you sure you want to delete {{ student.fullname | upper }}?');">
-                                                    <button type="submit" class="dropdown-item text-white">
-                                                        <i class="bi bi-trash me-2"></i> Delete
-                                                    </button>
-                                                </form>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+  <form
+    id="excel-download-form"
+    action="{{ url_for('admin.download_students_excel') }}"
+    method="post"
+  >
+    <input type="text" name="branch" value="{{ selected_branch.id }}" hidden />
+    <input
+      type="text"
+      name="grade"
+      value="{{ selected_grade.grade_form }}"
+      hidden
+    />
+    <input type="text" name="gradeid" value="{{ selected_grade.id }}" hidden />
+    <input
+      type="text"
+      name="stream"
+      value="{{ selected_stream if selected_stream is not none else '' }}"
+      hidden
+    />
+  </form>
+
+  <!-- Table -->
+  <div class="table-responsive mt-3">
+    <div class="scroll-table-wrapper">
+      {% if students %}
+      <table class="table table-bordered table-striped small">
+        <thead class="text-white bg-secondary">
+          <tr class="sticky-header">
+            <th class="text-center">#</th>
+            <th class="text-center">Adm No</th>
+            <th>Name</th>
+            <th>Gender</th>
+            <th>Ass. No</th>
+            {% if selected_grade.grade_form | lower == "grade 10" %}
+            <th>Pathway</th>
             {% endif %}
-        </div>
+            <th>DOB</th>
+            <th>Phone</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+          <tr>
+            <td class="text-center">{{ loop.index }}</td>
+            <td class="text-center">{{ student.admission_number }}</td>
+            <td>{{ student.fullname | upper }}</td>
+            <td>{{ student.gender }}</td>
+            <td>{{ student.knec_assessment_no or "---"}}</td>
+            {% if selected_grade.grade_form | lower == "grade 10" %}
+            <td>{{ student.pathway or "---"}}</td>
+            {% endif %}
+            <td>{{ student.dob or "---"}}</td>
+            <td>{{ student.parent_phone or "---" }}</td>
+            <td class="text-center">
+              <div class="dropdown">
+                <button
+                  class="btn btn-secondary btn-sm border dropdown-toggle p-1"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                >
+                  <i class="bi bi-gear me-2"></i>
+                </button>
+                <ul class="dropdown-menu bg-light-green">
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="{{ url_for('admin.student_profile', student_id=student.id) }}"
+                    >
+                      <i class="bi bi-pencil-square me-2"></i> Edit
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="{{ url_for('admin.student_profile', student_id=student.id) }}"
+                    >
+                      <i class="bi bi-person-badge me-2"></i> Profile
+                    </a>
+                  </li>
+                  <li>
+                    <form
+                      method="POST"
+                      action="{{ url_for('admin.delete_student', student_id=student.id) }}"
+                      onsubmit="return confirm('Are you sure you want to delete {{ student.fullname | upper }}?');"
+                    >
+                      <button type="submit" class="dropdown-item text-white">
+                        <i class="bi bi-trash me-2"></i> Delete
+                      </button>
+                    </form>
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
     </div>
+  </div>
 </div>
- {% else %}
- <!-- No Branch/class/(stream) selected yet -->
- <div id="warning-section" class="row text-center mt-2"
-    {% if students %} style="display:none;" {% endif %}>
-    <span class="h2"><i class="bi bi-exclamation-triangle-fill text-danger"></i></span>
-    <h6 class="text-danger small">No records found. Adjust filters above to load students.</h6>
+{% else %}
+<!-- No Branch/class/(stream) selected yet -->
+<div
+  id="warning-section"
+  class="row text-center mt-2"
+  {%
+  if
+  students
+  %}
+  style="display: none"
+  {%
+  endif
+  %}
+>
+  <span class="h2"
+    ><i class="bi bi-exclamation-triangle-fill text-danger"></i
+  ></span>
+  <h6 class="text-danger small">
+    No records found. Adjust filters above to load students.
+  </h6>
 </div>
 
- {% endif %}
+{% endif %}
 
 <!-- =========================
      Add Student Modal
 ========================= -->
-<div class="modal fade" id="addStudentModal" tabindex="-1"
-     aria-labelledby="addStudentModalLabel" aria-hidden="true"
-     data-bs-backdrop="static" data-bs-keyboard="false">
+<div
+  class="modal fade"
+  id="addStudentModal"
+  tabindex="-1"
+  aria-labelledby="addStudentModalLabel"
+  aria-hidden="true"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+>
+  <div
+    class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"
+  >
+    <div class="modal-content">
+      <!-- Modal Header -->
+      <div class="modal-header bg-danger text-white pt-2 pb-2 px-3">
+        <h6 class="modal-title" id="addStudentModalLabel">
+          <i class="bi bi-person-plus-fill me-2"></i> REGISTER NEW STUDENT
+        </h6>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <!-- Modal Body -->
+      <div class="modal-body pt-1">
+        <h5 class="text-center fw-light p-2 mb-0 border-bottom bg-light">
+          Student's Data Entry
+        </h5>
+        <div class="border p-2 mt-2">
+          <form method="POST" action="{{ url_for('admin.add_student') }}">
+            {{ student_data_form.hidden_tag() }}
 
-    <div class="modal-dialog modal-lg modal-dialog-centered  modal-dialog-scrollable">
-        <div class="modal-content">
-
-            <!-- Modal Header -->
-            <div class="modal-header bg-danger text-white pt-2 pb-2 px-3">
-                <h6 class="modal-title" id="addStudentModalLabel">
-                    <i class="bi bi-person-plus-fill me-2"></i> REGISTER NEW STUDENT
-                </h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div> 
-            <!-- Modal Body -->
-            <div class="modal-body pt-1">
-                <h5 class="text-center fw-light p-2 mb-0 border-bottom bg-light">
-                    Student's Data Entry
-                </h5>
-                <div class="border p-2 mt-2">
-                    <form method="POST" action="{{ url_for('admin.add_student') }}">
-                        {{ student_data_form.hidden_tag() }}
-
-                        <div class="container">
-                            <div class="row g-3">
-
-                                <!-- Branch & class details -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.branches.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-hash"></i></span>
-                                        {{ student_data_form.branches(class="form-select", id="selected-branch") }}
-                                    </div>
-                                    {% for error in student_data_form.branches.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div> 
-
-                                <!-- Grades -->
-                                <div class="col-md-4 d-flex align-items-end" id="grade-container">
-                                    
-                                </div>
-
-                                <!-- Streams placeholder -->
-                                <div class="col-md-4 d-flex align-items-end" id="stream-container-2">
-                                    <!-- The select will be injected here dynamically if needed -->
-                                </div>
-
-                                <!-- Admission Number -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.admission_number.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-hash"></i></span>
-                                        {{ student_data_form.admission_number(class="form-control", placeholder="Enter admission number") }}
-                                    </div>
-                                    {% for error in student_data_form.admission_number.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Full Name -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.fullname.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-person"></i></span>
-                                        {{ student_data_form.fullname(class="form-control", placeholder="Full name") }}
-                                    </div>
-                                    {% for error in student_data_form.fullname.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- KNEC Assessment No -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.knec_assessment_no.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-card-text"></i></span>
-                                        {{ student_data_form.knec_assessment_no(class="form-control") }}
-                                    </div>
-                                    {% for error in student_data_form.knec_assessment_no.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- NEMIS Number -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.nemis_number.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-123"></i></span>
-                                        {{ student_data_form.nemis_number(class="form-control") }}
-                                    </div>
-                                    {% for error in student_data_form.nemis_number.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Birth Cert Number -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.birth_cert_no.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-file-earmark-text"></i></span>
-                                        {{ student_data_form.birth_cert_no(class="form-control") }}
-                                    </div>
-                                    {% for error in student_data_form.birth_cert_no.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Gender -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.gender.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-gender-ambiguous"></i></span>
-                                        {{ student_data_form.gender(class="form-select") }}
-                                    </div>
-                                    {% for error in student_data_form.gender.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Date of Birth -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.dob.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-calendar-event"></i></span>
-                                        {{ student_data_form.dob(class="form-control") }}
-                                    </div>
-                                    {% for error in student_data_form.dob.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Boarding Status -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.boarding_status.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-building"></i></span>
-                                        {{ student_data_form.boarding_status(class="form-select") }}
-                                    </div>
-                                    {% for error in student_data_form.boarding_status.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Pathway -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.pathway.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-diagram-3"></i></span>
-                                        {{ student_data_form.pathway(class="form-select") }}
-                                    </div>
-                                    {% for error in student_data_form.pathway.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- KCPE Marks -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.kcpe_marks.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-bar-chart"></i></span>
-                                        {{ student_data_form.kcpe_marks(class="form-control") }}
-                                    </div>
-                                    {% for error in student_data_form.kcpe_marks.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- KCPE Index Number -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.kcpe_index_no.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-journal-text"></i></span>
-                                        {{ student_data_form.kcpe_index_no(class="form-control") }}
-                                    </div>
-                                    {% for error in student_data_form.kcpe_index_no.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- KCPE Year -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.kcpe_year.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-calendar"></i></span>
-                                        {{ student_data_form.kcpe_year(class="form-control") }}
-                                    </div>
-                                    {% for error in student_data_form.kcpe_year.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Date of Admission -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.date_of_admission.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-calendar-check"></i></span>
-                                        {{ student_data_form.date_of_admission(class="form-control") }}
-                                    </div>
-                                    {% for error in student_data_form.date_of_admission.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Parent Full Name -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.parent_fullname.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-person-vcard"></i></span>
-                                        {{ student_data_form.parent_fullname(class="form-control", placeholder="Enter parent/guardian name") }}
-                                    </div>
-                                    {% for error in student_data_form.parent_fullname.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                                <!-- Parent Phone -->
-                                <div class="col-md-4">
-                                    <label class="form-label">{{ student_data_form.parent_phone.label }}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-secondary text-white"><i class="bi bi-telephone"></i></span>
-                                        {{ student_data_form.parent_phone(class="form-control", placeholder="07XXXXXXXX") }}
-                                    </div>
-                                    {% for error in student_data_form.parent_phone.errors %}
-                                        <div class="text-danger small">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-
-                            </div>
-
-                            <div class="mt-4 d-flex justify-content-end">
-                                <button class="btn btn-secondary px-4">
-                                    <i class="bi bi-send-plus mx-2"></i> Submit
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+            <div class="container">
+              <div class="row g-3">
+                <!-- Branch & class details -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.branches.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-hash"></i
+                    ></span>
+                    {{ student_data_form.branches(class="form-select",
+                    id="selected-branch") }}
+                  </div>
+                  {% for error in student_data_form.branches.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
                 </div>
-                <hr>
-            </div>
 
+                <!-- Grades -->
+                <div
+                  class="col-md-4 d-flex align-items-end"
+                  id="grade-container"
+                ></div>
+
+                <!-- Streams placeholder -->
+                <div
+                  class="col-md-4 d-flex align-items-end"
+                  id="stream-container-2"
+                >
+                  <!-- The select will be injected here dynamically if needed -->
+                </div>
+
+                <!-- Admission Number -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.admission_number.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-hash"></i
+                    ></span>
+                    {{ student_data_form.admission_number(class="form-control")
+                    }}
+                  </div>
+                  {% for error in student_data_form.admission_number.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <!-- Full Name -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.fullname.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-person"></i
+                    ></span>
+                    {{ student_data_form.fullname(class="form-control",
+                    placeholder="Full name") }}
+                  </div>
+                  {% for error in student_data_form.fullname.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <!-- KNEC Assessment No -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.knec_assessment_no.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-card-text"></i
+                    ></span>
+                    {{
+                    student_data_form.knec_assessment_no(class="form-control")
+                    }}
+                  </div>
+                  {% for error in student_data_form.knec_assessment_no.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <!-- NEMIS Number -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.nemis_number.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-123"></i
+                    ></span>
+                    {{ student_data_form.nemis_number(class="form-control") }}
+                  </div>
+                  {% for error in student_data_form.nemis_number.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <!-- Birth Cert Number -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.birth_cert_no.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-file-earmark-text"></i
+                    ></span>
+                    {{ student_data_form.birth_cert_no(class="form-control") }}
+                  </div>
+                  {% for error in student_data_form.birth_cert_no.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <!-- Gender -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.gender.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-gender-ambiguous"></i
+                    ></span>
+                    {{ student_data_form.gender(class="form-select") }}
+                  </div>
+                  {% for error in student_data_form.gender.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <!-- Date of Birth -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.dob.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-calendar-event"></i
+                    ></span>
+                    {{ student_data_form.dob(class="form-control") }}
+                  </div>
+                  {% for error in student_data_form.dob.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <!-- Boarding Status -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.boarding_status.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-building"></i
+                    ></span>
+                    {{ student_data_form.boarding_status(class="form-select") }}
+                  </div>
+                  {% for error in student_data_form.boarding_status.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <!-- Pathway -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.pathway.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-diagram-3"></i
+                    ></span>
+                    {{ student_data_form.pathway(class="form-select") }}
+                  </div>
+                  {% for error in student_data_form.pathway.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <!-- KCPE Marks -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.kcpe_marks.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-bar-chart"></i
+                    ></span>
+                    {{ student_data_form.kcpe_marks(class="form-control") }}
+                  </div>
+                  {% for error in student_data_form.kcpe_marks.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <!-- KCPE Index Number -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.kcpe_index_no.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-journal-text"></i
+                    ></span>
+                    {{ student_data_form.kcpe_index_no(class="form-control") }}
+                  </div>
+                  {% for error in student_data_form.kcpe_index_no.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <!-- KCPE Year -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.kcpe_year.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-calendar"></i
+                    ></span>
+                    {{ student_data_form.kcpe_year(class="form-control") }}
+                  </div>
+                  {% for error in student_data_form.kcpe_year.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <!-- Date of Admission -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.date_of_admission.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-calendar-check"></i
+                    ></span>
+                    {{ student_data_form.date_of_admission(class="form-control")
+                    }}
+                  </div>
+                  {% for error in student_data_form.date_of_admission.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <!-- Parent Full Name -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.parent_fullname.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-person-vcard"></i
+                    ></span>
+                    {{ student_data_form.parent_fullname(class="form-control",
+                    placeholder="Enter parent/guardian name") }}
+                  </div>
+                  {% for error in student_data_form.parent_fullname.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+
+                <!-- Parent Phone -->
+                <div class="col-md-4">
+                  <label class="form-label"
+                    >{{ student_data_form.parent_phone.label }}</label
+                  >
+                  <div class="input-group">
+                    <span class="input-group-text bg-secondary text-white"
+                      ><i class="bi bi-telephone"></i
+                    ></span>
+                    {{ student_data_form.parent_phone(class="form-control",
+                    placeholder="07XXXXXXXX") }}
+                  </div>
+                  {% for error in student_data_form.parent_phone.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div class="mt-4 d-flex justify-content-end">
+                <button class="btn btn-secondary px-4">
+                  <i class="bi bi-send-plus mx-2"></i> Submit
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
+        <hr />
+      </div>
     </div>
-</div> 
+  </div>
+</div>
 
 <!-- =========================
      Upload Modal
-========================= --> 
-<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered modal-md">  
-        <div class="modal-content mb-0">
-            <div class="modal-header bg-danger text-white p-2 px-3 mb-0">
-                <h6 class="modal-title" id="uploadModalLabel">
-                    <i class="bi bi-upload me-2"></i> UPLOAD MUILTAPLE STUDENTS
-                </h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+========================= -->
+<div
+  class="modal fade"
+  id="uploadModal"
+  tabindex="-1"
+  aria-labelledby="uploadModalLabel"
+  aria-hidden="true"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+>
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content mb-0">
+      <div class="modal-header bg-danger text-white p-2 px-3 mb-0">
+        <h6 class="modal-title" id="uploadModalLabel">
+          <i class="bi bi-upload me-2"></i> UPLOAD MUILTAPLE STUDENTS
+        </h6>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body pt-1">
+        <h5 class="text-center bg-light fw-light p-3 mb-0 border-bottom">
+          Data from MS Excel
+        </h5>
+        <p class="small">
+          <span class="fw-bold">Guidelines</span>: <br />
+          To avoid errors Ensure that the first column [A] is for adm number(s)
+          and second column [B] is for student names.
+        </p>
+        <div class="card p-3">
+          <h5 class="text-center text-orange fw-bold">
+            <i class="bi bi-filter"></i> Filter Grade / Form to import data
+          </h5>
+          <form
+            method="POST"
+            id="excel-upload-form"
+            action="{{ url_for('admin.muiltaple_students_upload') }}"
+            enctype="multipart/form-data"
+          >
+            {{ muiltable_students_upload_form.hidden_tag() }}
+
+            <div class="row">
+              <div class="col-md-6">
+                {{ muiltable_students_upload_form.branches.label(class="fw-bold
+                mb-2") }} {{
+                muiltable_students_upload_form.branches(class="form-control",
+                id="select-branch-element") }} {% for error in
+                muiltable_students_upload_form.branches.errors %}
+                <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="col-md-6">
+                <div id="grade-forms-container"></div>
+              </div>
             </div>
-            <div class="modal-body pt-1">
-                <h5 class="text-center bg-light fw-light p-3 mb-0 border-bottom">Data from MS Excel</h5>  
-                <p class="small"><span class="fw-bold">Guidelines</span>: <br>
-                   To avoid errors Ensure that the first column [A] is for adm number(s) and
-                   second column [B] is for student names.
-                </p>
-                <div class="card p-3">
-                    <h5 class="text-center text-orange fw-bold">
-                        <i class="bi bi-filter"></i> Filter Grade / Form to import data
-                    </h5>
-                    <form method="POST" id="excel-upload-form" action="{{ url_for('admin.muiltaple_students_upload') }}" enctype="multipart/form-data">
-                        {{ muiltable_students_upload_form.hidden_tag() }} 
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                {{ muiltable_students_upload_form.branches.label(class="fw-bold mb-2") }}
-                                {{ muiltable_students_upload_form.branches(class="form-control", id="select-branch-element") }}
-
-                                {% for error in muiltable_students_upload_form.branches.errors %}
-                                    <div class="text-danger small">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-
-                            <div class="col-md-6">
-                                <div id="grade-forms-container">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-md-6">
-                                <div id="stream-select-container"></div>
-                            </div>
-                        </div>
-                        <div class="row p-3">
-                            <div class="mb-3">
-                                {{ muiltable_students_upload_form.excel_file.label(class="form-label fw-bold") }}
-                                {{ muiltable_students_upload_form.excel_file(class="form-control") }}
-
-                                {% for error in muiltable_students_upload_form.excel_file.errors %}
-                                    <div class="text-danger small">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <button class="btn btn-secondary">
-                                <i class="bi bi-download me-2"></i> Import Data
-                            </button>
-                        </div>
-                    </form>
-                </div>
+            <div class="row mt-2">
+              <div class="col-md-6">
+                <div id="stream-select-container"></div>
+              </div>
             </div>
+            <div class="row p-3">
+              <div class="mb-3">
+                {{
+                muiltable_students_upload_form.excel_file.label(class="form-label
+                fw-bold") }} {{
+                muiltable_students_upload_form.excel_file(class="form-control")
+                }} {% for error in
+                muiltable_students_upload_form.excel_file.errors %}
+                <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="row mt-2">
+              <button class="btn btn-secondary">
+                <i class="bi bi-download me-2"></i> Import Data
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
     </div>
+  </div>
 </div>
-
 
 <!-- Scripts -->
 <script>
-    const branchesUrl = "{{ url_for('admin.api_branches') }}";
-    const gradesUrlBase = "{{ url_for('admin.api_grades', branch_id=0)[:-1] }}";
+  const branchesUrl = "{{ url_for('admin.api_branches') }}";
+  const gradesUrlBase = "{{ url_for('admin.api_grades', branch_id=0)[:-1] }}";
 </script>
-<script src="{{ url_for('admin.static', filename='js/load_branches.js') }}"></script> 
+<script src="{{ url_for('admin.static', filename='js/load_branches.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/insert_branches.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/highlight_selected_row.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/load_grade_streams.js') }}"></script>
