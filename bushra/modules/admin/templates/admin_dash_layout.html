@@ -105,11 +105,11 @@
         {% if current_user.is_super_admin %}
             <!-- Admin Notice -->
             <div class="d-flex align-items-center">
-                <span class="badge bg-success text-dark me-2">
-                    Super Admin
+                <span class="badge bg-warning text-white me-2">
+                    <i class="bi bi-person-fill mx-2"></i>Super Admin
                 </span>
-                <span class="fw-semibold">
-                    You have full access to manage all branches
+                <span class="fw-semibold small">
+                    You have full access to all branches
                 </span>
             </div>
         {% else %}
@@ -121,16 +121,15 @@
                         alt="Logo" 
                         style="width: 100%; height: 100%; object-fit: contain;">
                 </div>
-
                 <div>
-                    <div class="fw-semibold" style="line-height: 1;">
-                        {% if target_branch_info %}
+                    {% if target_branch_info %}
+                        <div class="fw-semibold" style="line-height: 1;">
                             <span class="fw-bold">{{ target_branch_info.branch_name | upper }}</span>
-                        {% endif %}
-                    </div>
-                    <small>
-                        {{ target_branch_info.motto }}
-                    </small>
+                        </div>
+                        <small>
+                            {{ target_branch_info.motto }}
+                        </small>
+                    {% endif %}
                 </div>
             </div>
         {% endif %}
