@@ -16,29 +16,6 @@ from ..utils.file_utils import preprocess_image
 def get_first_branch_id():   
     first_branch = Branch.query.first()
     return first_branch.id if first_branch else None
-
-
-def create_branch(form):
-    try:
-        branch = Branch(
-            branch_name=form.branch_name.data.strip(),
-            school_code=form.school_code.data,
-            branch_manager=form.branch_manager.data.strip(),
-            branch_level=form.branch_level.data,
-            branch_head=form.branch_head.data,
-            school_gender=form.school_gender.data,
-            school_type=form.school_type.data,
-            email=form.email.data.strip() if form.email.data else None,
-        )
-
-        db.session.add(branch)
-        db.session.commit()
-        return branch, None
-    
-    except Exception as e:
-        current_app.logger.error(f"Branch creation failed: {e}", exc_info=True)
-        db.session.rollback()
-        return None, "Failed to create branch. Please try again."
     
 
 def get_branch_data(branch_id):
@@ -53,28 +30,53 @@ def get_branch_data(branch_id):
     if not branch:
         return None, "Branch does not exist."
     
-    # Fetch students + teachers
+    # Fetch students + teachers (kept for compatibility with your structure)
     students = Student.query.filter_by(branch_id=branch_id).all()
     teachers = Teacher.query.filter_by(branch_id=branch_id).all()
 
-    # Gender counts
-    student_gender_counts = [
-        sum(1 for s in students if s.gender and s.gender.lower().startswith("m")),
-        sum(1 for s in students if s.gender and s.gender.lower().startswith("f")),
-    ]
+    # -----------------------------
+    # OPTIMIZED GENDER COUNTS 
+    # -----------------------------
 
-    teacher_gender_counts = [
-        sum(1 for t in teachers if t.gender and t.gender.lower().startswith("m")),
-        sum(1 for t in teachers if t.gender and t.gender.lower().startswith("f")),
-    ]
+    student_male = 0
+    student_female = 0
 
-    # Students per class
+    for s in students:
+        if s.gender:
+            g = s.gender.lower()
+            if g.startswith("m"):
+                student_male += 1
+            elif g.startswith("f"):
+                student_female += 1
+
+    student_gender_counts = [student_male, student_female]
+
+    teacher_male = 0
+    teacher_female = 0
+
+    for t in teachers:
+        if t.gender:
+            g = t.gender.lower()
+            if g.startswith("m"):
+                teacher_male += 1
+            elif g.startswith("f"):
+                teacher_female += 1
+
+    teacher_gender_counts = [teacher_male, teacher_female]
+
+    # -----------------------------
+    # OPTIMIZED CLASS COUNT LOOP 
+    # -----------------------------
+
     students_per_class = {}
     for s in students:
-        class_name = s.class_info.grade_form if s.class_info else "Unknown"
+        class_name = "Unknown"
+        if s.class_info and hasattr(s.class_info, "grade_form"):
+            class_name = s.class_info.grade_form
+
         students_per_class[class_name] = students_per_class.get(class_name, 0) + 1
 
-    # Package data
+    # Package data (UNCHANGED STRUCTURE)
     data = {
         "branch": branch.to_dict(),
         "total_students": len(students),
@@ -85,7 +87,6 @@ def get_branch_data(branch_id):
     }
 
     return data, None
-
 
 def get_branch_classes():
     records = BranchClasses.query.order_by(
@@ -157,16 +158,16 @@ def update_branch_service(form, branch_id):
         branch.branch_name = form.branch_name.data.strip()
         branch.school_code = form.school_code.data  
         branch.branch_manager = form.branch_manager.data.strip()
-        branch.branch_level = form.branch_level.data.strip()
-        branch.branch_head = form.branch_head.data if form.branch_head else branch.branch_head
-        branch.school_gender = form.school_gender.data.strip()
-        branch.school_type = form.school_type.data.strip()
+        branch.branch_level = form.branch_level.data
+        if form.branch_head.data:
+            branch.branch_head = form.branch_head.data     
+        branch.school_gender = form.school_gender.data
+        branch.school_type = form.school_type.data
         branch.logo = logo_filename if logo_filename else branch.logo
         branch.motto = form.motto.data.strip() if form.motto.data else None
 
         # optional field
-        email_value = form.email.data.strip() if form.email.data else None
-        branch.email = email_value or None
+        branch.email = form.email.data.strip() if form.email.data else None
  
         db.session.commit()
         return branch, "Branch updated successfully!"
@@ -174,8 +175,12 @@ def update_branch_service(form, branch_id):
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(
-            f"[UPDATE BRANCH ERROR] Branch ID={branch_id} | {type(e).__name__}: {e}"
+            "Update branch failed | id=%s | %s: %s",
+            branch_id,
+            type(e).__name__,
+            e
         )
+
         return None, "An error occurred while updating the branch. Try again."
 
 

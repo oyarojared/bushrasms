@@ -7,27 +7,36 @@ from .. import admin_bp
 from ..forms.branches_forms import (AddBranchForm, BranchesList,
                                     ExtendedBranchForm)
 from ..services.grades import create_class
-from ..services.branches import (create_branch,
-                                        get_branch_classes, get_branch_data, delete_branch_service,
-                                        get_first_branch_id, update_branch_service, get_branch_academic_population)
+from ..services.branches import (get_branch_classes, 
+                                get_branch_data, delete_branch_service,
+                                get_first_branch_id, update_branch_service, get_branch_academic_population)
 from ..utils import load_branch_choices, load_teacher_choices
 from ..services.subs import get_subjects_by_grade
 from flask_login import login_required
 from ..utils.file_utils import preprocess_image
-
 
 from sqlalchemy.exc import SQLAlchemyError
 from ....modals.students_db import Student, StudentSubjectAllocation 
 from ....modals.assessment_db import ExamPaper, StudentExamMark, GradeGradingScheme
 from ....modals.subjects_db import Lesson
 
- 
+
 @admin_bp.route("/add_school", methods=["POST"])
 @login_required
 def add_school():
+    """
+    Handle creation of a new school (branch).
+    """
     form = AddBranchForm()
     form.branch_head.choices = load_teacher_choices()
-    
+
+    fallback_id = get_first_branch_id()
+
+    target = (
+        url_for("admin.branch_profile", branch_id=fallback_id)
+        if fallback_id else url_for("admin.admin_dash")
+    )
+ 
     if form.validate_on_submit():
         try:
             # Process logo if uploaded
@@ -52,13 +61,18 @@ def add_school():
             db.session.add(branch)
             db.session.commit()
 
-            flash(f"Branch {branch.branch_name} added successfully!", "success")
+            flash(f"School {branch.branch_name.upper() } added successfully!", "success")
             return redirect(url_for("admin.branch_profile", branch_id=branch.id))
         
         except Exception as e:
-            db.session.rollback()
-            flash(f"Oops! Something went wrong: {str(e)}", "danger")
-            return redirect(url_for("admin.branch_profile", branch_id=1))
+            db.session.rollback() 
+            current_app.logger.error(
+                "Error adding school %s: %s",
+                form.branch_name.data,
+                e
+            )
+            flash("Oops! Something went wrong. Please try again later.", "danger")
+            return redirect(target)
 
     # Form validation failed
     if form.errors:
@@ -66,9 +80,9 @@ def add_school():
             for err in errors:
                 flash(f"{field.capitalize()}: {err}", "danger")
 
-    return redirect(url_for("admin.branch_profile", branch_id=1))
+    return redirect(target)
 
-     
+ 
 @admin_bp.route("/branch/<int:branch_id>")
 @login_required
 def branch_profile(branch_id):
@@ -80,11 +94,11 @@ def branch_profile(branch_id):
 
     data, error = get_branch_data(branch_id)
 
-    if error:
-        flash(error, "warning")
-        fallback_id = get_first_branch_id()
+    if error: 
+        # flash(error, 'warning')
+        fallback_id = get_first_branch_id() 
 
-        if fallback_id:
+        if fallback_id and fallback_id != branch_id:
             return redirect(url_for("admin.branch_profile", branch_id=fallback_id))
 
         # No branches at all
