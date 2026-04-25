@@ -10,7 +10,7 @@ from .modals.branches_db import Branch, BranchClasses
 from .modules import admin_bp, auth_bp
 from .modals.staff_db import Teacher 
 
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 login_manager.login_message_category = "warning"
@@ -37,6 +37,20 @@ def create_app():
 
     db.init_app(app)
     migrate.init_app(app, db)
+
+    @app.context_processor
+    def inject_branch_data():
+        if not current_user.is_authenticated:
+            return {}
+
+        if current_user.is_super_admin:
+            return {"target_branch_info": None}
+
+        branch = Branch.query.get(current_user.branch_id)
+
+        return {
+            "target_branch_info": branch
+        }
 
     if not os.path.exists("logs"):
         os.mkdir("logs")
