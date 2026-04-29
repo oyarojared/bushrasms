@@ -158,9 +158,7 @@ def update_branch_service(form, branch_id):
         branch.branch_name = form.branch_name.data.strip()
         branch.school_code = form.school_code.data  
         branch.branch_manager = form.branch_manager.data.strip()
-        branch.branch_level = form.branch_level.data
-        if form.branch_head.data:
-            branch.branch_head = form.branch_head.data     
+        branch.branch_level = form.branch_level.data      
         branch.school_gender = form.school_gender.data
         branch.school_type = form.school_type.data
         branch.logo = logo_filename if logo_filename else branch.logo
@@ -168,6 +166,11 @@ def update_branch_service(form, branch_id):
 
         # optional field
         branch.email = form.email.data.strip() if form.email.data else None
+
+        if form.branch_head.data:
+            branch.branch_head = form.branch_head.data  
+        else:
+            branch.branch_head = branch.branch_head
  
         db.session.commit()
         return branch, "Branch updated successfully!"

@@ -198,7 +198,7 @@ def update_branch(branch_id):
     # ---- If form has validation errors → flash them ----
     if form.errors:
         for field, errors in form.errors.items():
-            for error in errors:
+            for error in errors:   
                 flash(f"{field.replace('_', ' ').title()}: {error}", "danger")
 
     return redirect(url_for("admin.branch_profile", branch_id=fallback_id))
