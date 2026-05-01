@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bushra Schools | Login</title>
+    <title>Bushra Tech | Login</title>
 
     <!-- Bootstrap CSS -->
     <link
@@ -23,102 +23,11 @@
       rel="stylesheet"
     />
 
-    <style>
-      body {
-        font-family: "Open Sans", sans-serif;
-        min-height: 100vh;
-        background: linear-gradient(
-          135deg,
-          #6e1f1f,
-          #9b2f2f,
-          #c74b4b
-        ); /* dimmed red gradient */
-        display: flex;
-        flex-direction: column;
-      }
-
-      /* CENTERING */
-      .login-wrapper {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-      }
-
-      /* CARD */
-      .login-card {
-        width: 100%;
-        max-width: 420px;
-        background: #ffffff;
-        border-radius: 14px;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-        padding: 2rem;
-      }
-
-      /* HEADINGS */
-      .login-card h4 {
-        color: #6e1f1f;
-      }
-
-      /* INPUTS */
-      .form-control {
-        height: 46px;
-        border-radius: 8px;
-      }
-
-      .form-control:focus {
-        border-color: #9b2f2f;
-        box-shadow: 0 0 0 0.2rem rgba(155, 47, 47, 0.2);
-      }
-
-      .input-group-text {
-        background: #fff;
-        border-radius: 8px 0 0 8px;
-        color: #9b2f2f;
-        font-size: 1.1rem;
-      }
-
-      /* BUTTON */
-      .btn-login {
-        height: 46px;
-        border-radius: 8px;
-        font-weight: 600;
-        color: #fff;
-        background: linear-gradient(135deg, #9b2f2f, #6e1f1f);
-        border: none;
-      }
-
-      .btn-login:hover {
-        background: linear-gradient(135deg, #6e1f1f, #9b2f2f);
-      }
-
-      /* ALERT */
-      .alert {
-        font-size: 0.9rem;
-        border-radius: 8px;
-      }
-
-      /* FOOTER */
-      footer {
-        background: rgba(0, 0, 0, 0.15);
-        color: #ffffff;
-        text-align: center;
-        padding: 0.8rem 1rem;
-        font-size: 0.85rem;
-      }
-
-      footer span {
-        display: block;
-      }
-
-      @media (min-width: 576px) {
-        footer span {
-          display: inline;
-          margin: 0 6px;
-        }
-      }
-    </style>
+    <!-- Customized Styling -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('auth.static', filename='auth_style.css') }}"
+    />
   </head>
   <body>
     <div class="login-wrapper">
