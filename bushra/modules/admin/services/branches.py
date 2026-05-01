@@ -16,57 +16,41 @@ from ..utils.file_utils import preprocess_image
 def get_first_branch_id():   
     first_branch = Branch.query.first()
     return first_branch.id if first_branch else None
-    
+
+
+def count_gender_distribution(data):
+    male = 0
+    female = 0
+
+    for v in data:
+        if v.gender:
+            g = v.gender.lower()
+            if g.startswith("m"):
+                male += 1
+            elif g.startswith("f"):
+                female += 1
+
+    return [male, female]
+
 
 def get_branch_data(branch_id):
     """
     Return general branch data:
         branch name
         Total teachers per branch and their gender
-        Total Stundents per class per branch and their gender
+        Total Students per class per branch and their gender
     """
 
     branch = Branch.query.get(branch_id)
     if not branch:
         return None, "Branch does not exist."
     
-    # Fetch students + teachers (kept for compatibility with your structure)
+    # Fetch students + teachers 
     students = Student.query.filter_by(branch_id=branch_id).all()
     teachers = Teacher.query.filter_by(branch_id=branch_id).all()
 
-    # -----------------------------
-    # OPTIMIZED GENDER COUNTS 
-    # -----------------------------
-
-    student_male = 0
-    student_female = 0
-
-    for s in students:
-        if s.gender:
-            g = s.gender.lower()
-            if g.startswith("m"):
-                student_male += 1
-            elif g.startswith("f"):
-                student_female += 1
-
-    student_gender_counts = [student_male, student_female]
-
-    teacher_male = 0
-    teacher_female = 0
-
-    for t in teachers:
-        if t.gender:
-            g = t.gender.lower()
-            if g.startswith("m"):
-                teacher_male += 1
-            elif g.startswith("f"):
-                teacher_female += 1
-
-    teacher_gender_counts = [teacher_male, teacher_female]
-
-    # -----------------------------
-    # OPTIMIZED CLASS COUNT LOOP 
-    # -----------------------------
+    student_gender_counts = count_gender_distribution(students)
+    teacher_gender_counts = count_gender_distribution(teachers)
 
     students_per_class = {}
     for s in students:
@@ -76,7 +60,7 @@ def get_branch_data(branch_id):
 
         students_per_class[class_name] = students_per_class.get(class_name, 0) + 1
 
-    # Package data (UNCHANGED STRUCTURE)
+    # Package data
     data = {
         "branch": branch.to_dict(),
         "total_students": len(students),
@@ -87,6 +71,7 @@ def get_branch_data(branch_id):
     }
 
     return data, None
+
 
 def get_branch_classes():
     records = BranchClasses.query.order_by(
@@ -113,34 +98,31 @@ def get_branch_classes():
 
 
 def delete_branch_service(branch_id):
-    branch = Branch.query.get(branch_id)
-    if not branch:
-        return None, "Invalid Branch"
+    branch = db.session.get(Branch, branch_id)
 
-    has_students = Student.query.filter_by(
-        branch_id=branch_id).first()
+    if not branch:
+        return False, "Invalid Branch"
+
+    has_students = db.session.query(Student.id).filter_by(branch_id=branch_id).first()
 
     if has_students:
-        return (
-            None,
-            "Can't delete a branch that has students! \
-                Please move them to another branch first.",
+        return False, (
+            "Can't delete a branch that has students! "
+            "Please move them to another branch first."
         )
 
     try:
         db.session.delete(branch)
         db.session.commit()
-        return (
-            branch, 
-            f"Branch {branch.branch_name.upper()} was deleted successfully."
-        )
-    
+
+        return True, f"Branch {branch.branch_name.upper()} was deleted successfully."
+
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(
-            f"Failured to delete branch {branch.branch_name.upper()} {e}"
+            f"Failed to delete branch {branch.branch_name.upper()}: {e}"
         )
-        return None, "Error occurred while deleting branch."
+        return False, "Error occurred while deleting branch."
 
 
 def update_branch_service(form, branch_id):  
