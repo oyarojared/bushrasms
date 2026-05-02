@@ -1,546 +1,546 @@
-{% extends "admin_dash_layout.html" %}
-{% from "_macros.html" import render_flash_messages, sidebar %}
-
-{% block side_nav %}
-<div class="sidebar">
-    {{ sidebar("Exams", current_user) }}
-</div>
-{% endblock %}
-
-{% block main_content %}
-
-{{ render_flash_messages() }}
+{% extends "admin_dash_layout.html" %} {% from "_macros.html" import
+render_flash_messages, sidebar %} {% block side_nav %}
+<div class="sidebar">{{ sidebar("Exams", current_user) }}</div>
+{% endblock %} {% block main_content %} {{ render_flash_messages() }}
 
 <!-- Header -->
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h6 class="fw-bold mb-0">
-            <i class="bi bi-pencil-square me-2"></i> Marks Entry
-        </h6>
-        <small class="text-muted">
-            {{ exam.name }} · {{ exam.year }} · Term {{ exam.term }} 
-        </small>
-        <input id="examId" type="hidden" value="{{ exam.id }}">
-    </div>
+  <div>
+    <h6 class="fw-bold mb-0">
+      <i class="bi bi-pencil-square me-2"></i> Marks Entry
+    </h6>
+    <small class="text-muted">
+      {{ exam.name }} · {{ exam.year }} · Term {{ exam.term }}
+    </small>
+    <input id="examId" type="hidden" value="{{ exam.id }}" />
+  </div>
 
-    <span class="badge bg-success">
-        <i class="bi bi-unlock-fill me-1"></i> Open
-    </span>
+  <span class="badge bg-success">
+    <i class="bi bi-unlock-fill me-1"></i> Open
+  </span>
 </div>
 
-<a href="{{ url_for('admin.assessment_dash') }}" class="btn btn-secondary btn-sm mb-1">
-    <i class="bi bi-arrow-left me-2"></i>Back
+<a
+  href="{{ url_for('admin.assessment_dash') }}"
+  class="btn btn-secondary btn-sm mb-1"
+>
+  <i class="bi bi-arrow-left me-2"></i>Back
 </a>
 
 <!-- Selection Controls -->
 <div class="card shadow-sm mb-4">
-    <div class="orange-line"></div>
-    <div class="card-body">
-        <div class="row g-3">
-
-            {% if exam.exam_branches|length > 1 %}
-            <!-- Branch -->
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Branch</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-house"></i></span>
-                    <select id="branchSelect" class="form-select">
-                        <option value="">Select branch</option>
-                        {% for eb in exam.exam_branches %}
-                            <option value="{{ eb.branch.id }}">
-                                {{ eb.branch.branch_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            {% else %}
-                <input type="hidden"
-                       id="branchSelect"
-                       value="{{ exam.exam_branches[0].branch.id }}">
-            {% endif %}
-
-            <!-- Grade -->
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Grade / Class</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
-                    <select id="gradeSelect" class="form-select" disabled>
-                        <option value="">--- Select grade ---</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Stream -->
-            <div class="col-md-4 d-none" id="streamWrapper">
-                <label class="form-label small fw-semibold">Stream</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-diagram-3-fill"></i></span>
-                    <select id="streamSelect" class="form-select">
-                        <option value="">--- Select stream ---</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Subject -->
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Subject</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-book-fill"></i></span>
-                    <select id="subjectSelect" class="form-select" disabled>
-                        <option value="">--- Select subject ---</option>
-                    </select>
-                </div>
-            </div>
-
+  <div class="orange-line"></div>
+  <div class="card-body">
+    <div class="row g-3">
+      {% if exam.exam_branches|length > 1 %}
+      <!-- Branch -->
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Branch</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-house"></i></span>
+          <select id="branchSelect" class="form-select">
+            <option value="">Select branch</option>
+            {% for eb in exam.exam_branches %}
+            <option value="{{ eb.branch.id }}">
+              {{ eb.branch.branch_name }}
+            </option>
+            {% endfor %}
+          </select>
         </div>
+      </div>
+      {% else %}
+      <input
+        type="hidden"
+        id="branchSelect"
+        value="{{ exam.exam_branches[0].branch.id }}"
+      />
+      {% endif %}
+
+      <!-- Grade -->
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Grade / Class</label>
+        <div class="input-group">
+          <span class="input-group-text"
+            ><i class="bi bi-mortarboard-fill"></i
+          ></span>
+          <select id="gradeSelect" class="form-select" disabled>
+            <option value="">--- Select grade ---</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Stream -->
+      <div class="col-md-4 d-none" id="streamWrapper">
+        <label class="form-label small fw-semibold">Stream</label>
+        <div class="input-group">
+          <span class="input-group-text"
+            ><i class="bi bi-diagram-3-fill"></i
+          ></span>
+          <select id="streamSelect" class="form-select">
+            <option value="">--- Select stream ---</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Subject -->
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Subject</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-book-fill"></i></span>
+          <select id="subjectSelect" class="form-select" disabled>
+            <option value="">--- Select subject ---</option>
+          </select>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 
 <!-- Paper Settings -->
 <div class="card shadow-sm mb-4 d-none" id="paperSettingsCard">
-    <!-- <div class="orange-line"></div> -->
-    <div class="card-body">
-        <h6 class="fw-bold mb-3">
-            <i class="bi bi-file-earmark-text me-1"></i> Paper Settings
-        </h6>
+  <!-- <div class="orange-line"></div> -->
+  <div class="card-body">
+    <h6 class="fw-bold mb-3">
+      <i class="bi bi-file-earmark-text me-1"></i> Paper Settings
+    </h6>
 
-        <div class="col-md-4">
-            <label class="form-label small fw-semibold">Marks Out Of</label>
-            <div class="input-group">
-                <span class="input-group-text"><i class="bi bi-123"></i></span>
-                <input type="number"
-                       id="marksOutOf"
-                       class="form-control"
-                       min="1"
-                       max="100"
-                       value="100">
-            </div>
-            <small class="text-muted">Maximum allowed is 100</small>
-        </div>
+    <div class="col-md-4">
+      <label class="form-label small fw-semibold">Marks Out Of</label>
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-123"></i></span>
+        <input
+          type="number"
+          id="marksOutOf"
+          class="form-control"
+          min="1"
+          max="100"
+          value="100"
+        />
+      </div>
+      <small class="text-muted">Maximum allowed is 100</small>
     </div>
+  </div>
 </div>
 
 <!-- Students Container -->
 <div id="studentsContainer">
-    <div class="orange-line"></div>
-    <div class="card shadow-sm">
-        <div class="card-body text-center py-5">
-            <i class="bi bi-people-fill fs-1 text-muted"></i>
-            <p class="mt-3 mb-1 fw-semibold">Marks entry not yet available</p>
-            <small class="text-muted">
-                This section will display students once selections are complete.
-            </small>
-        </div>
+  <div class="orange-line"></div>
+  <div class="card shadow-sm">
+    <div class="card-body text-center py-5">
+      <i class="bi bi-people-fill fs-1 text-muted"></i>
+      <p class="mt-3 mb-1 fw-semibold">Marks entry not yet available</p>
+      <small class="text-muted">
+        This section will display students once selections are complete.
+      </small>
     </div>
+  </div>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-
-    const branchSelect   = document.getElementById("branchSelect");
-    const gradeSelect    = document.getElementById("gradeSelect");
-    const streamWrapper  = document.getElementById("streamWrapper");
-    const streamSelect   = document.getElementById("streamSelect");
-    const subjectSelect  = document.getElementById("subjectSelect");
-    const paperCard      = document.getElementById("paperSettingsCard");
-    const marksOutOf     = document.getElementById("marksOutOf");
-    const studentsContainer = document.getElementById("studentsContainer");
-
-    let currentStudents = [];
-    let sortBy = "admission_number";
-    
-
-    /* ---------- Reset Helpers ---------- */
-
-    function resetStudents() {
-        currentStudents = [];
-        studentsContainer.innerHTML = `
-            <div class="card shadow-sm">
-                <div class="orange-line"></div>
-                <div class="card-body text-center py-5">
-                    <i class="bi bi-people-fill fs-1 text-muted"></i>
-                    <p class="mt-3 mb-1 fw-semibold">Marks entry not yet available</p>
-                    <small class="text-muted">Select grade and subject.</small>
-                </div>
-            </div>
-        `;
-    }
-
-    function resetGrades() {
-        gradeSelect.innerHTML = '<option value="">--- Select grade ---</option>';
-        gradeSelect.disabled = true;
-        resetStreams();
-        resetSubjects();
-        paperCard.classList.add("d-none");
-        resetStudents();
-    }
-
-    function resetStreams() {
-        streamSelect.innerHTML = '<option value="">--- Select stream ---</option>';
-        streamWrapper.classList.add("d-none");
-    }
-
-    function resetSubjects() {
-        subjectSelect.innerHTML = '<option value="">--- Select subject ---</option>';
-        subjectSelect.disabled = true;
-        paperCard.classList.add("d-none");
-        resetStudents();
-    }
-
-    /* ---------- Load Grades ---------- */
-
-    function loadGrades(branchId) {
-        resetGrades();
-        if (!branchId) return;
-
-        fetch(`/admin/api/grades/${branchId}`)
-            .then(r => r.json())
-            .then(data => {
-                data.forEach(cls => {
-                    const opt = document.createElement("option");
-                    opt.value = cls.id;
-                    opt.textContent = cls.grade_form;
-                    opt.dataset.streams = JSON.stringify(cls.streams || []);
-                    gradeSelect.appendChild(opt);
-                });
-                gradeSelect.disabled = false;
-            });
-    }
-
-    /* ---------- Load Subjects ---------- */
-
-    function loadSubjects(branchId, classId, stream=null) {
-        resetSubjects();
-        if (!branchId || !classId) return;
-
-        const params = new URLSearchParams({
-            branch_id: branchId,
-            class_id: classId
-        });
-        if (stream) params.append("stream", stream);
-
-        fetch(`/admin/api/subjects?${params}`)
-            .then(r => r.json())
-            .then(data => {
-                data.forEach(subj => {
-                    const opt = document.createElement("option");
-                    opt.value = subj.id;
-                    opt.textContent = `${subj.code} -- ${subj.name}`;
-                    subjectSelect.appendChild(opt);
-                });
-                subjectSelect.disabled = false;
-            });
-    }
-
-    /* ---------- Load Students ---------- */
-
-    function loadStudents() {
-        const branchId  = branchSelect.value;
-        const classId   = gradeSelect.value;
-        const subjectId = subjectSelect.value;
-        const stream    = streamSelect.value || "";
-        const examId = document.getElementById("examId").value;
-
-        const subjectText = subjectSelect.options[subjectSelect.selectedIndex].text;
-
-
-        fetch(`/admin/api/exam-students?branch_id=${branchId}&exam_id=${examId}&class_id=${classId}&subject_id=${subjectId}&stream=${stream}`)
-            .then(r => r.json())
-            .then(data => {
-                currentStudents = data; 
-
-                // 1. Update marks out of if paper exists
-                if (data.paper && data.paper.marks_out_of) {
-                    marksOutOf.value = data.paper.marks_out_of;
-                }
-
-                renderStudents(subjectText);
-            });
-
-    }
-
-    function renderStudents(subjectname) {
-        if (!currentStudents.students.length) {
-            resetStudents();
-            return;
-        }
-
-        currentStudents.students.sort((a, b) => {
-            if (sortBy === "full_name") {
-                return a.full_name.localeCompare(b.full_name);
-            }
-            return String(a.admission_number)
-                .localeCompare(String(b.admission_number), undefined, { numeric: true });
-        });
-
-        let html = `
-            <div class="card shadow-sm">
-                <div class="orange-line"></div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2">
-                        <h6 class="fw-bold text-primary">${subjectname} Marks Entry</h6>
-                        <div class="btn-group btn-group-sm">
-                            <i class="bi bi-filter mt-1"></i><small class="me-2 mt-1">Sort</small>
-                            <button class="btn btn-outline-secondary" id="sortNameBtn">Name</button>
-                            <button class="btn btn-secondary" id="sortAdmBtn">Adm No</button>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive fix-top-customized-lg">
-                        <table class="table table-sm table-hover border table-bordered">
-                            <thead class="bg-secondary text-white" style="font-size: 0.8rem;">
-                                <tr>
-                                    <th class="text-center">#</th>
-                                    <th class="text-center">ADM NO</th>
-                                    <th>FULLNAME</th>
-                                    <th>MARKS / ${marksOutOf.value}</th>
-                                </tr>
-                            </thead>
-                            <tbody  style="color: #555555 !important; font-size: 0.75rem">
-        `;
-
-        currentStudents.students.forEach((s, i) => {
-            html += `
-               <tr data-student-id="${s.id}">
-
-                    <td class="text-center">${i + 1}</td>
-                    <td class="text-center">${s.admission_number}</td>
-                    <td class="text-uppercase">${s.full_name}</td>
-                    <td>
-                        <input type="number"
-                            class="form-control form-control-sm marks-input"
-                            min="0"
-                            max="${marksOutOf.value}"
-                            inputmode="numeric" 
-                            value="${s.marks !== null && s.marks !== undefined ? s.marks : ""}"
-                            style="
-                                font-weight: 500;
-                            "
-                        >
-                    </td>
-                </tr>
-            `;
-        }); 
-
-        html += `
-            </tbody></table></div></div>
-            <div id="saveMarksAlert" class="text-center text-orange alert d-none mx-4 mt-0 mb-2">
-            </div>
-            <div class="row d-flex justify-content-center mb-3">
-                <div class="col-auto">
-                    <button class="btn btn-secondary btn-sm" id="saveMarksBtn">
-                        <i class="bi bi-save me-1"></i> Save Marks
-                    </button>
-                </div>
-            </div>
-            </div>
-        `;
-        studentsContainer.innerHTML = html;
-
-        const subjectText = subjectSelect.options[subjectSelect.selectedIndex].text;
-        document.getElementById("sortNameBtn").onclick = () => {
-            sortBy = "full_name"; renderStudents(subjectText);
-        };
-        document.getElementById("sortAdmBtn").onclick = () => {
-            sortBy = "admission_number"; renderStudents(subjectText);
-        };
-
-
-        document.querySelectorAll(".marks-input").forEach((input, i, arr) => {
-            input.addEventListener("keydown", e => {
-                if (e.key === "Enter") {
-                    e.preventDefault();
-                    arr[i + 1]?.focus();
-                }
-            });
-        });
-
-        document.getElementById("saveMarksBtn").onclick = collectAndSaveMarks;
-
-    }
-
-    /* ---------- Events ---------- */
-
-    branchSelect.addEventListener("change", () => loadGrades(branchSelect.value));
-
-    if (branchSelect.value) {
-        loadGrades(branchSelect.value);
-    }
-
-    gradeSelect.addEventListener("change", function () {
-        resetStreams();
-        resetSubjects();
-
-        const selected = this.options[this.selectedIndex];
-        const streams = JSON.parse(selected.dataset.streams || "[]");
-
-        if (streams.length) {
-            streams.forEach(s => {
-                const opt = document.createElement("option");
-                opt.value = s;
-                opt.textContent = s;
-                streamSelect.appendChild(opt);
-            });
-            streamWrapper.classList.remove("d-none");
-        } else {
-            loadSubjects(branchSelect.value, gradeSelect.value);
-        }
-    });
-
-    streamSelect.addEventListener("change", () => {
-        loadSubjects(branchSelect.value, gradeSelect.value, streamSelect.value);
-    });
-
-    subjectSelect.addEventListener("change", function () {
-        if (this.value) {
-            paperCard.classList.remove("d-none");
-            loadStudents();
-        }
-    });
-
-    marksOutOf.addEventListener("input", () => renderStudents());
-
-    resetStudents();
-
-    document.addEventListener("input", function (e) {
-        if (!e.target.classList.contains("marks-input")) return;
-
-        const input = e.target;
-        const maxMarks = parseInt(document.getElementById("marksOutOf").value, 10);
-
-        let value = input.value;
-
-        // Allow empty (teacher may still be typing)
-        if (value === "") {
-            clearError(input);
-            return;
-        }
-
-        // Digits only
-        if (!/^\d+$/.test(value)) {
-            input.value = value.replace(/\D/g, "");
-            return;
-        }
-
-        const marks = parseInt(value, 10);
-
-        if (marks > maxMarks) {
-            showError(input, `Marks cannot exceed ${maxMarks}`);
-        } else {
-            clearError(input);
-        }
-    });
-
-
-    function showError(input, message) {
-        input.classList.add("is-invalid");
-
-        let feedback = input.nextElementSibling;
-        if (!feedback || !feedback.classList.contains("invalid-feedback")) {
-            feedback = document.createElement("div");
-            feedback.className = "invalid-feedback";
-            input.after(feedback);
-        }
-        feedback.textContent = message;
-    }
-
-    function clearError(input) {
-        input.classList.remove("is-invalid");
-
-        const feedback = input.nextElementSibling;
-        if (feedback && feedback.classList.contains("invalid-feedback")) {
-            feedback.remove();
-        }
-    }
-
-
-    document.addEventListener("keydown", function (e) {
-        if (!e.target.classList.contains("marks-input")) return;
-
-        if (e.key === "Enter") {
-            e.preventDefault();
-
-            if (e.target.classList.contains("is-invalid")) {
-                return; // Stay on the same input
-            }
-
-            const inputs = [...document.querySelectorAll(".marks-input")];
-            const index = inputs.indexOf(e.target);
-
-            if (inputs[index + 1]) {
-                inputs[index + 1].focus();
-            }
-        }
-    });
-
-
-
-
-    function collectAndSaveMarks() {
-    const saveMarksAlert = document.getElementById("saveMarksAlert");
-    saveMarksAlert.classList.remove("d-none");
-    saveMarksAlert.classList.add("alert-warning");
-    saveMarksAlert.innerHTML = `
-        <div class="d-flex justify-content-center align-items-center text-warning">
-            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-            <span class="h6">Please wait, saving marks…</span>
-        </div>`
-
-    const marksData = [];
-
-    document.querySelectorAll("tbody tr").forEach(row => {
-        const input = row.querySelector(".marks-input");
-        const studentId = row.dataset.studentId;
-
-        if (input && studentId && input.value !== "") {
-            marksData.push({
-                student_id: parseInt(studentId),
-                marks: parseInt(input.value)
-            });
-        }
-    
-    });
-
-    fetch("/admin/api/save-exam-marks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            exam_id: {{ exam.id }},
-            branch_id: branchSelect.value,
-            class_id: gradeSelect.value,
-            stream: streamSelect.value || null,
-            subject_id: subjectSelect.value,
-            marks_out_of: parseInt(marksOutOf.value),
-            marks: marksData
-        })
-    })
-    .then(r => r.json())
-    .then(resp => {
-        if (resp.success) {
-            saveMarksAlert.classList.remove("alert-warning");
-            saveMarksAlert.classList.add("alert-success");
-            saveMarksAlert.innerHTML = `
-                <div class="d-flex justify-content-center align-items-center text-success">
-                    <i class="bi bi-check-circle-fill me-2"></i>
-                    <span class="h6">Marks saved successfully!</span>
-                </div>
-            `;
-        } else {
-            saveMarksAlert.classList.remove("alert-warning");
-            saveMarksAlert.classList.add("alert-danger");
-            saveMarksAlert.innerHTML = `
-                <div class="d-flex justify-content-center align-items-center text-danger">  
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    <span class="h6">Error saving marks: ${resp.error || "Unknown error"}</span>        
-                </div>
-            `;  
-        }
-    });
-}
-
-});
-
+  document.addEventListener("DOMContentLoaded", function () {
+
+      const branchSelect   = document.getElementById("branchSelect");
+      const gradeSelect    = document.getElementById("gradeSelect");
+      const streamWrapper  = document.getElementById("streamWrapper");
+      const streamSelect   = document.getElementById("streamSelect");
+      const subjectSelect  = document.getElementById("subjectSelect");
+      const paperCard      = document.getElementById("paperSettingsCard");
+      const marksOutOf     = document.getElementById("marksOutOf");
+      const studentsContainer = document.getElementById("studentsContainer");
+
+      let currentStudents = [];
+      let sortBy = "admission_number";
+
+
+      /* ---------- Reset Helpers ---------- */
+
+      function resetStudents() {
+          currentStudents = [];
+          studentsContainer.innerHTML = `
+              <div class="card shadow-sm">
+                  <div class="orange-line"></div>
+                  <div class="card-body text-center py-5">
+                      <i class="bi bi-people-fill fs-1 text-muted"></i>
+                      <p class="mt-3 mb-1 fw-semibold">Marks entry not yet available</p>
+                      <small class="text-muted">Select grade and subject.</small>
+                  </div>
+              </div>
+          `;
+      }
+
+      function resetGrades() {
+          gradeSelect.innerHTML = '<option value="">--- Select grade ---</option>';
+          gradeSelect.disabled = true;
+          resetStreams();
+          resetSubjects();
+          paperCard.classList.add("d-none");
+          resetStudents();
+      }
+
+      function resetStreams() {
+          streamSelect.innerHTML = '<option value="">--- Select stream ---</option>';
+          streamWrapper.classList.add("d-none");
+      }
+
+      function resetSubjects() {
+          subjectSelect.innerHTML = '<option value="">--- Select subject ---</option>';
+          subjectSelect.disabled = true;
+          paperCard.classList.add("d-none");
+          resetStudents();
+      }
+
+      /* ---------- Load Grades ---------- */
+
+      function loadGrades(branchId) {
+          resetGrades();
+          if (!branchId) return;
+
+          fetch(`/admin/api/grades/${branchId}`)
+              .then(r => r.json())
+              .then(data => {
+                  data.forEach(cls => {
+                      const opt = document.createElement("option");
+                      opt.value = cls.id;
+                      opt.textContent = cls.grade_form;
+                      opt.dataset.streams = JSON.stringify(cls.streams || []);
+                      gradeSelect.appendChild(opt);
+                  });
+                  gradeSelect.disabled = false;
+              });
+      }
+
+      /* ---------- Load Subjects ---------- */
+
+      function loadSubjects(branchId, classId, stream=null) {
+          resetSubjects();
+          if (!branchId || !classId) return;
+
+          const params = new URLSearchParams({
+              branch_id: branchId,
+              class_id: classId
+          });
+          if (stream) params.append("stream", stream);
+
+          fetch(`/admin/api/subjects?${params}`)
+              .then(r => r.json())
+              .then(data => {
+                  data.forEach(subj => {
+                      const opt = document.createElement("option");
+                      opt.value = subj.id;
+                      opt.textContent = `${subj.code} -- ${subj.name}`;
+                      subjectSelect.appendChild(opt);
+                  });
+                  subjectSelect.disabled = false;
+              });
+      }
+
+      /* ---------- Load Students ---------- */
+
+      function loadStudents() {
+          const branchId  = branchSelect.value;
+          const classId   = gradeSelect.value;
+          const subjectId = subjectSelect.value;
+          const stream    = streamSelect.value || "";
+          const examId = document.getElementById("examId").value;
+
+          const subjectText = subjectSelect.options[subjectSelect.selectedIndex].text;
+
+
+          fetch(`/admin/api/exam-students?branch_id=${branchId}&exam_id=${examId}&class_id=${classId}&subject_id=${subjectId}&stream=${stream}`)
+              .then(r => r.json())
+              .then(data => {
+                  currentStudents = data;
+
+                  // 1. Update marks out of if paper exists
+                  if (data.paper && data.paper.marks_out_of) {
+                      marksOutOf.value = data.paper.marks_out_of;
+                  }
+                  renderStudents(subjectText);
+              });
+
+      }
+
+      function renderStudents(subjectname) {
+          if (!currentStudents.students.length) {
+              resetStudents();
+              return;
+          }
+
+          currentStudents.students.sort((a, b) => {
+              if (sortBy === "full_name") {
+                  return a.full_name.localeCompare(b.full_name);
+              }
+              return String(a.admission_number)
+                  .localeCompare(String(b.admission_number), undefined, { numeric: true });
+          });
+
+          let html = `
+              <div class="card shadow-sm">
+                  <div class="orange-line"></div>
+                  <div class="card-body">
+                      <div class="d-flex justify-content-between mb-2">
+                          <h6 class="fw-bold text-primary">${subjectname} Marks Entry</h6>
+                          <div class="btn-group btn-group-sm">
+                              <i class="bi bi-filter mt-1"></i><small class="me-2 mt-1">Sort</small>
+                              <button class="btn btn-outline-secondary" id="sortNameBtn">Name</button>
+                              <button class="btn btn-secondary" id="sortAdmBtn">Adm No</button>
+                          </div>
+                      </div>
+
+                      <div class="table-responsive fix-top-customized-lg">
+                          <table class="table table-sm table-hover border table-bordered">
+                              <thead class="bg-secondary text-white" style="font-size: 0.8rem;">
+                                  <tr>
+                                      <th class="text-center">#</th>
+                                      <th class="text-center">ADM NO</th>
+                                      <th>FULLNAME</th>
+                                      <th>MARKS / ${marksOutOf.value}</th>
+                                  </tr>
+                              </thead>
+                              <tbody  style="color: #555555 !important; font-size: 0.75rem">
+          `;
+
+          currentStudents.students.forEach((s, i) => {
+              html += `
+                 <tr data-student-id="${s.id}">
+
+                      <td class="text-center">${i + 1}</td>
+                      <td class="text-center">${s.admission_number}</td>
+                      <td class="text-uppercase">${s.full_name}</td>
+                      <td>
+                          <input type="number"
+                              class="form-control form-control-sm marks-input"
+                              min="0"
+                              max="${marksOutOf.value}"
+                              inputmode="numeric"
+                              value="${s.marks !== null && s.marks !== undefined ? s.marks : ""}"
+                              style="
+                                  font-weight: 500;
+                              "
+                          >
+                      </td>
+                  </tr>
+              `;
+          });
+
+          html += `
+              </tbody></table></div></div>
+              <div id="saveMarksAlert" class="text-center text-orange alert d-none mx-4 mt-0 mb-2">
+              </div>
+              <div class="row d-flex justify-content-center mb-3">
+                  <div class="col-auto">
+                      <button class="btn btn-secondary btn-sm" id="saveMarksBtn">
+                          <i class="bi bi-save me-1"></i> Save Marks
+                      </button>
+                  </div>
+              </div>
+              </div>
+          `;
+          studentsContainer.innerHTML = html;
+
+          const subjectText = subjectSelect.options[subjectSelect.selectedIndex].text;
+          document.getElementById("sortNameBtn").onclick = () => {
+              sortBy = "full_name"; renderStudents(subjectText);
+          };
+          document.getElementById("sortAdmBtn").onclick = () => {
+              sortBy = "admission_number"; renderStudents(subjectText);
+          };
+
+
+          document.querySelectorAll(".marks-input").forEach((input, i, arr) => {
+              input.addEventListener("keydown", e => {
+                  if (e.key === "Enter") {
+                      e.preventDefault();
+                      arr[i + 1]?.focus();
+                  }
+              });
+          });
+
+          document.getElementById("saveMarksBtn").onclick = collectAndSaveMarks;
+
+      }
+
+      /* ---------- Events ---------- */
+
+      branchSelect.addEventListener("change", () => loadGrades(branchSelect.value));
+
+      if (branchSelect.value) {
+          loadGrades(branchSelect.value);
+      }
+
+      gradeSelect.addEventListener("change", function () {
+          resetStreams();
+          resetSubjects();
+
+          const selected = this.options[this.selectedIndex];
+          const streams = JSON.parse(selected.dataset.streams || "[]");
+
+          if (streams.length) {
+              streams.forEach(s => {
+                  const opt = document.createElement("option");
+                  opt.value = s;
+                  opt.textContent = s;
+                  streamSelect.appendChild(opt);
+              });
+              streamWrapper.classList.remove("d-none");
+          } else {
+              loadSubjects(branchSelect.value, gradeSelect.value);
+          }
+      });
+
+      streamSelect.addEventListener("change", () => {
+          loadSubjects(branchSelect.value, gradeSelect.value, streamSelect.value);
+      });
+
+      subjectSelect.addEventListener("change", function () {
+          if (this.value) {
+              paperCard.classList.remove("d-none");
+              loadStudents();
+          }
+      });
+
+      marksOutOf.addEventListener("input", () => renderStudents());
+
+      resetStudents();
+
+      document.addEventListener("input", function (e) {
+          if (!e.target.classList.contains("marks-input")) return;
+
+          const input = e.target;
+          const maxMarks = parseInt(document.getElementById("marksOutOf").value, 10);
+
+          let value = input.value;
+
+          // Allow empty (teacher may still be typing)
+          if (value === "") {
+              clearError(input);
+              return;
+          }
+
+          // Digits only
+          if (!/^\d+$/.test(value)) {
+              input.value = value.replace(/\D/g, "");
+              return;
+          }
+
+          const marks = parseInt(value, 10);
+
+          if (marks > maxMarks) {
+              showError(input, `Marks cannot exceed ${maxMarks}. Please enter valid marks!`);
+          } else {
+              clearError(input);
+          }
+      });
+
+
+      function showError(input, message) {
+          input.classList.add("is-invalid");
+
+          let feedback = input.nextElementSibling;
+          if (!feedback || !feedback.classList.contains("invalid-feedback")) {
+              feedback = document.createElement("div");
+              feedback.className = "invalid-feedback";
+              input.after(feedback);
+          }
+          feedback.textContent = message;
+          input.value = '';
+      }
+
+      function clearError(input) {
+          input.classList.remove("is-invalid");
+
+          const feedback = input.nextElementSibling;
+          if (feedback && feedback.classList.contains("invalid-feedback")) {
+              feedback.remove();
+          }
+      }
+
+
+      document.addEventListener("keydown", function (e) {
+          if (!e.target.classList.contains("marks-input")) return;
+
+          if (e.key === "Enter") {
+              e.preventDefault();
+
+              if (e.target.classList.contains("is-invalid")) {
+                  return; // Stay on the same input
+              }
+
+              const inputs = [...document.querySelectorAll(".marks-input")];
+              const index = inputs.indexOf(e.target);
+
+              if (inputs[index + 1]) {
+                  inputs[index + 1].focus();
+              }
+          }
+      });
+
+
+
+
+      function collectAndSaveMarks() {
+      const saveMarksAlert = document.getElementById("saveMarksAlert");
+      saveMarksAlert.classList.remove("d-none");
+      saveMarksAlert.classList.add("alert-warning");
+      saveMarksAlert.innerHTML = `
+          <div class="d-flex justify-content-center align-items-center text-warning">
+              <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+              <span class="h6">Please wait, saving marks…</span>
+          </div>`
+
+      const marksData = [];
+
+      document.querySelectorAll("tbody tr").forEach(row => {
+          const input = row.querySelector(".marks-input");
+          const studentId = row.dataset.studentId;
+
+          if (input && studentId && input.value !== "") {
+              marksData.push({
+                  student_id: parseInt(studentId),
+                  marks: parseInt(input.value)
+              });
+          }
+
+      });
+
+      fetch("/admin/api/save-exam-marks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+              exam_id: {{ exam.id }},
+              branch_id: branchSelect.value,
+              class_id: gradeSelect.value,
+              stream: streamSelect.value || null,
+              subject_id: subjectSelect.value,
+              marks_out_of: parseInt(marksOutOf.value),
+              marks: marksData
+          })
+      })
+      .then(r => r.json())
+      .then(resp => {
+          if (resp.success) {
+              saveMarksAlert.classList.remove("alert-warning");
+              saveMarksAlert.classList.add("alert-success");
+              saveMarksAlert.innerHTML = `
+                  <div class="d-flex justify-content-center align-items-center text-success">
+                      <i class="bi bi-check-circle-fill me-2"></i>
+                      <span class="h6">Marks saved successfully!</span>
+                  </div>
+              `;
+          } else {
+              saveMarksAlert.classList.remove("alert-warning");
+              saveMarksAlert.classList.add("alert-danger");
+              saveMarksAlert.innerHTML = `
+                  <div class="d-flex justify-content-center align-items-center text-danger">
+                      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                      <span class="h6">Error saving marks: ${resp.error || "Unknown error"}</span>
+                  </div>
+              `;
+          }
+      });
+  }
+
+  });
 </script>
 
 {% endblock %}

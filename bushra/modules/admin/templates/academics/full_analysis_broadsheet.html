@@ -1,30 +1,30 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<meta charset="utf-8">
-<style>
-    /* -------- PAGE SETUP -------- */
-    @page {
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      /* -------- PAGE SETUP -------- */
+      @page {
         size: A4 landscape;
         margin: 15mm 10mm 25mm 10mm; /* top, right, bottom, left */
 
         /* Footer at bottom center */
         @bottom-center {
-            content: "Developed by Bushra Tech Solution. All rights reserved. 2026.";
-            font-size: 10px;
-            color: #555;
+          content: "Developed by Bushra Tech Solution. All rights reserved. 2026.";
+          font-size: 10px;
+          color: #555;
         }
-    }
+      }
 
-    body {
+      body {
         font-family: "Segoe UI", Arial, sans-serif;
         font-size: 10px;
         color: #222;
         margin: 0;
-    }
+      }
 
-    /* -------- WATERMARK -------- */
-    .watermark {
+      /* -------- WATERMARK -------- */
+      .watermark {
         position: fixed;
         top: 40%;
         left: 50%;
@@ -34,301 +34,368 @@
         white-space: nowrap;
         pointer-events: none;
         z-index: 0;
-    }
+      }
 
-    /* -------- HEADER -------- */
-    .header {
+      /* -------- HEADER -------- */
+      .header {
         text-align: center;
         border-bottom: 2px solid #333;
         margin-bottom: 8px;
         padding-bottom: 5px;
         z-index: 1;
-    }
+      }
 
-    .school-name {
+      .school-name {
         font-size: 16px;
         font-weight: bold;
         text-transform: uppercase;
         letter-spacing: 1px;
-    }
+      }
 
-    .title {
+      .title {
         font-size: 14px;
         font-weight: bold;
         color: #4b4b4b;
         margin-top: 2px;
-    }
+      }
 
-    .h1 {
+      .h1 {
         font-size: 24px;
         font-weight: bold;
         color: #4b4b4b;
-    }
+      }
 
-    .meta {
+      .meta {
         font-size: 11px;
         margin-top: 2px;
         color: #444;
-    }
+      }
 
-    /* -------- TABLE -------- */
-    table {
+      /* -------- TABLE -------- */
+      table {
         width: 100%;
         border-collapse: collapse;
         table-layout: fixed; /* ensures subjects fit */
         margin-bottom: 12px;
-    }
+      }
 
-    th, td {
+      th,
+      td {
         border: 1px solid #999;
         padding: 3px;
         text-align: center;
         word-wrap: break-word;
-    }
+      }
 
-    th {
+      th {
         background: #2c3e50;
         color: #fff;
         font-size: 10px;
-    }
+      }
 
-    td {
+      td {
         font-size: 9px;
-    }
+      }
 
-    .left {
+      .left {
         text-align: left;
         padding-left: 5px;
-    }
+      }
 
-    /* SUBJECT HEADER */
-    .subject-header {
+      /* SUBJECT HEADER */
+      .subject-header {
         font-size: 9px;
         line-height: 1.2;
-    }
+      }
 
-    .teacher {
+      .teacher {
         font-size: 8px;
         color: #ddd;
-    }
+      }
 
-    /* GRADES */
-    .grade {
+      /* GRADES */
+      .grade {
         display: inline-block;
         padding: 1px 3px;
         border-radius: 3px;
         font-size: 8px;
         margin-top: 2px;
-    }
+      }
 
-    .EE { background: #198754; color: #fff; }
-    .ME { background: #0d6efd; color: #fff; }
-    .AE { background: #ffc107; color: #000; }
-    .BE { background: #dc3545; color: #fff; }
+      .EE {
+        background: #198754;
+        color: #fff;
+      }
+      .ME {
+        background: #0d6efd;
+        color: #fff;
+      }
+      .AE {
+        background: #ffc107;
+        color: #000;
+      }
+      .BE {
+        background: #dc3545;
+        color: #fff;
+      }
 
-    /* ROW STYLING */
-    tr:nth-child(even) {
+      /* ROW STYLING */
+      tr:nth-child(even) {
         background: #f9f9f9;
-    }
+      }
 
-    tr:hover {
+      tr:hover {
         background: #f1f1f1;
-    }
+      }
 
-    /* SECTIONS */
-    .section {
+      /* SECTIONS */
+      .section {
         margin-top: 12px;
-    }
+      }
 
-    .section h4 {
+      .section h4 {
         margin-bottom: 5px;
         border-left: 4px solid #0d6efd;
         padding-left: 6px;
         font-size: 12px;
-    }
+      }
 
-    /* MINI TABLES */
-    .mini-table th {
+      /* MINI TABLES */
+      .mini-table th {
         background: #6c757d;
         color: #fff;
         font-size: 10px;
-    }
+      }
 
-    .risk {
+      .risk {
         color: #dc3545;
         font-weight: bold;
-    }
+      }
 
-    .align-left {
-        text-align: left; 
-    }
+      .align-left {
+        text-align: left;
+      }
 
-    .num {
+      .num {
         width: 14px !important;
         text-align: center;
-    }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- WATERMARK -->
+    <div class="watermark">{{ data.branch_name }}</div>
 
-</style>
-</head>
-<body>
-
-<!-- WATERMARK -->
-<div class="watermark">{{ data.branch_name }}</div>
-
-<!-- HEADER -->
-<div class="header">
-    <div class="school-name h1">{{ data.branch_name }}</div>
-    <div class="title">ACADEMIC BROADSHEET REPORT</div>
-    <div class="meta">
-        {{ data.class_name }} {% if data.stream %}{{ data.stream }}{% endif %} &nbsp;|&nbsp; {{ data.exam_name }}
+    <!-- HEADER -->
+    <div class="header">
+      <div class="school-name h1">{{ data.branch_name }}</div>
+      <div class="title">ACADEMIC BROADSHEET REPORT</div>
+      <div class="meta">
+        {{ data.class_name }} {% if data.stream %}{{ data.stream }}{% endif %}
+        &nbsp;|&nbsp; {{ data.exam_name }}
+      </div>
+      <div class="meta">
+        Class Teacher:
+        <strong>{{ data.class_teacher or "N/A" }}</strong> &nbsp;|&nbsp; Total
+        Learners: <strong>{{ data.total_learners }}</strong>
+      </div>
     </div>
-    <div class="meta">
-        Class Teacher: <strong>{{ data.class_teacher or "N/A" }}</strong>
-        &nbsp;|&nbsp;
-        Total Learners: <strong>{{ data.total_learners }}</strong>
-    </div>
-</div>
 
-<!-- MAIN TABLE -->
-<table>
-    <thead>
+    <!-- MAIN TABLE -->
+    <table>
+      <thead>
         <tr>
-            <th style="width:4%;">#</th>
-            <th class="left" style="width:14%;">Student Name</th>
-            {% for subject in data.subjects %}
-                <th class="subject-header">
-                    {{ subject.name }}<br>
-                    <span class="teacher">{{ subject.teacher }}</span>
-                </th>
-            {% endfor %}
+          <th style="width: 4%">#</th>
+          <th class="left" style="width: 14%">Student Name</th>
+          {% for subject in data.subjects %}
+          <th class="subject-header">
+            {{ subject.name }}<br />
+            <span class="teacher">{{ subject.teacher }}</span>
+          </th>
+          {% endfor %}
         </tr>
-    </thead>
+      </thead>
 
-    <tbody>
+      <tbody>
         {% for student in data.students %}
         <tr>
-            <td>{{ loop.index }}</td>
-            <td class="left">{{ student.full_name }}</td>
+          <td>{{ loop.index }}</td>
+          <td class="left">{{ student.full_name }}</td>
 
-            {% for subject in data.subjects %}
-                {% set mark = student.marks[subject.id] %}
-                <td>
-                    {{ mark.marks }}
-                    {% if mark.grade %}
-                        <div class="grade {{ mark.grade }}">{{ mark.grade }}</div>
-                    {% endif %}
-                </td>
-            {% endfor %}
+          {% for subject in data.subjects %} {% set mark =
+          student.marks[subject.id] %}
+          <td>
+            {{ mark.marks }} {% if mark.grade %}
+            <div class="grade {{ mark.grade }}">{{ mark.grade }}</div>
+            {% endif %}
+          </td>
+          {% endfor %}
         </tr>
         {% endfor %}
-    </tbody>
-</table>
-
-<!-- =================== ANALYTICS =================== -->
-
-<div class="section">
-    <h4>Subject Averages</h4>
-    <table class="mini-table">
-        <tr>
-            {% for subject in data.subjects %}
-                <th>{{ subject.name }}</th>
-            {% endfor %}
-        </tr>
-        <tr>
-            {% for subject in data.subjects %}
-                <td>
-                    {{ data.subject_averages[subject.id] | round(1) if data.subject_averages[subject.id] else "-" }}
-                </td>
-            {% endfor %}
-        </tr>
+      </tbody>
     </table>
-</div>
 
-<!-- =================== SUBJECT PERFORMANCE LEVELS =================== -->
+    <!-- =================== ANALYTICS =================== -->
 
-<div class="section">
-    <h4>Subject Performance Levels</h4>
-
-    <!-- Legend -->
-    <div style="margin-bottom:8px; font-size:10px;">
-        <span style="display:inline-block;width:12px;height:12px;background:#198754;margin-right:4px;border-radius:3px;"></span> EE
-        <span style="display:inline-block;width:12px;height:12px;background:#0d6efd;margin:0 4px 0 10px;border-radius:3px;"></span> ME
-        <span style="display:inline-block;width:12px;height:12px;background:#ffc107;margin:0 4px 0 10px;border-radius:3px;"></span> AE
-        <span style="display:inline-block;width:12px;height:12px;background:#dc3545;margin:0 4px 0 10px;border-radius:3px;"></span> BE
+    <div class="section">
+      <h4>Subject Averages</h4>
+      <table class="mini-table">
+        <tr>
+          {% for subject in data.subjects %}
+          <th>{{ subject.name }}</th>
+          {% endfor %}
+        </tr>
+        <tr>
+          {% for subject in data.subjects %}
+          <td>
+            {{ data.subject_averages[subject.id] | round(1) if
+            data.subject_averages[subject.id] else "-" }}
+          </td>
+          {% endfor %}
+        </tr>
+      </table>
     </div>
 
-    <table class="mini-table" style="border:none; table-layout:fixed; width:100%;">
+    <!-- =================== SUBJECT PERFORMANCE LEVELS =================== -->
+
+    <div class="section">
+      <h4>Subject Performance Levels</h4>
+
+      <!-- Legend -->
+      <div style="margin-bottom: 8px; font-size: 10px">
+        <span
+          style="
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #198754;
+            margin-right: 4px;
+            border-radius: 3px;
+          "
+        ></span>
+        EE
+        <span
+          style="
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #0d6efd;
+            margin: 0 4px 0 10px;
+            border-radius: 3px;
+          "
+        ></span>
+        ME
+        <span
+          style="
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #ffc107;
+            margin: 0 4px 0 10px;
+            border-radius: 3px;
+          "
+        ></span>
+        AE
+        <span
+          style="
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #dc3545;
+            margin: 0 4px 0 10px;
+            border-radius: 3px;
+          "
+        ></span>
+        BE
+      </div>
+
+      <table
+        class="mini-table"
+        style="border: none; table-layout: fixed; width: 100%"
+      >
         <thead>
-            <tr>
-                <th class="left" style="text-align:left; width:20%;">Subject</th>
-                <th style="text-align:center;">EE</th>
-                <th style="text-align:center;">ME</th>
-                <th style="text-align:center;">AE</th>
-                <th style="text-align:center;">BE</th>
-            </tr>
+          <tr>
+            <th class="left" style="text-align: left; width: 20%">Subject</th>
+            <th style="text-align: center">EE</th>
+            <th style="text-align: center">ME</th>
+            <th style="text-align: center">AE</th>
+            <th style="text-align: center">BE</th>
+          </tr>
         </thead>
         <tbody>
-            {% for subject in data.subjects %}
-            {% set analysis = data.subject_analysis[subject.id] %}
-            <tr>
-                <td class="left">{{ subject.name }}</td>
-                {% for level in ['EE','ME','AE','BE'] %}
-                {% set count = analysis.get(level,0) %}
-                {% set percent = (count / data.total_learners * 100) | round(1) if data.total_learners else 0 %}
-                <td>
-                    <div style="background:#eee; width:100%; height:14px; border-radius:7px; overflow:hidden; margin-bottom:2px;">
-                        {% if count > 0 %}
-                        <div style="
+          {% for subject in data.subjects %} {% set analysis =
+          data.subject_analysis[subject.id] %}
+          <tr>
+            <td class="left">{{ subject.name }}</td>
+            {% for level in ['EE','ME','AE','BE'] %} {% set count =
+            analysis.get(level,0) %} {% set percent = (count /
+            data.total_learners * 100) | round(1) if data.total_learners else 0
+            %}
+            <td>
+              <div
+                style="
+                  background: #eee;
+                  width: 100%;
+                  height: 14px;
+                  border-radius: 7px;
+                  overflow: hidden;
+                  margin-bottom: 2px;
+                "
+              >
+                {% if count > 0 %}
+                <div
+                  style="
                             background: {% if level=='EE' %}#198754{% elif level=='ME' %}#0d6efd{% elif level=='AE' %}#ffc107{% else %}#dc3545{% endif %};
                             width: {{ percent }}%;
                             height:100%;
-                        " title="{{ count }} learner(s)"></div>
-                        {% endif %}
-                    </div>
-                    <span style="font-size:9px;">{{ count }} ({{ percent }}%)</span>
-                </td>
-                {% endfor %}
-            </tr>
+                        "
+                  title="{{ count }} learner(s)"
+                ></div>
+                {% endif %}
+              </div>
+              <span style="font-size: 9px">{{ count }} ({{ percent }}%)</span>
+            </td>
             {% endfor %}
+          </tr>
+          {% endfor %}
         </tbody>
-    </table>
-</div>
+      </table>
+    </div>
 
-<div class="section">
-    <h4>Learners who need Attention</h4>
-    <table class="mini-table">
+    <div class="section">
+      <h4>Learners who need Attention</h4>
+      <table class="mini-table">
         <tr>
-            <th class="num">#</th>
-            <th>Student</th>
-            <th>Learning Areas Requiring Support</th>
+          <th class="num">#</th>
+          <th>Student</th>
+          <th>Learning Areas Requiring Support</th>
         </tr>
         {% for s in data.at_risk_learners %}
         <tr class="risk">
-            <td class="align-left num">{{ loop.index }}</td>
-            <td class="align-left">{{ s.name }}</td>
-            <td class="align-left">{{ s.low_subjects }}</td>
+          <td class="align-left num">{{ loop.index }}</td>
+          <td class="align-left">{{ s.name }}</td>
+          <td class="align-left">{{ s.low_subjects }}</td>
         </tr>
         {% endfor %}
-    </table>
-</div>
+      </table>
+    </div>
 
-<div class="section">
-    <h4>Missing Marks</h4>
-    <table class="mini-table">
+    <div class="section">
+      <h4>Missing Marks</h4>
+      <table class="mini-table">
         <tr>
-            <th class="num">#</th>
-            <th>Student</th>
-            <th>Subject(s) / Learning Area(s)</th>
+          <th class="num">#</th>
+          <th>Student</th>
+          <th>Subject(s) / Learning Area(s)</th>
         </tr>
         {% for m in data.missing_marks %}
         <tr>
-            <td class="align-left num">{{ loop.index }}</td>
-            <td class="align-left">{{ m.student }}</td>
-            <td class="align-left">{{ m.subjects | join(", ") }}</td>
+          <td class="align-left num">{{ loop.index }}</td>
+          <td class="align-left">{{ m.student }}</td>
+          <td class="align-left">{{ m.subjects | join(", ") }}</td>
         </tr>
         {% endfor %}
-    </table>
-</div>
-
-</body>
+      </table>
+    </div>
+  </body>
 </html>

@@ -54,7 +54,7 @@ def assessment_dash():
         # Selected branch
         selected_branch_id = exam_form.branch_id.data
 
-        # --- DUPLICATE CHECKd ---
+        # --- DUPLICATE CHECK ---
         exists = (
             db.session.query(Exam.id)
             .join(ExamBranch)
@@ -148,7 +148,6 @@ def delete_exam(exam_id):
         )
 
     return redirect(url_for("admin.assessment_dash"))
-
 
 
 @admin_bp.route("/exams/<int:exam_id>/lock", methods=["POST"])
