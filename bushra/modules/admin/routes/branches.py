@@ -7,27 +7,37 @@ from .. import admin_bp
 from ..forms.branches_forms import (AddBranchForm, BranchesList,
                                     ExtendedBranchForm)
 from ..services.grades import create_class
-from ..services.branches import (create_branch,
-                                        get_branch_classes, get_branch_data, delete_branch_service,
-                                        get_first_branch_id, update_branch_service, get_branch_academic_population)
+from ..services.branches import (get_branch_classes, 
+                                get_branch_data, delete_branch_service,
+                                get_first_branch_id, update_branch_service, get_branch_academic_population)
 from ..utils import load_branch_choices, load_teacher_choices
 from ..services.subs import get_subjects_by_grade
 from flask_login import login_required
 from ..utils.file_utils import preprocess_image
 
-
 from sqlalchemy.exc import SQLAlchemyError
 from ....modals.students_db import Student, StudentSubjectAllocation 
 from ....modals.assessment_db import ExamPaper, StudentExamMark, GradeGradingScheme
 from ....modals.subjects_db import Lesson
+from flask_login import current_user
 
- 
+
 @admin_bp.route("/add_school", methods=["POST"])
 @login_required
 def add_school():
+    """
+    Handle creation of a new school (branch).
+    """
     form = AddBranchForm()
     form.branch_head.choices = load_teacher_choices()
-    
+
+    fallback_id = get_first_branch_id()
+
+    target = (
+        url_for("admin.branch_profile", branch_id=fallback_id)
+        if fallback_id else url_for("admin.admin_dash")
+    )
+ 
     if form.validate_on_submit():
         try:
             # Process logo if uploaded
@@ -52,13 +62,18 @@ def add_school():
             db.session.add(branch)
             db.session.commit()
 
-            flash(f"Branch {branch.branch_name} added successfully!", "success")
+            flash(f"School {branch.branch_name.upper() } added successfully!", "success")
             return redirect(url_for("admin.branch_profile", branch_id=branch.id))
         
         except Exception as e:
-            db.session.rollback()
-            flash(f"Oops! Something went wrong: {str(e)}", "danger")
-            return redirect(url_for("admin.branch_profile", branch_id=1))
+            db.session.rollback() 
+            current_app.logger.error(
+                "Error adding school %s: %s",
+                form.branch_name.data,
+                e
+            )
+            flash("Oops! Something went wrong. Please try again later.", "danger")
+            return redirect(target)
 
     # Form validation failed
     if form.errors:
@@ -66,9 +81,9 @@ def add_school():
             for err in errors:
                 flash(f"{field.capitalize()}: {err}", "danger")
 
-    return redirect(url_for("admin.branch_profile", branch_id=1))
+    return redirect(target)
 
-     
+ 
 @admin_bp.route("/branch/<int:branch_id>")
 @login_required
 def branch_profile(branch_id):
@@ -80,11 +95,11 @@ def branch_profile(branch_id):
 
     data, error = get_branch_data(branch_id)
 
-    if error:
-        flash(error, "warning")
-        fallback_id = get_first_branch_id()
+    if error: 
+        # flash(error, 'warning')
+        fallback_id = get_first_branch_id() 
 
-        if fallback_id:
+        if fallback_id and fallback_id != branch_id:
             return redirect(url_for("admin.branch_profile", branch_id=fallback_id))
 
         # No branches at all
@@ -136,29 +151,35 @@ def grades_forms():
 @admin_bp.route("/delete_branch/<int:branch_id>", methods=["POST"])
 @login_required
 def delete_branch(branch_id):
+    if not getattr(current_user, "is_super_admin", False):
+        flash("Only Super Admin can delete a branch!", "danger")
+        fallback_id = get_first_branch_id()
+        return redirect(
+            url_for("admin.branch_profile", branch_id=fallback_id)
+            if fallback_id else url_for("admin.admin_dash")
+        )
+
     deleted, message = delete_branch_service(branch_id)
 
-    if deleted:  
+    if deleted:
         flash(message, "success")
- 
+
+        # recompute AFTER deletion
         fallback_id = get_first_branch_id()
 
-        if fallback_id:
-            return redirect(url_for("admin.branch_profile", branch_id=fallback_id))
-        
-        # If no branches remain
-        return redirect(url_for("admin.admin_dash"))
+        return redirect(
+            url_for("admin.branch_profile", branch_id=fallback_id)
+            if fallback_id else url_for("admin.admin_dash")
+        )
 
-    # Deletion failed → show error
     flash(message, "danger")
 
-    # Redirect safely
-    safe_branch_id = branch_id if Branch.query.get(branch_id) else get_first_branch_id()
+    safe_branch_id = branch_id if db.session.get(Branch, branch_id) else get_first_branch_id()
 
-    if safe_branch_id:
-        return redirect(url_for("admin.branch_profile", branch_id=safe_branch_id))
-
-    return redirect(url_for("admin.admin_dash"))
+    return redirect(
+        url_for("admin.branch_profile", branch_id=safe_branch_id)
+        if safe_branch_id else url_for("admin.admin_dash")
+    )
 
 
 @admin_bp.route("/update_branch/<int:branch_id>", methods=["POST"])
@@ -184,7 +205,7 @@ def update_branch(branch_id):
     # ---- If form has validation errors → flash them ----
     if form.errors:
         for field, errors in form.errors.items():
-            for error in errors:
+            for error in errors:   
                 flash(f"{field.replace('_', ' ').title()}: {error}", "danger")
 
     return redirect(url_for("admin.branch_profile", branch_id=fallback_id))
@@ -225,6 +246,9 @@ def force_delete_grade():
     branch_id = data.get("branch_id")
     grade_id = data.get("grade_id")
 
+    if not getattr(current_user, "is_admin", False):
+        return jsonify({"message": "Only Admin can delete Grade!"}), 200
+
     if not branch_id or not grade_id:
         return jsonify({"error": "branch_id and grade_id are required"}), 400
 
@@ -234,13 +258,13 @@ def force_delete_grade():
             return jsonify({"error": "Grade not found"}), 404
 
         # -----------------------------
-        # 0️⃣ Delete related grading schemes
+        #  Delete related grading schemes
         # ----------------------------- 
         GradeGradingScheme.query.filter_by(grade_id=grade_id).delete()
         db.session.flush()
 
         # -----------------------------
-        # 1️⃣ Delete dependent exam marks
+        # 1️ Delete dependent exam marks
         # -----------------------------
         exam_papers = ExamPaper.query.filter_by(class_id=grade_id).all()
         for paper in exam_papers:
@@ -248,19 +272,19 @@ def force_delete_grade():
         db.session.flush()
 
         # -----------------------------
-        # 2️⃣ Delete exam papers
+        # 2️ Delete exam papers
         # -----------------------------
         ExamPaper.query.filter_by(class_id=grade_id).delete()
         db.session.flush()
 
         # -----------------------------
-        # 3️⃣ Delete lessons
+        # 3️ Delete lessons
         # -----------------------------
         Lesson.query.filter_by(class_id=grade_id).delete()
         db.session.flush()
 
         # -----------------------------
-        # 4️⃣ Delete student subject allocations
+        # 4️ Delete student subject allocations
         # -----------------------------
         students = Student.query.filter_by(class_id=grade_id).all()
         for student in students:
@@ -268,13 +292,13 @@ def force_delete_grade():
         db.session.flush()
 
         # -----------------------------
-        # 5️⃣ Delete students
+        # 5️ Delete students
         # -----------------------------
         Student.query.filter_by(class_id=grade_id).delete()
         db.session.flush()
 
         # -----------------------------
-        # 6️⃣ Delete the grade itself
+        # 6 Delete the grade itself
         # -----------------------------
         db.session.delete(grade)
         db.session.commit()
@@ -293,6 +317,9 @@ def force_delete_stream():
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "Invalid JSON payload"}), 400
+    
+    if not getattr(current_user, "is_admin", False):
+        return jsonify({"message": "Only Admin can delete Grade!"}), 200
 
     branch_id = data.get("branch_id")
     grade_id = data.get("grade_id")

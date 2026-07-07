@@ -1,4 +1,4 @@
-{% extends "admin_dash_layout.html" %}
+ {% extends "admin_dash_layout.html" %}
 {% from "_macros.html" import render_flash_messages, sidebar %}
 
 
@@ -47,7 +47,7 @@
             <button id="editBranchBtn" class="btn btn-sm btn-danger">
                 <i class="bi bi-pencil"></i> Edit
             </button>
-            <button  
+            <button
                 data-bs-toggle="modal"
                 data-bs-target="#deleteBranchModal"
                 class="btn btn-sm btn-danger small mx-1"
@@ -58,18 +58,18 @@
     </div>
 </div>
 
-{% if branch_id == 0 %} 
+{% if branch_id == 0 %}
 {% else %}
     <div class="container bg-white p-3 shadow-sm rounded-6">
-    
+
         <div class="d-flex flex-column flex-md-row align-items-center gap-3">
         {% if data.branch.logo %}
-            <img src="{{ url_for('static', filename='uploads/passports/' + data.branch.logo) }}"
+            <img src="{{ url_for('admin.serve_passport', filename=data.branch.logo) }}"
                 alt="Logo"
                 class="img-fluid"
                 style="max-width: 120px; max-height: 120px;">
         {% endif %}
-        
+
         {% if data.branch.motto %}
             <div class="text-center text-md-start">
                 <h5 class="mb-0 fw-bold">{{ data.branch.branch_name }}</h5>
@@ -128,7 +128,7 @@
 
 <div class="container bg-white mt-3 pt-3 pb-3 shadow-sm rounded-6">
     <ul class="nav nav-tabs" id="myTab" role="tablist">
-        
+
         <li class="nav-item" role="presentation">
             <button class="nav-link active fw-bold"
                 id="stats-tab"
@@ -209,11 +209,11 @@
 </div>
 
 
- 
+
 <!-- =========================
      Add Branch Modal
 ========================= -->
-<div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" 
+<div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
 data-bs-keyboard="false">
   <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
 
@@ -222,7 +222,7 @@ data-bs-keyboard="false">
       <div class="modal-header bg-danger text-white pt-2 pb-2 px-4">
         <h6 class="modal-title">
             <i class="bi bi-plus-circle me-1"></i>
-            <span id="modal-header-title">ADD BRANCH / SCHOOL</span>  
+            <span id="modal-header-title">ADD BRANCH / SCHOOL</span>
         </h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
@@ -233,7 +233,7 @@ data-bs-keyboard="false">
             Branch / School Data Entry
         </h5>
         <form id="addBranchForm" method="POST" enctype="multipart/form-data" class="px-4 border p-2">
-            {{ add_branch_form.hidden_tag() }}         
+            {{ add_branch_form.hidden_tag() }}
             <!-- Row 1: Branch Name & School Code -->
             <div class="row">
                 <div class="col-md-6 mb-3">
@@ -390,7 +390,7 @@ data-bs-keyboard="false">
   </div>
 </div>
 
-{% if branch_id == 0 %} 
+{% if branch_id == 0 %}
 {% else %}
     <!-- CONFIRM DELETE MODAL -->
 <div class="modal fade" id="deleteBranchModal" tabindex="-1" aria-hidden="true">
@@ -398,8 +398,8 @@ data-bs-keyboard="false">
     <div class="modal-content">
 
       <div class="modal-header bg-danger text-white pt-2 pb-2 px-4">
-        <h6 class="modal-title"> 
-          CONFIRM DELETE BRANCH / SCHOOL 
+        <h6 class="modal-title">
+          CONFIRM DELETE BRANCH / SCHOOL
         </h6>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
@@ -411,7 +411,7 @@ data-bs-keyboard="false">
             </h5>
         </div>
         <p class="text-muted small">
-          Are you sure you want to delete <strong>{{ data.branch.branch_name | upper }}</strong>?   
+          Are you sure you want to delete <strong>{{ data.branch.branch_name | upper }}</strong>?
           <br><strong>NB: </strong>You must move all students before deletion.
         </p>
       </div>
@@ -423,7 +423,7 @@ data-bs-keyboard="false">
 
         <form method="POST" action="{{ url_for('admin.delete_branch', branch_id=data.branch.id) }}">
           <button type="submit" class="btn btn-sm btn-danger">
-            <i class="bi bi-x-octagon-fill me-1"></i> Yes, Delete 
+            <i class="bi bi-x-octagon-fill me-1"></i> Yes, Delete
         </button>
         </form>
       </div>
@@ -442,11 +442,11 @@ data-bs-keyboard="false">
     const studentGender = {{ data["gender_counts"] | tojson }};
     const teacherGender = {{ data["teacher_gender_counts"] | tojson }};
     const studentsPerClass = {{ data["students_per_class"] | tojson }};
-    
+
 </script>
 {% endif %}
 <script>
     const add_branch_url = "{{ url_for('admin.add_school') }}";
 </script>
-<script src="{{ url_for('admin.static', filename='js/branch.js')}}"></script> 
+<script src="{{ url_for('admin.static', filename='js/branch.js')}}"></script>
 {% endblock %}

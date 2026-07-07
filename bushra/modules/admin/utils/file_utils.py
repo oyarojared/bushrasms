@@ -10,6 +10,8 @@ from PIL import Image
 from werkzeug.utils import secure_filename
 
 from .general_utils import allowed_file
+from pathlib import Path
+
 
 
 def generate_excel_file(headers=[], fields=[], data=[]):
@@ -60,8 +62,6 @@ def generate_excel_file(headers=[], fields=[], data=[]):
     output.seek(0)
     return output
 
-
-
 def preprocess_image(uploaded_img, size=(200, 200)):
     if not uploaded_img:
         return None
@@ -73,11 +73,16 @@ def preprocess_image(uploaded_img, size=(200, 200)):
         raise ValueError("Unsupported image format")
 
     new_name = f"{token_hex(16)}{ext.lower()}"
-    folder = os.path.join(current_app.root_path, "static/uploads/passports")
-    os.makedirs(folder, exist_ok=True)
 
-    img = Image.open(uploaded_img)
-    img.thumbnail(size)
-    img.save(os.path.join(folder, new_name), quality=95)
+    base = Path(current_app.root_path).parent.parent.parent
+    folder = base / "uploads" / "passports"
+    folder.mkdir(parents=True, exist_ok=True)
+
+    try:
+        img = Image.open(uploaded_img).convert("RGB")
+        img.thumbnail(size)
+        img.save(folder / new_name, quality=95)
+    except Exception as e:
+        raise ValueError("Invalid image file") from e
 
     return new_name

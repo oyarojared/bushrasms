@@ -1,112 +1,113 @@
 document.addEventListener("DOMContentLoaded", function () {
-    // ---------------------- DOM ELEMENTS ----------------------
-    const branchSelect = document.querySelector("form select[name='branches']");
-    const container = document.getElementById("academicDataContainer");
-    const branchClassesDiv = document.querySelector(".form-select-div");
-    const subjectContainer = document.querySelector(".subject-select-div");
+  // ---------------------- DOM ELEMENTS ----------------------
+  const branchSelect = document.querySelector("form select[name='branches']");
+  const container = document.getElementById("academicDataContainer");
+  const branchClassesDiv = document.querySelector(".form-select-div");
+  const subjectContainer = document.querySelector(".subject-select-div");
 
-    const statusBox = document.getElementById("statusBox");
-    const statusText = document.getElementById("statusText");
-    const spinner = document.getElementById("statusSpinner")
+  const statusBox = document.getElementById("statusBox");
+  const statusText = document.getElementById("statusText");
+  const spinner = document.getElementById("statusSpinner");
 
-    function clearStudentsList() {
-        const studentContainer = document.querySelector(".students-allocation-div");
-        if (studentContainer) {
-            studentContainer.innerHTML = "";
-        }
+  function clearStudentsList() {
+    const studentContainer = document.querySelector(".students-allocation-div");
+    if (studentContainer) {
+      studentContainer.innerHTML = "";
     }
+  }
 
-    function scrollPageUp() {
-         statusBox.scrollIntoView(
-            {
-                behavior: "smooth",
-                block: "start"
-            }
-        )
-    }
+  function scrollPageUp() {
+    statusBox.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
 
-    // SHOW STATUS FUNCTIONS
-    function showloading(message="Loading...") {
-        statusBox.className = "alert alert-info d-flex";
-        statusText.textContent = message;
-        spinner.classList.remove("d-none");
-        scrollPageUp();
-    }
+  // SHOW STATUS FUNCTIONS
+  function showloading(message = "Loading...") {
+    statusBox.className = "alert alert-info d-flex";
+    statusText.textContent = message;
+    spinner.classList.remove("d-none");
+    scrollPageUp();
+  }
 
-    function showsuccess(message="Operation was successfully.", category="success") {
-        statusBox.className = `alert alert-${category} d-flex`;
-        statusText.textContent = message;
-        spinner.classList.add("d-none");
-        scrollPageUp();
+  function showsuccess(
+    message = "Operation was successfully.",
+    category = "success",
+  ) {
+    statusBox.className = `alert alert-${category} d-flex`;
+    statusText.textContent = message;
+    spinner.classList.add("d-none");
+    scrollPageUp();
 
-        setTimeout(() => {
-            statusBox.classList.add("d-none")
-        }, 3000)
-    }
+    setTimeout(() => {
+      statusBox.classList.add("d-none");
+    }, 3000);
+  }
 
-    function showserror(message="Something went wrong") {
-        statusBox.className = "alert alert-danger d-danger";
-        statusText.textContent = message;
-        spinner.classList.add("d-none");
-        scrollPageUp();
+  function showserror(message = "Something went wrong") {
+    statusBox.className = "alert alert-danger d-danger";
+    statusText.textContent = message;
+    spinner.classList.add("d-none");
+    scrollPageUp();
 
-        setTimeout(() => {
-            statusBox.classList.add("d-none")
-        }, 4000)
-    }
+    setTimeout(() => {
+      statusBox.classList.add("d-none");
+    }, 4000);
+  }
 
-    if (!branchSelect || !container) return;
+  if (!branchSelect || !container) return;
 
-    // ---------------------- BRANCH SELECTION ----------------------
-    branchSelect.addEventListener("change", function () {
-        subjectContainer.innerHTML = ""; // Clear subjects input
-        clearStudentsList()
-        
-        const branchId = this.value;
+  // ---------------------- BRANCH SELECTION ----------------------
+  branchSelect.addEventListener("change", function () {
+    subjectContainer.innerHTML = ""; // Clear subjects input
+    clearStudentsList();
 
-        if (branchId === "") {
-            branchClassesDiv.innerHTML = `
+    const branchId = this.value;
+
+    if (branchId === "") {
+      branchClassesDiv.innerHTML = `
                 <h6 class='small fw-bold text-danger'>Please select a valid branch!</h6>
             `;
-        }
+    }
 
-        if (!branchId) {
-            container.innerHTML = `<div class="text-danger fw-bold">Select a branch to view academic data.</div>`;
-            return;
-        }
+    if (!branchId) {
+      container.innerHTML = `<div class="text-danger fw-bold">Select a branch to view academic data.</div>`;
+      return;
+    }
 
-       container.innerHTML = `
+    container.innerHTML = `
             <div class="d-flex justify-content-center align-items-center py-4 text-success">
                 <div class="spinner-border spinner-border-sm me-2" role="status"></div>
                 <span class="h6">Loading branch data…</span>
             </div>
         `;
 
-
-        fetch(`/admin/branches/${branchId}/academic-data`)
-            .then(res => { 
-                if (!res.ok) throw new Error("Failed to fetch data");
-                return res.json();
-            })
-            .then(response => {
-                if (response.status !== "success") throw new Error(response.message || "Error loading data");
-                renderAcademicData(response.data);
-            })
-            .catch(err => {
-                console.error(err);
-                container.innerHTML = `
+    fetch(`/admin/branches/${branchId}/academic-data`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch data");
+        return res.json();
+      })
+      .then((response) => {
+        if (response.status !== "success")
+          throw new Error(response.message || "Error loading data");
+        renderAcademicData(response.data);
+      })
+      .catch((err) => {
+        console.error(err);
+        container.innerHTML = `
                     <div class="text-danger">
                        <i class="bi bi-x-circle-fill me-2"></i>
                         Failed to load branch data! Something went wrong.
                     </div>
                 `;
-            });
-    });
+      });
+  });
 
-    // ---------------------- RENDER ACADEMIC DATA ----------------------
-    function renderAcademicData(data) {
-        // Branch header
-        let html = `
+  // ---------------------- RENDER ACADEMIC DATA ----------------------
+  function renderAcademicData(data) {
+    // Branch header
+    let html = `
             <div class="mb-3">
                 <h6 class="fw-bold text-secondary">
                     <i class="bi bi-building me-2"></i>${data.branch_name}
@@ -114,26 +115,26 @@ document.addEventListener("DOMContentLoaded", function () {
             </div>
         `;
 
-        if (!data.grades || !data.grades.length) {
-            container.innerHTML = `
+    if (!data.grades || !data.grades.length) {
+      container.innerHTML = `
                 <div class="text-danger fw-bold">
                     <i class="bi bi-x-circle-fill me-2"></i>No academic records found for this branch.
                 </div>
             `;
-            branchClassesDiv.innerHTML = `
+      branchClassesDiv.innerHTML = `
                 <small class='text-danger fw-bold'>
                     <i class="bi bi-x-circle-fill me-2"></i>No classes found!
                 </small>
             `;
-            subjectContainer.innerHTML = "";
-            return;
-        }
+      subjectContainer.innerHTML = "";
+      return;
+    }
 
-        html += `<div class="row g-3 fix-top-customized">`;
- 
-        // Render grades and streams
-        data.grades.forEach(g => {
-            html += `
+    html += `<div class="row g-3 fix-top-customized">`;
+
+    // Render grades and streams
+    data.grades.forEach((g) => {
+      html += `
                 <div class="col-md-6 col-lg-4">
                     <div class="p-3 border rounded-3 shadow-sm h-100 bg-white">
                         <div class="container orange-line mb-2"></div>
@@ -161,11 +162,11 @@ document.addEventListener("DOMContentLoaded", function () {
                                 <i class="bi bi-trash me-1"></i>Delete Grade/Form
                             </button>
 
-            `
+            `;
 
-            if (g.streams && g.streams.length) {
-                g.streams.forEach(s => {
-                    html += `
+      if (g.streams && g.streams.length) {
+        g.streams.forEach((s) => {
+          html += `
                         <div class="border rounded-2 p-2 mb-1 bg-light">
                             <div class="d-flex justify-content-between align-items-center">
                                 <strong class="small text-dark">${s.name}</strong>
@@ -189,9 +190,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         </button>
 
                     `;
-                });
-            } else {
-                html += `
+        });
+      } else {
+        html += `
                     <div class="text-muted small fst-italic">No streams available</div>
                     <div>
                         <h6 class="small text-center mt-2 text-success">Classteacher: <span class="text-muted text-uppercase">
@@ -199,238 +200,243 @@ document.addEventListener("DOMContentLoaded", function () {
                         </h6>
                     </div>
                     `;
-            }
+      }
 
-            html += `</div></div></div>`;
-        });
+      html += `</div></div></div>`;
+    });
 
-        html += `</div>`;
-        container.innerHTML = html;
-
-        // ---------------------- BUILD GRADE SELECT ----------------------
-        buildGradeSelect(data);
-
-        container.addEventListener("click", function (e) {
-            // ---------------------- DELETE GRADE ----------------------
-            function deleteGrade(branchId, gradeId) {
-                fetch(`/admin/grades/force-delete`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        branch_id: branchId,
-                        grade_id: gradeId
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    alert(data.message);
-                    // loadAcademicData(branchId); // refresh UI
-                    window.location.reload();
-                });
-            }
-
-            // DELETE GRADE
-            if (e.target.closest(".delete-grade-btn")) {
-                const btn = e.target.closest(".delete-grade-btn");
-
-                const branchId = btn.dataset.branch;
-                const gradeId  = btn.dataset.grade;
-
-                if (!confirm("Delete this grade and all its streams?")) return;
-
-                deleteGrade(branchId, gradeId);
-            }
-
-                // ---------------------- DELETE STREAM ----------------------
-                function deleteStream(branchId, gradeId, streamName) {
-                    fetch(`/admin/streams/force-delete`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            branch_id: branchId,
-                            grade_id: gradeId,
-                            stream_name: streamName
-                        })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        alert(data.message);
-                        loadAcademicData(branchId);
-                    });
-                }
-
-            // DELETE STREAM
-            if (e.target.closest(".delete-stream-btn")) {
-                const btn = e.target.closest(".delete-stream-btn");
-
-                const branchId  = btn.dataset.branch;
-                const gradeId   = btn.dataset.grade;
-                const stream    = btn.dataset.stream;
-
-                if (!confirm(`Delete stream "${stream}"?`)) return;
-
-                deleteStream(branchId, gradeId, stream);
-            }
-        });
-
-
-    }
+    html += `</div>`;
+    container.innerHTML = html;
 
     // ---------------------- BUILD GRADE SELECT ----------------------
-    function buildGradeSelect(data) {
+    buildGradeSelect(data);
 
-        branchClassesDiv.innerHTML = "";
-        const inputGroup = document.createElement("div");
-        inputGroup.classList.add("input-group", "mb-3");
+    container.addEventListener("click", function (e) {
+      // ---------------------- DELETE GRADE ----------------------
+      function deleteGrade(branchId, gradeId) {
+        fetch(`/admin/grades/force-delete`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            branch_id: branchId,
+            grade_id: gradeId,
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            alert(data.message);
+            // loadAcademicData(branchId); // refresh UI
+            window.location.reload();
+          });
+      }
 
-        const iconSpan = document.createElement("span");
-        iconSpan.classList.add("input-group-text");
-        iconSpan.innerHTML = '<i class="bi bi-mortarboard"></i>';
+      // DELETE GRADE
+      if (e.target.closest(".delete-grade-btn")) {
+        const btn = e.target.closest(".delete-grade-btn");
 
-        const label = document.createElement("label");
-        label.setAttribute("for", "classSelect");
-        label.classList.add("form-label", "me-2", "small");
-        label.textContent = "Grade / Form:";
+        const branchId = btn.dataset.branch;
+        const gradeId = btn.dataset.grade;
 
-        const select = document.createElement("select");
-        select.classList.add("form-select");
-        select.name = "class_id";
-        select.id = "classSelect";
+        if (!confirm("Delete this grade and all its streams?")) return;
 
-        const placeholder = document.createElement("option");
-        placeholder.value = "";
-        placeholder.textContent = "-- Select Class --";
-        placeholder.disabled = true;
-        placeholder.selected = true;
-        select.appendChild(placeholder);
+        deleteGrade(branchId, gradeId);
+      }
 
-        data.grades.forEach(grade => {
-            const option = document.createElement("option");
-            option.value = grade.grade_form;
-            option.textContent = grade.grade_form;
-            select.appendChild(option);
-        });
+      // ---------------------- DELETE STREAM ----------------------
+      function deleteStream(branchId, gradeId, streamName) {
+        fetch(`/admin/streams/force-delete`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            branch_id: branchId,
+            grade_id: gradeId,
+            stream_name: streamName,
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            alert(data.message);
+            loadAcademicData(branchId);
+          });
+      }
 
-        inputGroup.appendChild(iconSpan);
-        inputGroup.appendChild(select); 
-        branchClassesDiv.appendChild(label);
-        branchClassesDiv.appendChild(inputGroup);
+      // DELETE STREAM
+      if (e.target.closest(".delete-stream-btn")) {
+        const btn = e.target.closest(".delete-stream-btn");
 
-        // Save hidden branch id
-        const hiddenBranchIdInput = document.getElementById("selected-branch-id");
-        if (hiddenBranchIdInput) hiddenBranchIdInput.value = data.branch_id;
+        const branchId = btn.dataset.branch;
+        const gradeId = btn.dataset.grade;
+        const stream = btn.dataset.stream;
 
-        // Add grade change listener
-        select.addEventListener("change", function () {
-            clearStudentsList();
+        if (!confirm(`Delete stream "${stream}"?`)) return;
 
-            const gradeForm = this.value;
-            if (!gradeForm) return;
-            
-            subjectContainer.innerHTML =  `
+        deleteStream(branchId, gradeId, stream);
+      }
+    });
+  }
+
+  // ---------------------- BUILD GRADE SELECT ----------------------
+  function buildGradeSelect(data) {
+    branchClassesDiv.innerHTML = "";
+    const inputGroup = document.createElement("div");
+    inputGroup.classList.add("input-group", "mb-3");
+
+    const iconSpan = document.createElement("span");
+    iconSpan.classList.add("input-group-text");
+    iconSpan.innerHTML = '<i class="bi bi-mortarboard"></i>';
+
+    const label = document.createElement("label");
+    label.setAttribute("for", "classSelect");
+    label.classList.add("form-label", "me-2", "small");
+    label.textContent = "Grade / Form:";
+
+    const select = document.createElement("select");
+    select.classList.add("form-select");
+    select.name = "class_id";
+    select.id = "classSelect";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "-- Select Class --";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
+
+    data.grades.forEach((grade) => {
+      const option = document.createElement("option");
+      option.value = grade.grade_form;
+      option.textContent = grade.grade_form;
+      select.appendChild(option);
+    });
+
+    inputGroup.appendChild(iconSpan);
+    inputGroup.appendChild(select);
+    branchClassesDiv.appendChild(label);
+    branchClassesDiv.appendChild(inputGroup);
+
+    // Save hidden branch id
+    const hiddenBranchIdInput = document.getElementById("selected-branch-id");
+    if (hiddenBranchIdInput) hiddenBranchIdInput.value = data.branch_id;
+
+    // Add grade change listener
+    select.addEventListener("change", function () {
+      clearStudentsList();
+
+      const gradeForm = this.value;
+      if (!gradeForm) return;
+
+      subjectContainer.innerHTML = `
                 <div class="d-flex justify-content-center align-items-center py-4 text-success">
                     <div class="spinner-border spinner-border-sm me-2" role="status"></div>
                     <span class="h6">Loading subjects…</span>
                 </div>
             `;
 
-            fetch(`/admin/subjects/by-grade-json?grade_form=${encodeURIComponent(gradeForm)}`)
-                .then(res => res.json())
-                .then(subjects => buildSubjectSelect(subjects))
-                .catch(err => console.error(err));
-        });
-    }
+      fetch(
+        `/admin/subjects/by-grade-json?grade_form=${encodeURIComponent(gradeForm)}`,
+      )
+        .then((res) => res.json())
+        .then((subjects) => buildSubjectSelect(subjects))
+        .catch((err) => console.error(err));
+    });
+  }
 
-    // ---------------------- BUILD SUBJECT SELECT ----------------------
-    function buildSubjectSelect(subjects) { 
-        if (!subjectContainer) return;
-        subjectContainer.innerHTML = "";
+  // ---------------------- BUILD SUBJECT SELECT ----------------------
+  function buildSubjectSelect(subjects) {
+    if (!subjectContainer) return;
+    subjectContainer.innerHTML = "";
 
-        if (!subjects || subjects.length === 0) {
-            subjectContainer.innerHTML = `
+    if (!subjects || subjects.length === 0) {
+      subjectContainer.innerHTML = `
                 <div class="text-danger mt-5 small fw-bold">
                     <i class="bi bi-x-circle-fill me-2"></i>No subjects found
                     .<span class="fw-light">(Go to subjects and assign some subjects/L. Areas to this class.)</span>
                 </div>
             `;
-            return;
-        }
+      return;
+    }
 
-        const label = document.createElement("label");
-        label.setAttribute("for", "subjectSelect");
-        label.classList.add("form-label", "fw-semibold", "mb-1", "small");
-        label.textContent = "Select Subject";
+    const label = document.createElement("label");
+    label.setAttribute("for", "subjectSelect");
+    label.classList.add("form-label", "fw-semibold", "mb-1", "small");
+    label.textContent = "Select Subject";
 
-        const inputGroup = document.createElement("div");
-        inputGroup.classList.add("input-group", "mb-3");
+    const inputGroup = document.createElement("div");
+    inputGroup.classList.add("input-group", "mb-3");
 
-        const iconSpan = document.createElement("span");
-        iconSpan.classList.add("input-group-text");
-        iconSpan.innerHTML = '<i class="bi bi-book"></i>';
+    const iconSpan = document.createElement("span");
+    iconSpan.classList.add("input-group-text");
+    iconSpan.innerHTML = '<i class="bi bi-book"></i>';
 
-        const select = document.createElement("select");
-        select.classList.add("form-select");
-        select.id = "subjectSelect";
-        select.name = "subject_id";
+    const select = document.createElement("select");
+    select.classList.add("form-select");
+    select.id = "subjectSelect";
+    select.name = "subject_id";
 
-        const placeholder = document.createElement("option");
-        placeholder.value = "";
-        placeholder.textContent = "-- Select Subject --";
-        placeholder.disabled = true;
-        placeholder.selected = true;
-        select.appendChild(placeholder);
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "-- Select Subject --";
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    select.appendChild(placeholder);
 
-        subjects.forEach(sub => {
-            const option = document.createElement("option");
-            option.value = sub.id;
-            option.textContent = sub.name;
-            select.appendChild(option);
-        });
+    subjects.forEach((sub) => {
+      const option = document.createElement("option");
+      option.value = sub.id;
+      option.textContent = sub.name;
+      select.appendChild(option);
+    });
 
-        inputGroup.appendChild(iconSpan);
-        inputGroup.appendChild(select);
-        subjectContainer.appendChild(label);
-        subjectContainer.appendChild(inputGroup);
+    inputGroup.appendChild(iconSpan);
+    inputGroup.appendChild(select);
+    subjectContainer.appendChild(label);
+    subjectContainer.appendChild(inputGroup);
 
-        // Add subject change listener
-        select.addEventListener("change", function () {
-            // Add spinner has student data is loaded
-            const studentContainer = document.querySelector(".students-allocation-div");
-            studentContainer.innerHTML =  `
+    // Add subject change listener
+    select.addEventListener("change", function () {
+      // Add spinner has student data is loaded
+      const studentContainer = document.querySelector(
+        ".students-allocation-div",
+      );
+      studentContainer.innerHTML = `
                 <div class="text-center py-3">
                     <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
                 </div>
             `;
-            const subjectId = this.value;
-            if (!subjectId) return;
+      const subjectId = this.value;
+      if (!subjectId) return;
 
-            const branchId = document.getElementById("selected-branch-id").value;
-            const gradeForm = document.getElementById("classSelect").value;
+      const branchId = document.getElementById("selected-branch-id").value;
+      const gradeForm = document.getElementById("classSelect").value;
 
-            fetch("/admin/students/by-class-subject", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ branch_id: branchId, grade_form: gradeForm, subject_id: subjectId })
-            })
-            .then(res => res.json())
-            .then(students => {
-                renderStudentsTable(students)
-                // Scroll page up 
-                document.getElementById("student-table").scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
-                })
-            })
-            .catch(err => console.error(err));
-        });
-    }
+      fetch("/admin/students/by-class-subject", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          branch_id: branchId,
+          grade_form: gradeForm,
+          subject_id: subjectId,
+        }),
+      })
+        .then((res) => res.json())
+        .then((students) => {
+          renderStudentsTable(students);
+          // Scroll page up
+          document.getElementById("student-table").scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        })
+        .catch((err) => console.error(err));
+    });
+  }
 
-    // ---------------------- RENDER STUDENTS TABLE ----------------------
-   function renderStudentsTable(students) {
+  // ---------------------- RENDER STUDENTS TABLE ----------------------
+  function renderStudentsTable(students) {
     const container = document.querySelector(".students-allocation-div");
     if (!container) return;
 
@@ -438,12 +444,12 @@ document.addEventListener("DOMContentLoaded", function () {
     container.innerHTML = "";
 
     if (!students["students"] || students["students"].length === 0) {
-        container.innerHTML = `
+      container.innerHTML = `
             <div class="text-danger small">
                 <i class="bi bi-x-circle-fill me-2"></i>No students found for this class.
             </div>
         `;
-        return;
+      return;
     }
 
     // Table header + buttons
@@ -481,8 +487,8 @@ document.addEventListener("DOMContentLoaded", function () {
     `;
 
     // Add rows for each student
-    students["students"].forEach(student => {
-        html += `
+    students["students"].forEach((student) => {
+      html += `
             <tr>
                 <td class="text-center">${student.admission_number}</td>
                 <td class="text-uppercase">${student.fullname}</td>
@@ -505,83 +511,88 @@ document.addEventListener("DOMContentLoaded", function () {
     // ---------------------- ALLOCATE ALL BUTTON ----------------------
     const allocateAllBtn = document.getElementById("allocateAllBtn");
     if (allocateAllBtn) {
-        allocateAllBtn.addEventListener("click", () => {
-            document.querySelectorAll(".student-checkbox").forEach(cb => cb.checked = true);
-        });
+      allocateAllBtn.addEventListener("click", () => {
+        document
+          .querySelectorAll(".student-checkbox")
+          .forEach((cb) => (cb.checked = true));
+      });
     }
 
     // ---------------------- APPLY ALLOCATION BUTTON ----------------------
     const applyBtn = document.getElementById("applyAllocationBtn");
     if (applyBtn) {
-        applyBtn.addEventListener("click", () => {
-            const branchId = document.getElementById("selected-branch-id")?.value;
-            const gradeForm = document.getElementById("classSelect")?.value;
-            const subjectId = document.getElementById("subjectSelect")?.value;
+      applyBtn.addEventListener("click", () => {
+        const branchId = document.getElementById("selected-branch-id")?.value;
+        const gradeForm = document.getElementById("classSelect")?.value;
+        const subjectId = document.getElementById("subjectSelect")?.value;
 
-            if (!branchId || !gradeForm || !subjectId) {
-                alert("One of the following is not selectd: Branch, Class or Subject");
-                return;
-            }
+        if (!branchId || !gradeForm || !subjectId) {
+          alert(
+            "One of the following is not selectd: Branch, Class or Subject",
+          );
+          return;
+        }
 
-            // Collect selected students
-            const selectedStudents = Array.from(
-                document.querySelectorAll(".student-checkbox:checked")
-            ).map(cb => parseInt(cb.dataset.studentId));
+        // Collect selected students
+        const selectedStudents = Array.from(
+          document.querySelectorAll(".student-checkbox:checked"),
+        ).map((cb) => parseInt(cb.dataset.studentId));
 
-            const payload = {
-                branch_id: branchId,
-                grade_form: gradeForm,
-                subject_id: parseInt(subjectId),
-                students: selectedStudents
-            };
+        const payload = {
+          branch_id: branchId,
+          grade_form: gradeForm,
+          subject_id: parseInt(subjectId),
+          students: selectedStudents,
+        };
 
-            console.log("Allocation payload:", payload);
+        console.log("Allocation payload:", payload);
 
-            
-            showloading(message="Applying allocations...");
+        showloading((message = "Applying allocations..."));
 
-            fetch("/admin/subjects/allocate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === "success") { 
-                    if (data["added_count"]) {
-                        showsuccess(message=`${data["added_count"]} students allocated successfully! (${data.already_allocated_count} were already allocated)`)
-                    } 
-                    else {
-                        showsuccess(message=`No new student(s) allocation! (${data.already_allocated_count} were already allocated)`, category="warning")
-                    }
+        fetch("/admin/subjects/allocate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.status === "success") {
+              if (data["added_count"]) {
+                showsuccess(
+                  (message = `${data["added_count"]} students allocated successfully! (${data.already_allocated_count} were already allocated)`),
+                );
+              } else {
+                showsuccess(
+                  (message = `No new student(s) allocation! (${data.already_allocated_count} were already allocated)`),
+                  (category = "warning"),
+                );
+              }
 
-                    
-                    // Ensure allocated students are checked
-                    selectedStudents.forEach(sid => {
-                        const checkbox = document.querySelector(`.student-checkbox[data-student-id='${sid}']`);
-                        if (checkbox) checkbox.checked = true;
-                    });
+              // Ensure allocated students are checked
+              selectedStudents.forEach((sid) => {
+                const checkbox = document.querySelector(
+                  `.student-checkbox[data-student-id='${sid}']`,
+                );
+                if (checkbox) checkbox.checked = true;
+              });
 
-                    document.getElementById("doneByStudentsCount").textContent = `
+              document.getElementById("doneByStudentsCount").textContent = `
                         ${Number(data["added_count"]) + Number(data.already_allocated_count)}
                     students.
-                    `
-                } else {
-                    showserror(message="Failed to allocate subjects. Please try again."); 
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                showserror("Error while allocating subjects. Please check your internet connection."); 
-            });
-        });
+                    `;
+            } else {
+              showserror(
+                (message = "Failed to allocate subjects. Please try again."),
+              );
+            }
+          })
+          .catch((err) => {
+            console.error(err);
+            showserror(
+              "Error while allocating subjects. Please check your internet connection.",
+            );
+          });
+      });
     }
-}
-
+  }
 });
-
-
-
-
-
-

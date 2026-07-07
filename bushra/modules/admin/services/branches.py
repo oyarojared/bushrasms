@@ -18,60 +18,46 @@ def get_first_branch_id():
     return first_branch.id if first_branch else None
 
 
-def create_branch(form):
-    try:
-        branch = Branch(
-            branch_name=form.branch_name.data.strip(),
-            school_code=form.school_code.data,
-            branch_manager=form.branch_manager.data.strip(),
-            branch_level=form.branch_level.data,
-            branch_head=form.branch_head.data,
-            school_gender=form.school_gender.data,
-            school_type=form.school_type.data,
-            email=form.email.data.strip() if form.email.data else None,
-        )
+def count_gender_distribution(data):
+    male = 0
+    female = 0
 
-        db.session.add(branch)
-        db.session.commit()
-        return branch, None
-    
-    except Exception as e:
-        current_app.logger.error(f"Branch creation failed: {e}", exc_info=True)
-        db.session.rollback()
-        return None, "Failed to create branch. Please try again."
-    
+    for v in data:
+        if v.gender:
+            g = v.gender.lower()
+            if g.startswith("m"):
+                male += 1
+            elif g.startswith("f"):
+                female += 1
+
+    return [male, female]
+
 
 def get_branch_data(branch_id):
     """
     Return general branch data:
         branch name
         Total teachers per branch and their gender
-        Total Stundents per class per branch and their gender
+        Total Students per class per branch and their gender
     """
 
     branch = Branch.query.get(branch_id)
     if not branch:
         return None, "Branch does not exist."
     
-    # Fetch students + teachers
+    # Fetch students + teachers 
     students = Student.query.filter_by(branch_id=branch_id).all()
     teachers = Teacher.query.filter_by(branch_id=branch_id).all()
 
-    # Gender counts
-    student_gender_counts = [
-        sum(1 for s in students if s.gender and s.gender.lower().startswith("m")),
-        sum(1 for s in students if s.gender and s.gender.lower().startswith("f")),
-    ]
+    student_gender_counts = count_gender_distribution(students)
+    teacher_gender_counts = count_gender_distribution(teachers)
 
-    teacher_gender_counts = [
-        sum(1 for t in teachers if t.gender and t.gender.lower().startswith("m")),
-        sum(1 for t in teachers if t.gender and t.gender.lower().startswith("f")),
-    ]
-
-    # Students per class
     students_per_class = {}
     for s in students:
-        class_name = s.class_info.grade_form if s.class_info else "Unknown"
+        class_name = "Unknown"
+        if s.class_info and hasattr(s.class_info, "grade_form"):
+            class_name = s.class_info.grade_form
+
         students_per_class[class_name] = students_per_class.get(class_name, 0) + 1
 
     # Package data
@@ -112,34 +98,31 @@ def get_branch_classes():
 
 
 def delete_branch_service(branch_id):
-    branch = Branch.query.get(branch_id)
-    if not branch:
-        return None, "Invalid Branch"
+    branch = db.session.get(Branch, branch_id)
 
-    has_students = Student.query.filter_by(
-        branch_id=branch_id).first()
+    if not branch:
+        return False, "Invalid Branch"
+
+    has_students = db.session.query(Student.id).filter_by(branch_id=branch_id).first()
 
     if has_students:
-        return (
-            None,
-            "Can't delete a branch that has students! \
-                Please move them to another branch first.",
+        return False, (
+            "Can't delete a branch that has students! "
+            "Please move them to another branch first."
         )
 
     try:
         db.session.delete(branch)
         db.session.commit()
-        return (
-            branch, 
-            f"Branch {branch.branch_name.upper()} was deleted successfully."
-        )
-    
+
+        return True, f"Branch {branch.branch_name.upper()} was deleted successfully."
+
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(
-            f"Failured to delete branch {branch.branch_name.upper()} {e}"
+            f"Failed to delete branch {branch.branch_name.upper()}: {e}"
         )
-        return None, "Error occurred while deleting branch."
+        return False, "Error occurred while deleting branch."
 
 
 def update_branch_service(form, branch_id):  
@@ -157,16 +140,19 @@ def update_branch_service(form, branch_id):
         branch.branch_name = form.branch_name.data.strip()
         branch.school_code = form.school_code.data  
         branch.branch_manager = form.branch_manager.data.strip()
-        branch.branch_level = form.branch_level.data.strip()
-        branch.branch_head = form.branch_head.data if form.branch_head else branch.branch_head
-        branch.school_gender = form.school_gender.data.strip()
-        branch.school_type = form.school_type.data.strip()
+        branch.branch_level = form.branch_level.data      
+        branch.school_gender = form.school_gender.data
+        branch.school_type = form.school_type.data
         branch.logo = logo_filename if logo_filename else branch.logo
         branch.motto = form.motto.data.strip() if form.motto.data else None
 
         # optional field
-        email_value = form.email.data.strip() if form.email.data else None
-        branch.email = email_value or None
+        branch.email = form.email.data.strip() if form.email.data else None
+
+        if form.branch_head.data:
+            branch.branch_head = form.branch_head.data  
+        else:
+            branch.branch_head = branch.branch_head
  
         db.session.commit()
         return branch, "Branch updated successfully!"
@@ -174,8 +160,12 @@ def update_branch_service(form, branch_id):
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(
-            f"[UPDATE BRANCH ERROR] Branch ID={branch_id} | {type(e).__name__}: {e}"
+            "Update branch failed | id=%s | %s: %s",
+            branch_id,
+            type(e).__name__,
+            e
         )
+
         return None, "An error occurred while updating the branch. Try again."
 
 

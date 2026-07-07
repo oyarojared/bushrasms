@@ -73,7 +73,6 @@ class Student(db.Model):
         return f"<Student {self.fullname}>"
 
 
-
 class StudentSubjectAllocation(db.Model):
     __tablename__ = "student_subject_allocation"
 

@@ -33,8 +33,9 @@ def admin_dash():
             Branch.branch_level.label("level"),
             HeadTeacher.fullname.label("head_name"),
             Branch.school_gender.label("gender"),
-            Branch.school_type.label("type"),
+            Branch.school_type.label("type"), 
             Branch.email.label("email"),
+            Branch.motto.label("motto"),
             Branch.school_code.label("code"),
             Branch.created_at.label("created_at"),
             Branch.updated_at.label("updated_at"),
@@ -117,8 +118,9 @@ def admin_dash():
             {
                 "id": b.id,
                 "name": b.name,
-                "manager": b.manager,
+                "manager": b.manager, 
                 "level": b.level,
+                "motto": b.motto,
                 "head": b.head_name or "Not Assigned",
                 "gender": b.gender,
                 "type": b.type,
@@ -134,7 +136,7 @@ def admin_dash():
         )
 
     total_students = None
-    single_branch = []
+    single_branch = [] 
 
     if current_user.is_super_admin:
         # Return all students across all branches
@@ -143,7 +145,7 @@ def admin_dash():
         for b in branches_list:
             if b["id"] == current_user.branch_id:
                 total_students = b["population"] # Only students of the user branch
-                single_branch.append(b)
+                single_branch.append(b) 
 
     # ==========================================================
     # 6. RENDER
