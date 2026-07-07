@@ -21,6 +21,7 @@ class Branch(db.Model):
     email = db.Column(db.String(120), nullable=True, unique=False)
     logo = db.Column(db.String(250), nullable=True)
     motto = db.Column(db.String(250), nullable=True)
+    
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(

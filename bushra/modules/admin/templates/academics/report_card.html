@@ -344,8 +344,15 @@
                 <h2>{{ data.branch.name }}</h2>
                 <p>P.O. BOX 28-70100, GARISSA - KENYA</p>
                 <p class="small">
-                    Email: <span class="text-primary">bushraschools2021@gmail.com</span>
-                    | Phone: <span class="text-primary">0722339494</span>
+                    Email:
+                    <span class="text-primary">
+                        {{ data.branch.email|default('N/A', true)|upper }}
+                    </span>
+                    |
+                    Phone:
+                    <span class="text-primary">
+                        {{ data.branch.phone|default('N/A', true) }}
+                    </span>
                 </p>
                 <p>{{ data.exam.name }} <strong>Term: </strong>{{ data.exam.term }} {{ data.exam.year }}</p>
                 <h4 class="">LEARNER'S ASSESSMENT REPORT <br>

@@ -679,3 +679,7 @@ Traceback (most recent call last):
   File "C:\Users\PC\Desktop\bushra_sys\venv\Lib\site-packages\flask\templating.py", line 99, in _get_source_fast
     raise TemplateNotFound(template)
 jinja2.exceptions.TemplateNotFound: pdf/broadsheet.html
+2026-07-07 17:21:22,822 ERROR: Update branch failed | id=3 | IntegrityError: (sqlite3.IntegrityError) NOT NULL constraint failed: branches.school_code
+[SQL: UPDATE branches SET school_code=?, branch_head=?, updated_at=? WHERE branches.id = ?]
+[parameters: (None, '24', '2026-07-07 14:21:22.821976', 3)]
+(Background on this error at: https://sqlalche.me/e/20/gkpj) [in C:\Users\ADMIN\Desktop\bushra_sys\bushra\modules\admin\services\branches.py:162]

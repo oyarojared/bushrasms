@@ -408,6 +408,8 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
     result = {
         "branch": {
             "name": branch.branch_name.upper(),
+            "email": branch.email,
+            "phone": "",
             "code": branch.school_code,
             "class_name": class_name,
             "logo": school_logo_path,
