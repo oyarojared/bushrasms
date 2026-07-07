@@ -378,7 +378,7 @@
                 </div>
             {% else %}
                 <div class="position-badge">
-                    Position: {{ student.class_position }} out of {{ student.class_total }}
+                    Position: {{ loop.index }} out of {{ data.students|length }}
                 </div>
             {% endif %}
         {% endif %}
