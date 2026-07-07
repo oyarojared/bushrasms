@@ -290,6 +290,17 @@
             color:#923006;
         }
 
+        .position-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #923006;
+            border: 0.7px solid #fdfdfd;
+            border-radius: 8px;
+            color: #fff;
+            font-weight: bold;
+            font-size: 10px;
+        }
+
     </style>
 </head>
 
@@ -357,7 +368,20 @@
             <strong>Name:</strong> {{ student.fullname }} |
             <strong>Adm:</strong> {{ student.admission_number }} |
             <strong>Ass. No:</strong><span class="text-upper">{{ student.assessment_no or "---" }}</span> |
-            <strong>Gender:</strong> <span class="text-upper">{{ student.gender or "---" }}</span>
+            <strong>Gender:</strong> <span class="text-upper">{{ student.gender or "---" }}</span> |
+            {% if data.students|length > 0 %}
+            {% if student.stream %}
+                <div class="position-badge">
+                    Stream Position: {{ student.stream_position }} out of {{ student.stream_total }}
+                    <br>
+                    Overall Position: {{ student.class_position }} out of {{ student.class_total }}
+                </div>
+            {% else %}
+                <div class="position-badge">
+                    Position: {{ student.class_position }} out of {{ student.class_total }}
+                </div>
+            {% endif %}
+        {% endif %}
         </div>
 
 

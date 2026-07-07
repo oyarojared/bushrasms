@@ -23,7 +23,7 @@ from sqlalchemy.orm import joinedload
 from flask import render_template, make_response
 import weasyprint
 
- 
+
 @admin_bp.route("assessments/dash", methods=["GET", "POST"])
 @login_required
 def assessment_dash():

@@ -47,43 +47,59 @@ def build_passport_path(student):
 
 
 
+
 def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=None):
     """
     Fetch all necessary data to generate a report card PDF,
     including grading reference for the class.
     """
-    # 1️⃣ Branch info
+
+    # Branch info
     branch = Branch.query.get(branch_id)
     if not branch:
         raise ValueError("Branch not found")
 
-    # 2️⃣ Class info
+    # Class info
     class_ = BranchClasses.query.get(class_id)
     if not class_:
         raise ValueError("Class not found")
-    
+
     class_name = class_.grade_form
 
-    # 3️⃣ Exam info
+    # Exam info
     exam_data = Exam.query.get(exam_id)
 
-    # 4️⃣ Class teacher
-    class_teacher_query = ClassTeacher.query.filter_by(branch_id=branch_id, class_id=class_id)
+    # Class teacher
+    class_teacher_query = ClassTeacher.query.filter_by(
+        branch_id=branch_id,
+        class_id=class_id
+    )
+
     if stream:
         class_teacher_query = class_teacher_query.filter_by(stream=stream)
-    class_teacher_obj = class_teacher_query.first()
-    class_teacher_name = class_teacher_obj.teacher.fullname if class_teacher_obj and class_teacher_obj.teacher else None
 
-    # 5️⃣ Students
-    query = Student.query.filter_by(branch_id=branch_id, class_id=class_id)
-    if stream:
-        query = query.filter_by(stream=stream)
-    if student_id:
-        query = query.filter_by(id=student_id)
-    students = query.all()
+    class_teacher_obj = class_teacher_query.first()
+    class_teacher_name = (
+        class_teacher_obj.teacher.fullname
+        if class_teacher_obj and class_teacher_obj.teacher
+        else None
+    )
+
+    # =========================
+    # FETCH ALL STUDENTS FIRST
+    # =========================
+    students = Student.query.filter_by(
+        branch_id=branch_id,
+        class_id=class_id
+    ).all()
 
     student_list = []
+
+    # =========================
+    # BUILD STUDENT DATA
+    # =========================
     for s in students:
+
         student_data = {
             "id": s.id,
             "fullname": s.fullname.upper(),
@@ -92,17 +108,17 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
             "pathway": s.pathway,
             "gender": s.gender,
             "stream": s.stream,
-            "passport_path": build_passport_path(s),  # ✅ rename
+            "passport_path": build_passport_path(s),
             "class_teacher": class_teacher_name,
-            "subjects": []
+            "subjects": [], 
+            "total_marks": 0
         }
- 
+
         for alloc in s.subject_allocations:
             subject = alloc.subject
             if not subject:
                 continue
 
-            # Get lesson to find teacher initials
             lesson = Lesson.query.filter_by(
                 branch_id=branch_id,
                 class_id=class_id,
@@ -115,7 +131,6 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
                 names = lesson.teacher.fullname.strip().split()
                 teacher_initials = ".".join([n[0].upper() for n in names])
 
-            # Get student's marks
             exam_paper = ExamPaper.query.filter_by(
                 exam_id=exam_id,
                 branch_id=branch_id,
@@ -125,15 +140,19 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
             ).first()
 
             marks = None
+
             if exam_paper:
                 mark_obj = StudentExamMark.query.filter_by(
                     exam_paper_id=exam_paper.id,
                     student_id=s.id
                 ).first()
+
                 if mark_obj:
                     marks = mark_obj.marks
 
-            # Resolve performance
+                    if marks:
+                        student_data["total_marks"] += marks
+
             grade_info = resolve_grade(class_id, marks) if marks is not None else {
                 "performance_level": None,
                 "points": None,
@@ -152,16 +171,87 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
 
         student_list.append(student_data)
 
-    # 6️⃣ Grading boundaries for this grade
+    # ======================================================
+    # STEP 1: CLASS RANKING (FULL CLASS - NOT FILTERED)
+    # ======================================================
+    student_list.sort(
+        key=lambda student: student["total_marks"],
+        reverse=True
+    )
+
+    for position, student in enumerate(student_list, start=1):
+        student["class_position"] = position
+        student["class_total"] = len(student_list)
+
+    # ======================================================
+    # STEP 2: STREAM RANKING (FULL CLASS)
+    # ======================================================
+    has_streams = any(s.get("stream") for s in student_list)
+
+    if has_streams:
+        from collections import defaultdict
+
+        stream_groups = defaultdict(list)
+
+        for student in student_list:
+            stream_key = student.get("stream")
+            if stream_key:
+                stream_groups[stream_key].append(student)
+
+        for stream_students in stream_groups.values():
+
+            stream_students.sort(
+                key=lambda s: s["total_marks"],
+                reverse=True
+            )
+
+            for position, student in enumerate(stream_students, start=1):
+                student["stream_position"] = position
+                student["stream_total"] = len(stream_students)
+
+    else:
+        for student in student_list:
+            student["stream_position"] = None
+
+    # ======================================================
+    # STEP 3: APPLY REQUEST FILTERING (DISPLAY ONLY)
+    # ======================================================
+    if stream:
+        student_list = [
+            s for s in student_list
+            if s.get("stream") == stream
+        ]
+
+    if student_id:
+        student_list = [
+            s for s in student_list
+            if s["id"] == student_id
+        ]
+
+    # Final sort for display only
+    student_list.sort(
+        key=lambda student: student["total_marks"],
+        reverse=True
+    )
+
+    # ======================================================
+    # Grading boundaries
+    # ======================================================
     grading_boundaries = []
     scheme_link = GradeGradingScheme.query.filter_by(grade_id=class_id).first()
     if scheme_link and scheme_link.scheme:
         grading_boundaries = scheme_link.scheme.boundaries
 
+    # ======================================================
+    # Logo
+    # ======================================================
     school_logo_path = None
     if branch.logo:
         school_logo_path = build_static_image_path(branch.logo)
 
+    # ======================================================
+    # RESULT
+    # ======================================================
     result = {
         "branch": {
             "name": branch.branch_name.upper(),
@@ -189,6 +279,162 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
     }
 
     return result
+
+
+
+
+
+# def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=None):
+#     """
+#     Fetch all necessary data to generate a report card PDF,
+#     including grading reference for the class.
+#     """
+#     # Branch info
+#     branch = Branch.query.get(branch_id)
+#     if not branch:
+#         raise ValueError("Branch not found")
+
+#     # Class info
+#     class_ = BranchClasses.query.get(class_id)
+#     if not class_:
+#         raise ValueError("Class not found")
+    
+#     class_name = class_.grade_form
+
+#     # Exam info
+#     exam_data = Exam.query.get(exam_id)
+
+#     # Class teacher
+#     class_teacher_query = ClassTeacher.query.filter_by(branch_id=branch_id, class_id=class_id)
+#     if stream:
+#         class_teacher_query = class_teacher_query.filter_by(stream=stream)
+#     class_teacher_obj = class_teacher_query.first()
+#     class_teacher_name = class_teacher_obj.teacher.fullname if class_teacher_obj and class_teacher_obj.teacher else None
+
+#     # Students
+#     query = Student.query.filter_by(branch_id=branch_id, class_id=class_id)
+#     if stream:
+#         query = query.filter_by(stream=stream)
+#     if student_id:
+#         query = query.filter_by(id=student_id)
+#     students = query.all()
+
+#     student_list = []
+#     for s in students: 
+#         student_data = {
+#             "id": s.id,
+#             "fullname": s.fullname.upper(),
+#             "assessment_no": s.knec_assessment_no,
+#             "admission_number": s.admission_number,
+#             "pathway": s.pathway,
+#             "gender": s.gender,
+#             "stream": s.stream,
+#             "passport_path": build_passport_path(s),
+#             "class_teacher": class_teacher_name,
+#             "subjects": [],
+#             "total_marks": 0
+#         }
+ 
+#         for alloc in s.subject_allocations:
+#             subject = alloc.subject
+#             if not subject:
+#                 continue
+
+#             # Get lesson to find teacher initials
+#             lesson = Lesson.query.filter_by(
+#                 branch_id=branch_id,
+#                 class_id=class_id,
+#                 stream=stream,
+#                 subject_id=subject.id
+#             ).first()
+
+#             teacher_initials = None
+#             if lesson and lesson.teacher:
+#                 names = lesson.teacher.fullname.strip().split()
+#                 teacher_initials = ".".join([n[0].upper() for n in names])
+
+#             # Get student's marks
+#             exam_paper = ExamPaper.query.filter_by(
+#                 exam_id=exam_id,
+#                 branch_id=branch_id,
+#                 class_id=class_id,
+#                 stream=stream,
+#                 subject_id=subject.id
+#             ).first()
+
+#             marks = None
+#             if exam_paper:
+#                 mark_obj = StudentExamMark.query.filter_by(
+#                     exam_paper_id=exam_paper.id,
+#                     student_id=s.id
+#                 ).first()
+#                 if mark_obj:
+#                     marks = mark_obj.marks 
+
+#                     # find total marks
+#                     if marks: 
+#                         student_data["total_marks"] += marks
+
+#             # Resolve performance
+#             grade_info = resolve_grade(class_id, marks) if marks is not None else {
+#                 "performance_level": None,
+#                 "points": None,
+#                 "descriptor": None
+#             }
+
+#             student_data["subjects"].append({
+#                 "subject_code": subject.code,
+#                 "subject_name": subject.name,
+#                 "teacher_initials": teacher_initials,
+#                 "marks": marks,
+#                 "performance_level": grade_info["performance_level"],
+#                 "points": grade_info["points"],
+#                 "descriptor": grade_info["descriptor"]
+#             })
+
+#         student_list.append(student_data)
+
+#     # Grading boundaries for this grade
+#     grading_boundaries = []
+#     scheme_link = GradeGradingScheme.query.filter_by(grade_id=class_id).first()
+#     if scheme_link and scheme_link.scheme:
+#         grading_boundaries = scheme_link.scheme.boundaries
+
+#     school_logo_path = None
+#     if branch.logo:
+#         school_logo_path = build_static_image_path(branch.logo)
+
+#     result = {
+#         "branch": {
+#             "name": branch.branch_name.upper(),
+#             "code": branch.school_code,
+#             "class_name": class_name,
+#             "logo": school_logo_path,
+#             "motto": branch.motto,
+#         },
+#         "exam": {
+#             "name": exam_data.name,
+#             "year": exam_data.year,
+#             "term": exam_data.term
+#         },
+#         "class": {
+#             "grade_form": class_.grade_form,
+#             "class_year": class_.class_year,
+#             "streams": class_.streams
+#         },
+#         "exam_id": exam_id,
+#         "students":  sorted(
+#             student_list,
+#             key=lambda student: student["total_marks"],
+#             reverse=True
+#         ),
+#         "grading_boundaries": grading_boundaries,
+#         "school_logo": None,
+#         "stamp_placeholder": True,
+#         "max_points": get_max_points_for_class(class_id)
+#     }
+
+#     return result
 
 
 

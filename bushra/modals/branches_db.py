@@ -40,20 +40,23 @@ class Branch(db.Model):
         back_populates="branch",
         cascade="all, delete-orphan"
     )
+    
     def to_dict(self):
+        teacher = Teacher.query.get(self.branch_head) if self.branch_head else None
+
         return {
             "id": self.id,
             "branch_name": self.branch_name,
             "school_code": self.school_code,
             "branch_manager": self.branch_manager,
             "branch_level": self.branch_level,
-            "branch_head": Teacher.query.get(self.branch_head).fullname if self.branch_head else None,
+            "branch_head": teacher.fullname if teacher else None,
             "school_gender": self.school_gender,
             "school_type": self.school_type,
             "email": self.email,
             "logo": self.logo,
             "motto": self.motto,
-    }
+        }
         
     def __repr__(self):
         return f"<Branch {self.branch_name}>"

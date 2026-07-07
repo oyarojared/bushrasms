@@ -27,7 +27,6 @@ from ..services.subs import auto_allocate_subjects
 @login_required
 @admin_required
 def student_dash():
-
     # ----------- Define Route Forms ----------- #
     form = BranchGradeStreamForm()
     add_student_form = AddStudentForm()

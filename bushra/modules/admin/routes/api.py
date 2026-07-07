@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import current_app, jsonify, request
 from ....modals.branches_db import Branch, BranchClasses, db
 from .. import admin_bp
@@ -15,6 +16,8 @@ from ....modals.assessment_db import (StudentExamMark,ExamPaper, GradeGradingSch
 from ..utils import resolve_grade
 from flask_login import login_required
 from ..utils.route_protect import admin_required
+from flask import render_template, make_response
+from weasyprint import HTML, CSS
 
 
 # --------------------------------------
@@ -116,9 +119,6 @@ def api_grades(branch_id):
         return jsonify([]), 500
 
 
-
-
-
 @admin_bp.route("/api/class-context", methods=["POST"])
 @login_required
 def api_class_context():
@@ -157,7 +157,6 @@ def api_class_context():
             )
             .all()
         )
-
 
         # ----------------------------
         # FETCH TEACHERS FOR BRANCH
@@ -224,7 +223,6 @@ def api_class_context():
                 "assigned_teacher_id": assigned_teacher_id
             })
 
-
         response = {
             "branch_id": branch_id,
             "class_id": class_obj.id,
@@ -277,7 +275,6 @@ def class_teacher_context():
     })
 
 
-
 @admin_bp.route("/api/subjects")
 @login_required
 def api_subjects():
@@ -304,7 +301,7 @@ def api_subjects():
             )
         )
 
-        # 🔐 Teacher restriction
+        # Teacher restriction
         if not current_user.is_admin:
             query = query.filter(Lesson.teacher_id == current_user.id)
 
@@ -410,8 +407,6 @@ def get_exam_students():
         return jsonify({"error": "Failed to load students"}), 500
     
     
-    
-
 @admin_bp.route("/api/save-exam-marks", methods=["POST"])
 @login_required
 def save_exam_marks():
@@ -483,7 +478,6 @@ def save_exam_marks():
         current_app.logger.error(f"Saving marks failed: {e}", exc_info=True)
         return jsonify({"error": "Failed to save marks"}), 500
 
-from datetime import datetime
 
 @admin_bp.route("/api/exams")
 @login_required
@@ -501,7 +495,7 @@ def api_exams():
             ExamPaper.class_id == class_id
         )
 
-        # ✅ Handle stream correctly
+        # Handle stream correctly
         # if stream in ("null", "", None):
         #     stream = None
 
@@ -521,13 +515,12 @@ def api_exams():
 
         return jsonify(list(exams.values()))
 
-    except Exception as e:
-        print(e)
+    except Exception as e: 
         current_app.logger.error(f"Error loading exams: {e}", exc_info=True)
         return jsonify([]), 500
 
 
-# # -------------------- API: Get exam students with resolved grades --------------------
+# -------------------- API: Get exam students with resolved grades --------------------
 @admin_bp.route("/api/exam-students-with-grades")
 @login_required
 def api_exam_students_with_grades():
@@ -630,7 +623,6 @@ def api_exam_students_with_grades():
     except Exception:
         current_app.logger.exception("Error fetching students with grades")
         return jsonify({"error": "Failed to load students"}), 500
-
 
 
 @admin_bp.route("/api/exam-students-with-grades-all-subjects")
@@ -968,7 +960,6 @@ def api_students_by_class():
         return jsonify({"error": "Failed to load students"}), 500
 
 
-
 @admin_bp.route("/api/broadsheet")
 @login_required
 def api_broadsheet():
@@ -989,9 +980,6 @@ def api_broadsheet():
         current_app.logger.exception("Error building broadsheet")
         return jsonify({"error": "Failed to load broadsheet"}), 500
     
-
-from flask import render_template, make_response
-from weasyprint import HTML, CSS
 
 @admin_bp.route("/api/broadsheet/pdf")
 @login_required
@@ -1039,8 +1027,6 @@ def broadsheet_pdf():
         current_app.logger.exception("Error generating broadsheet PDF")
         return jsonify({"error": "Failed to generate PDF"}), 500
     
-
-
 
 @admin_bp.route("/api/broadsheet/missing-pdf")
 @login_required
