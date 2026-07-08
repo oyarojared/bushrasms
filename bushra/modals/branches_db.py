@@ -21,8 +21,7 @@ class Branch(db.Model):
     email = db.Column(db.String(120), nullable=True, unique=False)
     logo = db.Column(db.String(250), nullable=True)
     motto = db.Column(db.String(250), nullable=True)
-    phone = db.Column(db.String(20), nullable=True)      
-    address = db.Column(db.String(255), nullable=True)   
+    
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
@@ -58,8 +57,6 @@ class Branch(db.Model):
             "email": self.email,
             "logo": self.logo,
             "motto": self.motto,
-            "phone": self.phone,
-            "address": self.address,
         }
         
     def __repr__(self):

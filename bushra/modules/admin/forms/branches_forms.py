@@ -137,23 +137,6 @@ class AddBranchForm(FlaskForm):
             Length(max=120)
         ]
     )
-
-    # Branch address
-    address = StringField(
-        "address",
-        validators=[
-            DataRequired(message="Please provide school address!"),
-            Length(min=4)
-        ]
-    )
-
-    # Branch phone
-    phone = StringField(
-        "phone",
-        validators=[
-            Length(min=10, max=10)
-        ]
-    )
     
     logo = FileField(
         "School Logo",
