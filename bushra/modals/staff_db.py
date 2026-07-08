@@ -26,7 +26,7 @@ class Teacher(db.Model, UserMixin):
     password_hash = db.Column(db.String(250), nullable=False)
     passport_url = db.Column(db.String(250))
     is_admin = db.Column(db.Boolean, default=False)
-    is_super_admin = db.Column(db.Boolean, default=False, nullable=False)
+    is_super_admin = db.Column(db.Boolean, default=False, nullable=False) 
 
     # Timestamps
     created_at = db.Column(db.DateTime, server_default=db.func.now())
