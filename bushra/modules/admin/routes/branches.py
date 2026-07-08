@@ -54,6 +54,8 @@ def add_school():
                 branch_head=form.branch_head.data or None,
                 school_gender=form.school_gender.data,
                 school_type=form.school_type.data,
+                address=form.address.data.strip(),
+                phone=form.phone.data.strip(),
                 email=form.email.data.strip() if form.email.data else None,
                 logo=logo_filename,
                 motto=form.motto.data.strip() if form.motto.data else None
@@ -63,6 +65,8 @@ def add_school():
             db.session.commit()
 
             flash(f"School {branch.branch_name.upper() } added successfully!", "success")
+            print(branch.address)
+            print(branch.phone)
             return redirect(url_for("admin.branch_profile", branch_id=branch.id))
         
         except Exception as e:

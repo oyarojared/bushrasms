@@ -1,22 +1,15 @@
 {% extends "student_templates/student_dash_layout.html" %} {% block body %}
 <div class="container mb-2 go-back-btn">
-<<<<<<< HEAD
   <a
     href="{{ request.referrer or url_for('admin.student_dash') }}"
     class="text-secondary"
   >
     <i class="bi bi-arrow-left"></i> Go Back
   </a>
-=======
-    <a href="{{ request.referrer or url_for('admin.student_dash') }}" class="text-secondary">
-        <i class="bi bi-arrow-left"></i> Go Back
-    </a>
->>>>>>> 960c9cc690170e8e85e2b20513ea7125baf9c5f9
 </div>
 
 <!-- Student Card -->
 <div class="container mb-2">
-<<<<<<< HEAD
   <div class="shadow-sm bg-white rounded-6">
     <div class="container orange-line"></div>
     <div class="card-body">
@@ -34,110 +27,7 @@
                 class="img-fluid"
                 alt="Photo"
               />
-=======
-    <div class="shadow-sm bg-white rounded-6">
-        <div class="container orange-line"></div>
-        <div class="card-body">
-            <div class="row">
-
-                <!-- Left Panel -->
-                <div class="col-md-4">
-                    <div class="border-end">
-
-                        <div class="profile-photo-lg mx-auto my-1">
-                            {% set passport = student.passport or "default.jpg" %}
-                            <img src="{{ url_for('admin.serve_passport', filename=passport) }}"
-                                class="img-fluid" alt="Photo">
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-center">
-                        <form id="photoUploadForm"
-                              action="{{ url_for('admin.student_profile', student_id=student.id) }}"
-                              method="POST"
-                              enctype="multipart/form-data"
-                              style="display:none;">
-
-                            {{ passport_form.hidden_tag() }}
-                            {{ passport_form.passport(id="passportInput") }}
-
-                        </form>
-
-                        <button id="triggerPassportUpload" class="btn btn-sm btn-secondary">
-                            <i class="bi bi-camera me-2"></i>Update Passport
-                        </button>
-                    </div>
-
-                    {% if passport_form.passport.errors %}
-                        <div class="text-danger mt-2 fw-bold d-flex justify-content-center" style="font-size: 0.9rem;">
-                            {% for error in passport_form.passport.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-
-                <!-- Right Panel -->
-                <div class="col-md-8 align-items-center d-flex flex-column justify-content-center">
-                    <h3 class="text-center text-orange">{{ student.fullname | upper }}</h3>
-                    <h6 class=" text-center">
-                        ({{ student_branch.branch_name }} {{ student_class.grade_form }}
-                        {{ student.stream if student.stream else ""}})
-                    </h6>
-                    <div class="border p-3 w-100 mt-2">
-                        {% if student_class.grade_form == "Grade 9" %}
-                            <h6 class="fw-light">
-                                <span class="fw-bold">Pathway: </span>
-                                {{ student.pathway | default('N/A') }}
-                            </h6>
-                        {% endif %}
-                        <h6 class="fw-bold">Total Learning Areas/Subjects: {{ student.subjects_taken | length }}</h6>
-                        <div class="card p-2">
-                            <span class="text-muted small">
-                               {{ student.subjects_taken | join(', ') if student.subjects_taken else "No learning areas data available." }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="row rounded-2 w-100 d-flex justify-content-center">
-                        <div class="col-sm-2"></div>
-                        <div class="col-sm-10 d-flex">
-
-                            <!-- Edit Student -->
-                            <a href="#" id="editStudentBtn" data-bs-toggle="modal"
-                                data-bs-target="#addStudentModal" class="border-end mt-2">
-                                <div class="btn btn-sm btn-danger">
-                                    <i class="bi bi-pencil"></i>
-                                    <span class="ms-1">Edit</span>
-                                </div>
-                            </a>
-
-                            <!-- Transfer Student -->
-                            <a href="#" data-bs-toggle="modal" data-bs-target="#moveStudentModal" class="border-end mx-2 mt-2">
-                                <div class="btn-danger btn btn-sm small">
-                                    <i class="bi bi-arrow-left-right me-2"></i> Move
-                                </div>
-                            </a>
-
-                            <!-- Delete Student -->
-                            <a href="#">
-                                <div class="">
-                                    <form method="POST"
-                                            action="{{ url_for('admin.delete_student', student_id=student.id) }}"
-                                            onsubmit="return confirm('Are you sure you want to delete {{ student.fullname | upper }} from the system?');">
-
-                                        <button type="submit" class="btn-danger btn btn-sm small mt-2">
-                                            <i class="bi bi-trash"></i> Delete
-                                        </button>
-                                    </form>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
->>>>>>> 960c9cc690170e8e85e2b20513ea7125baf9c5f9
             </div>
-             
           </div>
 
           <div class="d-flex justify-content-center">
@@ -246,88 +136,7 @@
             </div>
           </div>
         </div>
-<<<<<<< HEAD
       </div>
-=======
-
-        <!-- Academics Tab -->
-        <div class="tab-pane fade" id="academics">
-            <p>Academic information will go here...</p>
-        </div>
-
-    </div>
-</div>
-<div  style="height: 70px;"></div>
-<!-- MOVE STUDENT MODAL -->
- <div class="modal fade" id="moveStudentModal" tabindex="-1" aria-labelledby="moveStudentModalLabel"  data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-
-      <div class="modal-header pt-2 pb-2 px-6 bg-danger text-white mb-0">
-        <h6 class="modal-title" id="moveStudentModalLabel">
-            <i class="bi bi-arrow-left-right me-3"></i>MOVE {{ student.fullname | upper }}
-        </h6>
-        <button
-            type="button"
-            class="btn-close btn-close-white"
-            data-bs-dismiss="modal"
-            aria-label="Close">
-        </button>
-      </div>
-
-      <div class="modal-body mt-1 pt-0">
-         <div class="bg-light p-2 border-bottom">
-            <h6 class="text-center text-orange">
-                {{ student_branch.branch_name }}
-            </h6>
-            <h6 class="text-center text-orange">
-                {{ student_class.grade_form }}
-                {% if student.stream %}
-                    {{ " " ~ student.stream }}
-                {% endif %}
-            </h6>
-         </div>
-
-        <div class="d-flex align-items-center my-4">
-            <span class="flex-grow-1 border-bottom"></span>
-            <h6 class="mx-3 mb-0 text-danger fw-bold">
-                Move To <i class="bi bi-arrow-right"></i>
-            </h6>
-            <span class="flex-grow-1 border-bottom"></span>
-        </div>
-
-        <div class="card px-3 pt-2 pb-2 shadow-sm">
-            <form action="{{ url_for('admin.move_student', student_id=student.id) }}" method="post">
-                {{ transfer_form.hidden_tag() }}
-                <div class="row">
-                    <div class="col-md-6">
-                        {{ transfer_form.branches.label(class="fw-bold mb-2") }}
-                            {{ transfer_form.branches(class="form-control", id="select-branch-element") }}
-
-                            {% for error in transfer_form.branches.errors %}
-                                <div class="text-danger small">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                    <div class="col-md-6">
-                        <div id="grade-forms-container"></div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div id="stream-select-container"></div>
-                </div>
-                <div class="row">
-                    <div class="col-12 d-flex justify-content-end">
-                        <button class="btn btn-sm btn-secondary mt-2">
-                            <i class="bi bi-arrow-left-right me-2"></i>Move
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-        <hr>
-      </div>
-
->>>>>>> 960c9cc690170e8e85e2b20513ea7125baf9c5f9
     </div>
   </div>
 </div>
