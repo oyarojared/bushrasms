@@ -1,4 +1,5 @@
 # Python cache
+migrations_backup/
 __pycache__/
 *.pyc
 
