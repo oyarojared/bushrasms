@@ -1,40 +1,12 @@
 {% extends "student_templates/student_dash_layout.html" %} {% block body %}
 <div class="container mb-2 go-back-btn">
-<<<<<<< HEAD
-  <a
-    href="{{ request.referrer or url_for('admin.student_dash') }}"
-    class="text-secondary"
-  >
-    <i class="bi bi-arrow-left"></i> Go Back
-  </a>
-=======
     <a href="{{ request.referrer or url_for('admin.student_dash') }}" class="text-secondary">
         <i class="bi bi-arrow-left"></i> Go Back
     </a>
->>>>>>> 960c9cc690170e8e85e2b20513ea7125baf9c5f9
 </div>
 
 <!-- Student Card -->
 <div class="container mb-2">
-<<<<<<< HEAD
-  <div class="shadow-sm bg-white rounded-6">
-    <div class="container orange-line"></div>
-    <div class="card-body">
-      <div class="row">
-        <!-- Left Panel -->
-        <div class="col-md-4">
-          <div class="border-end">
-            <div class="profile-photo-lg mx-auto my-1">
-              <img
-                src="{% if student.passport %}
-                                        {{ url_for('static', filename='uploads/passports/' + student.passport) }}
-                                     {% else %}
-                                        {{ url_for('static', filename='uploads/passports/default.JPG') }}
-                                     {% endif %}"
-                class="img-fluid"
-                alt="Photo"
-              />
-=======
     <div class="shadow-sm bg-white rounded-6">
         <div class="container orange-line"></div>
         <div class="card-body">
@@ -135,7 +107,6 @@
                     </div>
                 </div>
 
->>>>>>> 960c9cc690170e8e85e2b20513ea7125baf9c5f9
             </div>
              
           </div>
@@ -246,9 +217,6 @@
             </div>
           </div>
         </div>
-<<<<<<< HEAD
-      </div>
-=======
 
         <!-- Academics Tab -->
         <div class="tab-pane fade" id="academics">
@@ -327,7 +295,6 @@
         <hr>
       </div>
 
->>>>>>> 960c9cc690170e8e85e2b20513ea7125baf9c5f9
     </div>
   </div>
 </div>
@@ -452,8 +419,7 @@
                   value="Male"
                   {%
                   if
-                  student.gender=""
-                  ="Male"
+                  student.gender=="Male"
                   %}selected{%
                   endif
                   %}
@@ -464,8 +430,7 @@
                   value="Female"
                   {%
                   if
-                  student.gender=""
-                  ="Female"
+                  student.gender=="Female"
                   %}selected{%
                   endif
                   %}
@@ -505,8 +470,7 @@
                   value="Day"
                   {%
                   if
-                  student.boarding_status=""
-                  ="Day"
+                  student.boarding_status=="Day"
                   %}selected{%
                   endif
                   %}
@@ -517,8 +481,7 @@
                   value="Boarding"
                   {%
                   if
-                  student.boarding_status=""
-                  ="Boarding"
+                  student.boarding_status=="Boarding"
                   %}selected{%
                   endif
                   %}
@@ -591,8 +554,7 @@
                   value="{{ year }}"
                   {%
                   if
-                  student.kcpe_year=""
-                  ="year"
+                  student.kcpe_year=="year"
                   %}selected{%
                   endif
                   %}
