@@ -46,7 +46,7 @@ def build_passport_path(student):
         if path.exists():
             return path.resolve().as_uri()
 
-    return (base / "default.JPG").resolve().as_uri()
+    return (base / "default.jpg").resolve().as_uri()
 
 
 
