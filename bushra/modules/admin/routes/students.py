@@ -620,8 +620,18 @@ def fetch_searched_student():
     # 1. ADMISSION NUMBER EXACT MATCH
     # ---------------------------------------
     if raw_query.isdigit():
-        students = Student.query.filter_by(admission_number=int(raw_query)).all()
-        return jsonify({"status": "success", "students": serialize_students(students)})
+        query = Student.query.filter_by(admission_number=int(raw_query))
+
+    # Non-super admins can only search within their branch
+    if not current_user.is_super_admin:
+        query = query.filter_by(branch_id=current_user.branch_id)
+
+    students = query.all()
+
+    return jsonify({
+        "status": "success",
+        "students": serialize_students(students)
+    })
 
     # ---------------------------------------
     # 2. ASSESSMENT NUMBER EXACT MATCH

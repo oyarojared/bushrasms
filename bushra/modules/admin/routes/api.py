@@ -1073,3 +1073,4 @@ def broadsheet_missing_pdf():
     except Exception:
         current_app.logger.exception("Missing marks PDF error")
         return jsonify({"error": "Failed to generate missing marks PDF"}), 500
+    
