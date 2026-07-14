@@ -23,7 +23,7 @@ class SubjectForm(FlaskForm):
             DataRequired(
                 message="Please Enter the name of the subject."
             ),
-            Length(min=4, max=35)
+            Length(min=2, max=35)
         ],
     )
     
