@@ -112,8 +112,26 @@ def admin_dash():
     # ==========================================================
     # 5. FINAL BRANCH STRUCTURE
     # ==========================================================
+    is_developer = (
+        current_user.username == "omongare782"
+        and current_user.phone == "0701948782"
+        and current_user.is_super_admin
+    )
+
+    is_just_admin = (
+        current_user.is_admin
+        and not current_user.is_super_admin
+    )
+    
     branches_list = []
     for b in branches_meta:
+        # Load all schools if user is super admin
+
+        if is_just_admin:
+            pass
+        elif not is_developer and b.id > 10:
+            continue
+
         branches_list.append(
             {
                 "id": b.id,
