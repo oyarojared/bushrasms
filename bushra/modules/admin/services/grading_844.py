@@ -162,8 +162,8 @@ AGGREGATE_POINT_SCALE = [
     (53, 59, "B-"),
     (60, 66, "B"),
     (67, 73, "B+"), 
-    (74, 80, "A-"), 
-    (81, 84, "A"), 
+    (74, 79, "A-"), 
+    (80, 84, "A"), 
 ]
 
 def aggregate_to_final_grade(points):
