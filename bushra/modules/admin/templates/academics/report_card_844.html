@@ -74,15 +74,16 @@ body {
     border-radius: 4px;
 }
 
-/* ================= TABLE ================= */
+
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    font-size: 10px;
 }
 
 th, td {
-    padding: 5px;
+    padding: 3px 4px;
     border: 1px solid #7f8c8d;
     text-align: center;
 }
@@ -90,6 +91,7 @@ th, td {
 th {
     background-color: #923006;
     color: white;
+    font-size: 10px;
 }
 
 .text-left { text-align: left; }
@@ -98,33 +100,44 @@ th {
     text-transform: uppercase;
 }
 
-/* ================= BAR CHART ================= */
 .subject-bar-container {
-    margin-top: 10px;
+    margin-top: 8px;
     display: flex;
     align-items: flex-end;
     justify-content: space-around;
-    gap: 6px;
-    height: 180px;
-    overflow: hidden;   /* important */
+    gap: 4px;
+    height: 150px;
+    overflow: hidden;
     border-left: 1px solid #000;
     border-bottom: 1px solid #000;
-    padding: 6px;
+    padding: 4px;
 }
 
 .subject-bar {
-    width: 42px;
+    width: 34px;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
 .bar-label {
-    font-size: 9px;
+    font-size: 8px;
     color: #000;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     text-align: center;
     word-break: break-word;
+    line-height: 1.1;
+}
+
+.bar-fill {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    font-size: 9px;
+    font-weight: bold;
+    color: #fff;
+    padding-bottom: 2px;
 }
 
 /* FOOTER */
@@ -135,17 +148,6 @@ th {
     color: #7f8c8d;
     border-top: 1px solid #ccc;
     padding-top: 4px;
-}
-
-.bar-fill {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    font-size: 10px;
-    font-weight: bold;
-    color: #fff;
-    padding-bottom: 2px;
 }
 
 /* Bar colors */
@@ -279,6 +281,7 @@ th {
     <table>
         <thead>
             <tr>
+                <th>Code</th>
                 <th>Subject</th>
                 <th>Marks</th>
                 <th>Grade</th>
@@ -291,8 +294,9 @@ th {
         {% for s in student.subjects %}
 
             <tr>
+                <td>{{ s.code }}</td>
                 <td class="text-left subject-uppercase">{{ s.subject }}</td>
-                <td>{{ s.marks }}</td>
+                <td>{{ s.marks|int }}</td>
                 <td>{{ s.grade }}</td>
                 <td>{{ s.points }}</td>
                 <td class="text-left">{{ s.comment }}</td>
@@ -318,8 +322,8 @@ th {
             {% endif %}
 
             <div class="subject-bar">
-                <div class="bar-label subject-uppercase">{{ s.subject }}</div>
-                <div class="bar-fill {{ cls }}" style="height: {{ s.marks * 1.8 }}px;">
+                <div class="bar-label subject-uppercase">{{ s.subject }}</div> 
+                <div class="bar-fill {{ cls }}" style="height: {{ s.marks * 1.4 }}px;"> 
                     {{ s.marks }}
                 </div>
             </div>
