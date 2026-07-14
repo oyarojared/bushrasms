@@ -8,7 +8,7 @@ $(document).ready(function(){
     });
 
     // Load grades/forms when branch changes
-    $("#branch").change(function(){
+    $("#branch").change(function(){  
         let branchId = $(this).val();
         let gradeSelect = $("#grade_form");
         gradeSelect.empty();

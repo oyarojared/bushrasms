@@ -23,6 +23,8 @@ from sqlalchemy.orm import joinedload
 from flask import render_template, make_response
 import weasyprint
 
+from ..utils import get_accessible_branches_query
+
 
 @admin_bp.route("assessments/dash", methods=["GET", "POST"])
 @login_required
@@ -36,7 +38,11 @@ def assessment_dash():
 
     # Branch choices
     if current_user.is_super_admin:
-        branches = Branch.query.order_by(Branch.branch_name).all()
+        branches = (
+            get_accessible_branches_query()
+            .order_by(Branch.branch_name)
+            .all()
+        ) 
         exam_form.branch_id.choices = [(b.id, b.branch_name) for b in branches]
     else:
         branch = Branch.query.get(current_user.branch_id)

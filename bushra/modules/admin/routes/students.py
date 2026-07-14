@@ -17,7 +17,9 @@ from ..forms import AddStudentForm, StudentSearchForm
 from ..forms.branches_forms import BranchesList, BranchGradeStreamForm
 from ..forms.students_forms import (MuiltapleStudentsUploadForm,
                                     PassportUploadForm)
-from ..utils import load_branch_choices, preprocess_image, safe_date, validate_fullname
+from ..utils import (load_branch_choices, preprocess_image, 
+                     safe_date, validate_fullname, 
+                     get_accessible_branches_query)
 from ..utils.route_protect import admin_required
 from flask_login import login_required 
 
@@ -46,7 +48,11 @@ def student_dash():
     students = []
     selected_branch = selected_grade = selected_stream = None
 
-    branches = Branch.query.order_by(Branch.created_at.desc()).all()
+    branches = (
+        get_accessible_branches_query()
+        .order_by(Branch.created_at.desc())
+        .all()
+    )
 
     # On POST, populate form choices for validation
     if request.method == "POST":
