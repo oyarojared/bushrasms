@@ -12,6 +12,7 @@ from ..services.subs import get_subjects, delete_subject_service, add_subject, u
 from flask_login import login_required
 
 from ..utils.route_protect import admin_required
+from flask_login import current_user
 
 @admin_bp.route("/subjects_dash", methods=["GET", "POST"])
 @login_required
@@ -78,11 +79,14 @@ def subjects_dash():
         active_page="subjects",
     )
 
-
 @admin_bp.route("/delete_subject/<int:subject_id>", methods=["POST"])
 @login_required
 @admin_required
-def delete_subject(subject_id):
+def delete_subject(subject_id): 
+    if not (current_user.is_super_admin and current_user.id == 11):
+        flash("You do not have permission to delete subjects. Please contact the Super Admin.", "warning")
+        return redirect(url_for("admin.subjects_dash"))
+
     success, error = delete_subject_service(subject_id)
 
     if success:
@@ -91,7 +95,6 @@ def delete_subject(subject_id):
         flash(error or "Delete failed.", "danger")
 
     return redirect(url_for("admin.subjects_dash"))
-
 
 
 @admin_bp.route("/subjects/by-grade")
