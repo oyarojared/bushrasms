@@ -18,6 +18,7 @@ from flask_login import login_required
 from ..utils.route_protect import admin_required
 from flask import render_template, make_response
 from weasyprint import HTML, CSS
+from ..utils import get_accessible_branches_query
 
 
 # --------------------------------------
@@ -31,10 +32,15 @@ from weasyprint import HTML, CSS
 @login_required
 def api_branches():
     try:
-        if current_user.is_super_admin:
-            branches = Branch.query.order_by(Branch.branch_name).all()
-        else:
-            branches = Branch.query.filter_by(id=current_user.branch_id).all()
+        # if current_user.is_super_admin:
+        #     branches = Branch.query.order_by(Branch.branch_name).all()
+        # else:
+        #     branches = Branch.query.filter_by(id=current_user.branch_id).all()
+        branches = (
+            get_accessible_branches_query()
+            .order_by(Branch.branch_name)
+            .all()
+        ) 
 
         data = [{"id": b.id, "name": b.branch_name} for b in branches]
         return jsonify(data)

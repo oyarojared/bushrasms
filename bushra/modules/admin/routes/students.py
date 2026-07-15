@@ -105,7 +105,7 @@ def student_dash():
         students = Student.query.filter_by(branch_id=1, class_id=1).all()
         selected_branch = Branch.query.get(1)
         selected_grade = BranchClasses.query.get(1)
-        
+
     return render_template(
         "student_templates/student_dash.html",
         select_branch_form=form,
