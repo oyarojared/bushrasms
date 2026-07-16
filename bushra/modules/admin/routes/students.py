@@ -28,6 +28,8 @@ from ..services.subs import auto_allocate_subjects
 from ..services.studs import get_next_adm_no
 from flask_login import current_user
 
+UNRESTRICTED_SUPER_ADMIN_ID = 11
+
 @admin_bp.route("/student_dash", methods=["GET", "POST"])
 @login_required
 @admin_required
@@ -611,6 +613,22 @@ def serialize_students(student_list):
     ]
 
 
+def apply_student_branch_restrictions(query):
+    """
+        Restrict student queries based on the current user's permissions.
+
+        - Regular admins: own branch only.
+        - Super admins (except user 11): branches 1–10.
+        - User 11: unrestricted.
+    """
+    if not current_user.is_super_admin:
+        return query.filter_by(branch_id=current_user.branch_id)
+
+    if current_user.id != UNRESTRICTED_SUPER_ADMIN_ID:
+        return query.filter(Student.branch_id.between(1, 10))
+
+    return query
+
 @admin_bp.route("/fetch_searched_student", methods=["POST"])
 @login_required
 @admin_required
@@ -626,32 +644,45 @@ def fetch_searched_student():
     # 1. ADMISSION NUMBER EXACT MATCH
     # ---------------------------------------
     if raw_query.isdigit():
-        query = Student.query.filter_by(admission_number=int(raw_query))
+        try:
+            query = Student.query.filter_by(
+                admission_number=int(raw_query)
+            )
 
-    # Non-super admins can only search within their branch
-    if not current_user.is_super_admin:
-        query = query.filter_by(branch_id=current_user.branch_id)
+            query = apply_student_branch_restrictions(query)
 
-    students = query.all()
+            students = query.all()
 
-    return jsonify({
-        "status": "success",
-        "students": serialize_students(students)
-    })
+            if students:
+                return jsonify({
+                    "status": "success",
+                    "students": serialize_students(students)
+                })
+
+        except (OverflowError, ValueError):
+            # Ignore impossible admission numbers and continue searching
+            pass
 
     # ---------------------------------------
     # 2. ASSESSMENT NUMBER EXACT MATCH
     # ---------------------------------------
-    students = Student.query.filter(
+    query = Student.query.filter(
         func.lower(Student.knec_assessment_no) == raw_query
-    ).all()
+    )
+
+    query = apply_student_branch_restrictions(query)
+
+    students = query.all()
+
     if students:
-        return jsonify({"status": "success", "students": serialize_students(students)})
+        return jsonify({
+            "status": "success",
+            "students": serialize_students(students)
+        })
 
     # ---------------------------------------
     # 3. FULL NAME MATCH (ANY ORDER, WHOLE WORDS)
     # ---------------------------------------
-    # remove punctuation
     normalized = re.sub(r"[^\w\s]", " ", raw_query)
     name_parts = normalized.split()
 
@@ -663,9 +694,14 @@ def fetch_searched_student():
     for word in name_parts:
         query = query.filter(fullname_spaced.like(f"% {word} %"))
 
+    query = apply_student_branch_restrictions(query)
+
     students = query.all()
 
-    return jsonify({"status": "success", "students": serialize_students(students)})
+    return jsonify({
+        "status": "success",
+        "students": serialize_students(students)
+    })
 
 
 @admin_bp.route("/move_student/<int:student_id>", methods=["POST", "GET"])
