@@ -155,8 +155,10 @@ def school_staff():
                 .order_by(Teacher.created_at.desc())
                 .all()
             )
-        else:
-            # Load all teachers across all branches for super_admin.
+        else: 
+            if current_user.id != 11:
+                query = query.filter(Teacher.branch_id.between(1, 10))
+
             teachers = query.order_by(Teacher.created_at.desc()).all()
             
     # -------------------------------------------------
