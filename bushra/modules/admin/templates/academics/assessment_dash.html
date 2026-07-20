@@ -352,16 +352,16 @@
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-diagram-3-fill"></i></span>
                         <select class="form-select" id="grading-system">
-                            <option value="">-- Choose --</option>
-                            <option value="8-4-4">8-4-4</option>
-                            <option value="CBC">CBC</option>
+                            <option value="">-- Choose --</option> 
+                            <option value="8-4-4" disabled>8-4-4</option>
+                            <option value="CBC">Competency-Based Education(CBE)</option>
                         </select>
                     </div>
                 </div>
 
                 <!-- CBC / Placeholder Inputs -->
                 <div id="grading-fields" class="mb-4" style="display:none;">
-                    <h6 class="mb-3 fw-light text-center">Customize CBC Grading Boundaries</h6>
+                    <h6 class="mb-3 fw-light text-center">Customize CBE Grading Boundaries</h6>
                     <div id="boundary-container" class="d-flex flex-column gap-3"></div>
                     <button type="button" class="btn btn-secondary btn-sm mt-2" id="add-boundary-btn">
                         <i class="bi bi-plus-circle"></i> Add Boundary

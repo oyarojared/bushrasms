@@ -25,14 +25,14 @@ import weasyprint
 
 from ..utils import get_accessible_branches_query
 
+DEVELOPER_ID = 11
+
 
 @admin_bp.route("assessments/dash", methods=["GET", "POST"])
 @login_required
 def assessment_dash():
     exam_form = ExamCreateForm()
 
-    grades = BranchClasses.query.all()
-    
     query = get_exams_for_user(current_user)
     exams_list = query.all()
 
@@ -102,6 +102,15 @@ def assessment_dash():
         flash("Exam created successfully.", "success")
         return redirect(url_for("admin.assessment_dash"))
     
+    # Display grades based on the current user's branch
+    if current_user.is_admin:
+        if current_user.id == DEVELOPER_ID:
+            grades = BranchClasses.query.all()
+        else:
+            grades = BranchClasses.query.filter_by(
+                branch_id=current_user.branch_id
+            ).all()
+                
     return render_template(
         "academics/assessment_dash.html", 
         exam_form=exam_form,
@@ -354,18 +363,31 @@ def save_grading_config():
         # Extract grade_form strings from tuples
         grade_forms = [gf[0] for gf in grade_forms]
 
-        # 3️⃣ Apply boundaries to all classes with these grade_forms
+        # 3️⃣ Apply boundaries to matching classes
         for grade_form in grade_forms:
-            classes = BranchClasses.query.filter_by(grade_form=grade_form).all()
+
+            query = BranchClasses.query.filter_by(grade_form=grade_form)
+
+            # Branch 11 can manage all branches
+            if current_user.id != DEVELOPER_ID:
+                query = query.filter_by(branch_id=current_user.branch_id)
+
+            classes = query.all()
 
             for cls in classes:
                 grade_id = cls.id
 
                 # Delete old mappings and boundaries for this class
-                old_mappings = GradeGradingScheme.query.filter_by(grade_id=grade_id).all()
+                old_mappings = GradeGradingScheme.query.filter_by(
+                    grade_id=grade_id
+                ).all()
+
                 for m in old_mappings:
-                    GradingBoundary.query.filter_by(scheme_id=m.scheme_id).delete()
+                    GradingBoundary.query.filter_by(
+                        scheme_id=m.scheme_id
+                    ).delete()
                     db.session.delete(m)
+
                 db.session.flush()
 
                 # Create new scheme
