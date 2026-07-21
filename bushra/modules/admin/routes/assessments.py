@@ -110,6 +110,8 @@ def assessment_dash():
             grades = BranchClasses.query.filter_by(
                 branch_id=current_user.branch_id
             ).all()
+    else:
+        grades = []
                 
     return render_template(
         "academics/assessment_dash.html", 
