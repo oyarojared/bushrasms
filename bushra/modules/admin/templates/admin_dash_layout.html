@@ -106,10 +106,10 @@
             <!-- Admin Notice -->
             <div class="d-flex align-items-center">
                 <span class="badge bg-warning text-white me-2">
-                    <i class="bi bi-person-fill mx-2"></i>Super Admin
+                    <i class="bi bi-person-fill mx-2"></i>Super Admin.
                 </span>
                 <span class="fw-semibold small">
-                    You have full access to all branches
+                    You have full access to all branches.
                 </span>
             </div>
         {% else %}
@@ -128,18 +128,29 @@
                         <div class="fw-semibold" style="line-height: 1;">
                             <span class="fw-bold">{{ target_branch_info.branch_name | upper }}</span>
                         </div>
-                        <small>
-                            {{ target_branch_info.motto }}
+                        <small class="text-warning">
+                            <span class="fw-bold">Motto: </span>{{ target_branch_info.motto }}
                         </small>
+                        <br>
+                        <div class="bg-light border rounded-3 d-inline-flex align-items-center px-3 py-1">
+                            <i class="bi bi-calendar2-check text-danger fs-5 me-2"></i>
+                            <div class="lh-sm">
+                                <div class="small text-muted">Next Subscription: <span class="fw-semibold text-danger">05/09/2026</span></div>
+                            </div>
+                        </div>
                     {% endif %}
                 </div>
             </div>
         {% endif %}
+       <div class="bg-secondary text-white rounded px-3 py-2 d-flex align-items-center shadow-lg">
+            <i class="bi bi-person-circle fs-4 me-2"></i>
 
-        <!-- Optional Right Side (future use: user profile, logout, etc.) -->
-        <div>
-            <!-- Example placeholder -->
-            <!-- <a href="#" class="text-white text-decoration-none">Profile</a> -->
+            <div class="lh-sm">
+                <div class="fw-semibold">{{ current_user.fullname }}</div>
+                <small class="opacity-75 text-warning">
+                    <i class="bi bi-shield-check me-1"></i>Administrator
+                </small>
+            </div>
         </div>
 
     </div>
