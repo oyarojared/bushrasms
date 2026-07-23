@@ -116,7 +116,7 @@
             <!-- School Info -->
             <div class="d-flex align-items-center">
                 <div class="bg-white rounded-circle d-flex align-items-center justify-content-center me-2"
-                     style="width: 42px; height: 42px; overflow: hidden;">
+                     style="width: 52px; height: 52px; overflow: hidden;">
                     {% if target_branch_info.logo %}
                     <img src="{{ url_for('admin.serve_passport', filename=target_branch_info.logo) }}"
                         alt="Logo" 
@@ -132,16 +132,20 @@
                             <span class="fw-bold">Motto: </span>{{ target_branch_info.motto }}
                         </small>
                         <br>
-                        <div class="bg-light border rounded-3 d-inline-flex align-items-center px-3 py-1">
-                            <i class="bi bi-calendar2-check text-danger fs-5 me-2"></i>
-                            <div class="lh-sm">
-                                <div class="small text-muted">Next Subscription: <span class="fw-semibold text-danger">05/09/2026</span></div>
+                        {% if current_user.is_admin %}
+                            <div class="bg-light border rounded-3 d-inline-flex align-items-center px-3 py-1">
+                                <i class="bi bi-calendar2-check text-danger fs-5 me-2"></i>
+                                <div class="lh-sm">
+                                    <div class="small text-muted">Next Subscription: <span class="fw-semibold text-danger">05/09/2026</span></div>
+                                </div>
                             </div>
-                        </div>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>
         {% endif %}
+        
+        {% if current_user.is_admin %}
        <div class="bg-secondary text-white rounded px-3 py-2 d-flex align-items-center shadow-lg">
             <i class="bi bi-person-circle fs-4 me-2"></i>
 
@@ -152,6 +156,7 @@
                 </small>
             </div>
         </div>
+        {% endif %}
 
     </div>
 </div>
@@ -182,7 +187,7 @@
     <div class="row">
         <div class="col-md-9">
             <span><i class="bi bi-code-slash"></i></span>
-             Developed by <span class="fw-bold">Oyaro Jared</span> | <strong>Tel: </strong>+254701948782/+254782811403 <strong>Email: </strong> oyarojared278@gmail.com &copy;2026
+             Developed by <span class="fw-bold">Oyaro Jared</span> | <strong>Tel: </strong>0701948782 or 0782811403 <strong>Email: </strong> oyarojared278@gmail.com &copy;2026
              All rights reserved.
         </div>
         <div class="col-md-3">

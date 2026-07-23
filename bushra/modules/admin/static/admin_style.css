@@ -144,6 +144,21 @@ body {
   height: 60px;
 }
 
+.card {
+  transition: all 0.25s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.orange-line {
+  height: 4px;
+  background: linear-gradient(90deg, #fd7e14, #ffc107);
+  border-radius: 1rem 1rem 0 0;
+}
+
 .form-input {
   border-radius: 20px;
   padding: 6px 12px;
@@ -315,6 +330,76 @@ body {
 /* Smooth content animation */
 .tab-pane {
   animation: fadeIn 0.3s;
+}
+
+.card {
+  transition: all 0.25s ease;
+}
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.quick-action {
+  border-radius: 1rem;
+  transition: all 0.25s ease;
+}
+
+.quick-action:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.action-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+@media (max-width: 576px) {
+  .quick-action .card-body {
+    padding: 1rem !important;
+  }
+
+  .action-icon {
+    width: 52px;
+    height: 52px;
+  }
+
+  .quick-action h6 {
+    font-size: 1rem;
+  }
+
+  .quick-action small {
+    font-size: 0.85rem;
+  }
+}
+
+footer {
+  font-size: 0.95rem;
+}
+
+footer h6 {
+  letter-spacing: 0.3px;
+}
+
+footer .text-break {
+  word-break: break-word;
+}
+
+@media (max-width: 576px) {
+  footer {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  footer h6 {
+    font-size: 1rem;
+  }
 }
 
 @keyframes fadeIn {
