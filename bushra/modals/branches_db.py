@@ -9,7 +9,7 @@ class Branch(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     branch_name = db.Column(db.String(150), nullable=False, unique=True, index=True)
-    school_code = db.Column(db.String(8), nullable=False, unique=True, index=True)
+    school_code = db.Column(db.String(8), nullable=False, unique=False, index=True)
 
     branch_manager = db.Column(db.String(100), nullable=False)
     branch_level = db.Column(db.String(20), nullable=False)
