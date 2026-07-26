@@ -177,16 +177,20 @@ def aggregate_to_final_grade(points):
 # Automatic comment based on marks
 # =========================================================
 def subject_comment(marks):
-    if marks >= 75:
-        return "Excellent work!"
-    elif marks >= 65:
-        return "Very good. Keep it up."
+    if marks >= 80:
+        return "Excellent."
+    elif marks >= 70:
+        return "Very good."
+    elif marks >= 60:
+        return "Good."
     elif marks >= 50:
-        return "Good effort. Can improve."
+        return "Satisfactory."
     elif marks >= 40:
-        return "Fair performance. Needs more practice."
+        return "Fair"
+    elif marks >= 30:
+        return "Need Improvement."
     else:
-        return "Below average. Work harder."
+        return "Poor."
 
 
 # =========================================================
