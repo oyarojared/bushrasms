@@ -35,7 +35,7 @@ class ExtendedBranchForm(BranchesList):
     class_year = SelectField(
         "Class Year",
         choices=[(str(y), str(y)) for y in range(2035, 2024, -1)],
-        default="2025",
+        default="2026",
         validators=[DataRequired()],
     )
 
@@ -72,8 +72,8 @@ class AddBranchForm(FlaskForm):
         ],
     )
 
-    school_code = IntegerField(
-        "School Code",
+    school_code = StringField(
+        "School Address",
         validators=[ 
             Optional()
         ],

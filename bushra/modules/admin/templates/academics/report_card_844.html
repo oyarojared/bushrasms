@@ -254,12 +254,11 @@ th {
 
         <div class="school-info">
             <h2>{{ student.branch_name }}</h2>
-            <p>P.O. BOX 28-70100, GARISSA - KENYA</p>
+            <p>{{ (school.school_code or '') | upper }}</p>
             <p>
-                Email: <span class="contact-blue">secondaryschoolramaguda@gmail.com</span> |
-                Phone: <span class="contact-blue">---</span>
+                <span class="contact-blue">{{ school.email }}</span> 
             </p>
-            <h5>STUDENT'S ASSESSMENT REPORT</h5>
+            <h5>STUDENT'S REPORT CARD</h5>
             <h5>{{ student.exam.name }} - {{ student.exam.year }} - Term: {{ student.exam.term }}</h5>
         </div>
 
@@ -401,7 +400,7 @@ th {
 
 <div class="footer">
         © 2026 {{ student.branch_name }}.
-        <br>Developed by Bushra Tech. All Rights Reserved.
+        <br>Developed by Oyaro Jared. All Rights Reserved.
     </div>
 
 <style>

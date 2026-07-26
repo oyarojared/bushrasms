@@ -342,16 +342,10 @@
 
             <div class="school-info">
                 <h2>{{ data.branch.name }}</h2>
-                <p>P.O. BOX 28-70100, GARISSA - KENYA</p>
+                <p>{{ (school.school_code or '') | upper }}</p>
                 <p class="small">
-                    Email:
                     <span class="text-primary">
-                        {{ data.branch.email|default('N/A', true)|upper }}
-                    </span>
-                    |
-                    Phone:
-                    <span class="text-primary">
-                        {{ data.branch.phone|default('N/A', true) }}
+                        {{ data.branch.email|default('N/A', true) }}
                     </span>
                 </p>
                 <p>{{ data.exam.name }} <strong>Term: </strong>{{ data.exam.term }} {{ data.exam.year }}</p>

@@ -265,6 +265,8 @@ def generate_reportcards_pdf():
     # Defensive initialization (prevents UnboundLocalError)
     report_data = None
 
+    school = Branch.query.get(branch_id)
+
     try:
         # 🔹 Fetch class info first
         class_obj = BranchClasses.query.get_or_404(class_id)
@@ -297,7 +299,7 @@ def generate_reportcards_pdf():
             raise ValueError("No report data generated")
 
         # 🔹 2️⃣ Render HTML
-        rendered_html = render_template(template, data=report_data)
+        rendered_html = render_template(template, data=report_data, school=school)
 
         # 🔹 3️⃣ Generate PDF
         pdf = HTML(string=rendered_html).write_pdf()
@@ -324,7 +326,7 @@ def generate_reportcards_pdf():
         import traceback
         traceback.print_exc()
         return {
-            "error": "Failed to generate PDF",
+            "error": "Failed to generate PDF! Make sure you have configured grading first!",
             "details": str(e)
         }, 500
 
