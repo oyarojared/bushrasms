@@ -46,8 +46,7 @@ async function loadReportCards(branchId, classId, examId, stream = null) {
 
 
                     <div class="col-6 text-center">
-                        <h5 class="mb-1 fw-bold text-uppercase">${data.branch_name}</h5>
-                        <small class="d-block">P.O. BOX 28-70100 GARISSA, KENYA</small> 
+                        <h5 class="mb-1 fw-bold text-uppercase">${data.branch_name}</h5> 
                     </div>
 
                     <div class="col-3 text-center">
