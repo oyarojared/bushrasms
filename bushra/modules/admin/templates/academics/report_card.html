@@ -301,6 +301,36 @@
             font-size: 10px;
         }
 
+        .position-badge{
+    display:inline-block;
+    background:#923006;
+    color:#fff;
+    padding:6px 12px;
+    border-radius:8px;
+    text-align:center;
+}
+
+.main-position{
+    font-size:13px;
+    font-weight:bold;
+    line-height:1.1;
+}
+
+.main-position span{
+    display:block;
+    font-size:9px;
+    font-weight:normal;
+    opacity:.9;
+}
+
+.overall-position{
+    margin-top:3px;
+    padding-top:3px;
+    border-top:1px solid rgba(255,255,255,.35);
+    font-size:8px;
+    opacity:.85;
+}
+
     </style>
 </head>
 
@@ -370,19 +400,23 @@
             <strong>Adm:</strong> {{ student.admission_number }} |
             <strong>Ass. No:</strong><span class="text-upper">{{ student.assessment_no or "---" }}</span> |
             <strong>Gender:</strong> <span class="text-upper">{{ student.gender or "---" }}</span> |
-            {% if data.students|length > 0 %}
-            {% if student.stream %}
-                <div class="position-badge">
-                    Stream Position: {{ student.stream_position }} out of {{ student.stream_total }}
-                    <br>
-                    Overall Position: {{ student.class_position }} out of {{ student.class_total }}
-                </div>
-            {% else %}
-                <div class="position-badge">
-                    Position: {{ loop.index }} out of {{ data.students|length }}
-                </div>
-            {% endif %}
-        {% endif %}
+            {% if data.students %}
+    {% if student.stream %}
+        <div class="position-badge">
+            <div class="main-position">
+                <span>Stream Pos: {{ student.stream_position }} of {{ student.stream_total }}</span>
+            </div>
+
+            <div class="overall-position">
+                Overall Class Position: {{ student.overall_position }}/{{ student.class_total }}
+            </div>
+        </div>
+    {% else %}
+        <div class="position-badge">
+            Position: {{ student.overall_position }} out of {{ student.class_total }}
+        </div>
+    {% endif %}
+{% endif %}
         </div>
 
 

@@ -20,6 +20,8 @@ from flask import render_template, make_response
 from weasyprint import HTML, CSS
 from ..utils import get_accessible_branches_query
 
+from flask_login import current_user
+from sqlalchemy import distinct
 
 # --------------------------------------
 # API endpoint: Get all branches
@@ -55,9 +57,6 @@ def api_branches():
 # Returns a JSON list of classes with id, grade_form, and streams
 # Example: [{"id": 1, "grade_form": "Form 1", "streams": ["A","B"]}, ...]
 # --------------------------------------
-
-from flask_login import current_user
-from sqlalchemy import distinct
 
 @admin_bp.route("/api/grades/<int:branch_id>")
 @login_required

@@ -262,7 +262,6 @@ def generate_reportcards_pdf():
     if not branch_id or not class_id or not exam_id:
         return {"error": "branch_id, class_id, and exam_id are required"}, 400
 
-    # Defensive initialization (prevents UnboundLocalError)
     report_data = None
 
     school = Branch.query.get(branch_id)
