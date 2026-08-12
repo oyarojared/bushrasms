@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Acadex | School Management System</title>
+
+    <meta
+      name="description"
+      content="Acadex is a modern school management system that helps schools manage students, teachers, examinations, assessments, attendance and academic records."
+    />
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='logos/acadex_logo.png') }}"
+    />
+
+    <!-- Bootstrap 5 -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='landing_page.css')}}"
+    />
+  </head>
+
+  <body>
+    <!-- ============================================================
+     NAVBAR
+============================================================ -->
+
+    <nav class="navbar navbar-expand-lg sticky-top">
+      <div class="container">
+        <!-- COMPANY LOGO + ACADEX -->
+
+        <a class="brand-wrapper" href="#">
+          <img
+            src="{{ url_for('static', filename='logos/acadex_logo.png') }}"
+            alt="Company Logo"
+            class="company-logo"
+          />
+
+          <div class="brand-divider"></div>
+
+          <div class="acadex-wordmark">Acadex</div>
+        </a>
+
+        <!-- MOBILE MENU BUTTON -->
+
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#mainNavbar"
+          aria-controls="mainNavbar"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- NAVIGATION -->
+
+        <div class="collapse navbar-collapse" id="mainNavbar">
+          <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link" href="#features"> Features </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link" href="#product"> Platform </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link" href="#how-it-works"> How It Works </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link" href="#contact"> Contact </a>
+            </li>
+          </ul>
+
+          <div class="d-flex align-items-center">
+            <a href="{{ url_for('auth.login') }}" class="login-link"> Login </a>
+
+            <a href="#contact" class="btn btn-acadex"> Get Started </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ============================================================
+     HERO
+============================================================ -->
+
+    <section class="hero">
+      <div class="container">
+        <div class="row align-items-center">
+          <!-- HERO TEXT -->
+
+          <div class="col-lg-6">
+            <div class="hero-badge">
+              <i class="bi bi-stars"></i>
+              Powering Better Schools
+            </div>
+
+            <h1>
+              Everything your school needs,
+
+              <span> in one place. </span>
+            </h1>
+
+            <p class="hero-text">
+              Acadex brings student management, examinations, assessments,
+              attendance, teachers and school records together in one simple
+              platform.
+            </p>
+
+            <div class="hero-buttons">
+              <a href="#contact" class="btn btn-hero-primary">
+                Get Started
+
+                <i class="bi bi-arrow-right ms-2"></i>
+              </a>
+
+              <a href="#product" class="btn btn-hero-secondary">
+                Explore Acadex
+              </a>
+            </div>
+
+            <div class="hero-note">
+              <i class="bi bi-check-circle me-1"></i>
+
+              Built with schools in mind
+            </div>
+          </div>
+
+          <!-- DASHBOARD -->
+          <div class="col-lg-6">
+            <h2 class="text-center fw-light">Innovation meets simplicity</h2>
+            <div class="dashboard-wrapper">
+              <div class="dashboard-window">
+                <!-- Browser-style header -->
+                <div class="window-header">
+                  <span class="window-dot"></span>
+                  <span class="window-dot"></span>
+                  <span class="window-dot"></span>
+                </div>
+
+                <!-- Screenshot Carousel -->
+                <div
+                  id="acadexScreenshots"
+                  class="carousel slide carousel-fade"
+                  data-bs-ride="carousel"
+                  data-bs-interval="4500"
+                >
+                  <!-- Screenshots -->
+
+                  <div class="carousel-inner">
+                    <!-- Screenshot 1 -->
+                    <div class="carousel-item">
+                      <img
+                        src="{{ url_for('static', filename='system_screenshots/student_profile.png') }}"
+                        class="d-block w-100 acadex-screenshot"
+                        alt="Student profile"
+                      />
+                    </div>
+
+                    <!-- Screenshot 2 -->
+                    <div class="carousel-item active">
+                      <img
+                        src="{{ url_for('static', filename='system_screenshots/school_dash.png') }}"
+                        class="d-block w-100 acadex-screenshot"
+                        alt="Acadex school management dashboard"
+                      />
+                    </div>
+
+                    <!-- Screenshot 3 -->
+                    <div class="carousel-item">
+                      <img
+                        src="{{ url_for('static', filename='system_screenshots/students_upload.png') }}"
+                        class="d-block w-100 acadex-screenshot"
+                        alt="Acadex student upload"
+                      />
+                    </div>
+
+                    <!-- Screenshot 4 -->
+                    <div class="carousel-item">
+                      <img
+                        src="{{ url_for('static', filename='system_screenshots/student_report_card.png') }}"
+                        class="d-block w-100 acadex-screenshot"
+                        alt="Acadex assessment report"
+                      />
+                    </div>
+
+                    <!-- Screenshot 5 -->
+                    <div class="carousel-item">
+                      <img
+                        src="{{ url_for('static', filename='system_screenshots/acadex_logo.png') }}"
+                        class="d-block w-100 acadex-screenshot"
+                        alt="Acadex logo"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Previous button -->
+
+                  <button
+                    class="carousel-control-prev"
+                    type="button"
+                    data-bs-target="#acadexScreenshots"
+                    data-bs-slide="prev"
+                  >
+                    <span class="carousel-control-prev-icon" aria-hidden="true">
+                    </span>
+
+                    <span class="visually-hidden"> Previous </span>
+                  </button>
+
+                  <!-- Next button -->
+
+                  <button
+                    class="carousel-control-next"
+                    type="button"
+                    data-bs-target="#acadexScreenshots"
+                    data-bs-slide="next"
+                  >
+                    <span class="carousel-control-next-icon" aria-hidden="true">
+                    </span>
+
+                    <span class="visually-hidden"> Next </span>
+                  </button>
+
+                  <!-- Indicators -->
+
+                  <div class="carousel-indicators">
+                    <button
+                      type="button"
+                      data-bs-target="#acadexScreenshots"
+                      data-bs-slide-to="0"
+                      class="active"
+                      aria-current="true"
+                      aria-label="Dashboard"
+                    ></button>
+
+                    <button
+                      type="button"
+                      data-bs-target="#acadexScreenshots"
+                      data-bs-slide-to="1"
+                      aria-label="Students"
+                    ></button>
+
+                    <button
+                      type="button"
+                      data-bs-target="#acadexScreenshots"
+                      data-bs-slide-to="2"
+                      aria-label="Examinations"
+                    ></button>
+
+                    <button
+                      type="button"
+                      data-bs-target="#acadexScreenshots"
+                      data-bs-slide-to="3"
+                      aria-label="Assessment"
+                    ></button>
+
+                    <button
+                      type="button"
+                      data-bs-target="#acadexScreenshots"
+                      data-bs-slide-to="4"
+                      aria-label="Report Card"
+                    ></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+     TRUSTED BY SCHOOLS
+============================================================ -->
+
+    <section class="trust-section">
+      <div class="container-fluid px-0">
+        <div class="trust-heading">Trusted by schools</div>
+
+        <div class="trust-marquee">
+          <div class="trust-track">
+            <!-- =================================================
+                     GROUP 1
+
+                     Replace the school names and logo paths
+                     with your REAL schools.
+                ================================================= -->
+
+            <div class="trust-group">
+              <div class="school-item">
+                <div class="school-placeholder">
+                  <img
+                    src="{{ url_for('static', filename='logos/bushra_high.jpg')}}"
+                    alt="Bushra high school logo"
+                  />
+                </div>
+
+                <span class="school-name"> Bushra High School </span>
+              </div>
+
+              <div class="school-item">
+                <div class="school-placeholder">
+                  <img
+                    src="{{ url_for('static', filename='logos/bushra_academy.jpeg')}}"
+                    alt="Bushra Academy logo"
+                  />
+                </div>
+                <span class="school-name"> Bushra Academy </span>
+              </div>
+
+              <div class="school-item">
+                <img
+                  src="{{ url_for('static', filename='logos/fafi_academy.jpeg')}}"
+                  alt="Fafi academy logo"
+                />
+                <span class="school-name"> Fafi Academy </span>
+              </div>
+
+              <div class="school-item">
+                <img
+                  src="{{ url_for('static', filename='logos/ihsan_secondary.jpeg')}}"
+                  alt="Ihsan Secondary logo"
+                />
+                <span class="school-name"> Ihsan Secondary School </span>
+              </div>
+
+              <div class="school-item">
+                <img
+                  src="{{ url_for('static', filename='logos/ramaguda_sec.png')}}"
+                  alt="Ihsan Secondary logo"
+                />
+
+                <span class="school-name"> Ramaguda Secondary School </span>
+              </div>
+
+              <div class="school-item">
+                <img
+                  src="{{ url_for('static', filename='logos/ihsan_academy.jpeg')}}"
+                  alt="Ihsan Secondary logo"
+                />
+
+                <span class="school-name"> Ihsan Academy </span>
+              </div>
+            </div>
+
+            <!-- =================================================
+                     GROUP 2
+
+                     DUPLICATED intentionally to create
+                     a seamless infinite marquee.
+                ================================================= -->
+
+            <div class="trust-group">
+              <div class="school-item">
+                <img
+                  src="{{ url_for('static', filename='logos/albushra_academy.png')}}"
+                  alt="Al bushra Academy logo"
+                />
+
+                <span class="school-name"> Al-Bushra Royal Academy </span>
+              </div>
+
+              <div class="school-item">
+                <img
+                  src="{{ url_for('static', filename='logos/nuradin_academy.jpeg')}}"
+                  alt="Nuradin Academy logo"
+                />
+
+                <span class="school-name"> Nuradin Intergrated Academy </span>
+              </div>
+
+              <div class="school-item">
+                <img
+                  src="{{ url_for('static', filename='logos/bushra_academy.jpeg')}}"
+                  alt="Bushra Academy logo"
+                />
+                <span class="school-name"> Bushra Academy </span>
+              </div>
+
+              <div class="school-item">
+                <img
+                  src="{{ url_for('static', filename='logos/ihsan_secondary.jpeg')}}"
+                  alt="Ihsan Secondary logo"
+                />
+                <span class="school-name"> Ihsan Secondary School </span>
+              </div>
+
+              <img
+                src="{{ url_for('static', filename='logos/fafi_academy.jpeg')}}"
+                alt="Fafi academy logo"
+              />
+              <span class="school-name"> Fafi Academy </span>
+
+              <div class="school-item">
+                <img
+                  src="{{ url_for('static', filename='logos/kheyrat_academy.jpeg')}}"
+                  alt="Kheyrat Academy logo"
+                />
+
+                <span class="school-name"> Kheyrat Academy </span>
+              </div>
+
+              <div class="school-item">
+                <div class="school-placeholder">GA</div>
+
+                <span class="school-name"> Great Academy </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+     FEATURES
+============================================================ -->
+
+    <section class="section" id="features">
+      <div class="container">
+        <div class="text-center mb-5">
+          <div class="section-label">Everything in one place</div>
+
+          <h2 class="section-title">Built for the everyday work of schools</h2>
+
+          <p class="section-description mx-auto">
+            Acadex brings the essential tools for managing your school together
+            in one centralized platform.
+          </p>
+        </div>
+
+        <div class="row g-4">
+          <!-- STUDENTS -->
+
+          <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="bi bi-people"></i>
+              </div>
+
+              <h5>Student Management</h5>
+
+              <p>
+                Keep student records organized and accessible from one
+                centralized system.
+              </p>
+            </div>
+          </div>
+
+          <!-- EXAMS -->
+
+          <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="bi bi-journal-check"></i>
+              </div>
+
+              <h5>Examinations & Results</h5>
+
+              <p>
+                Manage examinations, marks, grading, positions and academic
+                performance.
+              </p>
+            </div>
+          </div>
+
+          <!-- CBC -->
+
+          <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="bi bi-bar-chart"></i>
+              </div>
+
+              <h5>CBC Assessment</h5>
+
+              <p>
+                Manage competency-based assessments and keep learner records
+                organized.
+              </p>
+            </div>
+          </div>
+
+          <!-- ATTENDANCE -->
+
+          <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="bi bi-calendar-check"></i>
+              </div>
+
+              <h5>Attendance</h5>
+
+              <p>
+                Keep track of student attendance and maintain clear school
+                records.
+              </p>
+            </div>
+          </div>
+
+          <!-- TEACHERS -->
+
+          <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="bi bi-person-badge"></i>
+              </div>
+
+              <h5>Teacher Management</h5>
+
+              <p>
+                Organize teacher information and manage their access to the
+                system.
+              </p>
+            </div>
+          </div>
+
+          <!-- REPORTS -->
+
+          <div class="col-md-6 col-lg-4">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="bi bi-file-earmark-text"></i>
+              </div>
+
+              <h5>Reports & Records</h5>
+
+              <p>
+                Generate useful academic reports and keep important records
+                accessible.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+     PRODUCT SHOWCASE
+============================================================ -->
+
+    <section class="section section-light" id="product">
+      <div class="container">
+        <div class="row align-items-center g-5">
+          <div class="col-lg-6">
+            <div class="section-label">The Acadex platform</div>
+
+            <h2 class="section-title">
+              Your school's information. One organized system.
+            </h2>
+
+            <p class="section-description mb-4">
+              From student records to academic results, Acadex gives your school
+              a centralized place to manage everyday operations.
+            </p>
+
+            <div class="benefit">
+              <div class="benefit-icon">
+                <i class="bi bi-check-lg"></i>
+              </div>
+
+              <div>
+                <h6>Simple to use</h6>
+
+                <p>
+                  Designed so school staff can get started without complicated
+                  training.
+                </p>
+              </div>
+            </div>
+
+            <div class="benefit">
+              <div class="benefit-icon">
+                <i class="bi bi-check-lg"></i>
+              </div>
+
+              <div>
+                <h6>Accessible anywhere</h6>
+
+                <p>
+                  Access your school system from a computer, tablet or
+                  smartphone.
+                </p>
+              </div>
+            </div>
+
+            <div class="benefit">
+              <div class="benefit-icon">
+                <i class="bi bi-check-lg"></i>
+              </div>
+
+              <div>
+                <h6>Built around schools</h6>
+
+                <p>
+                  Manage classes, streams, students, teachers and academic
+                  records together.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- PRODUCT MOCKUP -->
+          <div class="col-lg-6">
+            <img
+              src="{{ url_for('static', filename='system_screenshots/phone_marks_entry.png')}}"
+              alt=""
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+     HOW IT WORKS
+============================================================ -->
+
+    <section class="section" id="how-it-works">
+      <div class="container">
+        <div class="text-center mb-5">
+          <div class="section-label">Getting started</div>
+
+          <h2 class="section-title">Start managing your school simply</h2>
+
+          <p class="section-description mx-auto">
+            Getting started with Acadex is straightforward.
+          </p>
+        </div>
+
+        <div class="row g-5">
+          <div class="col-md-4">
+            <div class="step">
+              <div class="step-number">01</div>
+
+              <h5>Set up your school</h5>
+
+              <p>
+                Contact us to Configure your school's basic information and
+                structure.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="step">
+              <div class="step-number">02</div>
+
+              <h5>Add your data</h5>
+
+              <p>
+                Add students, teachers, classes and other school information.
+              </p>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="step">
+              <div class="step-number">03</div>
+
+              <h5>Start managing</h5>
+
+              <p>
+                Your school can now manage everyday operations from one
+                platform.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+     CTA
+============================================================ -->
+
+    <section class="cta-section" id="contact">
+      <div class="container">
+        <div class="cta-box">
+          <h2>Ready to simplify your school?</h2>
+
+          <p>
+            It takes less than 30 minutes to train your teachers on how to use
+            Acadex. Yes, It is that simple.
+          </p>
+
+          <a href="/login" class="btn btn-hero-primary">
+            Contact Us to Get Started
+
+            <i class="bi bi-arrow-right ms-2"></i>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+     FOOTER
+============================================================ -->
+
+    <footer>
+      <div class="container">
+        <div class="row g-5">
+          <div class="col-lg-5">
+            <div class="footer-brand-wrapper">
+              <img
+                src="{{ url_for('static', filename='logos/acadex_logo.png') }}"
+                alt="Company Logo"
+                class="company-logo"
+              />
+
+              <div class="footer-brand">Acadex</div>
+            </div>
+
+            <p class="footer-description">
+              A simple school management platform designed to help schools
+              organize their administration, academic records and everyday
+              operations.
+            </p>
+          </div>
+
+          <div class="col-6 col-lg-2">
+            <h6>Product</h6>
+
+            <ul>
+              <li>
+                <a href="#features"> Features </a>
+              </li>
+
+              <li>
+                <a href="#product"> Platform </a>
+              </li>
+
+              <li>
+                <a href="#how-it-works"> How It Works </a>
+              </li>
+            </ul>
+          </div>
+
+          <div class="col-6 col-lg-2">
+            <h6>Company</h6>
+
+            <ul>
+              <li>
+                <a href="#contact"> Contact </a>
+              </li>
+
+              <li>
+                <a href="#"> About </a>
+              </li>
+
+              <li>
+                <a href="#"> Privacy </a>
+              </li>
+            </ul>
+          </div>
+
+          <div class="col-6 col-lg-3">
+            <h6>Account</h6>
+
+            <ul>
+              <li>
+                <a href="/login"> Login </a>
+              </li>
+
+              <li>
+                <a href="#contact"> Get Started </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div
+          class="footer-bottom d-flex flex-column flex-md-row justify-content-between gap-2"
+        >
+          <div>© 2026 Acadex. All rights reserved.</div>
+
+          <div>Simple school management.</div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- ============================================================
+     BOOTSTRAP JS
+============================================================ -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
+```

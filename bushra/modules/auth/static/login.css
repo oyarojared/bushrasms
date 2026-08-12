@@ -1,0 +1,684 @@
+/* =====================================================
+           BRAND VARIABLES
+        ====================================================== */
+
+:root {
+  --acadex-red: #9b2f2f;
+  --acadex-red-dark: #7d2424;
+  --acadex-red-light: #fdf1f1;
+
+  --dark: #172033;
+  --muted: #64748b;
+
+  --border: #e5e7eb;
+
+  --background: #f7f8fa;
+}
+
+/* =====================================================
+           GLOBAL
+        ====================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+
+  background:
+    radial-gradient(
+      circle at 10% 10%,
+      rgba(155, 47, 47, 0.06),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 90% 90%,
+      rgba(155, 47, 47, 0.04),
+      transparent 30%
+    ),
+    var(--background);
+
+  color: var(--dark);
+
+  overflow: hidden;
+}
+
+/* =====================================================
+           MAIN PAGE
+
+           100svh works better on modern mobile browsers
+           because it accounts for the browser address bar.
+        ====================================================== */
+
+.login-page {
+  width: 100%;
+  height: 100svh;
+  min-height: 500px;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+/* =====================================================
+           TOP BAR
+        ====================================================== */
+
+.topbar {
+  width: 100%;
+
+  flex-shrink: 0;
+
+  background: rgba(255, 255, 255, 0.94);
+
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+
+  backdrop-filter: blur(10px);
+}
+
+.topbar-inner {
+  width: 100%;
+  max-width: 1180px;
+
+  height: 66px;
+
+  margin: 0 auto;
+
+  padding: 0 24px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+}
+
+/* =====================================================
+           COMPANY BRAND
+        ====================================================== */
+
+.company-brand {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  text-decoration: none;
+
+  color: var(--dark);
+}
+
+.company-logo {
+  width: 38px;
+  height: 38px;
+
+  border-radius: 8px;
+
+  object-fit: contain;
+
+  display: block;
+}
+
+/*
+         * Temporary logo if you don't have the actual
+         * company logo yet.
+         */
+
+.company-logo-placeholder {
+  width: 38px;
+  height: 38px;
+
+  border-radius: 8px;
+
+  background: var(--acadex-red);
+
+  color: white;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size: 1rem;
+}
+
+.company-name {
+  font-size: 0.98rem;
+
+  font-weight: 800;
+
+  letter-spacing: -0.2px;
+
+  line-height: 1.1;
+}
+
+.company-name small {
+  display: block;
+
+  color: #94a3b8;
+
+  font-size: 0.61rem;
+
+  font-weight: 500;
+
+  margin-top: 3px;
+}
+
+/* =====================================================
+           BACK TO WEBSITE
+        ====================================================== */
+
+.website-link {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  padding: 8px 13px;
+
+  border-radius: 8px;
+
+  text-decoration: none;
+
+  color: var(--muted);
+
+  font-size: 0.8rem;
+
+  font-weight: 600;
+
+  transition: all 0.2s ease;
+}
+
+.website-link:hover {
+  color: var(--acadex-red);
+
+  background: var(--acadex-red-light);
+}
+
+/* =====================================================
+           MAIN CONTENT
+
+           flex: 1 means this area takes all remaining
+           vertical space.
+
+           align-items + justify-content centers the card
+           vertically AND horizontally.
+        ====================================================== */
+
+.login-main {
+  flex: 1;
+
+  min-height: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 20px;
+
+  overflow: hidden;
+}
+
+.login-container {
+  width: 100%;
+
+  max-width: 420px;
+
+  margin: 0 auto;
+}
+
+/* =====================================================
+           LOGIN CARD
+        ====================================================== */
+
+.login-card {
+  width: 100%;
+
+  background: #ffffff;
+
+  border: 1px solid var(--border);
+
+  border-radius: 15px;
+
+  padding: 30px 34px 27px;
+
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+}
+
+/* =====================================================
+           ACADEX PRODUCT HEADER
+
+           NO ICON HERE.
+        ====================================================== */
+
+.acadex-brand {
+  text-align: center;
+
+  margin-bottom: 22px;
+}
+
+.acadex-title {
+  margin: 0;
+
+  color: var(--dark);
+
+  font-size: 1.5rem;
+
+  font-weight: 800;
+
+  letter-spacing: -0.7px;
+}
+
+.acadex-title span {
+  color: var(--acadex-red);
+}
+
+.acadex-description {
+  margin: 7px 0 0;
+
+  color: #94a3b8;
+
+  font-size: 0.82rem;
+
+  line-height: 1.5;
+}
+
+/* =====================================================
+           DIVIDER
+        ====================================================== */
+
+.divider {
+  height: 1px;
+
+  background: #edf0f2;
+
+  margin-bottom: 22px;
+}
+
+/* =====================================================
+           FLASH MESSAGES
+        ====================================================== */
+
+.alert {
+  border-radius: 8px;
+
+  font-size: 0.8rem;
+
+  margin-bottom: 17px;
+}
+
+/* =====================================================
+           FORM
+        ====================================================== */
+
+.form-label {
+  color: #334155;
+
+  font-size: 0.8rem;
+
+  font-weight: 700;
+
+  margin-bottom: 7px;
+}
+
+.input-group {
+  position: relative;
+}
+
+.input-group-text {
+  min-width: 43px;
+
+  justify-content: center;
+
+  background: #f8fafc;
+
+  border-color: #dce2e8;
+
+  color: #94a3b8;
+}
+
+.form-control {
+  height: 46px;
+
+  border-color: #dce2e8;
+
+  color: var(--dark);
+
+  font-size: 0.86rem;
+
+  box-shadow: none !important;
+}
+
+.form-control::placeholder {
+  color: #a8b1bb;
+}
+
+.form-control:focus {
+  border-color: var(--acadex-red);
+
+  box-shadow: 0 0 0 3px rgba(155, 47, 47, 0.09) !important;
+}
+
+/* =====================================================
+           PASSWORD TOGGLE
+        ====================================================== */
+
+#password {
+  padding-right: 45px;
+}
+
+.password-toggle {
+  position: absolute;
+
+  z-index: 10;
+
+  right: 6px;
+
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  width: 34px;
+  height: 34px;
+
+  border: none;
+
+  border-radius: 7px;
+
+  background: transparent;
+
+  color: #94a3b8;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  transition: all 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: var(--acadex-red);
+
+  background: #f1f5f9;
+}
+
+/* =====================================================
+           LOGIN BUTTON
+        ====================================================== */
+
+.btn-login {
+  height: 46px;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background: var(--acadex-red);
+
+  color: #ffffff;
+
+  font-size: 0.86rem;
+
+  font-weight: 700;
+
+  transition: all 0.2s ease;
+}
+
+.btn-login:hover {
+  background: var(--acadex-red-dark);
+
+  color: #ffffff;
+
+  transform: translateY(-1px);
+
+  box-shadow: 0 8px 18px rgba(155, 47, 47, 0.2);
+}
+
+.btn-login:active {
+  transform: translateY(0);
+}
+
+/* =====================================================
+           SECURITY MESSAGE
+        ====================================================== */
+
+.security-message {
+  margin-top: 15px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 6px;
+
+  color: #94a3b8;
+
+  font-size: 0.69rem;
+}
+
+.security-message i {
+  color: #7c8a9a;
+}
+
+/* =====================================================
+           FOOTER
+        ====================================================== */
+
+.login-footer {
+  flex-shrink: 0;
+
+  border-top: 1px solid #e5e7eb;
+
+  background: rgba(255, 255, 255, 0.75);
+
+  padding: 12px 24px;
+}
+
+.footer-inner {
+  width: 100%;
+
+  max-width: 1180px;
+
+  margin: auto;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 15px;
+
+  color: #94a3b8;
+
+  font-size: 0.68rem;
+}
+
+.footer-item {
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+}
+
+.footer-item i {
+  color: var(--acadex-red);
+}
+
+.footer-item strong {
+  color: #64748b;
+
+  font-weight: 600;
+}
+
+/* =====================================================
+           SMALL HEIGHT SCREENS
+
+           Prevents the card from becoming too tall on
+           laptops with limited vertical space.
+        ====================================================== */
+
+@media (max-height: 650px) {
+  .topbar-inner {
+    height: 56px;
+  }
+
+  .company-logo {
+    width: 34px;
+    height: 34px;
+  }
+
+  .login-main {
+    padding: 10px 20px;
+  }
+
+  .login-card {
+    padding: 22px 30px 20px;
+  }
+
+  .acadex-brand {
+    margin-bottom: 15px;
+  }
+
+  .acadex-title {
+    font-size: 1.35rem;
+  }
+
+  .acadex-description {
+    margin-top: 4px;
+  }
+
+  .divider {
+    margin-bottom: 16px;
+  }
+
+  .mb-3 {
+    margin-bottom: 0.65rem !important;
+  }
+
+  .mb-4 {
+    margin-bottom: 0.8rem !important;
+  }
+
+  .security-message {
+    margin-top: 10px;
+  }
+
+  .login-footer {
+    padding: 8px 20px;
+  }
+}
+
+/* =====================================================
+           MOBILE
+        ====================================================== */
+
+@media (max-width: 576px) {
+  .topbar-inner {
+    height: 60px;
+
+    padding: 0 15px;
+  }
+
+  .company-logo {
+    width: 35px;
+    height: 35px;
+  }
+
+  .company-name {
+    font-size: 0.88rem;
+  }
+
+  .company-name small {
+    font-size: 0.56rem;
+  }
+
+  .website-link {
+    padding: 8px;
+  }
+
+  .website-link span {
+    display: none;
+  }
+
+  .login-main {
+    padding: 15px;
+  }
+
+  .login-container {
+    max-width: 400px;
+  }
+
+  .login-card {
+    padding: 27px 21px 24px;
+
+    border-radius: 13px;
+  }
+
+  .acadex-title {
+    font-size: 1.35rem;
+  }
+
+  .acadex-description {
+    font-size: 0.78rem;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+
+    justify-content: center;
+
+    text-align: center;
+
+    gap: 4px;
+  }
+
+  .login-footer {
+    padding: 9px 15px;
+  }
+}
+
+/* =====================================================
+           VERY SMALL PHONES
+        ====================================================== */
+
+@media (max-width: 360px) {
+  .login-card {
+    padding: 22px 17px 20px;
+  }
+
+  .acadex-title {
+    font-size: 1.25rem;
+  }
+
+  .acadex-description {
+    font-size: 0.74rem;
+  }
+
+  .security-message {
+    font-size: 0.64rem;
+  }
+}

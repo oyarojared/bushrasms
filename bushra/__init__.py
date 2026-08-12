@@ -7,7 +7,7 @@ from flask import Flask
 from .config import DevelopmentConfig
 from .modals import db, migrate
 from .modals.branches_db import Branch, BranchClasses
-from .modules import admin_bp, auth_bp
+from .modules import admin_bp, auth_bp, main_bp
 from .modals.staff_db import Teacher 
 
 from flask_login import LoginManager, current_user
@@ -34,6 +34,7 @@ def create_app():
     # register all blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(main_bp)
 
     db.init_app(app)
     migrate.init_app(app, db)
