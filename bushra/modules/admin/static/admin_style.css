@@ -688,3 +688,419 @@ footer .text-break {
   font-weight: 700;
   line-height: 1.2;
 }
+
+/* 
+  #### TABS STYLE ####
+*/
+
+/* =========================================================
+   APPLICATION PAGE TITLE
+   Reusable across Dashboard, Exams, Students, Reports, etc.
+   ========================================================= */
+
+.app-page-title {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  margin: 0;
+}
+
+/* =========================================================
+   ICON
+   ========================================================= */
+
+.app-page-title-icon {
+  width: 34px;
+  height: 34px;
+
+  flex: 0 0 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  background: rgba(255, 121, 121, 0.1);
+
+  color: #ff7979;
+
+  border: 1px solid rgba(255, 121, 121, 0.12);
+
+  font-size: 0.85rem;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+/* =========================================================
+   CONTENT
+   ========================================================= */
+
+.app-page-title-content {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  line-height: 1;
+}
+
+/* =========================================================
+   MAIN TITLE
+   ========================================================= */
+
+.app-page-title-heading {
+  margin: 0;
+
+  color: #343a40;
+
+  font-size: 0.9rem;
+  font-weight: 800;
+
+  letter-spacing: 0.1px;
+
+  line-height: 1.2;
+}
+
+/* =========================================================
+   SUBTITLE
+   ========================================================= */
+
+.app-page-title-subtitle {
+  margin-top: 4px;
+
+  color: #98a1ad;
+
+  font-size: 0.62rem;
+  font-weight: 500;
+
+  letter-spacing: 0.15px;
+
+  line-height: 1.2;
+}
+
+/* =========================================================
+   HOVER
+   ========================================================= */
+
+.app-page-title:hover .app-page-title-icon {
+  background: rgba(255, 121, 121, 0.15);
+
+  transform: translateY(-1px);
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 767.98px) {
+  .app-page-title {
+    gap: 8px;
+  }
+
+  .app-page-title-icon {
+    width: 30px;
+    height: 30px;
+
+    flex-basis: 30px;
+
+    border-radius: 8px;
+
+    font-size: 0.76rem;
+  }
+
+  .app-page-title-heading {
+    font-size: 0.82rem;
+  }
+
+  .app-page-title-subtitle {
+    margin-top: 3px;
+
+    font-size: 0.56rem;
+  }
+}
+
+/* =========================================================
+   POLISHED SIDEBAR OVERRIDES
+   Add this at the VERY END of your CSS
+   ========================================================= */
+
+.sidebar-nav .nav {
+  gap: 3px;
+  padding: 4px 0;
+}
+
+.sidebar-nav .nav-link {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  width: 100%;
+
+  padding: 10px 13px;
+  margin: 2px 0;
+
+  border-radius: 8px;
+
+  color: rgba(255, 255, 255, 0.92);
+
+  font-size: 0.78rem;
+  font-weight: 500;
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.sidebar-nav .nav-link i {
+  width: 20px;
+  flex: 0 0 20px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 0.9rem;
+
+  opacity: 0.9;
+}
+
+.sidebar-nav .nav-link:hover {
+  background: rgba(255, 255, 255, 0.14);
+
+  color: #ffffff !important;
+
+  transform: translateX(2px);
+}
+
+.sidebar-nav .nav-link.active {
+  position: relative;
+
+  background: #e2e7eb;
+
+  color: #343a40 !important;
+
+  font-weight: 700;
+
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.08);
+
+  transform: none;
+
+  border-radius: 0 8px 8px 0;
+}
+
+.sidebar-nav .nav-link.active i {
+  color: #ff7979;
+
+  opacity: 1;
+}
+
+.sidebar-nav .nav-link.active::before {
+  content: "";
+
+  position: absolute;
+
+  left: 7px;
+
+  width: 3px;
+  height: 18px;
+
+  border-radius: 3px;
+
+  background: #ff7979;
+}
+
+/* =========================================================
+   MOBILE SIDEBAR
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .sidebar-nav .nav {
+    gap: 4px;
+
+    padding: 0 4px;
+  }
+
+  .sidebar-nav .nav-link {
+    width: auto !important;
+
+    min-width: 68px;
+
+    height: 54px;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    gap: 3px;
+
+    padding: 5px 9px;
+
+    margin: 0;
+
+    border-radius: 9px;
+
+    font-size: 0.62rem;
+
+    transform: none !important;
+  }
+
+  .sidebar-nav .nav-link i {
+    width: auto;
+
+    flex: none;
+
+    font-size: 1rem;
+  }
+
+  .sidebar-nav .nav-link.active {
+    background: rgba(255, 255, 255, 0.95);
+
+    color: #343a40 !important;
+
+    box-shadow: none;
+  }
+
+  .sidebar-nav .nav-link.active::before {
+    display: none;
+  }
+}
+
+/* =========================================================
+   SIDEBAR LOGOUT
+   ========================================================= */
+
+.sidebar-logout {
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  width: 100%;
+
+  padding: 8px 0;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+
+  background: #ff7979;
+
+  z-index: 5;
+}
+
+.sidebar-logout-link {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  width: 100%;
+
+  padding: 10px 13px;
+
+  color: rgba(255, 255, 255, 0.92);
+
+  font-size: 0.78rem;
+  font-weight: 500;
+
+  text-decoration: none;
+
+  border-radius: 0 8px 8px 0;
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.sidebar-logout-link i {
+  width: 20px;
+
+  flex: 0 0 20px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-size: 0.9rem;
+}
+
+.sidebar-logout-link:hover {
+  background: rgba(255, 255, 255, 0.14);
+
+  color: #ffffff;
+}
+
+/* =========================================================
+   DESKTOP SIDEBAR SPACE FOR LOGOUT
+   ========================================================= */
+
+@media (min-width: 769px) {
+  .sidebar-nav {
+    padding-bottom: 62px !important;
+
+    overflow-x: hidden !important;
+  }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .sidebar-logout {
+    position: static;
+
+    width: auto;
+
+    flex: 0 0 auto;
+
+    padding: 0;
+
+    margin: 0;
+
+    border-top: none;
+
+    background: transparent;
+  }
+
+  .sidebar-logout-link {
+    width: auto;
+
+    min-width: 68px;
+
+    height: 54px;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    gap: 3px;
+
+    padding: 5px 9px;
+
+    border-radius: 9px;
+
+    font-size: 0.62rem;
+
+    white-space: nowrap;
+  }
+
+  .sidebar-logout-link i {
+    width: auto;
+
+    flex: none;
+
+    font-size: 1rem;
+  }
+}

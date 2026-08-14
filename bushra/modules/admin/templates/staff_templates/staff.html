@@ -1,9 +1,19 @@
 {% extends "super_admin_dash.html" %} {% from "_macros.html" import
 render_flash_messages, sidebar, form_input %} {% block side_nav %} {{
 sidebar("School Staff", current_user) }} {% endblock %} {% block main_content %}
-<h6 class="fw-bold staff-title">
-  <i class="bi bi-person-workspace me-2"></i> SCHOOL STAFF
-</h6>
+<div class="app-page-title">
+  <div class="app-page-title-icon">
+    <i class="bi bi-person-workspace"></i>
+  </div>
+
+  <div class="app-page-title-content">
+    <h6 class="app-page-title-heading">School Staff</h6>
+
+    <span class="app-page-title-subtitle">
+      Manage teachers, administrators &amp; school personnel
+    </span>
+  </div>
+</div>
 
 <!-- Flash messages -->
 {{ render_flash_messages() }}

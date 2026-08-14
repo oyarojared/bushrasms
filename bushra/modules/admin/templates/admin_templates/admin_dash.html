@@ -3,52 +3,90 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %} {{
 sidebar("Dashboard", current_user)}} {% endblock %} {% block main_content %}
 
 <!-- ====================== DASHBOARD HEADER ====================== -->
-<h6 class="fw-bold dashboard-title">
-  <i class="bi bi-speedometer2 me-2"></i>DASHBOARD
-</h6>
+<div class="app-page-title">
+  <div class="app-page-title-icon">
+    <i class="bi bi-grid-1x2-fill"></i>
+  </div>
+
+  <div class="app-page-title-content mb-2">
+    <h6 class="app-page-title-heading">Dashboard</h6>
+
+    <span class="app-page-title-subtitle">
+      Overview &amp; system activity
+    </span>
+  </div>
+</div>
 
 <!-- Flash messages -->
 {{ render_flash_messages() }}
 
-<div class="container bg-white w-100 px-0 rounded-2 border welcome-shell">
-  <!-- subtle accent -->
+<!-- =========================================================
+     WELCOME / USER INTRODUCTION
+     ========================================================= -->
+<div class="welcome-shell">
+  <!-- Brand accent -->
   <div class="welcome-line"></div>
 
-  <div class="row align-items-center py-3">
+  <div class="welcome-content">
     <!-- Profile -->
-    <div
-      class="col-sm-3 px-4 d-flex justify-content-sm-start justify-content-center"
-    >
+    <div class="welcome-profile">
       {% set passport = current_user.passport_url or 'default.jpg' %}
+
       <div
-        class="user-profile-pic"
+        class="welcome-profile-pic"
         style="background-image: url('{{ url_for('admin.serve_passport', filename=passport) }}');"
       ></div>
     </div>
 
-    <!-- Text -->
-    <div class="col-sm-8 px-0">
-      <div class="welcome-card px-4">
-        <div class="d-flex align-items-start gap-3">
-          <i class="bi bi-mortarboard-fill welcome-icon-min"></i>
+    <!-- Welcome Content -->
+    <div class="welcome-card">
+      <!-- Welcome heading -->
+      <div class="welcome-heading">
+        <h4 class="welcome-title">
+          <span class="welcome-greeting">Welcome back,</span>
+          <span class="welcome-name"> {{ current_user.fullname }} </span>
+        </h4>
+      </div>
 
-          <div>
-            <h4 class="mb-1 fw-semibold">
-              Welcome back,
-              <span class="user-name fw-bold text-danger"
-                >{{ current_user.fullname }}</span
-              >
-            </h4>
+      <!-- Description -->
+      <div class="welcome-description">
+        <p>
+          View student competencies, track assessment progress, and generate
+          CBE-aligned reports with ease.
+        </p>
 
-            <p class="mb-2 text-muted small">
-              View student competencies, track assessment progress, and generate
-              CBE-aligned reports with ease.
-              <span class="text-primary"
-                >Supports 4-band Rubric (Primary), 8-point KJSEA Scale (Junior
-                Secondary) and Senior School Grading Scale.</span
-              >
-            </p>
-          </div>
+        <!-- Assessment Support -->
+        <div class="assessment-support">
+          <span class="support-label">
+            <i class="bi bi-check-circle-fill"></i>
+            Assessment support
+          </span>
+
+          <span class="support-item">
+            4-Band Rubric
+            <small>Primary</small>
+          </span>
+
+          <span class="support-divider"></span>
+
+          <span class="support-item">
+            8-Point KJSEA Scale
+            <small>Junior Secondary</small>
+          </span>
+
+          <span class="support-divider"></span>
+
+          <span class="support-item">
+            Senior School
+            <small>Grading Scale</small>
+          </span>
+
+          <span class="support-divider"></span>
+
+          <span class="support-item">
+            8-4-4
+            <small>Grading System</small>
+          </span>
         </div>
       </div>
     </div>
@@ -56,144 +94,146 @@ sidebar("Dashboard", current_user)}} {% endblock %} {% block main_content %}
 </div>
 
 <!-- ====================== OVERALL DATA CARDS ====================== -->
-<div class="container bg-white mt-3 pt-3 pb-4 px-3 rounded-2 border">
-  <div class="card d-inline p-1">
-    <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
-      {% if current_user.is_super_admin %}
-      <i class="bi bi-graph-up me-2"></i> Data Across All Branches {% elif
-      branches %} <i class="bi bi-graph-up me-2"></i> {{ branches[0].name|upper
-      }} DATA AT A GLANCE {% else %} <i class="bi bi-graph-up me-2"></i> --- {%
-      endif %}
-    </span>
+<div
+  class="container bg-white mt-3 pt-3 pb-4 px-3 rounded-2 border dashboard-stats-panel"
+>
+  <!-- =====================================================
+       DASHBOARD CONTEXT
+  ====================================================== -->
+
+  <div class="dashboard-context">
+    <div class="dashboard-context-icon">
+      <i class="bi bi-bar-chart-line-fill"></i>
+    </div>
+
+    <div class="dashboard-context-text">
+      <span class="dashboard-context-label">
+        {% if current_user.is_super_admin %} Data Overview {% elif branches %}
+        {{ branches[0].name|upper }} {% else %} Data Overview {% endif %}
+      </span>
+
+      <span class="dashboard-context-title">
+        {% if current_user.is_super_admin %} Across All Branches {% elif
+        branches %} Data at a Glance {% else %} --- {% endif %}
+      </span>
+    </div>
   </div>
 
-  <div class="row g-4 mt-1">
-    <!-- LEFT: Stats -->
-    <div class="col-md-8">
-      <div class="row g-3">
-        <!-- Students -->
-        <div class="col-12 col-md-6">
-          <div class="stat-card-modern accent-primary">
-            <div class="w-100">
-              <!-- Top Row -->
-              <div
-                class="d-flex justify-content-between align-items-center mb-2"
-              >
-                <div class="stat-label">Students</div>
+  <!-- =====================================================
+       ANALYTICS AREA
+  ====================================================== -->
 
-                <span class="badge bg-light text-secondary border">
-                  Total
-                </span>
-              </div>
+  <div class="row g-3 mt-1">
+    <!-- ===================================================
+         LEFT: METRICS
+    ==================================================== -->
 
-              <!-- Bottom Row -->
-              <div class="d-flex justify-content-between align-items-end">
-                <div class="stat-value count" data-count="{{ tot_students }}">
-                  0
-                </div>
+    <div class="col-12 col-lg-8">
+      <div class="stats-grid">
+        <!-- STUDENTS -->
+        <div class="stat-card-modern accent-primary">
+          <div class="stat-card-top">
+            <div class="stat-card-heading">
+              <span class="stat-icon-box">
+                <i class="bi bi-people-fill"></i>
+              </span>
 
-                <i class="bi bi-people-fill stat-icon-modern"></i>
-              </div>
+              <span class="stat-label"> Students </span>
             </div>
+          </div>
+
+          <div class="stat-card-bottom">
+            <div class="stat-value count" data-count="{{ tot_students }}">
+              0
+            </div>
+
+            <span class="stat-caption"> Total enrolled </span>
           </div>
         </div>
 
-        <!-- Teachers -->
-        <div class="col-12 col-md-6">
-          <div class="stat-card-modern accent-success">
-            <div class="w-100">
-              <!-- Top Row -->
-              <div
-                class="d-flex justify-content-between align-items-center mb-2"
-              >
-                <div class="stat-label">Teachers</div>
+        <!-- TEACHERS -->
+        <div class="stat-card-modern accent-success">
+          <div class="stat-card-top">
+            <div class="stat-card-heading">
+              <span class="stat-icon-box">
+                <i class="bi bi-person-badge-fill"></i>
+              </span>
 
-                <span class="badge bg-light text-secondary border">
-                  Total
-                </span>
-              </div>
-
-              <!-- Bottom Row -->
-              <div class="d-flex justify-content-between align-items-end">
-                <div class="stat-value count" data-count="{{ total_teachers }}">
-                  0
-                </div>
-
-                <i class="bi bi-person-badge-fill stat-icon-modern"></i>
-              </div>
+              <span class="stat-label"> Teachers </span>
             </div>
+          </div>
+
+          <div class="stat-card-bottom">
+            <div class="stat-value count" data-count="{{ total_teachers }}">
+              0
+            </div>
+
+            <span class="stat-caption"> Teaching staff </span>
           </div>
         </div>
 
-        <!-- Staff -->
-        <div class="col-12 col-md-6">
-          <div class="stat-card-modern accent-warning">
-            <div class="w-100">
-              <!-- Top Row -->
-              <div
-                class="d-flex justify-content-between align-items-center mb-2"
-              >
-                <div class="stat-label">Staff</div>
+        <!-- STAFF -->
+        <div class="stat-card-modern accent-warning">
+          <div class="stat-card-top">
+            <div class="stat-card-heading">
+              <span class="stat-icon-box">
+                <i class="bi bi-briefcase-fill"></i>
+              </span>
 
-                <span class="badge bg-light text-secondary border">
-                  Total
-                </span>
-              </div>
-
-              <!-- Bottom Row -->
-              <div class="d-flex justify-content-between align-items-end">
-                <div class="stat-value count" data-count="{{ total_staff }}">
-                  0
-                </div>
-
-                <i class="bi bi-briefcase-fill stat-icon-modern"></i>
-              </div>
+              <span class="stat-label"> Staff </span>
             </div>
+          </div>
+
+          <div class="stat-card-bottom">
+            <div class="stat-value count" data-count="{{ total_staff }}">0</div>
+
+            <span class="stat-caption"> Support staff </span>
           </div>
         </div>
 
-        <!-- Branches -->
-        <div class="col-12 col-md-6">
-          <div class="stat-card-modern accent-dark">
-            <div class="w-100">
-              <!-- Top Row -->
-              <div
-                class="d-flex justify-content-between align-items-center mb-2"
-              >
-                <div class="stat-label">Branches</div>
+        <!-- BRANCHES -->
+        <div class="stat-card-modern accent-dark">
+          <div class="stat-card-top">
+            <div class="stat-card-heading">
+              <span class="stat-icon-box">
+                <i class="bi bi-diagram-3-fill"></i>
+              </span>
 
-                <span class="badge bg-light text-secondary border">
-                  Total
-                </span>
-              </div>
-
-              <!-- Bottom Row -->
-              <div class="d-flex justify-content-between align-items-end">
-                <div
-                  class="stat-value count"
-                  data-count="{{ branches|length }}"
-                >
-                  0
-                </div>
-
-                <i class="bi bi-diagram-3-fill stat-icon-modern"></i>
-              </div>
+              <span class="stat-label"> Branches </span>
             </div>
+          </div>
+
+          <div class="stat-card-bottom">
+            <div class="stat-value count" data-count="{{ branches|length }}">
+              0
+            </div>
+
+            <span class="stat-caption"> School branches </span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- RIGHT: Chart -->
-    <div class="col-md-4">
-      <div class="card h-100 border-0 shadow-sm">
-        <div class="card-header bg-white fw-semibold border-bottom text-center">
-          School Population
-        </div>
-        <div class="card-body">
-          <div style="height: 260px">
-            <canvas id="branchPopulationChart"></canvas>
+    <!-- ===================================================
+         RIGHT: POPULATION CHART
+    ==================================================== -->
+
+    <div class="col-12 col-lg-4">
+      <div class="population-card">
+        <div class="population-header">
+          <div>
+            <div class="population-title">School Population</div>
+
+            <div class="population-subtitle">Student distribution</div>
           </div>
+
+          <div class="population-icon">
+            <i class="bi bi-bar-chart-fill"></i>
+          </div>
+        </div>
+
+        <div class="population-chart">
+          <canvas id="branchPopulationChart"></canvas>
         </div>
       </div>
     </div>
@@ -201,58 +241,125 @@ sidebar("Dashboard", current_user)}} {% endblock %} {% block main_content %}
 </div>
 
 <!-- ====================== BRANCHES DETAILS ====================== -->
-<div class="container mt-3">
+
+<div class="container mt-3 branch-details-container">
   {% for branch in branches %}
-  <div class="border rounded shadow-sm mb-4 p-3 bg-white">
-    <!-- Branch Header -->
-    <div class="d-flex align-items-center bg-white p-2">
-      <hr class="flex-grow-1" />
-      <h5 class="text-center font-weight-bold text-orange">
-        <i class="bi bi-house-fill mx-1"></i>{{ branch.name }}
-      </h5>
-      <hr class="flex-grow-1" />
-    </div>
 
-    <!-- Branch Info & Overview Chart -->
-    <div class="row">
-      <!-- Branch Info List -->
-      <div class="col-md-7">
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item fw-bold">
-            Manager: <span class="mx-3 fw-light">{{ branch.manager }}</span>
-          </li>
-          <li class="list-group-item fw-bold">
-            {% if branch.level == 'Primary' %}Headteacher: {% elif branch.level
-            == 'High School' %}Principal: {% else %}Principal/Headteacher:{%
-            endif %}
-            <span class="mx-3 fw-light">{{ branch.head }}</span>
-          </li>
-          <li class="list-group-item fw-bold">
-            Level: <span class="mx-3 fw-light">{{ branch.level }}</span>
-          </li>
-          <li class="list-group-item fw-bold">
-            Total Students:
-            <span class="mx-3 fw-light">{{ branch.population }}</span>
-          </li>
-          <li class="list-group-item fw-bold">
-            Total Teachers:
-            <span class="mx-3 fw-light">{{ branch.teacher_count }}</span>
-          </li>
-          <li class="list-group-item fw-bold">
-            Total Staff:
-            <span class="mx-3 fw-light">{{ branch.staff_count }}</span>
-          </li>
-        </ul>
+  <div class="branch-details-card">
+    <!-- ====================== BRANCH HEADER ====================== -->
+
+    <div class="branch-details-header">
+      <div class="branch-header-line"></div>
+
+      <div class="branch-name">
+        <span class="branch-name-icon">
+          <i class="bi bi-house-fill"></i>
+        </span>
+
+        <span>{{ branch.name }}</span>
       </div>
 
-      <!-- Branch Overview Bar Chart -->
-      <div class="col-md-5 d-flex justify-content-center align-items-center">
-        <canvas id="branchChart{{ branch.id }}"></canvas>
+      <div class="branch-header-line"></div>
+    </div>
+
+    <!-- ====================== BRANCH INFO & CHART ====================== -->
+
+    <div class="row g-3 align-items-stretch">
+      <!-- ====================== BRANCH INFO ====================== -->
+
+      <div class="col-12 col-md-7">
+        <div class="branch-info-panel">
+          <div class="branch-info-title">Branch Overview</div>
+
+          <div class="branch-info-list">
+            <!-- Manager -->
+            <div class="branch-info-row">
+              <span class="branch-info-label"> Manager </span>
+
+              <span class="branch-info-value"> {{ branch.manager }} </span>
+            </div>
+
+            <!-- Headteacher / Principal -->
+            <div class="branch-info-row">
+              <span class="branch-info-label">
+                {% if branch.level == 'Primary' %} Headteacher {% elif
+                branch.level == 'High School' %} Principal {% else %}
+                Principal/Headteacher {% endif %}
+              </span>
+
+              <span class="branch-info-value"> {{ branch.head }} </span>
+            </div>
+
+            <!-- Level -->
+            <div class="branch-info-row">
+              <span class="branch-info-label"> Level </span>
+
+              <span class="branch-info-value"> {{ branch.level }} </span>
+            </div>
+
+            <!-- Students -->
+            <div class="branch-info-row">
+              <span class="branch-info-label"> Total Students </span>
+
+              <span class="branch-info-value branch-stat-number">
+                {{ branch.population }}
+              </span>
+            </div>
+
+            <!-- Teachers -->
+            <div class="branch-info-row">
+              <span class="branch-info-label"> Total Teachers </span>
+
+              <span class="branch-info-value branch-stat-number">
+                {{ branch.teacher_count }}
+              </span>
+            </div>
+
+            <!-- Staff -->
+            <div class="branch-info-row">
+              <span class="branch-info-label"> Total Staff </span>
+
+              <span class="branch-info-value branch-stat-number">
+                {{ branch.staff_count }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================== BRANCH CHART ====================== -->
+
+      <div class="col-12 col-md-5">
+        <div class="branch-overview-chart">
+          <div class="branch-chart-heading">
+            <div>
+              <div class="branch-chart-title">Branch Statistics</div>
+
+              <div class="branch-chart-subtitle">
+                Students, teachers & staff
+              </div>
+            </div>
+
+            <div class="branch-chart-icon">
+              <i class="bi bi-bar-chart-fill"></i>
+            </div>
+          </div>
+
+          <!-- Responsive chart container -->
+
+          <div class="branch-chart-container">
+            <canvas id="branchChart{{ branch.id }}"></canvas>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Accordion: Class Distribution -->
-    <div class="accordion accordion-flush mt-3" id="accordion{{ branch.id }}">
+    <!-- ====================== MORE STATS ====================== -->
+
+    <div
+      class="accordion accordion-flush branch-more-stats"
+      id="accordion{{ branch.id }}"
+    >
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button
@@ -261,22 +368,47 @@ sidebar("Dashboard", current_user)}} {% endblock %} {% block main_content %}
             data-bs-toggle="collapse"
             data-bs-target="#collapse{{ branch.id }}"
           >
-            <span class="fw-bold text-danger">More Stats</span>
+            <span class="more-stats-icon">
+              <i class="bi bi-bar-chart-line-fill"></i>
+            </span>
+
+            <span class="more-stats-text">
+              <strong>More Stats</strong>
+              <small>Student distribution per class</small>
+            </span>
           </button>
         </h2>
+
         <div
           id="collapse{{ branch.id }}"
           class="accordion-collapse collapse"
           data-bs-parent="#accordion{{ branch.id }}"
         >
           <div class="accordion-body">
-            <h6 class="text-center">Student Distribution per Class</h6>
-            <canvas id="classChart{{ branch.id }}" class="convas-size"></canvas>
+            <div class="class-distribution-heading">
+              <div class="class-distribution-title">
+                Student Distribution per Class
+              </div>
+
+              <div class="class-distribution-subtitle">
+                Number of students in each class
+              </div>
+            </div>
+
+            <!-- Responsive class chart container -->
+
+            <div class="class-chart-container">
+              <canvas
+                id="classChart{{ branch.id }}"
+                class="convas-size"
+              ></canvas>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
   {% endfor %}
 </div>
 

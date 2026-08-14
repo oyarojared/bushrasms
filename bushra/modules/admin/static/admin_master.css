@@ -1,0 +1,1566 @@
+/* =========================================================
+   DASHBOARD STATS PANEL
+   ========================================================= */
+
+.dashboard-stats-panel {
+  border-color: #e9ecef !important;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.025);
+
+  overflow: hidden;
+}
+
+/* =========================================================
+   METRICS GRID
+   ========================================================= */
+
+.stats-grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 12px;
+}
+
+/* =========================================================
+   STAT CARD
+   ========================================================= */
+
+.stat-card-modern {
+  position: relative;
+
+  min-height: 100px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  padding: 13px 16px;
+
+  background: #ffffff;
+
+  border: 1px solid #edf0f2;
+
+  border-radius: 10px;
+
+  overflow: hidden;
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+/* =========================================================
+   COLORED ACCENT
+   ========================================================= */
+
+.stat-card-modern::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 3px;
+  height: 100%;
+
+  border-radius: 3px 0 0 3px;
+}
+
+.accent-primary::before {
+  background: #0d6efd;
+}
+
+.accent-success::before {
+  background: #198754;
+}
+
+.accent-warning::before {
+  background: #f0ad00;
+}
+
+.accent-dark::before {
+  background: #343a40;
+}
+
+/* =========================================================
+   HOVER
+   ========================================================= */
+
+.stat-card-modern:hover {
+  transform: translateY(-2px);
+
+  border-color: #e3e6e8;
+
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.055);
+}
+
+/* =========================================================
+   TOP
+   ========================================================= */
+
+.stat-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stat-card-heading {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  min-width: 0;
+}
+
+/* =========================================================
+   ICON
+   ========================================================= */
+
+.stat-icon-box {
+  width: 30px;
+  height: 30px;
+
+  flex: 0 0 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 7px;
+
+  background: #f8f9fa;
+
+  font-size: 0.75rem;
+}
+
+.accent-primary .stat-icon-box {
+  color: #0d6efd;
+  background: rgba(13, 110, 253, 0.08);
+}
+
+.accent-success .stat-icon-box {
+  color: #198754;
+  background: rgba(25, 135, 84, 0.08);
+}
+
+.accent-warning .stat-icon-box {
+  color: #c58a00;
+  background: rgba(240, 173, 0, 0.1);
+}
+
+.accent-dark .stat-icon-box {
+  color: #343a40;
+  background: rgba(52, 58, 64, 0.07);
+}
+
+/* =========================================================
+   LABEL
+   ========================================================= */
+
+.stat-label {
+  color: #495057;
+
+  font-size: 0.72rem;
+
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+/* =========================================================
+   BOTTOM
+   ========================================================= */
+
+.stat-card-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 10px;
+}
+
+/* =========================================================
+   NUMBER
+   ========================================================= */
+
+.stat-value {
+  color: #212529;
+
+  font-size: 1.55rem;
+
+  font-weight: 700;
+
+  line-height: 1;
+
+  letter-spacing: -0.4px;
+
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================
+   CAPTION
+   ========================================================= */
+
+.stat-caption {
+  padding-bottom: 1px;
+
+  color: #98a1ad;
+
+  font-size: 0.56rem;
+
+  font-weight: 500;
+
+  white-space: nowrap;
+}
+
+/* =========================================================
+   POPULATION CARD
+   ========================================================= */
+
+.population-card {
+  height: 100%;
+
+  min-height: 220px;
+
+  padding: 14px 16px;
+
+  background: #ffffff;
+
+  border: 1px solid #edf0f2;
+
+  border-radius: 10px;
+}
+
+/* =========================================================
+   POPULATION HEADER
+   ========================================================= */
+
+.population-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding-bottom: 10px;
+
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.population-title {
+  color: #343a40;
+
+  font-size: 0.73rem;
+
+  font-weight: 800;
+}
+
+.population-subtitle {
+  margin-top: 3px;
+
+  color: #98a1ad;
+
+  font-size: 0.57rem;
+
+  font-weight: 500;
+}
+
+/* =========================================================
+   POPULATION ICON
+   ========================================================= */
+
+.population-icon {
+  width: 30px;
+  height: 30px;
+
+  flex: 0 0 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 8px;
+
+  background: rgba(255, 121, 121, 0.09);
+
+  color: #ff7979;
+
+  font-size: 0.7rem;
+}
+
+/* =========================================================
+   CHART
+   ========================================================= */
+
+.population-chart {
+  position: relative;
+
+  width: 100%;
+
+  height: 175px;
+
+  margin-top: 6px;
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 991.98px) {
+  .stats-grid {
+    gap: 10px;
+  }
+
+  .stat-card-modern {
+    min-height: 94px;
+
+    padding: 12px 14px;
+  }
+
+  .stat-value {
+    font-size: 1.4rem;
+  }
+
+  .population-card {
+    min-height: 215px;
+  }
+
+  .population-chart {
+    height: 170px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 767.98px) {
+  .dashboard-stats-panel {
+    margin-top: 10px !important;
+
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+
+    padding-bottom: 14px !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 8px;
+  }
+
+  .stat-card-modern {
+    min-height: 88px;
+
+    padding: 10px 11px;
+
+    border-radius: 9px;
+  }
+
+  .stat-card-heading {
+    gap: 7px;
+  }
+
+  .stat-icon-box {
+    width: 27px;
+    height: 27px;
+
+    flex-basis: 27px;
+
+    border-radius: 7px;
+
+    font-size: 0.65rem;
+  }
+
+  .stat-label {
+    font-size: 0.59rem;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+
+  .stat-caption {
+    font-size: 0.48rem;
+  }
+
+  /* Chart */
+
+  .population-card {
+    min-height: 210px;
+
+    padding: 13px 14px;
+  }
+
+  .population-chart {
+    height: 165px;
+
+    margin-top: 6px;
+  }
+}
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 400px) {
+  .dashboard-stats-panel {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .stats-grid {
+    gap: 7px;
+  }
+
+  .stat-card-modern {
+    min-height: 82px;
+
+    padding: 9px 10px;
+  }
+
+  .stat-icon-box {
+    width: 25px;
+    height: 25px;
+
+    flex-basis: 25px;
+
+    font-size: 0.62rem;
+  }
+
+  .stat-label {
+    font-size: 0.55rem;
+  }
+
+  .stat-value {
+    font-size: 1.15rem;
+  }
+
+  .stat-caption {
+    font-size: 0.44rem;
+  }
+
+  .population-card {
+    min-height: 200px;
+
+    padding: 12px;
+  }
+
+  .population-title {
+    font-size: 0.67rem;
+  }
+
+  .population-subtitle {
+    font-size: 0.53rem;
+  }
+
+  .population-chart {
+    height: 155px;
+  }
+}
+
+/* =========================================================
+     WELCOME / USER INTRODUCTION
+     ========================================================= */
+
+.welcome-shell {
+  position: relative;
+
+  width: 100%;
+  margin: 0 0 14px 0;
+
+  overflow: hidden;
+
+  background: #ffffff;
+
+  border: 1px solid #e9ecef;
+  border-radius: 14px;
+
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.045);
+}
+
+/* =========================================================
+     BRAND ACCENT
+     ========================================================= */
+
+.welcome-line {
+  width: 100%;
+  height: 3px;
+
+  background: #ff7979;
+}
+
+/* =========================================================
+     MAIN CONTENT
+     ========================================================= */
+
+.welcome-content {
+  display: flex;
+  align-items: center;
+
+  min-height: 125px;
+
+  padding: 18px 24px;
+
+  gap: 22px;
+}
+
+/* =========================================================
+     PROFILE
+     ========================================================= */
+
+.welcome-profile {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-profile-pic {
+  width: 82px;
+  height: 82px;
+
+  flex: 0 0 82px;
+
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+
+  border-radius: 50%;
+
+  border: 3px solid #ffffff;
+
+  box-shadow:
+    0 0 0 2px rgba(255, 121, 121, 0.35),
+    0 5px 14px rgba(0, 0, 0, 0.12);
+
+  background-color: #f1f3f5;
+}
+
+/* =========================================================
+     WELCOME CONTENT
+     ========================================================= */
+
+.welcome-card {
+  min-width: 0;
+
+  flex: 1;
+}
+
+/* =========================================================
+     WELCOME HEADING
+     "Welcome back, John Doe"
+     ========================================================= */
+
+.welcome-heading {
+  margin: 0;
+  min-width: 0;
+}
+
+.welcome-title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+
+  gap: 6px;
+
+  margin: 0;
+
+  color: #343a40;
+
+  font-size: clamp(1rem, 1.7vw, 1.3rem);
+
+  font-weight: 800;
+
+  line-height: 1.25;
+
+  letter-spacing: -0.2px;
+
+  word-break: break-word;
+}
+
+.welcome-greeting {
+  color: #6c757d;
+
+  font-weight: 500;
+
+  white-space: nowrap;
+}
+
+.welcome-name {
+  color: #ff7979;
+
+  font-weight: 800;
+
+  min-width: 0;
+}
+
+/* =========================================================
+     DESCRIPTION
+     ========================================================= */
+
+.welcome-description {
+  margin-top: 10px;
+
+  max-width: 900px;
+}
+
+.welcome-description p {
+  margin: 0;
+
+  color: #6c757d;
+
+  font-size: 0.72rem;
+
+  line-height: 1.55;
+}
+
+/* =========================================================
+     ASSESSMENT SUPPORT
+     ========================================================= */
+
+.assessment-support {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 7px;
+
+  margin-top: 9px;
+}
+
+.support-label {
+  display: inline-flex;
+  align-items: center;
+
+  margin-right: 3px;
+
+  color: #ff7979;
+
+  font-size: 0.62rem;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+.support-label i {
+  margin-right: 4px;
+
+  font-size: 0.65rem;
+}
+
+.support-item {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 4px;
+
+  padding: 4px 8px;
+
+  border: 1px solid #edf0f2;
+  border-radius: 6px;
+
+  background: #f8f9fa;
+
+  color: #495057;
+
+  font-size: 0.59rem;
+  font-weight: 600;
+
+  line-height: 1.2;
+}
+
+.support-item small {
+  color: #98a1ad;
+
+  font-size: 0.52rem;
+  font-weight: 500;
+}
+
+.support-divider {
+  width: 3px;
+  height: 3px;
+
+  flex: 0 0 3px;
+
+  border-radius: 50%;
+
+  background: #ced4da;
+}
+
+/* =========================================================
+     TABLET
+     ========================================================= */
+
+@media (max-width: 991.98px) {
+  .welcome-content {
+    padding: 16px 18px;
+
+    gap: 17px;
+  }
+
+  .welcome-profile-pic {
+    width: 72px;
+    height: 72px;
+
+    flex-basis: 72px;
+  }
+
+  .welcome-description {
+    margin-top: 8px;
+  }
+
+  .welcome-description p {
+    font-size: 0.68rem;
+  }
+}
+
+/* =========================================================
+     MOBILE
+     ========================================================= */
+
+@media (max-width: 767.98px) {
+  .welcome-shell {
+    margin-bottom: 10px;
+
+    border-radius: 12px;
+  }
+
+  .welcome-profile {
+    display: none;
+  }
+
+  .welcome-line {
+    height: 3px;
+  }
+
+  .welcome-content {
+    min-height: auto;
+
+    display: flex;
+    align-items: flex-start;
+
+    padding: 15px 13px;
+
+    gap: 12px;
+  }
+
+  .welcome-card {
+    min-width: 0;
+  }
+
+  /* Keep greeting + name on the same line
+       whenever the available width allows it. */
+
+  .welcome-title {
+    display: block;
+
+    font-size: 0.92rem;
+
+    line-height: 1.3;
+  }
+
+  .welcome-greeting {
+    margin-right: 4px;
+  }
+
+  .welcome-description {
+    margin-top: 7px;
+  }
+
+  .welcome-description p {
+    font-size: 0.61rem;
+
+    line-height: 1.45;
+  }
+
+  .assessment-support {
+    gap: 5px;
+
+    margin-top: 7px;
+  }
+
+  .support-label {
+    width: 100%;
+
+    margin-bottom: 1px;
+
+    font-size: 0.56rem;
+  }
+
+  .support-item {
+    padding: 3px 6px;
+
+    font-size: 0.52rem;
+  }
+
+  .support-item small {
+    display: none;
+  }
+
+  .support-divider {
+    display: none;
+  }
+}
+
+/* =========================================================
+     VERY SMALL PHONES
+     ========================================================= */
+
+@media (max-width: 400px) {
+  .welcome-content {
+    padding: 12px 10px;
+
+    gap: 9px;
+  }
+
+  .welcome-profile-pic {
+    width: 46px;
+    height: 46px;
+
+    flex-basis: 46px;
+  }
+
+  .welcome-title {
+    font-size: 0.84rem;
+
+    line-height: 1.25;
+  }
+
+  .welcome-description p {
+    font-size: 0.57rem;
+  }
+
+  .support-item {
+    font-size: 0.49rem;
+  }
+}
+
+/* =========================================================
+   DASHBOARD CONTEXT / DATA OVERVIEW
+   ========================================================= */
+
+.dashboard-context {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 7px 13px 7px 8px;
+
+  background: #ffffff;
+
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.035);
+
+  vertical-align: middle;
+}
+
+/* =========================================================
+   ICON
+   ========================================================= */
+
+.dashboard-context-icon {
+  width: 29px;
+  height: 29px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 29px;
+
+  border-radius: 8px;
+
+  background: rgba(255, 121, 121, 0.1);
+
+  color: #ff7979;
+
+  font-size: 0.75rem;
+}
+
+/* =========================================================
+   TEXT
+   ========================================================= */
+
+.dashboard-context-text {
+  display: flex;
+  align-items: baseline;
+
+  gap: 6px;
+
+  min-width: 0;
+
+  line-height: 1.2;
+}
+
+.dashboard-context-label {
+  color: #6c757d;
+
+  font-size: 0.62rem;
+
+  font-weight: 600;
+
+  letter-spacing: 0.15px;
+
+  white-space: nowrap;
+}
+
+.dashboard-context-title {
+  color: #343a40;
+
+  font-size: 0.67rem;
+
+  font-weight: 800;
+
+  letter-spacing: -0.05px;
+
+  white-space: nowrap;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 767.98px) {
+  .dashboard-context {
+    gap: 8px;
+
+    padding: 6px 10px 6px 7px;
+
+    border-radius: 9px;
+  }
+
+  .dashboard-context-icon {
+    width: 26px;
+    height: 26px;
+
+    flex-basis: 26px;
+
+    font-size: 0.68rem;
+
+    border-radius: 7px;
+  }
+
+  .dashboard-context-text {
+    gap: 5px;
+  }
+
+  .dashboard-context-label {
+    font-size: 0.55rem;
+  }
+
+  .dashboard-context-title {
+    font-size: 0.58rem;
+  }
+}
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 400px) {
+  .dashboard-context {
+    padding: 5px 8px 5px 6px;
+
+    gap: 7px;
+  }
+
+  .dashboard-context-icon {
+    width: 24px;
+    height: 24px;
+
+    flex-basis: 24px;
+
+    font-size: 0.62rem;
+  }
+
+  .dashboard-context-label {
+    font-size: 0.52rem;
+  }
+
+  .dashboard-context-title {
+    font-size: 0.55rem;
+  }
+}
+
+/* =========================================================
+   BRANCH DETAILS
+   ========================================================= */
+
+.branch-details-container {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* =========================================================
+   MAIN BRANCH CARD
+   ========================================================= */
+
+.branch-details-card {
+  margin-bottom: 18px;
+
+  padding: 15px;
+
+  background: #ffffff;
+
+  border: 1px solid #e9ecef;
+
+  border-radius: 12px;
+
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.035);
+
+  overflow: hidden;
+}
+
+/* =========================================================
+   BRANCH HEADER
+   ========================================================= */
+
+.branch-details-header {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  margin-bottom: 14px;
+}
+
+.branch-header-line {
+  height: 1px;
+
+  flex: 1;
+
+  background: #edf0f2;
+}
+
+.branch-name {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 7px;
+
+  color: #343a40;
+
+  font-size: 0.78rem;
+
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+.branch-name-icon {
+  width: 27px;
+  height: 27px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 7px;
+
+  background: rgba(255, 121, 121, 0.09);
+
+  color: #ff7979;
+
+  font-size: 0.65rem;
+}
+
+/* =========================================================
+   INFORMATION PANEL
+   ========================================================= */
+
+.branch-info-panel {
+  height: 100%;
+
+  padding: 13px 15px;
+
+  border: 1px solid #edf0f2;
+
+  border-radius: 10px;
+
+  background: #ffffff;
+}
+
+.branch-info-title {
+  padding-bottom: 8px;
+
+  border-bottom: 1px solid #f0f1f3;
+
+  color: #343a40;
+
+  font-size: 0.69rem;
+
+  font-weight: 800;
+}
+
+/* =========================================================
+   INFORMATION ROWS
+   ========================================================= */
+
+.branch-info-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.branch-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  min-height: 31px;
+
+  padding: 4px 0;
+
+  gap: 15px;
+
+  border-bottom: 1px solid #f5f6f7;
+}
+
+.branch-info-row:last-child {
+  border-bottom: none;
+}
+
+.branch-info-label {
+  color: #6c757d;
+
+  font-size: 0.61rem;
+
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.branch-info-value {
+  max-width: 65%;
+
+  color: #343a40;
+
+  font-size: 0.62rem;
+
+  font-weight: 500;
+
+  text-align: right;
+
+  overflow-wrap: anywhere;
+}
+
+.branch-stat-number {
+  font-weight: 700;
+
+  font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================
+   BRANCH CHART
+   ========================================================= */
+
+.branch-overview-chart {
+  height: 100%;
+
+  padding: 13px 15px;
+
+  border: 1px solid #edf0f2;
+
+  border-radius: 10px;
+
+  background: #ffffff;
+}
+
+.branch-chart-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding-bottom: 8px;
+
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.branch-chart-title {
+  color: #343a40;
+
+  font-size: 0.69rem;
+
+  font-weight: 800;
+}
+
+.branch-chart-subtitle {
+  margin-top: 2px;
+
+  color: #98a1ad;
+
+  font-size: 0.53rem;
+
+  font-weight: 500;
+}
+
+.branch-chart-icon {
+  width: 28px;
+  height: 28px;
+
+  flex: 0 0 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 7px;
+
+  background: rgba(255, 121, 121, 0.09);
+
+  color: #ff7979;
+
+  font-size: 0.65rem;
+}
+
+/* =========================================================
+   RESPONSIVE CHART CONTAINER
+   ========================================================= */
+
+.branch-chart-container {
+  position: relative;
+
+  width: 100%;
+
+  height: 185px;
+
+  margin-top: 8px;
+}
+
+/* =========================================================
+   MORE STATS
+   ========================================================= */
+
+.branch-more-stats {
+  margin-top: 13px;
+
+  border-top: 1px solid #f0f1f3;
+}
+
+.branch-more-stats .accordion-item {
+  border: none;
+}
+
+.branch-more-stats .accordion-button {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 10px 3px;
+
+  background: transparent;
+
+  color: #495057;
+
+  box-shadow: none;
+}
+
+.branch-more-stats .accordion-button:not(.collapsed) {
+  background: transparent;
+
+  color: #343a40;
+
+  box-shadow: none;
+}
+
+.branch-more-stats .accordion-button::after {
+  transform: scale(0.7);
+
+  margin-left: auto;
+}
+
+/* =========================================================
+   MORE STATS ICON
+   ========================================================= */
+
+.more-stats-icon {
+  width: 27px;
+  height: 27px;
+
+  flex: 0 0 27px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 7px;
+
+  background: #f8f9fa;
+
+  color: #6c757d;
+
+  font-size: 0.62rem;
+}
+
+.more-stats-text {
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.more-stats-text strong {
+  color: #495057;
+
+  font-size: 0.62rem;
+
+  font-weight: 700;
+}
+
+.more-stats-text small {
+  color: #98a1ad;
+
+  font-size: 0.51rem;
+
+  font-weight: 500;
+}
+
+/* =========================================================
+   CLASS DISTRIBUTION
+   ========================================================= */
+
+.branch-more-stats .accordion-body {
+  padding: 8px 3px 14px;
+}
+
+.class-distribution-heading {
+  margin-bottom: 8px;
+
+  text-align: center;
+}
+
+.class-distribution-title {
+  color: #343a40;
+
+  font-size: 0.67rem;
+
+  font-weight: 800;
+}
+
+.class-distribution-subtitle {
+  margin-top: 2px;
+
+  color: #98a1ad;
+
+  font-size: 0.52rem;
+}
+
+/* =========================================================
+   CLASS CHART CONTAINER
+   ========================================================= */
+
+.class-chart-container {
+  position: relative;
+
+  width: 100%;
+
+  height: 230px;
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 991.98px) {
+  .branch-chart-container {
+    height: 205px;
+  }
+
+  .class-chart-container {
+    height: 220px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 767.98px) {
+  .branch-details-container {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .branch-details-card {
+    margin-bottom: 12px;
+
+    padding: 11px;
+
+    border-radius: 10px;
+  }
+
+  /* Header */
+
+  .branch-details-header {
+    gap: 8px;
+
+    margin-bottom: 10px;
+  }
+
+  .branch-name {
+    font-size: 0.67rem;
+
+    gap: 5px;
+  }
+
+  .branch-name-icon {
+    width: 23px;
+    height: 23px;
+
+    flex-basis: 23px;
+
+    font-size: 0.57rem;
+  }
+
+  /* Information */
+
+  .branch-info-panel {
+    padding: 11px 12px;
+  }
+
+  .branch-info-title {
+    font-size: 0.63rem;
+  }
+
+  .branch-info-row {
+    min-height: 29px;
+
+    gap: 10px;
+
+    padding: 4px 0;
+  }
+
+  .branch-info-label {
+    font-size: 0.56rem;
+  }
+
+  .branch-info-value {
+    max-width: 60%;
+
+    font-size: 0.56rem;
+  }
+
+  /* Chart */
+
+  .branch-overview-chart {
+    padding: 11px 12px;
+  }
+
+  .branch-chart-title {
+    font-size: 0.63rem;
+  }
+
+  .branch-chart-subtitle {
+    font-size: 0.5rem;
+  }
+
+  .branch-chart-container {
+    height: 210px;
+
+    margin-top: 7px;
+  }
+
+  /* More stats */
+
+  .branch-more-stats {
+    margin-top: 10px;
+  }
+
+  .branch-more-stats .accordion-button {
+    padding: 9px 2px;
+  }
+
+  .more-stats-icon {
+    width: 24px;
+    height: 24px;
+
+    flex-basis: 24px;
+  }
+
+  .more-stats-text strong {
+    font-size: 0.58rem;
+  }
+
+  .more-stats-text small {
+    font-size: 0.48rem;
+  }
+
+  .branch-more-stats .accordion-body {
+    padding: 7px 2px 10px;
+  }
+
+  .class-distribution-title {
+    font-size: 0.61rem;
+  }
+
+  .class-distribution-subtitle {
+    font-size: 0.48rem;
+  }
+
+  .class-chart-container {
+    height: 220px;
+  }
+}
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 400px) {
+  .branch-details-card {
+    padding: 9px;
+  }
+
+  .branch-name {
+    font-size: 0.61rem;
+  }
+
+  .branch-name-icon {
+    width: 21px;
+    height: 21px;
+
+    flex-basis: 21px;
+  }
+
+  .branch-info-panel {
+    padding: 9px 10px;
+  }
+
+  .branch-info-row {
+    min-height: 27px;
+
+    gap: 7px;
+  }
+
+  .branch-info-label {
+    font-size: 0.52rem;
+  }
+
+  .branch-info-value {
+    font-size: 0.52rem;
+  }
+
+  .branch-overview-chart {
+    padding: 9px 10px;
+  }
+
+  .branch-chart-container {
+    height: 195px;
+  }
+
+  .class-chart-container {
+    height: 205px;
+  }
+}

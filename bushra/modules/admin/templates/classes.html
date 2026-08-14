@@ -3,9 +3,19 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %} {{
 sidebar("Classes", current_user) }} {% endblock %} {% block main_content %} {{
 render_flash_messages() }}
 
-<h5 class="fw-bold classes-grps-title">
-  <i class="bi bi-buildings me-2"></i> Classes & Groups
-</h5>
+<div class="app-page-title">
+  <div class="app-page-title-icon">
+    <i class="bi bi-diagram-3-fill"></i>
+  </div>
+
+  <div class="app-page-title-content mb-2">
+    <h6 class="app-page-title-heading">Classes &amp; Groups</h6>
+
+    <span class="app-page-title-subtitle">
+      Manage classes, grades &amp; subjects/learning areas assignments
+    </span>
+  </div>
+</div>
 
 <!-- School Selector -->
 <div class="container bg-white pt-0 pb-3 px-0 mb-2 shadow-sm rounded-6">

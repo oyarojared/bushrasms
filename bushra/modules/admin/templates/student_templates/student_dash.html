@@ -1,10 +1,18 @@
 {% extends "student_templates/student_dash_layout.html" %} {% from
 "_macros.html" import sidebar, form_input %} {% block body %}
-<h5 class="fw-bold student-dash-title">
-  <i class="bi bi-database-fill-add"></i>
-  <span class="h6" style="font-weight: 700 !important">STUDENTS DATA</span>
-</h5>
+<div class="app-page-title">
+  <div class="app-page-title-icon">
+    <i class="bi bi-people-fill"></i>
+  </div>
 
+  <div class="app-page-title-content mb-2">
+    <h6 class="app-page-title-heading">Students Data</h6>
+
+    <span class="app-page-title-subtitle">
+      Manage student records and information
+    </span>
+  </div>
+</div>
 <!-- School Selector -->
 <div class="container bg-white pt-0 pb-3 px-0 mb-2 shadow-sm rounded-6">
   <div class="container orange-line"></div>

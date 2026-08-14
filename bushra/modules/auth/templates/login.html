@@ -2,268 +2,312 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <title>Acadex | Sign In</title>
-
-    <!-- =====================================================
-         BOOTSTRAP 5
-    ====================================================== -->
-
+    <title>Shuleka | Sign In</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
-
-    <!-- =====================================================
-         BOOTSTRAP ICONS
-    ====================================================== -->
-
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
       rel="stylesheet"
     />
-
-    <!-- =====================================================
-         GOOGLE FONT
-    ====================================================== -->
-
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-
     <link
       rel="stylesheet"
       href="{{ url_for('auth.static', filename='auth_style.css') }}"
     />
-
     <link
       rel="stylesheet"
-      href="{{ url_for('auth.static', filename='login.css')}}"
+      href="{{ url_for('auth.static', filename='login.css') }}"
     />
-    <!-- Favicon -->
     <link
       rel="icon"
-      href="{{ url_for('static', filename='logos/acadex_logo.png') }}"
+      href="{{ url_for('static', filename='logos/shuleka_logo_lg.png') }}"
     />
   </head>
 
   <body>
     <div class="login-page">
-      <!-- =====================================================
-         TOP BAR
-    ====================================================== -->
+      <!-- ===================================================
+           TOP BAR
+      ==================================================== -->
 
       <header class="topbar">
         <div class="topbar-inner">
-          <!-- COMPANY LOGO + NAME -->
-
+          <!-- COMPANY BRAND -->
           <a href="/" class="company-brand">
             <img
-              src="{{ url_for('static', filename='logos/acadex_logo.png') }}"
-              alt="Company Logo"
+              src="{{ url_for('static', filename='logos/shuleka_logo_lg.png') }}"
+              alt="Acadex Tech Logo"
               class="company-logo"
             />
 
             <div class="company-name">
-              Acadex Tech
-
-              <small>Powering Better Schools </small>
+              Shuleka Tech&TRADE;
+              <small> CBE Assessment & School Management </small>
             </div>
           </a>
 
           <!-- BACK TO WEBSITE -->
-
-          <a href="{{ url_for('main.index')}}" class="website-link">
+          <a href="{{ url_for('main.index') }}" class="website-link">
             <i class="bi bi-arrow-left"></i>
-
             <span>Back to website</span>
           </a>
         </div>
       </header>
 
-      <!-- =====================================================
-         MAIN LOGIN AREA
-    ====================================================== -->
+      <!-- ===================================================
+           MAIN LOGIN AREA
+      ==================================================== -->
 
       <main class="login-main">
-        <div class="login-container">
-          <div class="login-card">
-            <!-- =================================================
-                     PRODUCT TITLE
-                ================================================== -->
+        <div class="login-layout">
+          <!-- =================================================
+               LEFT VISUAL PANEL
+          ================================================== -->
+          <section class="visual-panel">
+            <div class="visual-image-wrapper">
+              <img
+                src="{{ url_for('static', filename='system_screenshots/acadex-login-laptop.png') }}"
+                alt="Acadex school management system being used on a laptop"
+                class="login-visual-image"
+              />
 
-            <div class="acadex-brand">
-              <h1 class="acadex-title">Welcome to <span>Acadex</span></h1>
+              <!-- Subtle overlay -->
 
-              <p class="acadex-description">
-                Sign in to access your school management system.
-              </p>
-            </div>
+              <div class="visual-overlay"></div>
 
-            <div class="divider"></div>
+              <!-- Image caption -->
+              <div class="visual-caption">
+                <h2>
+                  CBE Assessment.
+                  <br />
+                  <span>Simplified.</span>
+                </h2>
 
-            <!-- =================================================
-                     FLASH MESSAGES
-
-                     KEPT EXACTLY IN THE FLASK STRUCTURE
-                ================================================== -->
-
-            {% with messages = get_flashed_messages(with_categories=true) %} {%
-            if messages %} {% for category, message in messages %}
-
-            <div
-              class="alert alert-{{ category }} alert-dismissible fade show"
-              role="alert"
-            >
-              <i class="bi bi-exclamation-triangle-fill me-1"></i>
-
-              {{ message }}
-
-              <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="alert"
-                aria-label="Close"
-              ></button>
-            </div>
-
-            {% endfor %} {% endif %} {% endwith %}
-
-            <!-- =================================================
-                     LOGIN FORM
-
-                     EXISTING BACKEND ENDPOINT PRESERVED
-                ================================================== -->
-
-            <form method="POST" action="{{ url_for('auth.login') }}">
-              {{ form.hidden_tag() }}
-
-              <!-- USERNAME -->
-
-              <div class="mb-3">
-                <label for="username" class="form-label"> Username </label>
-
-                <div class="input-group">
-                  <span class="input-group-text">
-                    <i class="bi bi-person-fill"></i>
-                  </span>
-
-                  <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    class="form-control"
-                    placeholder="Enter your username"
-                    autocomplete="username"
-                    required
-                  />
-                </div>
-              </div>
-
-              <!-- PASSWORD -->
-
-              <div class="mb-4">
-                <label for="password" class="form-label"> Password </label>
-
-                <div class="input-group">
-                  <span class="input-group-text">
-                    <i class="bi bi-lock-fill"></i>
-                  </span>
-
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    class="form-control"
-                    placeholder="Enter your password"
-                    autocomplete="current-password"
-                    required
-                  />
-
-                  <!-- SHOW / HIDE PASSWORD -->
-
-                  <button
-                    type="button"
-                    class="password-toggle"
-                    id="togglePassword"
-                    aria-label="Show password"
+                <p>
+                  Capture assessment results, generate CBE-compliant reports and
+                  keep your school's academic records organized.<span
+                    style="color: #ff626a"
                   >
-                    <i class="bi bi-eye" id="passwordIcon"></i>
-                  </button>
-                </div>
+                    ...and much more.</span
+                  >
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- =================================================
+               RIGHT LOGIN PANEL
+          ================================================== -->
+
+          <section class="login-panel">
+            <div class="login-card">
+              <!-- =================================================
+                   PRODUCT TITLE
+              ================================================== -->
+
+              <div class="acadex-brand">
+                <h2 class="acadex-title">
+                  Welcome to
+                  <span>Shuleka</span>
+                </h2>
+
+                <p class="acadex-description">Sign in as a teacher or admin.</p>
               </div>
 
-              <!-- LOGIN BUTTON -->
+              <!-- =================================================
+                   DIVIDER
+              ================================================== -->
 
-              <button type="submit" class="btn btn-login w-100">
-                <i class="bi bi-box-arrow-in-right me-1"></i>
+              <div class="divider">
+                <span>
+                  <i class="bi bi-shield-check"></i>
+                </span>
+              </div>
 
-                Sign in to Acadex
-              </button>
-            </form>
+              <!-- =================================================
+                   FLASH MESSAGES
+              ================================================== -->
 
-            <!-- =================================================
-                     SECURITY
-                ================================================== -->
+              {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %} {% for category, message in messages %}
 
-            <div class="security-message">
-              <i class="bi bi-shield-check"></i>
+              <div
+                class="alert alert-{{ category }} alert-dismissible fade show"
+                role="alert"
+              >
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
 
-              <span> Secure access to your school system </span>
+                {{ message }}
+
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="alert"
+                  aria-label="Close"
+                ></button>
+              </div>
+
+              {% endfor %} {% endif %} {% endwith %}
+
+              <!-- =================================================
+                   LOGIN FORM
+                   
+                   EXISTING FLASK ENDPOINT PRESERVED
+              ================================================== -->
+
+              <form
+                method="POST"
+                action="{{ url_for('auth.login') }}"
+                class="login-form"
+              >
+                {{ form.hidden_tag() }}
+
+                <!-- USERNAME -->
+
+                <div class="form-field">
+                  <label for="username" class="form-label"> Username </label>
+
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bi bi-person"></i>
+                    </span>
+
+                    <input
+                      type="text"
+                      id="username"
+                      name="username"
+                      class="form-control"
+                      placeholder="Enter your username"
+                      autocomplete="username"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <!-- PASSWORD -->
+
+                <div class="form-field password-field">
+                  <label for="password" class="form-label"> Password </label>
+
+                  <div class="input-group">
+                    <span class="input-group-text">
+                      <i class="bi bi-lock"></i>
+                    </span>
+
+                    <input
+                      type="password"
+                      id="password"
+                      name="password"
+                      class="form-control"
+                      placeholder="Enter your password"
+                      autocomplete="current-password"
+                      required
+                    />
+
+                    <!-- SHOW / HIDE PASSWORD -->
+
+                    <button
+                      type="button"
+                      class="password-toggle"
+                      id="togglePassword"
+                      aria-label="Show password"
+                    >
+                      <i class="bi bi-eye" id="passwordIcon"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- LOGIN BUTTON -->
+
+                <button type="submit" class="btn btn-login w-100">
+                  <i class="bi bi-box-arrow-in-right"></i>
+
+                  <span>Sign in to Acadex</span>
+                </button>
+              </form>
+
+              <!-- =================================================
+                   SECURITY MESSAGE
+              ================================================== -->
+
+              <div class="security-message">
+                <i class="bi bi-shield-check"></i>
+                <span> Secure access to your school system </span>
+              </div>
             </div>
-          </div>
+          </section>
         </div>
       </main>
 
-      <!-- =====================================================
-         FOOTER
-    ====================================================== -->
+      <!-- ===================================================
+           FOOTER
+      ==================================================== -->
 
       <footer class="login-footer">
         <div class="footer-inner">
-          <div class="footer-item">
-            <i class="bi bi-code-slash"></i>
+          <!-- DEVELOPMENT -->
 
-            <span>
-              Developed by
-              <strong>Acadex Tech</strong>
-              &copy; 2026
-            </span>
+          <div class="footer-item">
+            <div class="footer-icon">
+              <i class="bi bi-code-slash"></i>
+            </div>
+
+            <div class="footer-content">
+              <span>Developed by</span>
+
+              <strong>
+                Shuleka Tech
+                <span class="copyright">&copy; 2026</span>
+              </strong>
+            </div>
           </div>
 
-          <div class="footer-item">
-            <i class="bi bi-telephone-fill"></i>
+          <!-- PHONE -->
 
-            <span>
-              <strong>Call:</strong>
-              0701948287 / 0782811403
-            </span>
+          <div class="footer-item">
+            <div class="footer-icon">
+              <i class="bi bi-telephone-fill"></i>
+            </div>
+
+            <div class="footer-content">
+              <span>Call</span>
+
+              <strong> 0701948287 / 0782811403 </strong>
+            </div>
           </div>
 
-          <div class="footer-item">
-            <i class="bi bi-envelope-fill"></i>
+          <!-- EMAIL -->
 
-            <span>
-              <strong>Email:</strong>
-              oyarojared278@gmail.com
-            </span>
+          <div class="footer-item">
+            <div class="footer-icon">
+              <i class="bi bi-envelope-fill"></i>
+            </div>
+
+            <div class="footer-content">
+              <span>Email</span>
+
+              <strong> shulekatech@gmail.com </strong>
+            </div>
           </div>
         </div>
       </footer>
     </div>
 
-    <!-- =========================================================
-     BOOTSTRAP JAVASCRIPT
-========================================================== -->
+    <!-- =====================================================
+         BOOTSTRAP JAVASCRIPT
+    ====================================================== -->
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- =========================================================
-     PASSWORD VISIBILITY
-========================================================== -->
+    <!-- =====================================================
+         PASSWORD VISIBILITY
+    ====================================================== -->
 
     <script>
       const passwordInput = document.getElementById("password");
@@ -272,18 +316,20 @@
 
       const passwordIcon = document.getElementById("passwordIcon");
 
-      togglePassword.addEventListener("click", function () {
-        const isPassword = passwordInput.type === "password";
+      if (passwordInput && togglePassword && passwordIcon) {
+        togglePassword.addEventListener("click", function () {
+          const isPassword = passwordInput.type === "password";
 
-        passwordInput.type = isPassword ? "text" : "password";
+          passwordInput.type = isPassword ? "text" : "password";
 
-        passwordIcon.className = isPassword ? "bi bi-eye-slash" : "bi bi-eye";
+          passwordIcon.className = isPassword ? "bi bi-eye-slash" : "bi bi-eye";
 
-        togglePassword.setAttribute(
-          "aria-label",
-          isPassword ? "Hide password" : "Show password",
-        );
-      });
+          togglePassword.setAttribute(
+            "aria-label",
+            isPassword ? "Hide password" : "Show password",
+          );
+        });
+      }
     </script>
   </body>
 </html>
