@@ -1774,6 +1774,10 @@
   .access-badge {
     display: none;
   }
+
+  .school-heading {
+    font-size: 2rem;
+  }
 }
 
 /* =========================================================
