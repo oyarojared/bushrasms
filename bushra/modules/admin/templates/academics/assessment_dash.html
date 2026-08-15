@@ -36,8 +36,8 @@
     <div class="card-body">
 
         <!-- Tabs navigation -->
-        <ul class="nav nav-tabs" id="examTabs" role="tablist">
-            <li class="nav-item" role="presentation" style="font-size: medium;">
+        <ul class="nav nav-tabs exam-tabs" id="examTabs" role="tablist">
+            <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="exam-setup-tab" data-bs-toggle="tab" data-bs-target="#exam-setup"
                     type="button" role="tab">
                     {% if current_user.is_admin %}
@@ -103,13 +103,19 @@
                 {% endif %}
                 <hr>
 
+
+
+
+
+
+
+
                 <div class="container-fluid">
                     {% if exams_list %}
                     <div class="row g-4">
                         {% for exam in exams_list %} 
                         <div class="col-md-4 col-lg-3">
                             <div class="card h-100 shadow border-0 exam-card">
-
                                 <!-- Card Header -->
                                 <div class="card-header bg-light d-flex justify-content-between align-items-start">
                                     <div>
@@ -208,19 +214,17 @@
                                         </form>
                                         {% endif %}
 
-                                        <!-- Danger Zone -->
-                                        <form method="post" action="{{ url_for('admin.delete_exam', exam_id=exam.id) }}"
-                                            onsubmit="return confirm('Are you sure you want to delete this exam?');">
-                                            {% if not current_user.is_admin %}
-                                            <button class="btn btn-sm btn-outline-danger w-100 d-none" disabled>
-                                                <i class="bi bi-trash-fill me-1"></i> Delete Exam
-                                            </button>
-                                            {% else %}
-                                            <button class="btn btn-sm btn-outline-danger w-100">
-                                                <i class="bi bi-trash-fill me-1"></i> Delete Exam
-                                            </button>
-                                            {% endif %}
-                                        </form>
+                                        <!-- Danger Zone --> 
+                                    {% if current_user.is_admin %}
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger w-100 delete-exam-btn"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteExamModal"
+                                            data-exam-name="{{ exam.name }}"
+                                            data-delete-url="{{ url_for('admin.delete_exam', exam_id=exam.id) }}">
+                                        <i class="bi bi-trash-fill me-1"></i> Delete Exam
+                                    </button>
+                                    {% endif %}
 
                                     </div>
 
@@ -228,50 +232,25 @@
 
                             </div>
                         </div>
-                        <!-- DELETE CONFIRMATION MODAL -->
-                        <div class="modal fade" id="deleteExamModal{{ exam.id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-sm modal-dialog-centered">
-                                <div class="modal-content">
-                                    <form method="post" action="{{ url_for('admin.delete_exam', exam_id=exam.id) }}">
-                                        <div class="modal-header bg-danger text-white py-2">
-                                            <h6 class="modal-title">Delete Exam</h6>
-                                            <button type="button" class="btn-close btn-close-white"
-                                                data-bs-dismiss="modal"></button>
-                                        </div>
-
-                                        <div class="modal-body text-center">
-                                            <p class="mb-2">
-                                                Are you sure you want to delete:
-                                            </p>
-                                            <strong>{{ exam.name }}</strong>
-                                            <p class="text-danger small mt-2 mb-0">
-                                                This action cannot be undone.
-                                            </p>
-                                        </div>
-
-                                        <div class="modal-footer justify-content-center py-2">
-                                            <button type="submit" class="btn btn-sm btn-danger">
-                                                Yes, Delete
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-secondary"
-                                                data-bs-dismiss="modal">
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-
                         {% endfor %}
+
                     </div>
                     {% else %}
                     <div class="alert alert-info">
                         No exams created yet.
                     </div>
                     {% endif %}
-
                 </div>
+
+
+
+
+
+
+
+
+
+
             </div>
 
             <!-- ================= RESULTS TAB ================= -->
@@ -631,9 +610,632 @@
     </div>
 </div>
 
+<!-- ================= DELETE EXAM MODAL (shared) ================= -->
+{% if current_user.is_admin %}
+<div class="modal fade"
+     id="deleteExamModal"
+     tabindex="-1"
+     aria-labelledby="deleteExamModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered delete-exam-modal-dialog">
+        <div class="modal-content delete-exam-modal">
+            <div class="delete-exam-modal-header">
+                <div class="delete-exam-modal-title-group">
+                    <div class="delete-exam-modal-icon" aria-hidden="true">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <div class="delete-exam-modal-heading">
+                        <h6 class="delete-exam-modal-title" id="deleteExamModalLabel">
+                            Delete Exam/Assessment
+                        </h6>
+                        <p class="delete-exam-modal-subtitle">
+                            This action cannot be undone
+                        </p>
+                    </div>
+                </div>
+                <button type="button"
+                        class="btn-close delete-exam-modal-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body delete-exam-modal-body">
+                <p class="delete-exam-lead">You are about to permanently remove:</p>
+
+                <div class="delete-exam-name-badge" id="deleteExamName" role="status"></div>
+
+                <div class="delete-exam-warning" role="alert">
+                    <div class="delete-exam-warning-icon" aria-hidden="true">
+                        <i class="bi bi-journal-x"></i>
+                    </div>
+                    <div class="delete-exam-warning-content">
+                        <strong>All entered marks will be lost</strong>
+                        <p>
+                            Every mark recorded for this exam/assessment will be permanently
+                            deleted. Teachers and administrators will no longer
+                            be able to recover this data.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer delete-exam-modal-footer">
+                <button type="button"
+                        class="btn delete-exam-btn-cancel"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-left-circle me-1"></i>
+                    Keep Exam
+                </button>
+                <form id="deleteExamForm" method="post" action="" class="delete-exam-form">
+                    <button type="submit" class="btn delete-exam-btn-confirm">
+                        <i class="bi bi-trash-fill me-1"></i>
+                        Yes, Delete Exam
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const modalEl = document.getElementById("deleteExamModal");
+        if (!modalEl) return;
+
+        const nameEl = document.getElementById("deleteExamName");
+        const formEl = document.getElementById("deleteExamForm");
+
+        modalEl.addEventListener("show.bs.modal", function (event) {
+            const button = event.relatedTarget;
+            if (!button || !button.classList.contains("delete-exam-btn")) return;
+
+            nameEl.textContent = button.getAttribute("data-exam-name") || "";
+            formEl.action = button.getAttribute("data-delete-url") || "";
+        });
+
+        modalEl.addEventListener("hidden.bs.modal", function () {
+            nameEl.textContent = "";
+            formEl.action = "";
+        });
+    });
+</script>
+{% endif %}
 <script src="{{ url_for('admin.static', filename='js/assessment/result_display.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/assessment/grading_config.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/assessment/results_reports.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/assessment/marksheets.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/assessment/broadsheet.js') }}"></script>
+
+<style>
+    /* =========================================================
+   EXAM TABS — brand navigation
+   ========================================================= */
+
+.exam-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 121, 121, 0.35) transparent;
+    gap: 0.15rem;
+    padding-bottom: 0;
+    border-bottom: 1px solid #edf0f3;
+}
+
+.exam-tabs::-webkit-scrollbar {
+    height: 4px;
+}
+
+.exam-tabs::-webkit-scrollbar-thumb {
+    background: rgba(255, 121, 121, 0.35);
+    border-radius: 4px;
+}
+
+.exam-tabs .nav-item {
+    flex-shrink: 0;
+}
+
+.exam-tabs .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.65rem 0.95rem;
+    border: none !important;
+    border-bottom: 3px solid transparent !important;
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+    color: #6c757d;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+    transition:
+        color 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.exam-tabs .nav-link i {
+    font-size: 0.88rem;
+    opacity: 0.85;
+    transition: opacity 0.2s ease;
+}
+
+.exam-tabs .nav-link:hover {
+    color: #ff7979;
+    background-color: rgba(255, 121, 121, 0.06);
+    border-bottom-color: rgba(255, 121, 121, 0.25) !important;
+}
+
+.exam-tabs .nav-link:hover i {
+    opacity: 1;
+}
+
+.exam-tabs .nav-link.active {
+    color: #ff7979 !important;
+    background-color: rgba(255, 121, 121, 0.08) !important;
+    border-bottom-color: #ff7979 !important;
+    font-weight: 700;
+}
+
+.exam-tabs .nav-link.active i {
+    opacity: 1;
+}
+
+.exam-tabs .nav-link:focus-visible {
+    outline: 2px solid rgba(255, 121, 121, 0.35);
+    outline-offset: 2px;
+}
+
+@media (max-width: 767.98px) {
+    .exam-tabs .nav-link {
+        padding: 0.58rem 0.75rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .exam-tabs {
+        margin-left: -0.25rem;
+        margin-right: -0.25rem;
+    }
+
+    .exam-tabs .nav-link {
+        padding: 0.55rem 0.65rem;
+        font-size: 0.9rem;
+    }
+
+    .exam-tabs .nav-link i {
+        font-size: 0.84rem;
+    }
+}
+
+
+/* =========================================================
+   SHULEKA EXAM CARDS
+   ========================================================= */
+
+.exam-card {
+    border: 1px solid #edf0f2 !important;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.exam-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 121, 121, 0.35) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+}
+
+
+/* =========================================================
+   CARD HEADER
+   ========================================================= */
+
+.exam-card .card-header {
+    background: #fff !important;
+    border-bottom: 1px solid #f0f1f3;
+    padding: 1rem;
+}
+
+.exam-card .card-header h6 {
+    color: #252a2f;
+    font-size: 0.95rem;
+    line-height: 1.35;
+}
+
+.exam-card .card-header small {
+    font-size: 0.78rem;
+}
+
+
+/* =========================================================
+   STATUS BADGES
+   ========================================================= */
+
+.exam-card .badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.4rem 0.55rem;
+    border-radius: 6px;
+}
+
+
+/* =========================================================
+   CARD BODY
+   ========================================================= */
+
+.exam-card .card-body {
+    padding: 0.9rem 1rem;
+}
+
+.exam-card .card-body .small {
+    color: #495057;
+    font-size: 0.82rem;
+}
+
+.exam-card .card-body .text-muted {
+    font-size: 0.75rem;
+    letter-spacing: 0.01em;
+}
+
+
+/* =========================================================
+   PRIMARY ACTION
+   ========================================================= */
+
+.exam-card .btn-secondary {
+    background-color: #ff7979;
+    border-color: #ff7979;
+    color: #fff;
+    font-weight: 600;
+}
+
+.exam-card .btn-secondary:hover,
+.exam-card .btn-secondary:focus {
+    background-color: #f56868;
+    border-color: #f56868;
+    color: #fff;
+}
+
+
+/* =========================================================
+   EDIT BUTTON
+   ========================================================= */
+
+.exam-card .btn-outline-primary {
+    color: #ff7979;
+    border-color: #ff7979;
+}
+
+.exam-card .btn-outline-primary:hover {
+    color: #fff;
+    background-color: #ff7979;
+    border-color: #ff7979;
+}
+
+
+/* =========================================================
+   LOCK / UNLOCK
+   ========================================================= */
+
+.exam-card .btn-success {
+    font-weight: 500;
+}
+
+.exam-card .btn-warning {
+    font-weight: 500;
+}
+
+
+/* =========================================================
+   DELETE
+   ========================================================= */
+
+.exam-card .btn-outline-danger {
+    font-weight: 500;
+}
+
+
+/* =========================================================
+   CARD FOOTER
+   ========================================================= */
+
+.exam-card .card-footer {
+    padding: 0 1rem 1rem;
+}
+
+.exam-card .btn-group {
+    width: 100%;
+}
+
+.exam-card .btn {
+    font-size: 0.82rem;
+    border-radius: 6px;
+}
+
+.exam-card .btn-group .btn {
+    border-radius: 6px;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 575.98px) {
+
+    .exam-card .card-header {
+        padding: 0.9rem;
+    }
+
+    .exam-card .card-body {
+        padding: 0.8rem 0.9rem;
+    }
+
+    .exam-card .card-footer {
+        padding: 0 0.9rem 0.9rem;
+    }
+}
+
+
+/* =========================================================
+   DELETE EXAM MODAL — SaaS confirmation dialog
+   ========================================================= */
+
+.delete-exam-modal-dialog {
+    max-width: 440px;
+    margin: 1rem auto;
+}
+
+.delete-exam-modal {
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow:
+        0 24px 64px rgba(37, 42, 47, 0.16),
+        0 8px 20px rgba(255, 121, 121, 0.08);
+}
+
+.delete-exam-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 1.15rem 1.25rem 1rem;
+    border-bottom: 1px solid #f0f1f3;
+    background: linear-gradient(
+        180deg,
+        rgba(255, 121, 121, 0.07) 0%,
+        #ffffff 100%
+    );
+}
+
+.delete-exam-modal-title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.delete-exam-modal-icon {
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(255, 121, 121, 0.12);
+    color: #ff7979;
+    font-size: 1.1rem;
+    border: 1px solid rgba(255, 121, 121, 0.18);
+}
+
+.delete-exam-modal-heading {
+    min-width: 0;
+}
+
+.delete-exam-modal-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #252a2f;
+    line-height: 1.3;
+}
+
+.delete-exam-modal-subtitle {
+    margin: 0.2rem 0 0;
+    font-size: 0.78rem;
+    color: #8b939c;
+    line-height: 1.35;
+}
+
+.delete-exam-modal-close {
+    flex-shrink: 0;
+    margin-top: 2px;
+    opacity: 0.55;
+    transition: opacity 0.15s ease;
+}
+
+.delete-exam-modal-close:hover {
+    opacity: 0.9;
+}
+
+.delete-exam-modal-body {
+    padding: 1.15rem 1.25rem 1rem;
+}
+
+.delete-exam-lead {
+    margin: 0 0 0.65rem;
+    font-size: 0.84rem;
+    color: #6c757d;
+    text-align: center;
+}
+
+.delete-exam-name-badge {
+    display: block;
+    width: 100%;
+    margin: 0 auto 1rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: 10px;
+    background: #fafbfc;
+    border: 1px solid #edf0f3;
+    color: #252a2f;
+    font-size: 0.92rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.delete-exam-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 0.85rem 0.95rem;
+    border-radius: 10px;
+    background: rgba(255, 121, 121, 0.06);
+    border: 1px solid rgba(255, 121, 121, 0.22);
+}
+
+.delete-exam-warning-icon {
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: rgba(255, 121, 121, 0.14);
+    color: #e85f5f;
+    font-size: 1rem;
+}
+
+.delete-exam-warning-content strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #c94f4f;
+    line-height: 1.35;
+}
+
+.delete-exam-warning-content p {
+    margin: 0;
+    font-size: 0.76rem;
+    color: #697382;
+    line-height: 1.5;
+}
+
+.delete-exam-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: stretch;
+    gap: 0.65rem;
+    padding: 0.85rem 1.25rem 1.15rem;
+    border-top: 1px solid #f0f1f3;
+    background: #fafbfc;
+}
+
+.delete-exam-form {
+    flex: 1;
+    margin: 0;
+}
+
+.delete-exam-btn-cancel,
+.delete-exam-btn-confirm {
+    width: 100%;
+    padding: 0.52rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border-radius: 8px;
+    line-height: 1.3;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease,
+        box-shadow 0.15s ease,
+        transform 0.15s ease;
+}
+
+.delete-exam-btn-cancel {
+    flex: 1;
+    color: #495057;
+    background: #ffffff;
+    border: 1px solid #dfe3e8;
+}
+
+.delete-exam-btn-cancel:hover,
+.delete-exam-btn-cancel:focus {
+    color: #252a2f;
+    background: #f8f9fa;
+    border-color: #cfd6dd;
+}
+
+.delete-exam-btn-confirm {
+    color: #ffffff;
+    background: #ff7979;
+    border: 1px solid #ff7979;
+    box-shadow: 0 4px 14px rgba(255, 121, 121, 0.28);
+}
+
+.delete-exam-btn-confirm:hover,
+.delete-exam-btn-confirm:focus {
+    color: #ffffff;
+    background: #f56868;
+    border-color: #f56868;
+    box-shadow: 0 6px 18px rgba(255, 121, 121, 0.34);
+}
+
+.delete-exam-btn-confirm:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(255, 121, 121, 0.24);
+}
+
+@media (max-width: 575.98px) {
+    .delete-exam-modal-dialog {
+        max-width: calc(100% - 1.25rem);
+        margin: 0.65rem auto;
+    }
+
+    .delete-exam-modal-header {
+        padding: 1rem;
+    }
+
+    .delete-exam-modal-body {
+        padding: 1rem;
+    }
+
+    .delete-exam-modal-footer {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        padding: 0.85rem 1rem 1rem;
+    }
+
+    .delete-exam-form {
+        width: 100%;
+    }
+
+    .delete-exam-warning {
+        gap: 10px;
+        padding: 0.75rem 0.8rem;
+    }
+
+    .delete-exam-warning-content strong {
+        font-size: 0.8rem;
+    }
+
+    .delete-exam-warning-content p {
+        font-size: 0.74rem;
+    }
+}
+</style>
 {% endblock %}
