@@ -17,6 +17,15 @@
 
 html {
   scroll-behavior: smooth;
+  font-size: 106.25%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+@media (min-width: 1200px) {
+  html {
+    font-size: 107.5%;
+  }
 }
 
 body {

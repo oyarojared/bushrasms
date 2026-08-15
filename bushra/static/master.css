@@ -1,3 +1,43 @@
+/* =========================================================
+   GLOBAL TYPOGRAPHY
+   Gentle rem scale — Bootstrap & custom rem sizes follow html
+   ========================================================= */
+
+html {
+  font-size: 106.25%; /* 17px when browser default is 16px */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+@media (min-width: 1200px) {
+  html {
+    font-size: 107.5%; /* ~17.2px on large screens */
+  }
+}
+
+body {
+  font-family:
+    "Inter",
+    "Open Sans",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (max-width: 767.98px) {
+  body {
+    line-height: 1.5;
+  }
+}
+
 .gowun-batang-regular {
   font-family: "Gowun Batang", serif;
   font-weight: 400;
