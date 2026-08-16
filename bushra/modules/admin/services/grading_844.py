@@ -173,6 +173,77 @@ def aggregate_to_final_grade(points):
     return "E"
 
 
+def simplify_844_grade(grade):
+    """Collapse letter grades into A–E buckets for analytics charts."""
+    if not grade:
+        return None
+    letter = str(grade).strip().upper()[0]
+    if letter in ("A", "B", "C", "D", "E"):
+        return letter
+    return None
+
+
+def is_low_844_grade(grade):
+    bucket = simplify_844_grade(grade)
+    return bucket in ("D", "E")
+
+
+def compute_844_aggregate(all_subject_points):
+    """Compute KCSE aggregate total and mean grade from subject point rows."""
+    if not all_subject_points:
+        return {"total_points": 0, "mean_grade": "—"}
+
+    math_points = [
+        s["points"]
+        for s in all_subject_points
+        if str(s.get("category", "")).upper() == "MATHEMATICS"
+    ]
+    math_points = math_points[0] if math_points else 0
+
+    language_points = [
+        s["points"]
+        for s in all_subject_points
+        if str(s.get("category", "")).upper() == "LANGUAGES"
+    ]
+    language_points = max(language_points) if language_points else 0
+
+    math_index = next(
+        (
+            i
+            for i, s in enumerate(all_subject_points)
+            if str(s.get("category", "")).upper() == "MATHEMATICS"
+        ),
+        None,
+    )
+
+    language_indices = [
+        i
+        for i, s in enumerate(all_subject_points)
+        if str(s.get("category", "")).upper() == "LANGUAGES"
+    ]
+
+    best_language_index = None
+    if language_indices:
+        best_language_index = max(
+            language_indices,
+            key=lambda i: all_subject_points[i]["points"],
+        )
+
+    remaining_points = [
+        s["points"]
+        for i, s in enumerate(all_subject_points)
+        if i not in (math_index, best_language_index)
+    ]
+
+    best_five = sorted(remaining_points, reverse=True)[:5]
+    total_points = math_points + language_points + sum(best_five)
+
+    return {
+        "total_points": total_points,
+        "mean_grade": aggregate_to_final_grade(total_points),
+    }
+
+
 # =========================================================
 # Automatic comment based on marks
 # =========================================================

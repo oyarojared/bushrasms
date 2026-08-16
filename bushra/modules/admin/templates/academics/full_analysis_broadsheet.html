@@ -1,19 +1,22 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
+    <title>Full Academic Analysis</title>
     <style>
-      /* -------- PAGE SETUP -------- */
       @page {
-        size: A4 landscape;
-        margin: 15mm 10mm 25mm 10mm; /* top, right, bottom, left */
+        size: A4 portrait;
+        margin: 12mm 10mm 18mm 10mm;
 
-        /* Footer at bottom center */
         @bottom-center {
-          content: "Developed by Bushra Tech Solution. All rights reserved. 2026.";
-          font-size: 10px;
-          color: #555;
+          content: "Generated {{ generated_at.strftime('%d %b %Y, %H:%M') }} · Shuleka Tech";
+          font-size: 8px;
+          color: #888;
         }
+      }
+
+      * {
+        box-sizing: border-box;
       }
 
       body {
@@ -21,76 +24,128 @@
         font-size: 10px;
         color: #222;
         margin: 0;
+        line-height: 1.35;
       }
 
-      /* -------- WATERMARK -------- */
       .watermark {
         position: fixed;
-        top: 40%;
+        top: 42%;
         left: 50%;
-        transform: translate(-50%, -50%) rotate(-30deg);
-        font-size: 60px;
-        color: rgb(218, 218, 218);
+        transform: translate(-50%, -50%) rotate(-28deg);
+        font-size: 52px;
+        color: rgba(0, 0, 0, 0.04);
         white-space: nowrap;
-        pointer-events: none;
         z-index: 0;
+        pointer-events: none;
       }
 
-      /* -------- HEADER -------- */
-      .header {
-        text-align: center;
-        border-bottom: 2px solid #333;
-        margin-bottom: 8px;
-        padding-bottom: 5px;
+      .page-content {
+        position: relative;
         z-index: 1;
       }
 
+      .header {
+        text-align: center;
+        border-bottom: 3px solid #ff7979;
+        padding-bottom: 8px;
+        margin-bottom: 12px;
+      }
+
       .school-name {
-        font-size: 16px;
-        font-weight: bold;
+        font-size: 18px;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
+        color: #1a1a1a;
       }
 
-      .title {
+      .report-title {
         font-size: 14px;
-        font-weight: bold;
-        color: #4b4b4b;
-        margin-top: 2px;
-      }
-
-      .h1 {
-        font-size: 24px;
-        font-weight: bold;
-        color: #4b4b4b;
+        font-weight: 700;
+        color: #ff7979;
+        margin-top: 4px;
+        text-transform: uppercase;
       }
 
       .meta {
-        font-size: 11px;
-        margin-top: 2px;
-        color: #444;
+        font-size: 10px;
+        color: #555;
+        margin-top: 4px;
       }
 
-      /* -------- TABLE -------- */
+      .meta strong {
+        color: #222;
+      }
+
+      .summary-grid {
+        display: table;
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 6px 0;
+        margin-bottom: 12px;
+      }
+
+      .summary-card {
+        display: table-cell;
+        width: 25%;
+        background: #fafafa;
+        border: 1px solid #e8e8e8;
+        border-top: 3px solid #ff7979;
+        border-radius: 4px;
+        padding: 8px 10px;
+        vertical-align: top;
+      }
+
+      .summary-label {
+        display: block;
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #777;
+      }
+
+      .summary-value {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-top: 2px;
+      }
+
+      .section {
+        margin-bottom: 14px;
+        page-break-inside: avoid;
+      }
+
+      .section-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: #1a1a1a;
+        border-left: 4px solid #ff7979;
+        padding-left: 8px;
+        margin: 0 0 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
       table {
         width: 100%;
         border-collapse: collapse;
-        table-layout: fixed; /* ensures subjects fit */
-        margin-bottom: 12px;
       }
 
       th,
       td {
-        border: 1px solid #999;
-        padding: 3px;
+        border: 1px solid #ccc;
+        padding: 5px 6px;
         text-align: center;
-        word-wrap: break-word;
+        vertical-align: middle;
       }
 
       th {
         background: #2c3e50;
         color: #fff;
-        font-size: 10px;
+        font-size: 9px;
+        font-weight: 600;
       }
 
       td {
@@ -99,303 +154,407 @@
 
       .left {
         text-align: left;
-        padding-left: 5px;
       }
 
-      /* SUBJECT HEADER */
-      .subject-header {
-        font-size: 9px;
-        line-height: 1.2;
+      .highlight-row {
+        background: #fff8f8;
       }
 
-      .teacher {
-        font-size: 8px;
-        color: #ddd;
-      }
-
-      /* GRADES */
-      .grade {
+      .position-badge {
         display: inline-block;
-        padding: 1px 3px;
+        min-width: 18px;
+        padding: 2px 5px;
+        border-radius: 10px;
+        background: #ff7979;
+        color: #fff;
+        font-weight: 700;
+        font-size: 8px;
+      }
+
+      .position-badge.gold {
+        background: #d4a017;
+      }
+
+      .position-badge.silver {
+        background: #8e9aaf;
+      }
+
+      .position-badge.bronze {
+        background: #b87333;
+      }
+
+      .champions {
+        display: table;
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 8px 0;
+        margin-bottom: 4px;
+      }
+
+      .champion-card {
+        display: table-cell;
+        width: 50%;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        padding: 10px;
+        background: #fff;
+      }
+
+      .champion-card.boy {
+        border-top: 3px solid #0d6efd;
+      }
+
+      .champion-card.girl {
+        border-top: 3px solid #e83e8c;
+      }
+
+      .champion-label {
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #777;
+        margin-bottom: 4px;
+      }
+
+      .champion-name {
+        font-size: 12px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+      }
+
+      .champion-meta {
+        font-size: 9px;
+        color: #555;
+      }
+
+      .champion-empty {
+        color: #999;
+        font-style: italic;
+      }
+
+      .grade-pill {
+        display: inline-block;
+        min-width: 22px;
+        padding: 2px 5px;
         border-radius: 3px;
         font-size: 8px;
-        margin-top: 2px;
+        font-weight: 700;
+        color: #fff;
+        background: #6c757d;
       }
 
-      .EE {
+      .grade-pill.g-A,
+      .grade-pill.g-EE {
         background: #198754;
-        color: #fff;
       }
-      .ME {
+      .grade-pill.g-Am,
+      .grade-pill.g-ME {
         background: #0d6efd;
-        color: #fff;
       }
-      .AE {
+      .grade-pill.g-B,
+      .grade-pill.g-Bm,
+      .grade-pill.g-Bp,
+      .grade-pill.g-AE {
+        background: #0dcaf0;
+        color: #000;
+      }
+      .grade-pill.g-C,
+      .grade-pill.g-Cm,
+      .grade-pill.g-Cp,
+      .grade-pill.g-BE {
         background: #ffc107;
         color: #000;
       }
-      .BE {
+      .grade-pill.g-D,
+      .grade-pill.g-Dm,
+      .grade-pill.g-Dp,
+      .grade-pill.g-E {
         background: #dc3545;
-        color: #fff;
       }
 
-      /* ROW STYLING */
-      tr:nth-child(even) {
-        background: #f9f9f9;
+      .grade-matrix {
+        width: 100%;
+        table-layout: fixed;
+        font-size: 8px;
       }
 
-      tr:hover {
-        background: #f1f1f1;
+      .grade-matrix th,
+      .grade-matrix td {
+        padding: 4px 3px;
       }
 
-      /* SECTIONS */
-      .section {
-        margin-top: 12px;
+      .grade-matrix th {
+        font-size: 8px;
+        white-space: nowrap;
       }
 
-      .section h4 {
-        margin-bottom: 5px;
-        border-left: 4px solid #0d6efd;
-        padding-left: 6px;
-        font-size: 12px;
-      }
-
-      /* MINI TABLES */
-      .mini-table th {
-        background: #6c757d;
-        color: #fff;
-        font-size: 10px;
-      }
-
-      .risk {
-        color: #dc3545;
-        font-weight: bold;
-      }
-
-      .align-left {
+      .grade-matrix .col-subject {
+        width: 18%;
         text-align: left;
       }
 
-      .num {
-        width: 14px !important;
+      .grade-matrix .col-total {
+        width: 7%;
+        font-weight: 700;
+        background: #f8f9fa;
+      }
+
+      .grade-matrix tbody tr:nth-child(even) {
+        background: #fafbfc;
+      }
+
+      .grade-matrix .cell-zero {
+        color: #bbb;
+      }
+
+      .grade-matrix .cell-count {
+        font-weight: 600;
+      }
+
+      .overall-table {
+        max-width: 320px;
+      }
+
+      .overall-table th:first-child,
+      .overall-table td:first-child {
+        width: 45%;
+      }
+
+      .section-note {
+        font-size: 9px;
+        color: #666;
+        margin: -4px 0 8px;
+        padding-left: 12px;
+      }
+
+      .empty-note {
         text-align: center;
+        color: #888;
+        font-style: italic;
+        padding: 12px;
+        border: 1px dashed #ddd;
+        border-radius: 4px;
+      }
+
+      .two-col {
+        display: table;
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 10px 0;
+      }
+
+      .two-col > div {
+        display: table-cell;
+        width: 50%;
+        vertical-align: top;
       }
     </style>
   </head>
   <body>
-    <!-- WATERMARK -->
     <div class="watermark">{{ data.branch_name }}</div>
 
-    <!-- HEADER -->
-    <div class="header">
-      <div class="school-name h1">{{ data.branch_name }}</div>
-      <div class="title">ACADEMIC BROADSHEET REPORT</div>
-      <div class="meta">
-        {{ data.class_name }} {% if data.stream %}{{ data.stream }}{% endif %}
-        &nbsp;|&nbsp; {{ data.exam_name }}
-      </div>
-      <div class="meta">
-        Class Teacher:
-        <strong>{{ data.class_teacher or "N/A" }}</strong> &nbsp;|&nbsp; Total
-        Learners: <strong>{{ data.total_learners }}</strong>
-      </div>
-    </div>
+    <div class="page-content">
+      <header class="header">
+        <div class="school-name">{{ data.branch_name }}</div>
+        <div class="report-title">Full Academic Performance Analysis</div>
+        <div class="meta">
+          <strong>{{ data.class_name }}</strong>
+          {% if data.stream %} · <strong>{{ data.stream }}</strong>{% endif %}
+          · <strong>{{ data.exam_name }}</strong>
+        </div>
+        <div class="meta">
+          Class Teacher: <strong>{{ data.class_teacher or "N/A" }}</strong>
+          · Total Learners: <strong>{{ data.total_learners }}</strong>
+          · Grading:
+          <strong>{{ "8-4-4" if data.grading_type == "844" else "CBC" }}</strong>
+        </div>
+      </header>
 
-    <!-- MAIN TABLE -->
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 4%">#</th>
-          <th class="left" style="width: 14%">Student Name</th>
-          {% for subject in data.subjects %}
-          <th class="subject-header">
-            {{ subject.name }}<br />
-            <span class="teacher">{{ subject.teacher }}</span>
-          </th>
-          {% endfor %}
-        </tr>
-      </thead>
-
-      <tbody>
-        {% for student in data.students %}
-        <tr>
-          <td>{{ loop.index }}</td>
-          <td class="left">{{ student.full_name }}</td>
-
-          {% for subject in data.subjects %} {% set mark =
-          student.marks[subject.id] %}
-          <td>
-            {{ mark.marks }} {% if mark.grade %}
-            <div class="grade {{ mark.grade }}">{{ mark.grade }}</div>
-            {% endif %}
-          </td>
-          {% endfor %}
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <!-- =================== ANALYTICS =================== -->
-
-    <div class="section">
-      <h4>Subject Averages</h4>
-      <table class="mini-table">
-        <tr>
-          {% for subject in data.subjects %}
-          <th>{{ subject.name }}</th>
-          {% endfor %}
-        </tr>
-        <tr>
-          {% for subject in data.subjects %}
-          <td>
-            {{ data.subject_averages[subject.id] | round(1) if
-            data.subject_averages[subject.id] else "-" }}
-          </td>
-          {% endfor %}
-        </tr>
-      </table>
-    </div>
-
-    <!-- =================== SUBJECT PERFORMANCE LEVELS =================== -->
-
-    <div class="section">
-      <h4>Subject Performance Levels</h4>
-
-      <!-- Legend -->
-      <div style="margin-bottom: 8px; font-size: 10px">
-        <span
-          style="
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            background: #198754;
-            margin-right: 4px;
-            border-radius: 3px;
-          "
-        ></span>
-        EE
-        <span
-          style="
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            background: #0d6efd;
-            margin: 0 4px 0 10px;
-            border-radius: 3px;
-          "
-        ></span>
-        ME
-        <span
-          style="
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            background: #ffc107;
-            margin: 0 4px 0 10px;
-            border-radius: 3px;
-          "
-        ></span>
-        AE
-        <span
-          style="
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            background: #dc3545;
-            margin: 0 4px 0 10px;
-            border-radius: 3px;
-          "
-        ></span>
-        BE
+      <div class="summary-grid">
+        <div class="summary-card">
+          <span class="summary-label">Learners</span>
+          <span class="summary-value">{{ data.total_learners }}</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">Subjects</span>
+          <span class="summary-value">{{ data.subjects | length }}</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">Needs Support</span>
+          <span class="summary-value">{{ data.at_risk_learners | length }}</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-label">Missing Marks</span>
+          <span class="summary-value">{{ data.missing_marks | length }}</span>
+        </div>
       </div>
 
-      <table
-        class="mini-table"
-        style="border: none; table-layout: fixed; width: 100%"
-      >
-        <thead>
-          <tr>
-            <th class="left" style="text-align: left; width: 20%">Subject</th>
-            <th style="text-align: center">EE</th>
-            <th style="text-align: center">ME</th>
-            <th style="text-align: center">AE</th>
-            <th style="text-align: center">BE</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for subject in data.subjects %} {% set analysis =
-          data.subject_analysis[subject.id] %}
-          <tr>
-            <td class="left">{{ subject.name }}</td>
-            {% for level in ['EE','ME','AE','BE'] %} {% set count =
-            analysis.get(level,0) %} {% set percent = (count /
-            data.total_learners * 100) | round(1) if data.total_learners else 0
-            %}
-            <td>
-              <div
-                style="
-                  background: #eee;
-                  width: 100%;
-                  height: 14px;
-                  border-radius: 7px;
-                  overflow: hidden;
-                  margin-bottom: 2px;
-                "
-              >
-                {% if count > 0 %}
-                <div
-                  style="
-                            background: {% if level=='EE' %}#198754{% elif level=='ME' %}#0d6efd{% elif level=='AE' %}#ffc107{% else %}#dc3545{% endif %};
-                            width: {{ percent }}%;
-                            height:100%;
-                        "
-                  title="{{ count }} learner(s)"
-                ></div>
-                {% endif %}
-              </div>
-              <span style="font-size: 9px">{{ count }} ({{ percent }}%)</span>
-            </td>
+      <div class="section">
+        <h2 class="section-title">Top 5 Students</h2>
+        {% if analysis.top_students %}
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 8%">Pos</th>
+              <th class="left" style="width: 34%">Student</th>
+              <th style="width: 14%">Adm No.</th>
+              <th style="width: 10%">Gender</th>
+              <th style="width: 14%">{{ analysis.score_label }}</th>
+              <th style="width: 14%">{{ analysis.grade_label }}</th>
+              <th style="width: 6%">Subs</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for student in analysis.top_students %}
+            <tr class="highlight-row">
+              <td>
+                <span
+                  class="position-badge {% if student.position == 1 %}gold{% elif student.position == 2 %}silver{% elif student.position == 3 %}bronze{% endif %}"
+                >
+                  {{ student.position }}
+                </span>
+              </td>
+              <td class="left"><strong>{{ student.name }}</strong></td>
+              <td>{{ student.admission_number or "—" }}</td>
+              <td>{{ student.gender or "—" }}</td>
+              <td><strong>{{ student.score }}</strong></td>
+              <td>{{ student.mean_value }}</td>
+              <td>{{ student.subjects_count }}</td>
+            </tr>
             {% endfor %}
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-note">No student performance data available.</div>
+        {% endif %}
+      </div>
 
-    <div class="section">
-      <h4>Learners who need Attention</h4>
-      <table class="mini-table">
-        <tr>
-          <th class="num">#</th>
-          <th>Student</th>
-          <th>Learning Areas Requiring Support</th>
-        </tr>
-        {% for s in data.at_risk_learners %}
-        <tr class="risk">
-          <td class="align-left num">{{ loop.index }}</td>
-          <td class="align-left">{{ s.name }}</td>
-          <td class="align-left">{{ s.low_subjects }}</td>
-        </tr>
-        {% endfor %}
-      </table>
-    </div>
+      <div class="section">
+        <h2 class="section-title">Best Boy &amp; Best Girl</h2>
+        <div class="champions">
+          <div class="champion-card boy">
+            <div class="champion-label">Best Boy</div>
+            {% if analysis.best_boy %}
+            <div class="champion-name">{{ analysis.best_boy.name }}</div>
+            <div class="champion-meta">
+              {{ analysis.score_label }}: <strong>{{ analysis.best_boy.score }}</strong>
+              · {{ analysis.grade_label }}: <strong>{{ analysis.best_boy.mean_value }}</strong>
+            </div>
+            {% else %}
+            <div class="champion-empty">No male student data available.</div>
+            {% endif %}
+          </div>
+          <div class="champion-card girl">
+            <div class="champion-label">Best Girl</div>
+            {% if analysis.best_girl %}
+            <div class="champion-name">{{ analysis.best_girl.name }}</div>
+            <div class="champion-meta">
+              {{ analysis.score_label }}: <strong>{{ analysis.best_girl.score }}</strong>
+              · {{ analysis.grade_label }}: <strong>{{ analysis.best_girl.mean_value }}</strong>
+            </div>
+            {% else %}
+            <div class="champion-empty">No female student data available.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
 
-    <div class="section">
-      <h4>Missing Marks</h4>
-      <table class="mini-table">
-        <tr>
-          <th class="num">#</th>
-          <th>Student</th>
-          <th>Subject(s) / Learning Area(s)</th>
-        </tr>
-        {% for m in data.missing_marks %}
-        <tr>
-          <td class="align-left num">{{ loop.index }}</td>
-          <td class="align-left">{{ m.student }}</td>
-          <td class="align-left">{{ m.subjects | join(", ") }}</td>
-        </tr>
-        {% endfor %}
-      </table>
+      <div class="section">
+        <h2 class="section-title">Top Student Per Subject</h2>
+        {% if analysis.top_per_subject %}
+        <table>
+          <thead>
+            <tr>
+              <th class="left" style="width: 30%">Subject</th>
+              <th class="left" style="width: 40%">Student</th>
+              <th style="width: 15%">Marks</th>
+              <th style="width: 15%">Grade</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in analysis.top_per_subject %}
+            <tr>
+              <td class="left"><strong>{{ row.subject }}</strong></td>
+              <td class="left">{{ row.student }}</td>
+              <td><strong>{{ row.marks }}</strong></td>
+              <td>
+                <span class="grade-pill {{ row.grade_css }}">
+                  {{ row.grade }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-note">No subject top performers found.</div>
+        {% endif %}
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Subject Grade Performance</h2>
+        <p class="section-note">Number of students per grade in each subject</p>
+        {% if analysis.subject_grade_table.rows %}
+        <table class="grade-matrix">
+          <thead>
+            <tr>
+              <th class="col-subject left">Subject</th>
+              {% for grade in analysis.subject_grade_table.columns %}
+              <th>{{ grade }}</th>
+              {% endfor %}
+              <th class="col-total">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in analysis.subject_grade_table.rows %}
+            <tr>
+              <td class="col-subject left"><strong>{{ row.subject }}</strong></td>
+              {% for cell in row.cells %}
+              <td class="{% if cell.count %}cell-count{% else %}cell-zero{% endif %}">
+                {{ cell.count if cell.count else "—" }}
+              </td>
+              {% endfor %}
+              <td class="col-total">{{ row.total }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-note">No grade distribution data available.</div>
+        {% endif %}
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">{{ analysis.overall_grade_title }}</h2>
+        {% if analysis.overall_grade_subtitle %}
+        <p class="section-note">{{ analysis.overall_grade_subtitle }}</p>
+        {% endif %}
+        {% if analysis.overall_grade_analysis %}
+        <table class="overall-table">
+          <thead>
+            <tr>
+              <th class="left">
+                {{ "Mean Grade" if data.grading_type == "844" else "Grade" }}
+              </th>
+              <th>Students</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in analysis.overall_grade_analysis %}
+            <tr>
+              <td class="left">
+                <span class="grade-pill {{ item.css_class }}">{{ item.grade }}</span>
+              </td>
+              <td><strong>{{ item.count }}</strong></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-note">No overall grade data available.</div>
+        {% endif %}
+      </div>
     </div>
   </body>
 </html>

@@ -564,62 +564,70 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
       <!-- ================= BROADSHEET TAB ================= -->
       {% if current_user.is_admin %}
       <div class="tab-pane fade" id="broadsheet" role="tabpanel">
-        <!-- Filters Card -->
-        <div class="card p-3 shadow-sm mb-4">
-          <h6 class="fw-bold mb-3 text-primary">
-            <i class="bi bi-funnel-fill me-2"></i>Filter Broadsheet
-          </h6>
-          <div class="row g-3">
-            <!-- Branch -->
-            <div class="col-md-3">
-              <label class="form-label fw-semibold"
-                ><i class="bi bi-house-door me-1"></i>Branch</label
-              >
-              <select
-                id="bs-branch"
-                class="form-select form-select-sm"
-              ></select>
+        <div class="bs-filter-card card border-0 shadow-sm mb-4">
+          <div class="bs-filter-header">
+            <div class="bs-filter-title">
+              <div>
+                <h6 class="mb-0">Broadsheets &amp; Analytics</h6>
+                <small
+                  >Select school, class, and exam to generate analysis</small
+                >
+              </div>
             </div>
+          </div>
 
-            <!-- Grade -->
-            <div class="col-md-3">
-              <label class="form-label fw-semibold"
-                ><i class="bi bi-building me-1"></i>Grade / Class</label
-              >
-              <select id="bs-grade" class="form-select form-select-sm"></select>
-            </div>
+          <div class="card-body pt-0">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-6 col-lg-3">
+                <label class="form-label bs-label" for="bs-branch"
+                  >School</label
+                >
+                <select
+                  id="bs-branch"
+                  class="form-select form-select-sm"
+                ></select>
+              </div>
 
-            <!-- Stream -->
-            <div class="col-md-3">
-              <label class="form-label fw-semibold"
-                ><i class="bi bi-list-ul me-1"></i>Stream</label
-              >
-              <select id="bs-stream" class="form-select form-select-sm">
-                <option value="">All</option>
-              </select>
-            </div>
+              <div class="col-md-6 col-lg-3">
+                <label class="form-label bs-label" for="bs-grade"
+                  >Grade / Form</label
+                >
+                <select
+                  id="bs-grade"
+                  class="form-select form-select-sm"
+                ></select>
+              </div>
 
-            <!-- Exam -->
-            <div class="col-md-3">
-              <label class="form-label fw-semibold"
-                ><i class="bi bi-journal-text me-1"></i>Exam</label
-              >
-              <select id="bs-exam" class="form-select form-select-sm">
-                <option value="">--Select Exam--</option>
-              </select>
-            </div>
+              <div class="col-md-6 col-lg-3">
+                <label class="form-label bs-label" for="bs-stream"
+                  >Stream</label
+                >
+                <select id="bs-stream" class="form-select form-select-sm">
+                  <option value="">All</option>
+                </select>
+              </div>
 
-            <!-- Button -->
-            <div class="col-12 text-end mt-2">
-              <button id="load-broadsheet" class="btn btn-sm btn-danger">
-                <i class="bi bi-graph-up"></i> Generate Analytics
-              </button>
+              <div class="col-md-6 col-lg-3">
+                <label class="form-label bs-label" for="bs-exam">Exam</label>
+                <select id="bs-exam" class="form-select form-select-sm">
+                  <option value="">--Select Exam--</option>
+                </select>
+              </div>
+
+              <div class="col-12 col-lg-auto ms-lg-auto d-flex justify-content-end">
+                <button
+                  id="load-broadsheet"
+                  type="button"
+                  class="bs-btn bs-btn-primary"
+                >
+                  <i class="bi bi-bar-chart-line"></i> Generate
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Output -->
-        <div id="broadsheetContainer" class="p-3"></div>
+        <div id="broadsheetContainer" class="bs-display-area"></div>
       </div>
       {% endif %}
     </div>
@@ -703,15 +711,90 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
 {% endif %}
 
 <script>
-  function blockUI(message = "Please wait…", sub = "Processing your request") {
+  function blockUI(message = "Please wait…", sub = "Processing your request", options = {}) {
     const blocker = document.getElementById("uiBlocker");
     if (!blocker) return;
+
+    const { progress = false } = options;
+    const progressWrap = document.getElementById("uiBlockerProgressWrap");
+    const indeterminate = document.getElementById("uiBlockerIndeterminate");
+    const progressBar = document.getElementById("uiBlockerProgressBar");
+    const progressLabel = document.getElementById("uiBlockerProgressLabel");
+    const progressTrack = document.getElementById("uiBlockerProgress");
 
     blocker.querySelector(".ui-blocker-title").textContent = message;
     blocker.querySelector(".ui-blocker-message").textContent = sub;
     blocker.classList.remove("d-none");
     blocker.setAttribute("aria-busy", "true");
     document.body.classList.add("ui-blocker-active");
+
+    if (progress && progressWrap && progressBar && progressLabel && progressTrack) {
+      progressWrap.classList.remove("d-none");
+      indeterminate?.classList.add("d-none");
+      progressBar.classList.add("is-determinate");
+      progressBar.style.width = "0%";
+      progressBar.style.animation = "none";
+      progressLabel.textContent = "0%";
+      progressTrack.setAttribute("aria-valuenow", "0");
+    } else {
+      progressWrap?.classList.add("d-none");
+      indeterminate?.classList.remove("d-none");
+      if (progressBar) {
+        progressBar.classList.remove("is-determinate");
+        progressBar.style.width = "";
+        progressBar.style.animation = "";
+      }
+    }
+  }
+
+  function setUIProgress(percent, statusText) {
+    const progressBar = document.getElementById("uiBlockerProgressBar");
+    const progressLabel = document.getElementById("uiBlockerProgressLabel");
+    const progressTrack = document.getElementById("uiBlockerProgress");
+    const progressStatus = document.getElementById("uiBlockerProgressStatus");
+    if (!progressBar || !progressLabel || !progressTrack) return;
+
+    const value = Math.min(100, Math.max(0, Math.round(percent)));
+    progressBar.style.width = `${value}%`;
+    progressLabel.textContent = `${value}%`;
+    progressTrack.setAttribute("aria-valuenow", String(value));
+    if (statusText && progressStatus) {
+      progressStatus.textContent = statusText;
+    }
+  }
+
+  async function readResponseBlobWithProgress(response, onProgress) {
+    const total = Number(response.headers.get("Content-Length")) || 0;
+    const reader = response.body?.getReader();
+
+    if (!reader) {
+      const blob = await response.blob();
+      onProgress?.(100);
+      return blob;
+    }
+
+    const chunks = [];
+    let received = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      chunks.push(value);
+      received += value.length;
+
+      if (total > 0) {
+        onProgress?.(Math.min(100, Math.round((received / total) * 100)));
+      }
+    }
+
+    if (total <= 0) {
+      onProgress?.(100);
+    }
+
+    return new Blob(chunks, {
+      type: response.headers.get("Content-Type") || "application/octet-stream",
+    });
   }
 
   function unblockUI() {
@@ -721,6 +804,18 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     blocker.classList.add("d-none");
     blocker.setAttribute("aria-busy", "false");
     document.body.classList.remove("ui-blocker-active");
+
+    const progressWrap = document.getElementById("uiBlockerProgressWrap");
+    const indeterminate = document.getElementById("uiBlockerIndeterminate");
+    const progressBar = document.getElementById("uiBlockerProgressBar");
+
+    progressWrap?.classList.add("d-none");
+    indeterminate?.classList.remove("d-none");
+    if (progressBar) {
+      progressBar.classList.remove("is-determinate");
+      progressBar.style.width = "";
+      progressBar.style.animation = "";
+    }
   }
 </script>
 
@@ -748,7 +843,24 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
       Processing your request
     </p>
 
-    <div class="ui-blocker-progress" aria-hidden="true">
+    <div id="uiBlockerProgressWrap" class="ui-blocker-progress-wrap d-none">
+      <div class="ui-blocker-progress-meta">
+        <span id="uiBlockerProgressStatus">Downloading…</span>
+        <span id="uiBlockerProgressLabel">0%</span>
+      </div>
+      <div
+        id="uiBlockerProgress"
+        class="ui-blocker-progress"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+      >
+        <div id="uiBlockerProgressBar" class="ui-blocker-progress-bar is-determinate"></div>
+      </div>
+    </div>
+
+    <div id="uiBlockerIndeterminate" class="ui-blocker-progress" aria-hidden="true">
       <div class="ui-blocker-progress-bar"></div>
     </div>
   </div>
@@ -1485,10 +1597,15 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
   }
 
   .results-display-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     margin-top: 0.25rem;
   }
 
   .results-state {
+    width: 100%;
+    max-width: 860px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1517,167 +1634,126 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    margin-bottom: 1rem;
-    padding: 0.75rem 1rem;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
-    border: 1px solid rgba(255, 121, 121, 0.18);
+    width: 100%;
+    max-width: 860px;
+    margin-bottom: 0.65rem;
+    padding: 0.45rem 0.7rem;
+    border-radius: 8px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    font-size: 0.78rem;
+    color: #6c757d;
   }
 
   .results-summary-bar strong {
     color: #ff7979;
-    font-size: 1.1rem;
-    margin-right: 0.25rem;
+    font-size: 0.88rem;
+    margin-right: 0.2rem;
   }
 
   .results-summary-context {
     color: #6c757d;
-    font-size: 0.8rem;
+    font-size: 0.74rem;
     text-align: right;
   }
 
   .student-results-list {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    align-items: center;
+    gap: 0.65rem;
+    width: 100%;
+    max-width: 860px;
   }
 
   .student-result-card {
-    border: 1px solid #e9ecef;
-    border-radius: 14px;
+    width: 100%;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
     overflow: hidden;
     background: #fff;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
   }
 
   .student-result-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1rem 1.1rem;
-    background: linear-gradient(135deg, #ff7979 0%, #f56868 100%);
-    color: #fff;
+    padding: 0.55rem 0.75rem;
+    background: #fff;
+    border-bottom: 1px solid #edf0f3;
   }
 
-  .student-result-kicker {
-    margin: 0 0 0.2rem;
-    font-size: 0.68rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    opacity: 0.85;
+  .student-result-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
   }
 
   .student-result-name {
     margin: 0;
-    font-size: 1.05rem;
-    font-weight: 800;
-    line-height: 1.25;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #212529;
+    line-height: 1.3;
   }
 
-  .student-result-context {
-    margin: 0.35rem 0 0;
-    font-size: 0.78rem;
-    opacity: 0.92;
+  .student-result-score {
+    flex-shrink: 0;
+    font-size: 0.74rem;
+    color: #6c757d;
+    white-space: nowrap;
+  }
+
+  .student-result-score strong {
+    color: #ff7979;
+    font-size: 0.86rem;
+    font-weight: 700;
+  }
+
+  .student-result-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.6rem;
+    margin-top: 0.35rem;
+    font-size: 0.71rem;
+    color: #6c757d;
     line-height: 1.4;
   }
 
-  .context-separator {
-    margin: 0 0.3rem;
-    opacity: 0.7;
-  }
-
-  .student-result-summary {
-    display: flex;
-    flex-direction: column;
-    gap: 0.45rem;
-    flex-shrink: 0;
-  }
-
-  .summary-pill {
-    min-width: 92px;
-    padding: 0.45rem 0.65rem;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.18);
-    text-align: center;
-  }
-
-  .summary-pill-muted {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .summary-value {
-    display: block;
-    font-size: 1rem;
-    font-weight: 800;
-    line-height: 1.1;
-  }
-
-  .summary-label {
-    display: block;
-    margin-top: 0.15rem;
-    font-size: 0.62rem;
-    opacity: 0.85;
-  }
-
-  .student-result-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    padding: 0.85rem 1rem;
-    background: #f8f9fb;
-    border-bottom: 1px solid #edf0f3;
-  }
-
-  .meta-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem 0.65rem;
-    border-radius: 999px;
-    background: #fff;
-    border: 1px solid #e7ebf0;
+  .result-meta-item strong {
     color: #495057;
-    font-size: 0.74rem;
-  }
-
-  .meta-chip i {
-    color: #ff7979;
-    font-size: 0.78rem;
+    font-weight: 600;
   }
 
   .student-result-body {
-    padding: 1rem;
+    padding: 0.45rem 0.65rem 0.55rem;
   }
 
-  .student-result-section-title {
-    margin-bottom: 0.75rem;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #495057;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+  .student-result-table-wrap {
+    margin: 0;
   }
 
   .student-result-table {
+    width: 100%;
     margin-bottom: 0;
-    font-size: 0.8rem;
+    border-collapse: collapse;
+    font-size: 0.74rem;
   }
 
   .student-result-table thead th {
     background: #f1f3f5;
     color: #495057;
-    font-size: 0.72rem;
+    font-size: 0.67rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
-    border-color: #e9ecef;
+    letter-spacing: 0.02em;
+    border: 1px solid #dee2e6;
+    padding: 0.32rem 0.38rem;
     white-space: nowrap;
+    vertical-align: middle;
   }
 
   .student-result-table tbody td {
-    border-color: #edf0f3;
+    border: 1px solid #e9ecef;
+    padding: 0.28rem 0.38rem;
     vertical-align: middle;
   }
 
@@ -1724,6 +1800,75 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
   }
 
   .level-neutral {
+    background: #e9ecef;
+    color: #495057;
+  }
+
+  .results-grading-tag {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    background: #eef1f4;
+    color: #495057;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    vertical-align: middle;
+  }
+
+  .student-result-card-844 .student-result-header {
+    border-bottom-color: #d9c4b8;
+  }
+
+  .student-result-card-844 .student-result-score strong,
+  .student-result-card-844 .mean-grade-value {
+    color: #923006;
+  }
+
+  .student-result-table-844 thead th {
+    background: #f3ebe6;
+    color: #5c3d2e;
+  }
+
+  .grade-844-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.65rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .grade-844-a {
+    background: #d1f2e1;
+    color: #0f5132;
+  }
+
+  .grade-844-b {
+    background: #d8ecff;
+    color: #084298;
+  }
+
+  .grade-844-c {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .grade-844-d {
+    background: #ffe8cc;
+    color: #9a5b13;
+  }
+
+  .grade-844-e {
+    background: #f8d7da;
+    color: #842029;
+  }
+
+  .grade-844-neutral {
     background: #e9ecef;
     color: #495057;
   }
@@ -1800,41 +1945,36 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
   .student-result-footer {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem 1.25rem;
-    align-items: flex-start;
-    padding: 0.85rem 1rem;
-    background: #f8f9fb;
+    gap: 0.4rem 0.9rem;
+    align-items: baseline;
+    padding: 0.42rem 0.75rem;
+    background: #fafbfc;
     border-top: 1px solid #edf0f3;
+    font-size: 0.71rem;
   }
 
-  .footer-item {
-    min-width: 180px;
+  .result-footer-item {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem;
   }
 
-  .footer-label {
-    display: block;
-    font-size: 0.68rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+  .result-footer-label {
+    font-weight: 600;
     color: #6c757d;
   }
 
-  .footer-value {
-    display: block;
-    margin-top: 0.15rem;
-    font-size: 0.82rem;
-    color: #252a2f;
+  .result-footer-label::after {
+    content: ":";
   }
 
-  .footer-item-remarks {
+  .result-footer-value {
+    color: #212529;
+  }
+
+  .result-footer-item-remarks {
     flex: 1 1 100%;
-  }
-
-  .footer-generated {
-    margin-left: auto;
-    font-size: 0.72rem;
-    color: #98a1af;
   }
 
   @media (max-width: 767.98px) {
@@ -1856,22 +1996,10 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
       text-align: left;
     }
 
-    .student-result-header {
+    .student-result-top {
       flex-direction: column;
-    }
-
-    .student-result-summary {
-      flex-direction: row;
-      width: 100%;
-    }
-
-    .summary-pill {
-      flex: 1;
-    }
-
-    .footer-generated {
-      margin-left: 0;
-      width: 100%;
+      align-items: flex-start;
+      gap: 0.25rem;
     }
   }
 
@@ -2797,6 +2925,781 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
 
     .marksheet-watermark {
       opacity: 0.06;
+    }
+  }
+
+  /* =========================================================
+     BROADSHEETS & ANALYTICS TAB
+     ========================================================= */
+
+  .bs-filter-card {
+    border-radius: 12px;
+  }
+
+  .bs-filter-header {
+    padding: 1rem 1.1rem 0.35rem;
+  }
+
+  .bs-filter-title h6 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #252a2f;
+  }
+
+  .bs-filter-title small {
+    color: #6c757d;
+    font-size: 0.76rem;
+  }
+
+  .bs-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.35rem;
+  }
+
+  .bs-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 32px;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .bs-btn-primary {
+    border: 1px solid #ff7979;
+    background: #ff7979;
+    color: #fff;
+  }
+
+  .bs-btn-primary:hover,
+  .bs-btn-primary:focus {
+    background: #f56868;
+    border-color: #f56868;
+    color: #fff;
+  }
+
+  .bs-btn-outline {
+    border: 1px solid #ff7979;
+    background: #fff;
+    color: #ff7979;
+  }
+
+  .bs-btn-outline:hover,
+  .bs-btn-outline:focus {
+    background: rgba(255, 121, 121, 0.08);
+    border-color: #f56868;
+    color: #f56868;
+  }
+
+  .bs-display-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .bs-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 1100px;
+    padding: 2.5rem 1rem;
+    border: 1px dashed #dfe3e8;
+    border-radius: 12px;
+    background: #fafbfc;
+    color: #6c757d;
+    text-align: center;
+  }
+
+  .bs-state-error {
+    color: #c0392b;
+    background: #fff7f7;
+    border-color: #f3d0d0;
+  }
+
+  .bs-document {
+    width: 100%;
+    max-width: 1100px;
+  }
+
+  .bs-doc-header {
+    margin-bottom: 0.85rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    background: #fff;
+    text-align: center;
+  }
+
+  .bs-school-name {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #212529;
+  }
+
+  .bs-doc-subtitle {
+    margin: 0.25rem 0 0.45rem;
+    font-size: 0.78rem;
+    color: #6c757d;
+  }
+
+  .bs-doc-meta {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem 0.65rem;
+    font-size: 0.72rem;
+    color: #495057;
+  }
+
+  .bs-doc-meta strong {
+    color: #212529;
+  }
+
+  .bs-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .bs-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .bs-stat-icon {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+
+  .bs-stat-icon-primary {
+    background: rgba(255, 121, 121, 0.12);
+    color: #ff7979;
+  }
+
+  .bs-stat-icon-success {
+    background: rgba(25, 135, 84, 0.12);
+    color: #198754;
+  }
+
+  .bs-stat-icon-danger {
+    background: rgba(220, 53, 69, 0.12);
+    color: #dc3545;
+  }
+
+  .bs-stat-icon-warning {
+    background: rgba(255, 193, 7, 0.16);
+    color: #b8860b;
+  }
+
+  .bs-stat-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .bs-stat-value {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #212529;
+    line-height: 1.2;
+  }
+
+  .bs-stat-value-sm {
+    font-size: 0.76rem;
+    font-weight: 600;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .bs-action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+    padding: 0.45rem 0.65rem;
+    border: 1px solid #edf0f3;
+    border-radius: 8px;
+    background: #fafbfc;
+  }
+
+  .bs-section {
+    margin-bottom: 0.85rem;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .bs-section-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid #edf0f3;
+    background: #f8f9fa;
+  }
+
+  .bs-section-header h6 {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #252a2f;
+  }
+
+  .bs-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.75rem;
+    font-size: 0.68rem;
+    color: #6c757d;
+  }
+
+  .bs-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .bs-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .bs-section-body {
+    padding: 0.75rem;
+  }
+
+  .bs-analysis-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .bs-bar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .bs-bar-card {
+    padding: 0.65rem 0.7rem 0.75rem;
+    border: 1px solid #edf0f3;
+    border-radius: 10px;
+    background: #fafbfc;
+  }
+
+  .bs-bar-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .bs-bar-title {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #252a2f;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .bs-bar-meta {
+    font-size: 0.62rem;
+    color: #6c757d;
+    white-space: nowrap;
+  }
+
+  .bs-stack-bar {
+    display: flex;
+    width: 100%;
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #eceff3;
+    margin-bottom: 0.55rem;
+  }
+
+  .bs-stack-seg {
+    display: block;
+    height: 100%;
+    min-width: 2px;
+  }
+
+  .bs-grade-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.28rem;
+  }
+
+  .bs-grade-bar-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 24px;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .bs-grade-bar-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-align: center;
+    color: #fff;
+    border-radius: 4px;
+    padding: 1px 0;
+  }
+
+  .bs-grade-bar-track {
+    height: 7px;
+    background: #eceff3;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .bs-grade-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    min-width: 2px;
+  }
+
+  .bs-grade-bar-count {
+    font-size: 0.64rem;
+    font-weight: 700;
+    color: #495057;
+    text-align: right;
+  }
+
+  .bs-bar-empty {
+    font-size: 0.68rem;
+    color: #6c757d;
+    font-style: italic;
+  }
+
+  .bs-grade-A,
+  .bs-grade-EE,
+  .bs-stack-seg.bs-grade-A,
+  .bs-stack-seg.bs-grade-EE,
+  .bs-grade-bar-fill.bs-grade-A,
+  .bs-grade-bar-fill.bs-grade-EE {
+    background: #198754;
+  }
+
+  .bs-grade-Am,
+  .bs-grade-ME,
+  .bs-stack-seg.bs-grade-Am,
+  .bs-stack-seg.bs-grade-ME,
+  .bs-grade-bar-fill.bs-grade-Am,
+  .bs-grade-bar-fill.bs-grade-ME {
+    background: #0d6efd;
+  }
+
+  .bs-grade-B,
+  .bs-grade-Bm,
+  .bs-grade-Bp,
+  .bs-grade-AE,
+  .bs-stack-seg.bs-grade-B,
+  .bs-stack-seg.bs-grade-Bm,
+  .bs-stack-seg.bs-grade-Bp,
+  .bs-stack-seg.bs-grade-AE,
+  .bs-grade-bar-fill.bs-grade-B,
+  .bs-grade-bar-fill.bs-grade-Bm,
+  .bs-grade-bar-fill.bs-grade-Bp,
+  .bs-grade-bar-fill.bs-grade-AE {
+    background: #0dcaf0;
+    color: #000;
+  }
+
+  .bs-grade-C,
+  .bs-grade-Cm,
+  .bs-grade-Cp,
+  .bs-grade-BE,
+  .bs-stack-seg.bs-grade-C,
+  .bs-stack-seg.bs-grade-Cm,
+  .bs-stack-seg.bs-grade-Cp,
+  .bs-stack-seg.bs-grade-BE,
+  .bs-grade-bar-fill.bs-grade-C,
+  .bs-grade-bar-fill.bs-grade-Cm,
+  .bs-grade-bar-fill.bs-grade-Cp,
+  .bs-grade-bar-fill.bs-grade-BE {
+    background: #ffc107;
+    color: #000;
+  }
+
+  .bs-grade-D,
+  .bs-grade-Dm,
+  .bs-grade-Dp,
+  .bs-grade-E,
+  .bs-stack-seg.bs-grade-D,
+  .bs-stack-seg.bs-grade-Dm,
+  .bs-stack-seg.bs-grade-Dp,
+  .bs-stack-seg.bs-grade-E,
+  .bs-grade-bar-fill.bs-grade-D,
+  .bs-grade-bar-fill.bs-grade-Dm,
+  .bs-grade-bar-fill.bs-grade-Dp,
+  .bs-grade-bar-fill.bs-grade-E {
+    background: #dc3545;
+  }
+
+  .bs-grade-bar-label.bs-grade-B,
+  .bs-grade-bar-label.bs-grade-Bm,
+  .bs-grade-bar-label.bs-grade-Bp,
+  .bs-grade-bar-label.bs-grade-AE,
+  .bs-grade-bar-label.bs-grade-C,
+  .bs-grade-bar-label.bs-grade-Cm,
+  .bs-grade-bar-label.bs-grade-Cp,
+  .bs-grade-bar-label.bs-grade-BE {
+    color: #000;
+  }
+
+  .bs-means-section {
+    padding-top: 0.25rem;
+    border-top: 1px solid #edf0f3;
+  }
+
+  .bs-means-title {
+    margin-bottom: 0.45rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #495057;
+  }
+
+  .bs-analysis-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.8fr);
+    gap: 0.85rem;
+    align-items: start;
+  }
+
+  .bs-analysis-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .bs-subject-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .bs-subject-row-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.76rem;
+  }
+
+  .bs-subject-name {
+    font-weight: 700;
+    color: #252a2f;
+  }
+
+  .bs-subject-breakdown {
+    color: #6c757d;
+    font-size: 0.68rem;
+    text-align: right;
+  }
+
+  .bs-progress {
+    display: flex;
+    height: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #edf0f3;
+  }
+
+  .bs-progress-seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    font-size: 0;
+  }
+
+  .bs-progress-ee {
+    background: #198754;
+  }
+
+  .bs-progress-me {
+    background: #0d6efd;
+  }
+
+  .bs-progress-ae {
+    background: #ffc107;
+  }
+
+  .bs-progress-be {
+    background: #dc3545;
+  }
+
+  .bs-progress-a {
+    background: #198754;
+  }
+
+  .bs-progress-b {
+    background: #0d6efd;
+  }
+
+  .bs-progress-c {
+    background: #ffc107;
+  }
+
+  .bs-progress-d {
+    background: #fd7e14;
+  }
+
+  .bs-progress-e {
+    background: #dc3545;
+  }
+
+  .bs-mark-value {
+    display: block;
+    font-weight: 700;
+    color: #212529;
+  }
+
+  .bs-grade-a {
+    background: #d1f2e1;
+    color: #0f5132;
+  }
+
+  .bs-grade-b {
+    background: #d8ecff;
+    color: #084298;
+  }
+
+  .bs-grade-c {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .bs-grade-d {
+    background: #ffe8cc;
+    color: #9a5b13;
+  }
+
+  .bs-grade-e {
+    background: #f8d7da;
+    color: #842029;
+  }
+
+  .bs-chart-panel {
+    height: 220px;
+    padding: 0.35rem;
+    border: 1px solid #edf0f3;
+    border-radius: 8px;
+    background: #fafbfc;
+  }
+
+  .bs-alert-risk {
+    margin-bottom: 0.85rem;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid rgba(220, 53, 69, 0.2);
+    border-radius: 10px;
+    background: linear-gradient(135deg, #fff7f7 0%, #fff 100%);
+    font-size: 0.76rem;
+    color: #842029;
+  }
+
+  .bs-alert-risk strong {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.78rem;
+  }
+
+  .bs-alert-risk ul {
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+
+  .bs-show-more {
+    cursor: pointer;
+    color: #ff7979;
+    font-weight: 600;
+    list-style: none;
+    margin-left: -1.1rem;
+  }
+
+  .bs-table-wrap {
+    overflow: auto;
+    max-height: 520px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+  }
+
+  .bs-table {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+    font-size: 0.72rem;
+    table-layout: auto;
+  }
+
+  .bs-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 0.4rem 0.35rem;
+    border: 1px solid #495057;
+    background: #343a40;
+    color: #fff;
+    font-size: 0.67rem;
+    font-weight: 700;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .bs-table thead th .bs-teacher {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: #ffc107;
+  }
+
+  .bs-table tbody td {
+    padding: 0.32rem 0.35rem;
+    border: 1px solid #e9ecef;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .bs-table tbody tr:nth-child(even) {
+    background: #fafbfc;
+  }
+
+  .bs-table tbody tr.bs-row-risk {
+    background: #fff5f5;
+  }
+
+  .bs-table .bs-col-name {
+    text-align: left;
+    font-weight: 600;
+    color: #252a2f;
+    white-space: nowrap;
+  }
+
+  .bs-grade-pill {
+    display: inline-block;
+    margin-top: 0.15rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .bs-grade-ee {
+    background: #d1f2e1;
+    color: #0f5132;
+  }
+
+  .bs-grade-me {
+    background: #d8ecff;
+    color: #084298;
+  }
+
+  .bs-grade-ae {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .bs-grade-be {
+    background: #f8d7da;
+    color: #842029;
+  }
+
+  .bs-grade-neutral {
+    background: #e9ecef;
+    color: #495057;
+  }
+
+  .bs-missing-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.74rem;
+  }
+
+  .bs-missing-table th,
+  .bs-missing-table td {
+    padding: 0.38rem 0.5rem;
+    border: 1px solid #e9ecef;
+    vertical-align: middle;
+  }
+
+  .bs-missing-table thead th {
+    background: #f1f3f5;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #495057;
+  }
+
+  .bs-missing-wrap {
+    max-height: 280px;
+    overflow: auto;
+  }
+
+  @media (max-width: 991.98px) {
+    .bs-stats-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .bs-bar-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .bs-stats-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .bs-btn {
+      width: 100%;
+    }
+
+    .bs-action-bar {
+      flex-direction: column;
     }
   }
 </style>

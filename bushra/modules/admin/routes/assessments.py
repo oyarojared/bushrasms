@@ -311,6 +311,7 @@ def generate_reportcards_pdf():
         # 🔹 4️⃣ Send response
         response = make_response(pdf)
         response.headers["Content-Type"] = "application/pdf"
+        response.headers["Content-Length"] = str(len(pdf))
         if student_id:
             filename = f"{student_name}_assessment.pdf"
         else:

@@ -15,6 +15,7 @@ function getResultsContext() {
     className: gradeSelect.selectedOptions[0]?.textContent?.trim() || "",
     examName: examSelect.selectedOptions[0]?.textContent?.trim() || "",
     streamLabel,
+    gradingType: "cbc",
   };
 }
 
@@ -27,6 +28,10 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function is844Grading(context) {
+  return context.gradingType === "844";
+}
+
 function performanceBadgeClass(level) {
   const value = Number(level);
   if (Number.isNaN(value)) return "level-neutral";
@@ -36,7 +41,17 @@ function performanceBadgeClass(level) {
   return "level-below";
 }
 
-function renderSubjectRows(subjects) {
+function grade844BadgeClass(grade) {
+  const value = String(grade || "").toUpperCase();
+  if (value.startsWith("A")) return "grade-844-a";
+  if (value.startsWith("B")) return "grade-844-b";
+  if (value.startsWith("C")) return "grade-844-c";
+  if (value.startsWith("D")) return "grade-844-d";
+  if (value === "E") return "grade-844-e";
+  return "grade-844-neutral";
+}
+
+function renderCbcSubjectRows(subjects) {
   return subjects
     .map(
       (sub) => `
@@ -58,45 +73,83 @@ function renderSubjectRows(subjects) {
     .join("");
 }
 
-function renderSubjectCards(subjects) {
+function render844SubjectRows(subjects) {
   return subjects
     .map(
       (sub) => `
-      <div class="subject-score-card">
-        <div class="subject-score-card-head">
-          <div>
-            <div class="subject-score-card-code">${escapeHtml(sub.code || "-")}</div>
-            <div class="subject-score-card-name">${escapeHtml(sub.name || "-")}</div>
-          </div>
-          <span class="performance-badge ${performanceBadgeClass(sub.performance_level)}">
-            L${escapeHtml(sub.performance_level ?? "-")}
+      <tr>
+        <td class="text-center subject-code">${escapeHtml(sub.code || "-")}</td>
+        <td class="subject-name text-uppercase">${escapeHtml(sub.name || "-")}</td>
+        <td class="text-center subject-marks">${sub.marks ?? "-"}</td>
+        <td class="text-center">
+          <span class="grade-844-badge ${grade844BadgeClass(sub.performance_level)}">
+            ${escapeHtml(sub.performance_level ?? "-")}
           </span>
-        </div>
-        <div class="subject-score-card-grid">
-          <div class="score-metric">
-            <span>Marks</span>
-            <strong>${sub.marks ?? "-"}</strong>
-          </div>
-          <div class="score-metric">
-            <span>Points</span>
-            <strong>${sub.points ?? "-"}</strong>
-          </div>
-          <div class="score-metric score-metric-wide">
-            <span>Descriptor</span>
-            <strong>${escapeHtml(sub.descriptor || "-")}</strong>
-          </div>
-          <div class="score-metric">
-            <span>Teacher</span>
-            <strong>${escapeHtml(sub.teacher || "-")}</strong>
-          </div>
-        </div>
-      </div>
+        </td>
+        <td class="text-center">${sub.points ?? "-"}</td>
+        <td class="subject-descriptor">${escapeHtml(sub.descriptor || "-")}</td>
+        <td class="text-center subject-teacher">${escapeHtml(sub.teacher || "-")}</td>
+      </tr>
     `,
     )
     .join("");
 }
 
-function renderStudentResultCard(student, context) {
+function renderSubjectTable(student, context) {
+  if (is844Grading(context)) {
+    return `
+      <table class="student-result-table student-result-table-844">
+        <thead>
+          <tr>
+            <th class="text-center">Code</th>
+            <th>Subject</th>
+            <th class="text-center">Marks</th>
+            <th class="text-center">Grade</th>
+            <th class="text-center">Pts</th>
+            <th>Comment</th>
+            <th class="text-center">Teacher</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${render844SubjectRows(student.subjects)}
+        </tbody>
+      </table>
+    `;
+  }
+
+  return `
+    <table class="student-result-table student-result-table-cbc">
+      <thead>
+        <tr>
+          <th class="text-center">Code</th>
+          <th>Subject / Learning Area</th>
+          <th class="text-center">Marks</th>
+          <th class="text-center">Perf. Lvl</th>
+          <th class="text-center">Pts</th>
+          <th>Descriptor</th>
+          <th class="text-center">Teacher</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${renderCbcSubjectRows(student.subjects)}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderScoreSummary(student, context) {
+  if (is844Grading(context)) {
+    const summary = student.summary || {};
+    const totalPoints = summary.total_points ?? 0;
+    const meanGrade = summary.mean_grade ?? "—";
+    return `
+      <div class="student-result-score">
+        <strong>${totalPoints}</strong>
+        <span>pts · Mean Grade <strong class="mean-grade-value">${escapeHtml(meanGrade)}</strong></span>
+      </div>
+    `;
+  }
+
   const totalPoints = student.subjects.reduce(
     (sum, sub) => sum + (sub.points || 0),
     0,
@@ -106,97 +159,75 @@ function renderStudentResultCard(student, context) {
     maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
 
   return `
-    <article class="student-result-card">
+    <div class="student-result-score">
+      <strong>${totalPoints}</strong>
+      <span>/ ${maxPoints} pts (${percentage}%)</span>
+    </div>
+  `;
+}
+
+function renderStudentMetaDetails(student, context) {
+  if (is844Grading(context)) {
+    const streamItem = student.stream
+      ? `<span class="result-meta-item">Stream <strong>${escapeHtml(student.stream)}</strong></span>`
+      : "";
+
+    return `
+      <span class="result-meta-item">Adm <strong>${escapeHtml(student.admission_number || "-")}</strong></span>
+      ${streamItem}
+      <span class="result-meta-item">${escapeHtml(context.examName)}</span>
+      <span class="result-meta-item">${escapeHtml(context.className)}</span>
+      <span class="result-meta-item">${escapeHtml(context.streamLabel)}</span>
+    `;
+  }
+
+  const pathwayItem = student.pathway
+    ? `<span class="result-meta-item">Pathway <strong>${escapeHtml(student.pathway)}</strong></span>`
+    : "";
+
+  return `
+    <span class="result-meta-item">Adm <strong>${escapeHtml(student.admission_number || "-")}</strong></span>
+    <span class="result-meta-item">Assess <strong>${escapeHtml(student.assessment_no || "-")}</strong></span>
+    ${pathwayItem}
+    <span class="result-meta-item">${escapeHtml(context.examName)}</span>
+    <span class="result-meta-item">${escapeHtml(context.className)}</span>
+    <span class="result-meta-item">${escapeHtml(context.streamLabel)}</span>
+  `;
+}
+
+function renderStudentResultCard(student, context) {
+  const cardClass = is844Grading(context)
+    ? "student-result-card student-result-card-844"
+    : "student-result-card student-result-card-cbc";
+
+  return `
+    <article class="${cardClass}">
       <header class="student-result-header">
-        <div class="student-result-heading">
-          <p class="student-result-kicker">Academic Performance</p>
-          <h5 class="student-result-name">${escapeHtml(student.full_name)}</h5>
-          <p class="student-result-context">
-            ${escapeHtml(context.examName)}
-            <span class="context-separator">•</span>
-            ${escapeHtml(context.className)}
-            <span class="context-separator">•</span>
-            ${escapeHtml(context.streamLabel)}
-          </p>
+        <div class="student-result-top">
+          <h6 class="student-result-name">${escapeHtml(student.full_name)}</h6>
+          ${renderScoreSummary(student, context)}
         </div>
-        <div class="student-result-summary">
-          <div class="summary-pill">
-            <span class="summary-value">${totalPoints}</span>
-            <span class="summary-label">Total Points</span>
-          </div>
-          <div class="summary-pill summary-pill-muted">
-            <span class="summary-value">${percentage}%</span>
-            <span class="summary-label">of ${maxPoints} max</span>
-          </div>
+        <div class="student-result-details">
+          ${renderStudentMetaDetails(student, context)}
         </div>
       </header>
 
-      <div class="student-result-meta">
-        <div class="meta-chip">
-          <i class="bi bi-hash"></i>
-          <span>Adm No: <strong>${escapeHtml(student.admission_number || "-")}</strong></span>
-        </div>
-        <div class="meta-chip">
-          <i class="bi bi-card-text"></i>
-          <span>Assessment No: <strong>${escapeHtml(student.assessment_no || "-")}</strong></span>
-        </div>
-        ${
-          student.pathway
-            ? `<div class="meta-chip"><i class="bi bi-signpost-split"></i><span>Pathway: <strong>${escapeHtml(student.pathway)}</strong></span></div>`
-            : ""
-        }
-        <div class="meta-chip">
-          <i class="bi bi-house-door"></i>
-          <span>School: <strong>${escapeHtml(context.schoolName)}</strong></span>
-        </div>
-      </div>
-
       <div class="student-result-body">
-        <div class="student-result-section-title">
-          <i class="bi bi-table me-1"></i> Subject Performance
-        </div>
-
-        <div class="d-none d-md-block table-responsive student-result-table-wrap">
-          <table class="table table-sm student-result-table">
-            <thead>
-              <tr>
-                <th class="text-center">Code</th>
-                <th>Subject</th>
-                <th class="text-center">Marks</th>
-                <th class="text-center">Level</th>
-                <th class="text-center">Points</th>
-                <th>Descriptor</th>
-                <th class="text-center">Teacher</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${renderSubjectRows(student.subjects)}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="d-md-none student-subject-cards">
-          ${renderSubjectCards(student.subjects)}
+        <div class="table-responsive student-result-table-wrap">
+          ${renderSubjectTable(student, context)}
         </div>
       </div>
 
       <footer class="student-result-footer">
-        <div class="footer-item">
-          <span class="footer-label">Class Teacher</span>
-          <span class="footer-value">${escapeHtml(student.class_teacher || "Not assigned")}</span>
-        </div>
+        <span class="result-footer-item">
+          <span class="result-footer-label">Class Teacher</span>
+          <span class="result-footer-value">${escapeHtml(student.class_teacher || "Not assigned")}</span>
+        </span>
         ${
           student.remarks
-            ? `<div class="footer-item footer-item-remarks"><span class="footer-label">Remarks</span><span class="footer-value">${escapeHtml(student.remarks)}</span></div>`
+            ? `<span class="result-footer-item result-footer-item-remarks"><span class="result-footer-label">Remarks</span><span class="result-footer-value">${escapeHtml(student.remarks)}</span></span>`
             : ""
         }
-        <div class="footer-generated">
-          Generated on ${new Date().toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          })}
-        </div>
       </footer>
     </article>
   `;
@@ -222,6 +253,8 @@ async function loadReportCards(branchId, classId, examId, stream = null) {
     const data = await res.json();
     const students = data.students || [];
 
+    context.gradingType = data.grading_type === "844" ? "844" : "cbc";
+
     if (students.length === 0) {
       container.innerHTML = `
         <div class="results-state results-state-empty">
@@ -232,15 +265,12 @@ async function loadReportCards(branchId, classId, examId, stream = null) {
       return;
     }
 
+    const gradingLabel = is844Grading(context) ? "8-4-4" : "CBC";
+
     container.innerHTML = `
       <div class="results-summary-bar">
-        <div>
-          <strong>${students.length}</strong>
-          <span>student${students.length === 1 ? "" : "s"} loaded</span>
-        </div>
-        <div class="results-summary-context">
-          ${escapeHtml(context.examName)} · ${escapeHtml(context.className)}
-        </div>
+        <span><strong>${students.length}</strong> student${students.length === 1 ? "" : "s"} · <span class="results-grading-tag">${gradingLabel}</span></span>
+        <span class="results-summary-context">${escapeHtml(context.examName)} · ${escapeHtml(context.className)}</span>
       </div>
       <div class="student-results-list">
         ${students.map((student) => renderStudentResultCard(student, context)).join("")}
@@ -275,6 +305,20 @@ document.getElementById("load-results").addEventListener("click", () => {
   loadReportCards(branchId, classId, examId, stream);
 });
 
+function resultsGradeHasStreams() {
+  const streamSelect = document.getElementById("results-stream");
+  return streamSelect && streamSelect.options.length > 1;
+}
+
+function requireResultsStreamForDownload() {
+  const streamSelect = document.getElementById("results-stream");
+  if (resultsGradeHasStreams() && !streamSelect.value) {
+    alert("Please select a stream before downloading report cards.");
+    return false;
+  }
+  return true;
+}
+
 document.getElementById("generate-pdf-btn").addEventListener("click", () => {
   const branchId = document.getElementById("results-branch").value;
   const classId = document.getElementById("results-grade").value;
@@ -286,6 +330,8 @@ document.getElementById("generate-pdf-btn").addEventListener("click", () => {
     return;
   }
 
+  if (!requireResultsStreamForDownload()) return;
+
   generatePDF(branchId, classId, examId, stream);
 });
 
@@ -293,7 +339,24 @@ function generatePDF(branchId, classId, examId, stream) {
   blockUI(
     "Generating report cards",
     "This may take up to a minute. Please keep this tab open.",
+    { progress: true },
   );
+
+  let simulatedProgress = 0;
+  const simulationTimer = window.setInterval(() => {
+    if (simulatedProgress < 82) {
+      simulatedProgress = Math.min(
+        82,
+        simulatedProgress + Math.random() * 4 + 1,
+      );
+      setUIProgress(
+        simulatedProgress,
+        simulatedProgress < 35
+          ? "Preparing report data…"
+          : "Generating PDF on server…",
+      );
+    }
+  }, 450);
 
   fetch("/admin/generate-reportcards-pdf", {
     method: "POST",
@@ -313,7 +376,14 @@ function generatePDF(branchId, classId, examId, stream) {
         throw new Error("Failed to generate PDF");
       }
 
-      const blob = await response.blob();
+      window.clearInterval(simulationTimer);
+      setUIProgress(85, "Downloading report cards…");
+
+      const blob = await readResponseBlobWithProgress(response, (downloadPercent) => {
+        const overall = 85 + Math.round(downloadPercent * 0.15);
+        setUIProgress(overall, "Downloading report cards…");
+      });
+
       const contentDisposition = response.headers.get("Content-Disposition");
       let filename = "report.pdf";
 
@@ -326,6 +396,7 @@ function generatePDF(branchId, classId, examId, stream) {
         }
       }
 
+      setUIProgress(100, "Download complete");
       return { blob, filename };
     })
     .then(({ blob, filename }) => {
@@ -343,6 +414,7 @@ function generatePDF(branchId, classId, examId, stream) {
       alert("PDF generation failed.");
     })
     .finally(() => {
+      window.clearInterval(simulationTimer);
       unblockUI();
     });
 }

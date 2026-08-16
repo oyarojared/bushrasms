@@ -567,9 +567,19 @@ def build_broadsheet_data(branch_id, class_id, exam_id, stream=None):
         stream = None
 
     try:
+        from .grading_844 import (
+            is_844_form,
+            is_low_844_grade,
+            normalize_form_name,
+            resolve_844_grade,
+            simplify_844_grade,
+        )
+
         # -------------------- 1. Class & Exam --------------------
         class_obj = db.session.get(BranchClasses, class_id)
         class_name = class_obj.grade_form if class_obj else "N/A"
+        normalized_form = normalize_form_name(class_name)
+        is_844 = is_844_form(normalized_form)
 
         exam_obj = ExamPaper.query.filter_by(exam_id=exam_id).first()
         exam_name = exam_obj.exam.name if exam_obj and exam_obj.exam else "N/A"
@@ -592,13 +602,20 @@ def build_broadsheet_data(branch_id, class_id, exam_id, stream=None):
                 "class_name": class_name,
                 "exam_name": exam_name,
                 "total_learners": 0,
-                "branch_name": branch_name
+                "branch_name": branch_name,
+                "grading_type": "844" if is_844 else "cbc",
             }
 
         # -------------------- 3. Subjects --------------------
         allocations = StudentSubjectAllocation.query.filter(
             StudentSubjectAllocation.student_id.in_(student_ids)
         ).all()
+
+        allocations_by_student = {}
+        for allocation in allocations:
+            allocations_by_student.setdefault(allocation.student_id, set()).add(
+                allocation.subject_id
+            )
 
         subject_ids = set(a.subject_id for a in allocations)
 
@@ -672,6 +689,7 @@ def build_broadsheet_data(branch_id, class_id, exam_id, stream=None):
                 "id": s.id,
                 "name": s.name,
                 "code": s.code,
+                "category": s.category or "",
                 "teacher": teacher_name
             })
 
@@ -690,45 +708,72 @@ def build_broadsheet_data(branch_id, class_id, exam_id, stream=None):
 
                 mark_value = "-"
                 grade_value = None
+                points_value = None
 
                 if paper:
                     mark_value = marks_map.get((s.id, paper.id), "-")
 
                     if mark_value != "-":
-                        if class_name not in ("Form 3", "Form 4", "form 3", "form 4"):
-                            grade_info = resolve_grade(class_id, mark_value)
-                            grade_value = grade_info.get("performance_level") if grade_info else None
+                        if isinstance(mark_value, (int, float)):
+                            mark_value = int(round(mark_value))
 
-                            # Subject analysis
+                        if is_844:
+                            grade_value, points_value = resolve_844_grade(
+                                mark_value,
+                                subj.category or "",
+                            )
                             if grade_value:
-                                subject_analysis[subj.id][grade_value] = \
+                                subject_analysis[subj.id][grade_value] = (
                                     subject_analysis[subj.id].get(grade_value, 0) + 1
+                                )
+                        else:
+                            grade_info = resolve_grade(class_id, mark_value)
+                            grade_value = (
+                                grade_info.get("performance_level")
+                                if grade_info
+                                else None
+                            )
+                            if grade_value:
+                                subject_analysis[subj.id][grade_value] = (
+                                    subject_analysis[subj.id].get(grade_value, 0) + 1
+                                )
 
-                        # Collect for averages
                         subject_totals[subj.id].append(mark_value)
 
                 marks_per_subject[subj.id] = {
                     "marks": mark_value,
-                    "grade": grade_value
+                    "grade": grade_value,
+                    "points": points_value,
                 }
 
-            # Identify at-risk learners
-            low_count = sum(
-                1 for v in marks_per_subject.values()
-                if v["grade"] in ("BE",)
-            )
+            if is_844:
+                low_subjects = [
+                    subj.name
+                    for subj in subjects
+                    if is_low_844_grade(marks_per_subject[subj.id].get("grade"))
+                ]
+                low_count = len(low_subjects)
+            else:
+                low_subjects = [
+                    subj.name
+                    for subj in subjects
+                    if marks_per_subject[subj.id].get("grade") == "BE"
+                ]
+                low_count = len(low_subjects)
 
             if low_count >= 3:
                 at_risk_learners.append({
                     "id": s.id,
                     "name": s.fullname.upper(),
-                    "low_subjects": low_count
+                    "low_subjects": ", ".join(low_subjects),
+                    "low_count": low_count,
                 })
 
             students_data.append({
                 "id": s.id,
                 "admission_number": s.admission_number,
                 "full_name": s.fullname.upper(),
+                "gender": s.gender,
                 "marks": marks_per_subject
             })
 
@@ -737,26 +782,36 @@ def build_broadsheet_data(branch_id, class_id, exam_id, stream=None):
 
         for subj in subjects:
             values = subject_totals[subj.id]
-            subject_averages[subj.id] = sum(values) / len(values) if values else None
+            subject_averages[subj.id] = (
+                int(round(sum(values) / len(values))) if values else None
+            )
 
         subject_participation = {
             subj.id: len(subject_totals[subj.id])
             for subj in subjects
         }
 
-        # Missing marks per student
+        # Missing marks per student (only allocated / doing subjects)
         missing_marks_list = []
 
-        for s in students_data:
-            missing_subjects = [
-                subj.name
-                for subj in subjects
-                if s["marks"][subj.id]["marks"] == "-"
-            ]
+        for student_obj, student_row in zip(students, students_data):
+            allocated_subject_ids = allocations_by_student.get(student_obj.id, set())
+            missing_subjects = []
+
+            for subject_id in sorted(allocated_subject_ids, key=lambda sid: subject_map.get(sid).name if subject_map.get(sid) else ""):
+                subject = subject_map.get(subject_id)
+                if not subject:
+                    continue
+
+                mark_info = student_row["marks"].get(subject_id, {})
+                if mark_info.get("marks") == "-":
+                    missing_subjects.append(subject.name)
+
             if missing_subjects:
                 missing_marks_list.append({
-                    "student": s["full_name"],
-                    "subjects": missing_subjects
+                    "student": student_row["full_name"],
+                    "admission_number": student_row.get("admission_number"),
+                    "subjects": missing_subjects,
                 })
 
         # -------------------- 10. Final Data --------------------
@@ -773,9 +828,261 @@ def build_broadsheet_data(branch_id, class_id, exam_id, stream=None):
             "subject_participation": subject_participation,
             "at_risk_learners": at_risk_learners,
             "missing_marks": missing_marks_list,
-            "branch_name": branch_name
+            "branch_name": branch_name,
+            "grading_type": "844" if is_844 else "cbc",
         }
 
     except Exception:
         current_app.logger.exception("Error building broadsheet (service)")
         raise
+
+
+GRADE_ORDER_844 = [
+    "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "E",
+]
+GRADE_ORDER_CBC = ["EE", "ME", "AE", "BE"]
+
+
+def _is_male(gender):
+    return bool(gender and str(gender).lower().startswith("m"))
+
+
+def _is_female(gender):
+    return bool(gender and str(gender).lower().startswith("f"))
+
+
+def _grade_css_class(grade):
+    if not grade:
+        return ""
+    return "g-" + str(grade).replace("+", "p").replace("-", "m")
+
+
+def _sort_grade_counts(grade_counts, grading_type):
+    order = GRADE_ORDER_844 if grading_type == "844" else GRADE_ORDER_CBC
+    return [
+        {
+            "grade": grade,
+            "count": grade_counts[grade],
+            "css_class": _grade_css_class(grade),
+        }
+        for grade in order
+        if grade_counts.get(grade, 0) > 0
+    ]
+
+
+def _build_subject_grade_table(subject_grade_breakdown, grading_type):
+    grade_set = set()
+    for block in subject_grade_breakdown:
+        for item in block["grades"]:
+            grade_set.add(item["grade"])
+
+    order = GRADE_ORDER_844 if grading_type == "844" else GRADE_ORDER_CBC
+    columns = [grade for grade in order if grade in grade_set]
+
+    rows = []
+    for block in subject_grade_breakdown:
+        counts = {item["grade"]: item["count"] for item in block["grades"]}
+        rows.append({
+            "subject": block["subject"],
+            "total": block["total"],
+            "cells": [
+                {"grade": grade, "count": counts.get(grade, 0)}
+                for grade in columns
+            ],
+        })
+
+    return {"columns": columns, "rows": rows}
+
+
+def _student_ranking_score(student, subjects, is_844):
+    if is_844:
+        from .grading_844 import compute_844_aggregate
+
+        points_rows = []
+        for subj in subjects:
+            mark_info = student["marks"].get(subj["id"], {})
+            if mark_info.get("points") is not None:
+                points_rows.append({
+                    "points": mark_info["points"],
+                    "category": subj.get("category", ""),
+                })
+
+        if not points_rows:
+            return 0, "—", 0
+
+        summary = compute_844_aggregate(points_rows)
+        return summary["total_points"], summary["mean_grade"], len(points_rows)
+
+    numeric_marks = [
+        mark_info["marks"]
+        for mark_info in student["marks"].values()
+        if mark_info.get("marks") not in (None, "-")
+    ]
+
+    if not numeric_marks:
+        return 0, "—", 0
+
+    total = sum(numeric_marks)
+    mean = int(round(total / len(numeric_marks)))
+    return total, mean, len(numeric_marks)
+
+
+def compute_full_analysis(data):
+    """
+    Build rankings and grade-distribution analytics for the full analysis PDF.
+    """
+    subjects = data.get("subjects") or []
+    students = data.get("students") or []
+    grading_type = data.get("grading_type", "cbc")
+    is_844 = grading_type == "844"
+
+    empty = {
+        "top_students": [],
+        "top_per_subject": [],
+        "best_boy": None,
+        "best_girl": None,
+        "subject_grade_breakdown": [],
+        "subject_grade_table": {"columns": [], "rows": []},
+        "overall_grade_analysis": [],
+        "overall_grade_title": "Overall Grade Analysis",
+        "overall_grade_subtitle": "",
+        "grade_label": "Mean Grade" if is_844 else "Mean Score",
+        "score_label": "Total Points" if is_844 else "Total Marks",
+    }
+
+    if not students or not subjects:
+        return empty
+
+    ranked_students = []
+    for student in students:
+        score, mean_value, subjects_count = _student_ranking_score(
+            student, subjects, is_844
+        )
+        ranked_students.append({
+            "id": student["id"],
+            "name": student["full_name"],
+            "admission_number": student.get("admission_number"),
+            "gender": student.get("gender"),
+            "score": score,
+            "mean_value": mean_value,
+            "subjects_count": subjects_count,
+        })
+
+    ranked_students.sort(
+        key=lambda row: (row["score"], row["name"]),
+        reverse=True,
+    )
+
+    top_students = []
+    for position, row in enumerate(ranked_students[:5], start=1):
+        top_students.append({**row, "position": position})
+
+    best_boy = None
+    best_girl = None
+    for row in ranked_students:
+        if best_boy is None and _is_male(row["gender"]):
+            best_boy = row
+        if best_girl is None and _is_female(row["gender"]):
+            best_girl = row
+        if best_boy and best_girl:
+            break
+
+    top_per_subject = []
+    subject_grade_detail = {subj["id"]: {} for subj in subjects}
+    overall_grades = {}
+
+    for subj in subjects:
+        best_entry = None
+
+        for student in students:
+            mark_info = student["marks"].get(subj["id"], {})
+            marks = mark_info.get("marks")
+            grade = mark_info.get("grade")
+
+            if grade:
+                subject_grade_detail[subj["id"]][grade] = (
+                    subject_grade_detail[subj["id"]].get(grade, 0) + 1
+                )
+                if not is_844:
+                    overall_grades[grade] = overall_grades.get(grade, 0) + 1
+
+            if marks in (None, "-"):
+                continue
+
+            if best_entry is None or marks > best_entry["marks"]:
+                best_entry = {
+                    "student": student["full_name"],
+                    "marks": int(float(marks)),
+                    "grade": grade or "—",
+                    "grade_css": _grade_css_class(grade),
+                }
+
+        if best_entry:
+            top_per_subject.append({
+                "subject": subj["name"],
+                "student": best_entry["student"],
+                "marks": best_entry["marks"],
+                "grade": best_entry["grade"],
+                "grade_css": best_entry["grade_css"],
+            })
+
+    subject_grade_breakdown = []
+    for subj in subjects:
+        grades = _sort_grade_counts(
+            subject_grade_detail.get(subj["id"], {}),
+            grading_type,
+        )
+        if grades:
+            total = sum(item["count"] for item in grades)
+            max_count = max(item["count"] for item in grades)
+            for item in grades:
+                item["percent"] = round((item["count"] / total) * 100, 1) if total else 0
+                item["bar_width"] = round((item["count"] / max_count) * 100, 1) if max_count else 0
+
+            subject_grade_breakdown.append({
+                "subject": subj["name"],
+                "total": total,
+                "grades": grades,
+            })
+
+    subject_grade_table = _build_subject_grade_table(
+        subject_grade_breakdown,
+        grading_type,
+    )
+
+    if is_844:
+        student_mean_grade_counts = {}
+        for row in ranked_students:
+            mean_grade = row["mean_value"]
+            if mean_grade and mean_grade != "—":
+                student_mean_grade_counts[mean_grade] = (
+                    student_mean_grade_counts.get(mean_grade, 0) + 1
+                )
+        overall_grade_analysis = _sort_grade_counts(
+            student_mean_grade_counts,
+            grading_type,
+        )
+    else:
+        overall_grade_analysis = _sort_grade_counts(overall_grades, grading_type)
+
+    return {
+        "top_students": top_students,
+        "top_per_subject": top_per_subject,
+        "best_boy": best_boy,
+        "best_girl": best_girl,
+        "subject_grade_breakdown": subject_grade_breakdown,
+        "subject_grade_table": subject_grade_table,
+        "overall_grade_analysis": overall_grade_analysis,
+        "overall_grade_title": (
+            "Overall Mean Grade Analysis"
+            if is_844
+            else "Overall Grade Analysis"
+        ),
+        "overall_grade_subtitle": (
+            "Number of students by general mean grade"
+            if is_844
+            else "Grade distribution across all subject scores"
+        ),
+        "grade_label": "Mean Grade" if is_844 else "Mean Score",
+        "score_label": "Total Points" if is_844 else "Total Marks",
+    }

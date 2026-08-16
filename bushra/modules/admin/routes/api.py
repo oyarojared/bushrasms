@@ -9,11 +9,18 @@ from ....modals.branches_db import BranchClasses
 from ....modals.students_db import Student, StudentSubjectAllocation
 from ....modals.subjects_db import Subject, SubjectEligibility, Lesson
 from ....modals.staff_db import Teacher, ClassTeacher
-from ..services.report import build_broadsheet_data
+from ..services.report import build_broadsheet_data, compute_full_analysis
 from ....modals.assessment_db import (StudentExamMark,ExamPaper, GradeGradingScheme, 
                                     GradingBoundary, GradingScheme, GradingSystem)
 
 from ..utils import resolve_grade
+from ..services.grading_844 import (
+    normalize_form_name,
+    is_844_form,
+    resolve_844_grade,
+    subject_comment,
+    compute_844_aggregate,
+)
 from flask_login import login_required
 from ..utils.route_protect import admin_required
 from flask import render_template, make_response
@@ -646,9 +653,14 @@ def api_exam_students_with_grades_all_subjects():
         stream = None
 
     try:
-        # -------------------- Branch --------------------
+        # -------------------- Branch & class --------------------
         branch = Branch.query.get(branch_id)
         branch_name = branch.branch_name if branch else ""
+
+        class_obj = BranchClasses.query.get(class_id)
+        normalized_form = normalize_form_name(class_obj.grade_form if class_obj else "")
+        grading_type = "844" if is_844_form(normalized_form) else "cbc"
+        is_844 = grading_type == "844"
 
         # -------------------- Students --------------------
         students_query = Student.query.filter_by(
@@ -662,7 +674,12 @@ def api_exam_students_with_grades_all_subjects():
         student_ids = [s.id for s in students]
 
         if not students:
-            return jsonify({"students": [], "branch_name": branch_name})
+            return jsonify({
+                "students": [],
+                "branch_name": branch_name,
+                "grading_type": grading_type,
+                "class_name": class_obj.grade_form if class_obj else "",
+            })
 
         # -------------------- Subject Allocations --------------------
         allocations = StudentSubjectAllocation.query.filter(
@@ -735,19 +752,30 @@ def api_exam_students_with_grades_all_subjects():
                 grade_info = {
                     "performance_level": None,
                     "points": None,
-                    "descriptor": None
+                    "descriptor": None,
                 }
 
                 if paper:
                     mark_obj = marks_map.get((s.id, paper.id))
 
                     if mark_obj is not None:
-                        marks_value = mark_obj.marks  # may be 0, and that's OK 
+                        marks_value = mark_obj.marks
 
-                        resolved = resolve_grade(class_id, marks_value)
-                        if resolved:
-                            grade_info = resolved
-
+                        if is_844 and subject:
+                            grade, points = resolve_844_grade(
+                                marks_value,
+                                subject.category or "",
+                            )
+                            grade_info = {
+                                "performance_level": grade,
+                                "points": points,
+                                "descriptor": subject_comment(marks_value),
+                                "category": subject.category,
+                            }
+                        else:
+                            resolved = resolve_grade(class_id, marks_value)
+                            if resolved:
+                                grade_info = resolved
 
                 teacher_initials = ""
                 lesson = lesson_map.get(alloc.subject_id)
@@ -757,27 +785,63 @@ def api_exam_students_with_grades_all_subjects():
                         initials = [n[0] for n in teacher.fullname.split()]
                         teacher_initials = ". ".join(initials).upper() + "."
 
-                subjects_data.append({
+                subject_row = {
                     "teacher": teacher_initials,
                     "code": subject.code if subject else None,
                     "id": alloc.subject_id,
                     "name": subject.name if subject else "",
                     "marks": marks_value,
-                    **grade_info
-                })
+                    **grade_info,
+                }
+                subjects_data.append(subject_row)
 
-            students_data.append({
+            class_teacher_query = ClassTeacher.query.filter_by(
+                branch_id=branch_id,
+                class_id=class_id,
+            )
+            if s.stream:
+                class_teacher_query = class_teacher_query.filter_by(stream=s.stream)
+            else:
+                class_teacher_query = class_teacher_query.filter(
+                    db.or_(
+                        ClassTeacher.stream.is_(None),
+                        ClassTeacher.stream == "",
+                    )
+                )
+
+            class_teacher_record = class_teacher_query.first()
+            class_teacher_name = "Not assigned"
+            if class_teacher_record and class_teacher_record.teacher:
+                teacher = class_teacher_record.teacher
+                class_teacher_name = f"{teacher.title} {teacher.fullname}"
+
+            student_payload = {
                 "id": s.id,
                 "admission_number": s.admission_number,
                 "pathway": s.pathway,
                 "assessment_no": s.knec_assessment_no,
                 "full_name": s.fullname,
                 "subjects": subjects_data,
-                "passport": s.passport or "default.JPG"
-            })
+                "passport": s.passport or "default.JPG",
+                "class_teacher": class_teacher_name,
+                "stream": s.stream or "",
+            }
+
+            if is_844:
+                points_for_agg = [
+                    {"points": sub["points"], "category": sub.get("category", "")}
+                    for sub in subjects_data
+                    if sub.get("points") is not None
+                ]
+                student_payload["summary"] = compute_844_aggregate(points_for_agg)
+
+            students_data.append(student_payload)
+
         return jsonify({
             "students": students_data,
-            "branch_name": branch_name, 
+            "branch_name": branch_name,
+            "grading_type": grading_type,
+            "class_name": class_obj.grade_form if class_obj else "",
         })
     except Exception as e:
         current_app.logger.exception("Error fetching students with all subjects")
@@ -1019,21 +1083,26 @@ def broadsheet_pdf():
 
     try:
         data = build_broadsheet_data(branch_id, class_id, exam_id, stream)
+        analysis = compute_full_analysis(data)
 
-        # Render HTML template
-        html = render_template("academics/full_analysis_broadsheet.html", data=data)
+        html = render_template(
+            "academics/full_analysis_broadsheet.html",
+            data=data,
+            analysis=analysis,
+            generated_at=datetime.now(),
+        )
 
-        # Generate PDF
         pdf = HTML(string=html).write_pdf(
             stylesheets=[
                 CSS(string="""
                     @page {
-                        size: A4 landscape;
-                        margin: 10mm;
+                        size: A4 portrait;
+                        margin: 12mm 10mm 18mm 10mm;
                     }
                     body {
-                        font-family: Arial, sans-serif;
-                        font-size: 11px;
+                        font-family: "Segoe UI", Arial, sans-serif;
+                        font-size: 10px;
+                        color: #222;
                     }
                 """)
             ]
@@ -1042,7 +1111,7 @@ def broadsheet_pdf():
         response = make_response(pdf)
         response.headers["Content-Type"] = "application/pdf"
         response.headers["Content-Disposition"] = (
-            f"inline; filename=broadsheet_{data['class_name']}_{data['exam_name']}.pdf"
+            f"inline; filename=full_analysis_{data['class_name']}_{data['exam_name']}.pdf"
         )
 
         return response

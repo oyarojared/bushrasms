@@ -119,7 +119,7 @@
     <div class="h1">{{ data.branch_name }}</div>
     <div class="title">MISSING MARKS CHECKSHEET</div>
     <div class="meta">
-        {{ data.class_name }} | {{ data.exam_name }}
+        {{ data.class_name }}{% if data.stream %} · {{ data.stream }}{% endif %} | {{ data.exam_name }}
     </div>
     <div class="meta">
         Class Teacher: {{ data.class_teacher or "N/A" }}
