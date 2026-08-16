@@ -10,6 +10,7 @@ from ....modals.students_db import Student, StudentSubjectAllocation
 from ....modals.subjects_db import Subject, SubjectEligibility, Lesson
 from ....modals.staff_db import Teacher, ClassTeacher
 from ..services.report import build_broadsheet_data, compute_full_analysis
+from ..services.grades import sort_grade_records
 from ....modals.assessment_db import (StudentExamMark,ExamPaper, GradeGradingScheme, 
                                     GradingBoundary, GradingScheme, GradingSystem)
 
@@ -86,7 +87,7 @@ def api_grades(branch_id):
                 for c in classes
             ]
 
-            return jsonify(data)
+            return jsonify(sort_grade_records(data))
 
         # TEACHER → only classes they teach
         lessons = (
@@ -121,7 +122,7 @@ def api_grades(branch_id):
             item["streams"] = sorted(item["streams"])
             data.append(item)
 
-        return jsonify(data)
+        return jsonify(sort_grade_records(data))
 
     except Exception as e:
         current_app.logger.error(

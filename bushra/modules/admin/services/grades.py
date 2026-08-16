@@ -6,14 +6,21 @@ from ....modals.branches_db import BranchClasses, db
 import re
 
 
-def sort_grade_list(rows, reverse=False):
+def format_grade_form(name):
+    if not name:
+        return ""
+    return re.sub(r"\s+", " ", str(name).strip()).upper()
+
+
+def sort_grade_list(rows, reverse=False, dedupe=True):
     """
     Sort list of (id, grade_form) into hierarchy:
-    PP1, PP2, Grade 1–12, Form 1–4, IGCSE.
-    Removes duplicate grade names (case-insensitive).
+    Play Group, PP1, PP2, Grade 1–12, Form 1–4, IGCSE.
+    Optionally removes duplicate grade names (case-insensitive).
     """
 
     CATEGORY_ORDER = {
+        "PLAYGROUP": 0,
         "PP": 1,
         "GRADE": 2,
         "FORM": 3,
@@ -21,50 +28,64 @@ def sort_grade_list(rows, reverse=False):
     }
 
     def parse_class_name(name):
-        raw = name.strip().upper()
+        raw = format_grade_form(name)
 
-        # IGCSE → always last
+        if raw in {"PLAY GROUP", "PLAYGROUP", "PLAY-GROUP"}:
+            return CATEGORY_ORDER["PLAYGROUP"], 0
+
         if raw == "IGCSE":
             return CATEGORY_ORDER["IGCSE"], 999
 
-        # PP1, PP2
-        m = re.match(r"PP\s*([1-2])$", raw)
+        compact = raw.replace(" ", "")
+
+        m = re.match(r"PP([12])$", compact)
         if m:
             return CATEGORY_ORDER["PP"], int(m.group(1))
 
-        # Grade 1–12
-        m = re.match(r"GRADE\s*([1-9]|1[0-2])$", raw)
+        m = re.match(r"GRADE([1-9]|1[0-2])$", compact)
         if m:
             return CATEGORY_ORDER["GRADE"], int(m.group(1))
 
-        # Form 1–4
-        m = re.match(r"FORM\s*([1-4])$", raw)
+        m = re.match(r"FORM([1-4])$", compact)
         if m:
             return CATEGORY_ORDER["FORM"], int(m.group(1))
 
-        # Unknown → push to bottom
         return 999, 999
 
-    # -----------------------------------------
-    # REMOVE DUPLICATES (case-insensitive)
-    # -----------------------------------------
-    seen = set()
-    unique_rows = []
-    for (id_, name) in rows:
-        key = name.strip().upper()
-        if key not in seen:
-            seen.add(key)
-            unique_rows.append((id_, name))
+    if dedupe:
+        seen = set()
+        unique_rows = []
+        for id_, name in rows:
+            key = format_grade_form(name)
+            if key and key not in seen:
+                seen.add(key)
+                unique_rows.append((id_, name))
+        rows = unique_rows
 
-    # -----------------------------------------
-    # SORT BASED ON CATEGORY + NUMBER
-    # -----------------------------------------
-    sorted_rows = sorted(unique_rows, key=lambda r: parse_class_name(r[1]))
+    sorted_rows = sorted(rows, key=lambda r: parse_class_name(r[1]))
 
     if reverse:
         sorted_rows.reverse()
 
     return sorted_rows
+
+
+def sort_grade_records(records):
+    """Sort grade API records and normalize grade_form to uppercase."""
+    if not records:
+        return []
+
+    rows = [(record["id"], record.get("grade_form", "")) for record in records]
+    sorted_rows = sort_grade_list(rows, dedupe=False)
+    record_map = {record["id"]: record for record in records}
+
+    result = []
+    for record_id, _ in sorted_rows:
+        item = dict(record_map[record_id])
+        item["grade_form"] = format_grade_form(item.get("grade_form", ""))
+        result.append(item)
+
+    return result
 
 
 def load_grades(reverse=False):
