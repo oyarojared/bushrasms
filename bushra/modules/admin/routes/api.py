@@ -292,7 +292,7 @@ def api_subjects():
             return jsonify([])
 
         # Normalize stream
-        if stream in ("", "null", None):
+        if stream in ("", "null", None, "All"):
             stream = None
 
         # Base query
@@ -310,11 +310,9 @@ def api_subjects():
         if not current_user.is_admin:
             query = query.filter(Lesson.teacher_id == current_user.id)
 
-        # Stream filtering
+        # Stream filtering — omit filter when "All" streams selected
         if stream:
             query = query.filter(Lesson.stream == stream)
-        else:
-            query = query.filter(Lesson.stream.is_(None))
 
         lessons = query.distinct(Lesson.subject_id).all()
 
@@ -799,6 +797,8 @@ def api_students_by_subject():
     class_id = request.args.get("class_id", type=int)
     subject_id = request.args.get("subject_id", type=int)
     stream = request.args.get("stream", default=None, type=str)
+    if not stream or stream == "All":
+        stream = None
 
     if not all([branch_id, class_id, subject_id]):
         return jsonify({"error": "branch_id, class_id, and subject_id are required"}), 400
@@ -831,12 +831,9 @@ def api_students_by_subject():
             subject_id=subject_id
         )
 
-        # Only filter by stream if stream is provided
+        # Only filter by stream when a specific stream is selected
         if stream:
             lesson_query = lesson_query.filter_by(stream=stream)
-        else:
-            # Ensure we get rows where stream IS NULL
-            lesson_query = lesson_query.filter(Lesson.stream.is_(None))
 
         lesson = lesson_query.first()
         subject_name = Subject.query.get(subject_id).name if Subject.query.get(subject_id) else "N/A"
@@ -849,6 +846,27 @@ def api_students_by_subject():
             if teacher:
                 teacher_name = f"{teacher.title} {teacher.fullname}" 
 
+        class_teacher_query = ClassTeacher.query.filter(
+            ClassTeacher.branch_id == branch_id,
+            ClassTeacher.class_id == class_id
+        )
+
+        if stream:
+            class_teacher_query = class_teacher_query.filter(ClassTeacher.stream == stream)
+        else:
+            class_teacher_query = class_teacher_query.filter(
+                db.or_(
+                    ClassTeacher.stream.is_(None),
+                    ClassTeacher.stream == ""
+                )
+            )
+
+        class_teacher_record = class_teacher_query.first()
+        class_teacher_name = "Not assigned"
+        if class_teacher_record and class_teacher_record.teacher:
+            class_teacher = class_teacher_record.teacher
+            class_teacher_name = f"{class_teacher.title} {class_teacher.fullname}"
+
 
         # -------------------- 3. Build response --------------------
         students_data = []
@@ -856,10 +874,11 @@ def api_students_by_subject():
             students_data.append({
                 "admission_number": s.admission_number,
                 "full_name": s.fullname.upper(),
-                "subject_name": lesson.subject.name if lesson and lesson.subject else "N/A",
+                "subject_name": lesson.subject.name if lesson and lesson.subject else subject_name,
                 "subject_teacher": teacher_name or "Not assigned",
+                "class_teacher": class_teacher_name,
                 "class_name": class_name,
-                "stream": stream if stream else "",
+                "stream": s.stream or "",
                 "branch_name": branch_name
             }) 
         return jsonify({"students": students_data})
@@ -952,7 +971,7 @@ def api_students_by_class():
                 "full_name": s.fullname.upper(),
                 "class_teacher": teacher_name,
                 "class_name": class_name,
-                "stream": stream if stream else "",
+                "stream": s.stream or "",
                 "branch_name": branch_name
             }
             for s in students

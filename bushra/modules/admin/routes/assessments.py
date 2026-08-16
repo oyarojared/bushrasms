@@ -344,6 +344,35 @@ def save_grading_config():
     if not all([system_name, boundaries, selected_classes]):
         return jsonify({"error": "Missing required data"}), 400
 
+    valid_boundaries = []
+    for boundary in boundaries:
+        performance_level = (boundary.get("performance_level") or "").strip()
+        min_score = boundary.get("min_score")
+        max_score = boundary.get("max_score")
+
+        if performance_level == "" or min_score is None or max_score is None:
+            continue
+
+        try:
+            min_score = int(min_score)
+            max_score = int(max_score)
+        except (TypeError, ValueError):
+            continue
+
+        valid_boundaries.append({
+            **boundary,
+            "min_score": min_score,
+            "max_score": max_score,
+            "performance_level": performance_level,
+        })
+
+    if not valid_boundaries:
+        return jsonify({
+            "error": "At least one complete grading boundary is required."
+        }), 400
+
+    boundaries = valid_boundaries
+
     try:
         # 1️⃣ Resolve or create grading system
         system = GradingSystem.query.filter_by(name=system_name).first()

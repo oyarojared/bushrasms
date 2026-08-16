@@ -357,92 +357,120 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
 
       {% if current_user.is_admin %}
       <div class="tab-pane fade" id="grading" role="tabpanel">
-        <div class="alert alert-secondary mb-2">
-          <small>
-            Configure Grading Rules. Select a System, Customize Boundaries, and
-            Assign to Grades.
-          </small>
-        </div>
-
-        <!-- Step 1: Choose Grading System -->
-        <div class="mb-2">
-          <label for="grading-system" class="form-label"
-            ><strong>Select Grading System</strong></label
-          >
-          <div class="input-group">
-            <span class="input-group-text"
-              ><i class="bi bi-diagram-3-fill"></i
-            ></span>
-            <select class="form-select" id="grading-system">
-              <option value="">-- Choose --</option>
-              <option value="8-4-4" disabled>8-4-4</option>
-              <option value="CBC">Competency-Based Education(CBE)</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- CBC / Placeholder Inputs -->
-        <div id="grading-fields" class="mb-4" style="display: none">
-          <div class="card p-1 mb-1">
-            <h6 class="mb-3 fw-light text-center">
-              Customize CBE Grading Boundaries
-            </h6>
-            <span class="small text-center text-primary fw-bold"
-              >Supports 4-band rubric (Primary) and 8-point KJSEA scale (Junior
-              Secondary)</span
+        <div class="grading-panel card border-0 shadow-sm">
+          <div class="card-body">
+            <div
+              id="gradingSuccessAlert"
+              class="grading-success-alert d-none"
+              role="status"
+              aria-live="polite"
             >
-          </div>
-          <div id="boundary-container" class="d-flex flex-column gap-3"></div>
-          <button
-            type="button"
-            class="btn btn-secondary btn-sm mt-2"
-            id="add-boundary-btn"
-          >
-            <i class="bi bi-plus-circle"></i> Add Boundary
-          </button>
-        </div>
-
-        <!-- Placeholder for 8-4-4 -->
-        <div
-          id="grading-placeholder"
-          class="alert alert-info"
-          style="display: none"
-        >
-          8-4-4 grading configuration will be implemented later.
-        </div>
-
-        <!-- Step 2: Classes Selection -->
-        <div id="classes-section" class="mb-4 border p-2" style="display: none">
-          <label class="form-label fw-light small">
-            <strong>Select Classes to Apply This Scheme</strong>
-          </label>
-          <div class="d-flex flex-wrap gap-3">
-            {% for g in grades %}
-            <div class="form-check">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                value="{{ g.id }}"
-                id="{{ g.id }}"
-              />
-              <label class="form-check-label" for="{{ g.id }}"
-                >{{ g.grade_form }}</label
-              >
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-
-        <!-- Step 3: Save Button -->
-        <div class="mb-4">
-          <div class="row d-flex justify-content-end">
-            <div class="col-auto">
+              <div class="grading-success-alert-icon" aria-hidden="true">
+                <i class="bi bi-check-circle-fill"></i>
+              </div>
+              <div class="grading-success-alert-content">
+                <strong class="grading-success-alert-title"
+                  >Configuration saved</strong
+                >
+                <p class="grading-success-alert-message">
+                  Grading configuration has been saved and applied to the
+                  selected classes.
+                </p>
+              </div>
               <button
                 type="button"
-                class="btn btn-danger btn-sm"
+                class="grading-success-alert-close"
+                id="gradingSuccessCloseBtn"
+                aria-label="Dismiss success message"
+              >
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+
+            <div class="grading-intro">
+              <h6 class="grading-intro-title">Customize CBE boundaries</h6>
+              <p class="grading-intro-desc">
+                Define score ranges, performance levels, points, and
+                descriptors. Supports 4-band rubric (Primary) and 8-point KJSEA
+                scale (Junior Secondary).
+              </p>
+            </div>
+
+            <div class="grading-system-select-wrap">
+              <label for="grading-system" class="form-label grading-label">
+                <i class="bi bi-diagram-3-fill me-1"></i>Grading System
+              </label>
+              <select class="form-select form-select-sm" id="grading-system">
+                <option value="">Select grading system</option>
+                <option value="8-4-4" disabled>
+                  8-4-4 — Uses Default KNEC Scale
+                </option>
+                <option value="CBC">Competency-Based Education (CBE)</option>
+              </select>
+            </div>
+
+            <section id="grading-fields" class="grading-section d-none">
+              <div class="grading-boundary-guide">
+                <i class="bi bi-info-circle me-1"></i>
+                Add one row per score band. Min score must be less than or equal
+                to max score.
+              </div>
+
+              <div id="boundary-container" class="grading-boundary-list"></div>
+
+              <button
+                type="button"
+                class="btn grading-add-boundary-btn"
+                id="add-boundary-btn"
+              >
+                <i class="bi bi-plus-circle me-1"></i> Add Boundary
+              </button>
+            </section>
+
+            <div id="grading-placeholder" class="grading-coming-soon d-none">
+              <div class="grading-coming-soon-icon">
+                <i class="bi bi-award"></i>
+              </div>
+              <h6>8-4-4 grading rules</h6>
+              <p>
+                This system uses the default KNEC scale. Custom boundary editing
+                is not required for 8-4-4 classes.
+              </p>
+            </div>
+
+            <section id="classes-section" class="grading-section d-none">
+              <h6 class="grading-section-title">Assign to classes</h6>
+              <p class="grading-section-desc">
+                Choose which grades or forms should use this grading scheme.
+              </p>
+
+              <div class="grading-class-grid">
+                {% for g in grades %}
+                <label
+                  class="grading-class-chip"
+                  for="grading-class-{{ g.id }}"
+                >
+                  <input
+                    class="form-check-input grading-class-checkbox"
+                    type="checkbox"
+                    value="{{ g.id }}"
+                    id="grading-class-{{ g.id }}"
+                  />
+                  <span class="grading-class-chip-label"
+                    >{{ g.grade_form }}</span
+                  >
+                </label>
+                {% endfor %}
+              </div>
+            </section>
+
+            <div class="grading-actions">
+              <button
+                type="button"
+                class="btn grading-save-btn"
                 id="save-grading"
               >
-                <i class="bi bi-save"></i> Save Grading Configuration
+                <i class="bi bi-save me-1"></i> Save Grading Configuration
               </button>
             </div>
           </div>
@@ -453,58 +481,83 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
       <!-- MARKSHEETS TAB -->
       {% if current_user.is_admin %}
       <div class="tab-pane fade" id="marksheets" role="tabpanel">
-        <div class="card p-3 shadow-sm mb-4">
-          <h6 class="fw-bold mb-3 text-primary">
-            <i class="bi bi-funnel-fill me-2"></i>Select Class
-          </h6>
+        <div class="marksheet-filter-card card border-0 shadow-sm mb-4">
+          <div class="marksheet-filter-header">
+            <div class="marksheet-filter-title">
+              <div>
+                <h6 class="mb-0">Marksheets &amp; Classlist</h6>
+                <small
+                  >Select school, class, and subject to load students</small
+                >
+              </div>
+            </div>
+          </div>
 
-          <div class="row g-3">
-            <!-- Branch -->
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">Branch</label>
-              <select
-                id="marksheet-branch"
-                class="form-select form-select-sm"
-              ></select>
-            </div>
+          <div class="card-body pt-0">
+            <div class="row g-3">
+              <div class="col-md-6 col-lg-3">
+                <label class="form-label marksheet-label" for="marksheet-branch"
+                  >School</label
+                >
+                <select
+                  id="marksheet-branch"
+                  class="form-select form-select-sm"
+                ></select>
+              </div>
 
-            <!-- Grade -->
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">Grade / Class</label>
-              <select
-                id="marksheet-grade"
-                class="form-select form-select-sm"
-              ></select>
-            </div>
+              <div class="col-md-6 col-lg-3">
+                <label class="form-label marksheet-label" for="marksheet-grade"
+                  >Grade / Class</label
+                >
+                <select
+                  id="marksheet-grade"
+                  class="form-select form-select-sm"
+                ></select>
+              </div>
 
-            <!-- Stream (hidden by default) -->
-            <div class="col-md-4 d-none" id="marksheet-stream-wrapper">
-              <label class="form-label fw-semibold">Stream</label>
-              <select id="marksheet-stream" class="form-select form-select-sm">
-                <option value="">All</option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">Subject</label>
-              <select
-                id="marksheet-subject"
-                class="form-select form-select-sm"
-              ></select>
-            </div>
-            <!-- Button -->
-            <div class="col-12 text-end">
-              <button
-                id="load-marksheet-students"
-                class="btn btn-sm btn-primary"
+              <div
+                class="col-md-6 col-lg-3 d-none"
+                id="marksheet-stream-wrapper"
               >
-                <i class="bi bi-search me-1"></i> Load Students
-              </button>
+                <label class="form-label marksheet-label" for="marksheet-stream"
+                  >Stream</label
+                >
+                <select
+                  id="marksheet-stream"
+                  class="form-select form-select-sm"
+                >
+                  <option value="">All</option>
+                </select>
+              </div>
+
+              <div class="col-md-6 col-lg-3">
+                <label
+                  class="form-label marksheet-label"
+                  for="marksheet-subject"
+                  >Subject</label
+                >
+                <select
+                  id="marksheet-subject"
+                  class="form-select form-select-sm"
+                ></select>
+              </div>
+              <div class="col-md-6 col-lg-3 d-flex align-items-end">
+                <button
+                  id="load-marksheet-students"
+                  type="button"
+                  class="marksheet-btn marksheet-btn-primary w-100"
+                >
+                  <i class="bi bi-search"></i> Load
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Students Table -->
-        <div id="marksheetStudentsContainer"></div>
+        <div
+          id="marksheetStudentsContainer"
+          class="marksheet-display-area"
+        ></div>
       </div>
       {% endif %}
 
@@ -1819,6 +1872,931 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     .footer-generated {
       margin-left: 0;
       width: 100%;
+    }
+  }
+
+  /* =========================================================
+     GRADING & RULES TAB
+     ========================================================= */
+
+  .grading-panel {
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .grading-intro {
+    margin-bottom: 1rem;
+  }
+
+  .grading-intro-title {
+    margin: 0 0 0.35rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #252a2f;
+  }
+
+  .grading-intro-desc {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #6c757d;
+    line-height: 1.5;
+  }
+
+  .grading-section {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #edf0f3;
+  }
+
+  .grading-section-title {
+    margin: 0 0 0.25rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #252a2f;
+  }
+
+  .grading-section-desc {
+    margin: 0 0 0.85rem;
+    font-size: 0.78rem;
+    color: #6c757d;
+    line-height: 1.45;
+  }
+
+  .grading-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.35rem;
+  }
+
+  .grading-system-select-wrap {
+    max-width: 420px;
+    margin-top: 1rem;
+  }
+
+  .grading-boundary-guide {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    margin-bottom: 0.85rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 10px;
+    background: #fff7f7;
+    border: 1px solid rgba(255, 121, 121, 0.16);
+    color: #7a4b4b;
+    font-size: 0.76rem;
+    line-height: 1.45;
+  }
+
+  .grading-boundary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .grading-boundary-card {
+    padding: 0.9rem;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    background: #fafbfc;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .grading-boundary-card:hover {
+    border-color: rgba(255, 121, 121, 0.28);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  }
+
+  .grading-boundary-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  .grading-boundary-card-title {
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6c757d;
+  }
+
+  .grading-field-label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #6c757d;
+  }
+
+  .grading-remove-boundary {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid rgba(220, 53, 69, 0.18);
+    background: #fff;
+    color: #dc3545;
+  }
+
+  .grading-remove-boundary:hover,
+  .grading-remove-boundary:focus {
+    background: rgba(220, 53, 69, 0.08);
+    color: #c82333;
+    border-color: rgba(220, 53, 69, 0.28);
+  }
+
+  .grading-add-boundary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0.4rem 0.9rem;
+    border-radius: 10px;
+    border: 1.5px dashed rgba(255, 121, 121, 0.45);
+    background: #fff;
+    color: #e85555;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .grading-add-boundary-btn:hover,
+  .grading-add-boundary-btn:focus {
+    background: rgba(255, 121, 121, 0.06);
+    border-color: #ff7979;
+    color: #d94848;
+  }
+
+  .grading-coming-soon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.35rem;
+    margin-bottom: 1.25rem;
+    padding: 1.5rem 1rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border: 1px dashed #d7dee7;
+  }
+
+  .grading-coming-soon-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(255, 121, 121, 0.1);
+    color: #ff7979;
+    font-size: 1.2rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .grading-coming-soon h6 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #252a2f;
+  }
+
+  .grading-coming-soon p {
+    margin: 0;
+    max-width: 520px;
+    font-size: 0.78rem;
+    color: #6c757d;
+    line-height: 1.5;
+  }
+
+  .grading-class-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+
+  .grading-class-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid #e3e7ec;
+    border-radius: 999px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+
+  .grading-class-chip:hover {
+    border-color: rgba(255, 121, 121, 0.35);
+    background: #fff9f9;
+  }
+
+  .grading-class-checkbox {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .grading-class-chip-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #495057;
+  }
+
+  .grading-class-chip:has(.grading-class-checkbox:checked) {
+    border-color: #ff7979;
+    background: rgba(255, 121, 121, 0.1);
+    box-shadow: 0 0 0 1px rgba(255, 121, 121, 0.08);
+  }
+
+  .grading-class-chip:has(.grading-class-checkbox:checked)
+    .grading-class-chip-label {
+    color: #d94848;
+  }
+
+  .grading-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid #edf0f3;
+  }
+
+  .grading-save-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0.5rem 1.1rem;
+    border-radius: 10px;
+    border: 1px solid #ff7979;
+    background: #ff7979;
+    color: #fff;
+    font-size: 0.84rem;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(255, 121, 121, 0.22);
+  }
+
+  .grading-save-btn:hover,
+  .grading-save-btn:focus {
+    background: #f56868;
+    border-color: #f56868;
+    color: #fff;
+  }
+
+  .grading-success-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.85rem 0.95rem;
+    border: 1px solid rgba(25, 135, 84, 0.22);
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f3fbf6 0%, #ffffff 100%);
+    box-shadow: 0 4px 14px rgba(25, 135, 84, 0.08);
+  }
+
+  .grading-success-alert-icon {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(25, 135, 84, 0.12);
+    color: #198754;
+    font-size: 1.1rem;
+  }
+
+  .grading-success-alert-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .grading-success-alert-title {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1f5137;
+  }
+
+  .grading-success-alert-message {
+    margin: 0.2rem 0 0;
+    font-size: 0.78rem;
+    color: #4b6b57;
+    line-height: 1.45;
+  }
+
+  .grading-success-alert-close {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #6c757d;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .grading-success-alert-close:hover,
+  .grading-success-alert-close:focus {
+    background: rgba(25, 135, 84, 0.08);
+    color: #198754;
+  }
+
+  @media (max-width: 767.98px) {
+    .grading-system-select-wrap {
+      max-width: none;
+    }
+
+    .grading-actions {
+      justify-content: stretch;
+    }
+
+    .grading-save-btn {
+      width: 100%;
+    }
+  }
+
+  /* =========================================================
+     MARKSHEETS & CLASSLIST TAB
+     ========================================================= */
+
+  .marksheet-filter-card {
+    border-radius: 12px;
+  }
+
+  .marksheet-filter-header {
+    padding: 1rem 1.1rem 0.35rem;
+  }
+
+  .marksheet-filter-title h6 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #252a2f;
+  }
+
+  .marksheet-filter-title small {
+    color: #6c757d;
+    font-size: 0.76rem;
+  }
+
+  .marksheet-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.35rem;
+  }
+
+  .marksheet-filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #edf0f3;
+  }
+
+  .marksheet-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 32px;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .marksheet-btn-primary {
+    border: 1px solid #ff7979;
+    background: #ff7979;
+    color: #fff;
+  }
+
+  .marksheet-btn-primary:hover,
+  .marksheet-btn-primary:focus {
+    background: #f56868;
+    border-color: #f56868;
+    color: #fff;
+  }
+
+  .marksheet-btn-outline {
+    border: 1px solid #ff7979;
+    background: #fff;
+    color: #ff7979;
+  }
+
+  .marksheet-btn-outline:hover,
+  .marksheet-btn-outline:focus {
+    background: rgba(255, 121, 121, 0.08);
+    border-color: #f56868;
+    color: #f56868;
+  }
+
+  .marksheet-display-area {
+    width: 100%;
+  }
+
+  .marksheet-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem 1rem;
+    border: 1px dashed #dfe3e8;
+    border-radius: 12px;
+    background: #fafbfc;
+    color: #6c757d;
+    text-align: center;
+  }
+
+  .marksheet-state-error {
+    color: #c0392b;
+    background: #fff7f7;
+    border-color: #f3d0d0;
+  }
+
+  .marksheet-document {
+    width: 100%;
+  }
+
+  .marksheet-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.65rem;
+    padding: 0.45rem 0.65rem;
+    border: 1px solid #edf0f3;
+    border-radius: 8px;
+    background: #fafbfc;
+  }
+
+  .marksheet-action-label {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #6c757d;
+    letter-spacing: 0.02em;
+  }
+
+  .marksheet-action-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+  }
+
+  .marksheet-sheet {
+    position: relative;
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: #fff;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    color: #212529;
+    overflow: visible;
+  }
+
+  .marksheet-watermark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-size: clamp(1.8rem, 7vw, 3rem);
+    font-weight: 700;
+    line-height: 1.15;
+    color: #000;
+    opacity: 0.045;
+    text-transform: uppercase;
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+    transform: rotate(-30deg);
+    word-break: break-word;
+  }
+
+  .marksheet-sheet-header,
+  .marksheet-table-wrap {
+    position: relative;
+    z-index: 1;
+  }
+
+  .marksheet-sheet-header {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #ced4da;
+    text-align: center;
+  }
+
+  .marksheet-school-name {
+    margin: 0 0 0.35rem;
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #111;
+    text-transform: uppercase;
+    line-height: 1.3;
+  }
+
+  .marksheet-doc-title {
+    margin: 0 0 0.85rem;
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: #444;
+    text-transform: uppercase;
+  }
+
+  .marksheet-meta-panel {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 0.65rem 0;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    background: #fafbfc;
+  }
+
+  .marksheet-meta-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0 1.1rem;
+    min-width: 110px;
+    text-align: center;
+    position: relative;
+  }
+
+  .marksheet-meta-cell:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 15%;
+    height: 70%;
+    width: 1px;
+    background: #ced4da;
+  }
+
+  .marksheet-meta-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #6c757d;
+    line-height: 1.2;
+  }
+
+  .marksheet-meta-value {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #212529;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .marksheet-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .marksheet-table {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+    border: 1px solid #212529;
+    font-size: 0.875rem;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    table-layout: fixed;
+  }
+
+  .marksheet-table th,
+  .marksheet-table td {
+    border: 1px solid #212529;
+    padding: 0.5rem 0.55rem;
+    vertical-align: middle;
+    color: #212529;
+  }
+
+  .marksheet-table thead th {
+    background: #f1f3f5;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .marksheet-col-no {
+    width: 8%;
+    text-align: center;
+  }
+
+  .marksheet-col-adm {
+    width: 16%;
+    text-align: center;
+  }
+
+  .marksheet-col-stream {
+    width: 12%;
+    text-align: center;
+  }
+
+  .marksheet-col-name {
+    width: auto;
+    text-align: left;
+    word-break: break-word;
+  }
+
+  .marksheet-col-marks {
+    width: 14%;
+    min-height: 30px;
+    text-align: center;
+  }
+
+  .marksheet-table tbody td.marksheet-col-no,
+  .marksheet-table tbody td.marksheet-col-adm,
+  .marksheet-table tbody td.marksheet-col-stream,
+  .marksheet-table tbody td.marksheet-col-marks {
+    text-align: center;
+  }
+
+  .marksheet-table tbody td.marksheet-col-name {
+    text-align: left;
+  }
+
+  /* PDF export — dedicated layout for html2pdf */
+  .marksheet-pdf-root {
+    position: fixed;
+    left: -10000px;
+    top: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: #fff;
+  }
+
+  .marksheet-pdf-export {
+    width: 7.55in;
+    max-width: 7.55in;
+    padding: 0.2in 0.15in !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    font-family: "Times New Roman", Times, serif !important;
+    color: #000 !important;
+    box-shadow: none !important;
+  }
+
+  .marksheet-pdf-export .marksheet-watermark {
+    opacity: 0.07;
+    font-size: 2.15rem;
+    letter-spacing: 0.04em;
+  }
+
+  .marksheet-pdf-export .marksheet-school-name,
+  .marksheet-pdf-export .marksheet-doc-title {
+    font-family: "Times New Roman", Times, serif !important;
+    color: #000 !important;
+  }
+
+  .marksheet-pdf-export .marksheet-school-name {
+    font-size: 14pt;
+    margin-bottom: 0.2rem;
+  }
+
+  .marksheet-pdf-export .marksheet-doc-title {
+    font-size: 11pt;
+    margin-bottom: 0.55rem;
+  }
+
+  .marksheet-pdf-export .marksheet-sheet-header {
+    margin-bottom: 0.55rem;
+    padding-bottom: 0.45rem;
+    border-bottom-color: #999;
+  }
+
+  .marksheet-pdf-export .marksheet-meta-panel {
+    max-width: none;
+    padding: 0.4rem 0.5rem;
+    border-color: #bbb;
+    background: #f7f7f7;
+    border-radius: 4px;
+  }
+
+  .marksheet-pdf-export .marksheet-meta-label {
+    font-size: 7pt;
+    color: #555;
+  }
+
+  .marksheet-pdf-export .marksheet-meta-value {
+    font-size: 9pt;
+    font-weight: 700;
+    color: #000;
+  }
+
+  .marksheet-pdf-export .marksheet-table-wrap {
+    overflow: visible !important;
+  }
+
+  .marksheet-pdf-export .marksheet-table {
+    width: 100%;
+    border-color: #000 !important;
+    font-family: "Times New Roman", Times, serif !important;
+    font-size: 10.5pt;
+    page-break-inside: auto;
+  }
+
+  .marksheet-pdf-export .marksheet-table th,
+  .marksheet-pdf-export .marksheet-table td {
+    border-color: #000 !important;
+    color: #000 !important;
+    padding: 0.22rem 0.3rem;
+    line-height: 1.25;
+  }
+
+  .marksheet-pdf-export .marksheet-table thead {
+    display: table-header-group;
+  }
+
+  .marksheet-pdf-export .marksheet-table thead th {
+    background: #ececec !important;
+    font-size: 9.5pt;
+    padding: 0.28rem 0.3rem;
+  }
+
+  .marksheet-pdf-export .marksheet-pdf-row {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .marksheet-pdf-export.marksheet-pdf-compact .marksheet-table {
+    font-size: 9.5pt;
+  }
+
+  .marksheet-pdf-export.marksheet-pdf-compact .marksheet-table th,
+  .marksheet-pdf-export.marksheet-pdf-compact .marksheet-table td {
+    padding: 0.16rem 0.24rem;
+  }
+
+  .marksheet-pdf-export.marksheet-pdf-compact .marksheet-table thead th {
+    font-size: 8.5pt;
+  }
+
+  .marksheet-pdf-export.marksheet-pdf-dense .marksheet-table {
+    font-size: 8.5pt;
+  }
+
+  .marksheet-pdf-export.marksheet-pdf-dense .marksheet-table th,
+  .marksheet-pdf-export.marksheet-pdf-dense .marksheet-table td {
+    padding: 0.12rem 0.2rem;
+  }
+
+  .marksheet-pdf-export.marksheet-pdf-dense .marksheet-table thead th {
+    font-size: 8pt;
+  }
+
+  .marksheet-pdf-export.marksheet-pdf-dense .marksheet-school-name {
+    font-size: 12pt;
+  }
+
+  .marksheet-pdf-export.marksheet-pdf-dense .marksheet-meta-value {
+    font-size: 8pt;
+  }
+
+  .marksheet-pdf-export.marksheet-pdf-dense .marksheet-col-marks {
+    min-height: 18px;
+  }
+
+  @media (max-width: 767.98px) {
+    .marksheet-action-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .marksheet-action-group {
+      justify-content: stretch;
+    }
+
+    .marksheet-action-group .marksheet-btn {
+      flex: 1 1 auto;
+    }
+
+    .marksheet-btn {
+      width: 100%;
+    }
+
+    .marksheet-school-name {
+      font-size: 1rem;
+    }
+
+    .marksheet-meta-panel {
+      gap: 0.5rem;
+      padding: 0.55rem 0.5rem;
+    }
+
+    .marksheet-meta-cell {
+      flex: 1 1 45%;
+      min-width: 0;
+      padding: 0.35rem 0.5rem;
+    }
+
+    .marksheet-meta-cell::after {
+      display: none;
+    }
+
+    .marksheet-sheet {
+      padding: 0.75rem;
+      border-left: 0;
+      border-right: 0;
+      border-radius: 0;
+    }
+
+    #marksheets .marksheet-display-area {
+      margin-left: -12px;
+      margin-right: -12px;
+      width: calc(100% + 24px);
+    }
+  }
+
+  @media print {
+    body.ui-blocker-active {
+      overflow: visible !important;
+    }
+
+    .fixed-top-bar,
+    .sidebar-nav,
+    .app-footer,
+    .exam-tabs,
+    .marksheet-filter-card,
+    .marksheet-action-bar,
+    .marksheet-no-print,
+    .ui-blocker {
+      display: none !important;
+    }
+
+    .main-content {
+      margin: 0 !important;
+      padding: 0 !important;
+      height: auto !important;
+      overflow: visible !important;
+    }
+
+    .tab-content,
+    #marksheets,
+    .marksheet-display-area,
+    .marksheet-document,
+    .marksheet-sheet {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+    }
+
+    .marksheet-table {
+      font-size: 11pt;
+    }
+
+    .marksheet-table thead th,
+    .marksheet-table tbody td {
+      border-color: #000 !important;
+    }
+
+    .marksheet-watermark {
+      opacity: 0.06;
     }
   }
 </style>
