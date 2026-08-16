@@ -3,8 +3,11 @@ const gradeSelect = document.getElementById("results-grade");
 const streamSelect = document.getElementById("results-stream");
 const examSelect = document.getElementById("results-exam");
 const subjectSelect = document.getElementById("results-subject");
-const loadResultsBtn = document.getElementById("load-results");
-const resultsContainer = document.querySelector("#resultsContainer");
+
+function hideDownloadButton() {
+  const downloadBtn = document.getElementById("generate-pdf-btn");
+  if (downloadBtn) downloadBtn.classList.add("d-none");
+}
 
 // Populate a select element
 function populateSelect(
@@ -25,10 +28,11 @@ function populateSelect(
 // Fetch branches
 fetch("/admin/api/branches")
   .then((res) => res.json())
-  .then((data) => populateSelect(branchSelect, data, "Select Branch"));
+  .then((data) => populateSelect(branchSelect, data, "Select School"));
 
 // Fetch grades when branch changes
 branchSelect.addEventListener("change", function () {
+  hideDownloadButton();
   const branchId = this.value;
   gradeSelect.innerHTML = '<option value="">--Select Grade--</option>';
   streamSelect.innerHTML = '<option value="">All</option>';
@@ -46,6 +50,7 @@ branchSelect.addEventListener("change", function () {
 
 // When grade changes, fetch streams and exams
 gradeSelect.addEventListener("change", function () {
+  hideDownloadButton();
   const branchId = branchSelect.value;
   const classId = this.value;
   streamSelect.innerHTML = '<option value="">All</option>';
@@ -73,8 +78,11 @@ gradeSelect.addEventListener("change", function () {
     .then((data) => populateSelect(examSelect, data, "--Select Exam--"));
 });
 
+streamSelect.addEventListener("change", hideDownloadButton);
+
 // When exam changes, fetch subjects
 examSelect.addEventListener("change", function () {
+  hideDownloadButton();
   const branchId = branchSelect.value;
   const classId = gradeSelect.value;
   const stream = streamSelect.value || null;
@@ -89,50 +97,4 @@ examSelect.addEventListener("change", function () {
   )
     .then((res) => res.json())
     .then((data) => populateSelect(subjectSelect, data, "--Select Subject--"));
-});
-
-// Load results on button click
-loadResultsBtn.addEventListener("click", function () {
-  const branchId = branchSelect.value;
-  const classId = gradeSelect.value;
-  const stream = streamSelect.value || null;
-  const examId = examSelect.value;
-  const subjectId = subjectSelect.value;
-
-  if (!branchId || !classId || !examId) {
-    alert("Please select branch, grade, and exam.");
-    return;
-  }
-
-  resultsContainer.innerHTML = `<tr><td colspan="6" class="text-center">Loading...</td></tr>`;
-
-  // Use your API that returns students with resolved grades
-  fetch(
-    `/admin/api/exam-students-with-grades?branch_id=${branchId}&class_id=${classId}&exam_id=${examId}&subject_id=${subjectId}&stream=${stream}`,
-  )
-    .then((res) => res.json())
-    .then((data) => {
-      resultsContainer.innerHTML = "";
-      const students = data.students || [];
-
-      if (students.length === 0) {
-        resultsContainer.innerHTML = `
-                    <tr><td colspan="6" class="text-center">
-                       <div class="d-flex justify-content-center align-items-center py-4 text-success">
-                            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                            <span class="h6">Please wait, Generating result…</span>
-                        </div>
-                    </td></tr>
-                `;
-        return;
-      }
-
-      students.forEach((s) => {
-        // report cards here
-      });
-    })
-    .catch((err) => {
-      console.error(err);
-      resultsContainer.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error loading results.</td></tr>`;
-    });
 });

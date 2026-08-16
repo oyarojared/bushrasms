@@ -564,15 +564,16 @@ footer .text-break {
   .sidebar-nav .nav {
     flex-wrap: nowrap !important;
   }
-  /* Make footer disappear on small screens */
-  . {
-    display: none !important;
-  }
   /* Allow main content full width */
+  .fixed-top-bar {
+    height: auto;
+  }
+
   .main-content {
     margin: 60px 0 calc(68px + env(safe-area-inset-bottom, 0px)) 0;
     height: calc(100vh - 128px - env(safe-area-inset-bottom, 0px));
   }
+
   .download-link {
     display: none !important;
   }
@@ -589,10 +590,6 @@ footer .text-break {
     display: none;
   }
 
-  .user-profile-pic {
-    margin-top: 2rem;
-  }
-
   .user-name {
     font-size: 1.3rem;
   }
@@ -601,22 +598,6 @@ footer .text-break {
     display: none;
   }
 
-  .school-heading {
-    font-weight: 900 !important;
-    text-align: center;
-    font-size: 2rem;
-  }
-  /* Move first items slightly down to create space for search input */
-  .dashboard-title,
-  .go-back-btn,
-  .student-dash-title,
-  .classes-grps-title,
-  .branch-title,
-  .staff-title,
-  .subject-header,
-  .exam-header {
-    margin-top: 16px !important;
-  }
   .sm-center {
     justify-content: center;
   }
@@ -635,23 +616,119 @@ footer .text-break {
   }
 }
 
-/* ================= UI BLOCKER DURING REPORT CARD GENERATION ================= */
+/* ================= UI BLOCKER (loading overlay) ================= */
+body.ui-blocker-active {
+  overflow: hidden;
+}
+
 .ui-blocker {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
   z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
-.ui-blocker-content {
-  padding: 25px 35px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.6);
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+.ui-blocker-panel {
+  width: min(100%, 360px);
+  padding: 1.75rem 1.5rem 1.35rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.22),
+    0 8px 20px rgba(15, 23, 42, 0.08);
+  text-align: center;
 }
+
+.ui-blocker-spinner {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 1.1rem;
+}
+
+.ui-blocker-ring {
+  position: absolute;
+  inset: 0;
+  border: 3px solid rgba(255, 121, 121, 0.18);
+  border-top-color: #ff7979;
+  border-radius: 50%;
+  animation: ui-blocker-spin 0.9s linear infinite;
+}
+
+.ui-blocker-ring-delay {
+  inset: 8px;
+  border-width: 2px;
+  border-top-color: #f56868;
+  animation-duration: 1.2s;
+  animation-direction: reverse;
+}
+
+.ui-blocker-core {
+  position: absolute;
+  inset: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+  color: #ff7979;
+  font-size: 1.15rem;
+  box-shadow: inset 0 0 0 1px rgba(255, 121, 121, 0.12);
+}
+
+.ui-blocker-title {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.ui-blocker-message {
+  margin: 0.45rem 0 0;
+  color: #6b7280;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.ui-blocker-progress {
+  height: 4px;
+  margin-top: 1.15rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #f1f3f5;
+}
+
+.ui-blocker-progress-bar {
+  width: 35%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff7979, #f56868);
+  animation: ui-blocker-progress 1.4s ease-in-out infinite;
+}
+
+@keyframes ui-blocker-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ui-blocker-progress {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
 .c-table {
   table-layout: fixed;
   width: 100%;

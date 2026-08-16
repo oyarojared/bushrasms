@@ -155,6 +155,21 @@ body {
   letter-spacing: -0.3px;
 }
 
+.company-name .brand-wordmark {
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  color: var(--acadex-dark);
+}
+
+.company-name .brand-suffix {
+  margin-left: 0.12em;
+
+  font-size: 0.72em;
+  font-weight: 600;
+
+  color: #64748b;
+}
+
 .company-name small {
   display: block;
 

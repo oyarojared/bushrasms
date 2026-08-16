@@ -1,703 +1,809 @@
-{% extends "admin_dash_layout.html" %}
-{% from "_macros.html" import render_flash_messages, sidebar, form_input %}
-
-{% block side_nav %}
-<div class="sidebar">
-    {{ sidebar("Exams", current_user) }}
-</div>
-{% endblock %}
-
-{% block main_content %}
-
-{{ render_flash_messages() }}
+{% extends "admin_dash_layout.html" %} {% from "_macros.html" import
+render_flash_messages, sidebar, form_input %} {% block side_nav %}
+<div class="sidebar">{{ sidebar("Exams", current_user) }}</div>
+{% endblock %} {% block main_content %} {{ render_flash_messages() }}
 
 <div class="app-page-title">
+  <div class="app-page-title-icon">
+    <i class="bi bi-journal-check"></i>
+  </div>
 
-    <div class="app-page-title-icon">
-        <i class="bi bi-journal-check"></i>
-    </div>
+  <div class="app-page-title-content">
+    <h6 class="app-page-title-heading">Exams &amp; Assessments</h6>
 
-    <div class="app-page-title-content">
-
-        <h6 class="app-page-title-heading">
-            Exams &amp; Assessments
-        </h6>
-
-        <span class="app-page-title-subtitle">
-            Manage examinations, assessments &amp; student results
-        </span>
-
-    </div>
-
+    <span class="app-page-title-subtitle">
+      Manage examinations, assessments &amp; student results
+    </span>
+  </div>
 </div>
 
 <div class="card mt-3 shadow-sm">
-    <div class="orange-line"></div>
-    <div class="card-body">
-
-        <!-- Tabs navigation -->
-        <ul class="nav nav-tabs exam-tabs" id="examTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="exam-setup-tab" data-bs-toggle="tab" data-bs-target="#exam-setup"
-                    type="button" role="tab">
-                    {% if current_user.is_admin %}
-                    <i class="bi bi-gear-fill me-1"></i> Exam Setup
-                    {% else %}
-                    <i class="bi bi-gear-fill me-1"></i> Select Exam to Enter Marks
-                    {% endif %}
-                </button>
-            </li>
-
-            {% if current_user.is_admin %}
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="results-tab" data-bs-toggle="tab" data-bs-target="#results" type="button"
-                    role="tab">
-                    <i class="bi bi-file-earmark-bar-graph-fill me-1"></i> Results & Reports
-                </button>
-            </li>
-            {% endif %}
-
-            {% if current_user.is_admin %}
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="grading-tab" data-bs-toggle="tab" data-bs-target="#grading" type="button"
-                    role="tab">
-                    <i class="bi bi-award-fill me-1"></i> Grading & Rules
-                </button>
-            </li>
-            {% endif %}
-
-            {% if current_user.is_admin %}
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="marksheets-tab" data-bs-toggle="tab" data-bs-target="#marksheets"
-                    type="button" role="tab">
-                    <i class="bi bi-table me-1"></i> Marksheets & Classlists
-                </button>
-            </li>
-            {% endif %}
-
-            {% if current_user.is_admin %}
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="broadsheet-tab" data-bs-toggle="tab" data-bs-target="#broadsheet"
-                    type="button" role="tab">
-                    <i class="bi bi-file-earmark-text me-1"></i> Broadsheets & Analytics
-                </button>
-            </li>
-            {% endif %}
-
-        </ul>
-
-        <!-- TAB CONTENT -->
-        <div class="tab-content pt-3" id="examTabsContent">
-
-            <!-- ================= EXAM SETUP TAB ================= -->
-            <div class="tab-pane fade show active" id="exam-setup" role="tabpanel">
-
-                {% if current_user.is_admin %}
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="fw-bold mb-0">Exam Configuration</h6>
-
-                    <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#createExamModal">
-                        <i class="bi bi-plus-circle me-1"></i> Create Exam
-                    </button>
-                </div>
-                {% endif %}
-                <hr>
-
-
-
-
-
-
-
-
-                <div class="container-fluid">
-                    {% if exams_list %}
-                    <div class="row g-4">
-                        {% for exam in exams_list %} 
-                        <div class="col-md-4 col-lg-3">
-                            <div class="card h-100 shadow border-0 exam-card">
-                                <!-- Card Header -->
-                                <div class="card-header bg-light d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <h6 class="fw-bold mb-0">{{ exam.name }}</h6>
-                                        <small class="text-muted">
-                                            {{ exam.year }} · Term {{ exam.term }}
-                                        </small>
-                                    </div>
-
-                                    {% if exam.is_locked %}
-                                    <span class="badge bg-danger">
-                                        <i class="bi bi-lock-fill me-1"></i> Locked
-                                    </span>
-                                    {% else %}
-                                    <span class="badge bg-success">
-                                        <i class="bi bi-unlock-fill me-1"></i> Open
-                                    </span>
-                                    {% endif %}
-                                </div>
-
-                                <!-- Card Body -->
-                                <div class="card-body pt-2">
-
-                                    <div class="mb-2">
-                                        <div class="small">
-                                            {% for eb in exam.exam_branches %}
-                                            {{ eb.branch.branch_name }}{% if not loop.last %}, {% endif %}
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-2">
-                                        <small class="text-muted fw-semibold">Marks Entry</small><br>
-                                        {% if exam.is_locked %}
-                                        <span class="text-danger small">
-                                            <i class="bi bi-x-circle-fill"></i> Closed
-                                        </span>
-                                        {% else %}
-                                        <span class="text-success small">
-                                            <i class="bi bi-check-circle-fill"></i> Open
-                                        </span>
-                                        {% endif %}
-                                    </div>
-
-                                </div>
-
-                                <!-- Card Footer -->
-                                <div class="card-footer bg-white border-top-0 pt-0">
-
-                                    <div class="d-grid gap-2">
-
-                                        <!-- Primary Actions -->
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            {% if not current_user.is_admin %}
-                                            <button class="btn btn-outline-primary d-none" disabled>
-                                                <i class="bi bi-pencil-fill"></i> Edit
-                                            </button>
-                                            {% else %}
-                                            <button class="btn btn-outline-primary">
-                                                <i class="bi bi-pencil-fill"></i> Edit
-                                            </button>
-                                            {% endif %}
-
-                                            <a href="{{ url_for('admin.marks_entry', exam_id=exam.id) }}"
-                                                class="btn btn-secondary">
-                                                <i class="bi bi-table me-2"></i>Enter Marks
-                                            </a>
-
-                                        </div>
-
-                                        <!-- Lock / Unlock -->
-                                        {% if exam.is_locked %}
-                                        <form method="post"
-                                            action="{{ url_for('admin.unlock_exam', exam_id=exam.id) }}">
-                                            {% if not current_user.is_admin %}
-                                            <button class="btn btn-sm btn-success w-100 d-none" disabled>
-                                                <i class="bi bi-unlock-fill me-1"></i> Unlock Exam
-                                            </button>
-                                            {% else %}
-                                            <button class="btn btn-sm btn-success w-100">
-                                                <i class="bi bi-unlock-fill me-1"></i> Unlock Exam
-                                            </button>
-                                            {% endif %}
-                                        </form>
-                                        {% else %}
-                                        <form method="post" action="{{ url_for('admin.lock_exam', exam_id=exam.id) }}">
-                                            {% if not current_user.is_admin %}
-                                            <button class="btn btn-sm btn-warning w-100 d-none" disabled>
-                                                <i class="bi bi-lock-fill me-1"></i> Lock Exam
-                                            </button>
-                                            {% else %}
-                                            <button class="btn btn-sm btn-warning w-100">
-                                                <i class="bi bi-lock-fill me-1"></i> Lock Exam
-                                            </button>
-                                            {% endif %}
-                                        </form>
-                                        {% endif %}
-
-                                        <!-- Danger Zone --> 
-                                    {% if current_user.is_admin %}
-                                    <button type="button"
-                                            class="btn btn-sm btn-outline-danger w-100 delete-exam-btn"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#deleteExamModal"
-                                            data-exam-name="{{ exam.name }}"
-                                            data-delete-url="{{ url_for('admin.delete_exam', exam_id=exam.id) }}">
-                                        <i class="bi bi-trash-fill me-1"></i> Delete Exam
-                                    </button>
-                                    {% endif %}
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-                        </div>
-                        {% endfor %}
-
-                    </div>
-                    {% else %}
-                    <div class="alert alert-info">
-                        No exams created yet.
-                    </div>
-                    {% endif %}
-                </div>
-
-
-
-
-
-
-
-
-
-
-            </div>
-
-            <!-- ================= RESULTS TAB ================= -->
-            <div class="tab-pane fade" id="results" role="tabpanel">
-                <!-- Filters Card -->
-                <div class="card p-3 shadow-sm mb-4">
-                    <h6 class="fw-bold mb-3 text-primary">
-                        <i class="bi bi-funnel-fill me-2"></i>Filter Results
-                    </h6>
-                    <div class="row g-3">
-                        <!-- Branch -->
-                        <div class="col-md-3">
-                            <label for="results-branch" class="form-label fw-semibold">
-                                <i class="bi bi-house-door me-1"></i>Branch
-                            </label>
-                            <select id="results-branch" class="form-select form-select-sm"></select>
-                        </div>
-
-                        <!-- Grade/Class -->
-                        <div class="col-md-3">
-                            <label for="results-grade" class="form-label fw-semibold">
-                                <i class="bi bi-building me-1"></i>Grade / Class
-                            </label>
-                            <select id="results-grade" class="form-select form-select-sm"></select>
-                        </div>
-
-                        <!-- Stream -->
-                        <div class="col-md-3">
-                            <label for="results-stream" class="form-label fw-semibold">
-                                <i class="bi bi-list-ul me-1"></i>Stream
-                            </label>
-                            <select id="results-stream" class="form-select form-select-sm">
-                                <option value="">All</option>
-                            </select>
-                        </div>
-
-                        <!-- Exam -->
-                        <div class="col-md-3">
-                            <label for="results-exam" class="form-label fw-semibold">
-                                <i class="bi bi-journal-text me-1"></i>Exam
-                            </label>
-                            <select id="results-exam" class="form-select form-select-sm">
-                                <option value="">--Select Exam--</option>
-                            </select>
-                        </div>
-
-                        <!-- Subject -->
-                        <div class="col-md-3 d-none">
-                            <label for="results-subject" class="form-label fw-semibold">
-                                <i class="bi bi-book me-1"></i>Subject
-                            </label>
-                            <select id="results-subject" class="form-select form-select-sm"></select>
-                        </div>
-
-                        <!-- Load Results Button -->
-                        <div id="fetchResultsDiv" class="row d-flex justify-content-end mt-2">
-
-                            <div class="col-auto">
-                                <label for="results-subject" class="form-label fw-semibold">
-                                    <button id="load-results" class="btn btn-sm btn-primary w-100">
-                                        <i class="bi bi-search me-1"></i> Fetch Results
-                                    </button>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- Results Table -->
-                <div class="">
-                    <div id="resultsContainer"></div>
-                    <script>
-                        const STATIC_URL = "{{ url_for('static', filename='') }}";
-                    </script>
-
-                </div>
-            </div>
-
-
-            <!-- ================= GRADING TAB ================= -->
-
-            {% if current_user.is_admin %}
-            <div class="tab-pane fade" id="grading" role="tabpanel">
-
-                <div class="alert alert-secondary mb-2">
-                    <small>
-                        Configure Grading Rules. Select a System, Customize Boundaries, and Assign to Grades.
-                    </small>
-                </div>
-
-                <!-- Step 1: Choose Grading System -->
-                <div class="mb-2">
-                    <label for="grading-system" class="form-label"><strong>Select Grading System</strong></label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-diagram-3-fill"></i></span>
-                        <select class="form-select" id="grading-system">
-                            <option value="">-- Choose --</option> 
-                            <option value="8-4-4" disabled>8-4-4</option>
-                            <option value="CBC">Competency-Based Education(CBE)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- CBC / Placeholder Inputs -->
-                <div id="grading-fields" class="mb-4" style="display:none;">
-                    <div class="card p-1 mb-1">
-                    <h6 class="mb-3 fw-light text-center">Customize CBE Grading Boundaries</h6>
-                        <span class="small text-center text-primary fw-bold">Supports 4-band rubric (Primary) and 8-point KJSEA scale (Junior Secondary)</span>
-                    </div>
-                    <div id="boundary-container" class="d-flex flex-column gap-3"></div>
-                    <button type="button" class="btn btn-secondary btn-sm mt-2" id="add-boundary-btn">
-                        <i class="bi bi-plus-circle"></i> Add Boundary
-                    </button>
-                </div>
-
-                <!-- Placeholder for 8-4-4 -->
-                <div id="grading-placeholder" class="alert alert-info" style="display:none;">
-                    8-4-4 grading configuration will be implemented later.
-                </div>
-
-                <!-- Step 2: Classes Selection -->
-                <div id="classes-section" class="mb-4 border p-2" style="display:none;">
-                    <label class="form-label fw-light small">
-                        <strong>Select Classes to Apply This Scheme</strong>
-                    </label>
-                    <div class="d-flex flex-wrap gap-3">
-                        {% for g in grades %}
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="{{ g.id }}" id="{{ g.id }}">
-                            <label class="form-check-label" for="{{ g.id }}">{{ g.grade_form }}</label>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <!-- Step 3: Save Button -->
-                <div class="mb-4">
-                    <div class="row d-flex justify-content-end">
-                        <div class="col-auto">
-                            <button type="button" class="btn btn-danger btn-sm" id="save-grading">
-                                <i class="bi bi-save"></i> Save Grading Configuration
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-
-            <!-- MARKSHEETS TAB -->
-            {% if current_user.is_admin %}
-            <div class="tab-pane fade" id="marksheets" role="tabpanel">
-                <div class="card p-3 shadow-sm mb-4">
-                    <h6 class="fw-bold mb-3 text-primary">
-                        <i class="bi bi-funnel-fill me-2"></i>Select Class
-                    </h6>
-
-                    <div class="row g-3">
-
-                        <!-- Branch -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Branch</label>
-                            <select id="marksheet-branch" class="form-select form-select-sm"></select>
-                        </div>
-
-                        <!-- Grade -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Grade / Class</label>
-                            <select id="marksheet-grade" class="form-select form-select-sm"></select>
-                        </div>
-
-                        <!-- Stream (hidden by default) -->
-                        <div class="col-md-4 d-none" id="marksheet-stream-wrapper">
-                            <label class="form-label fw-semibold">Stream</label>
-                            <select id="marksheet-stream" class="form-select form-select-sm">
-                                <option value="">All</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Subject</label>
-                            <select id="marksheet-subject" class="form-select form-select-sm"></select>
-                        </div>
-                        <!-- Button -->
-                        <div class="col-12 text-end">
-                            <button id="load-marksheet-students" class="btn btn-sm btn-primary">
-                                <i class="bi bi-search me-1"></i> Load Students
-                            </button>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- Students Table -->
-                <div id="marksheetStudentsContainer"></div>
-
-            </div>
-            {% endif %}
-
-
-            <!-- ================= BROADSHEET TAB ================= -->
-            {% if current_user.is_admin %}
-            <div class="tab-pane fade" id="broadsheet" role="tabpanel">
-                <!-- Filters Card -->
-                <div class="card p-3 shadow-sm mb-4">
-                    <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-funnel-fill me-2"></i>Filter Broadsheet</h6>
-                    <div class="row g-3">
-                        <!-- Branch -->
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold"><i class="bi bi-house-door me-1"></i>Branch</label>
-                            <select id="bs-branch" class="form-select form-select-sm"></select>
-                        </div>
-
-                        <!-- Grade -->
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold"><i class="bi bi-building me-1"></i>Grade /
-                                Class</label>
-                            <select id="bs-grade" class="form-select form-select-sm"></select>
-                        </div>
-
-                        <!-- Stream -->
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold"><i class="bi bi-list-ul me-1"></i>Stream</label>
-                            <select id="bs-stream" class="form-select form-select-sm">
-                                <option value="">All</option>
-                            </select>
-                        </div>
-
-                        <!-- Exam -->
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold"><i class="bi bi-journal-text me-1"></i>Exam</label>
-                            <select id="bs-exam" class="form-select form-select-sm">
-                                <option value="">--Select Exam--</option>
-                            </select>
-                        </div>
-
-                        <!-- Button -->
-                        <div class="col-12 text-end mt-2">
-                            <button id="load-broadsheet" class="btn btn-sm btn-danger">
-                                <i class="bi bi-graph-up"></i> Generate Analytics
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Output -->
-                <div id="broadsheetContainer" class="p-3"></div>
-            </div>
-            {% endif %}
-
+  <div class="orange-line"></div>
+  <div class="card-body">
+    <!-- Tabs navigation -->
+    <ul class="nav nav-tabs exam-tabs" id="examTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link active"
+          id="exam-setup-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#exam-setup"
+          type="button"
+          role="tab"
+        >
+          {% if current_user.is_admin %}
+          <i class="bi bi-gear-fill me-1"></i> Exam Setup {% else %}
+          <i class="bi bi-gear-fill me-1"></i> Select Exam to Enter Marks {%
+          endif %}
+        </button>
+      </li>
+
+      {% if current_user.is_admin %}
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
+          id="results-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#results"
+          type="button"
+          role="tab"
+        >
+          <i class="bi bi-file-earmark-bar-graph-fill me-1"></i> Results &
+          Reports
+        </button>
+      </li>
+      {% endif %} {% if current_user.is_admin %}
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
+          id="grading-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#grading"
+          type="button"
+          role="tab"
+        >
+          <i class="bi bi-award-fill me-1"></i> Grading & Rules
+        </button>
+      </li>
+      {% endif %} {% if current_user.is_admin %}
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
+          id="marksheets-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#marksheets"
+          type="button"
+          role="tab"
+        >
+          <i class="bi bi-table me-1"></i> Marksheets & Classlists
+        </button>
+      </li>
+      {% endif %} {% if current_user.is_admin %}
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
+          id="broadsheet-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#broadsheet"
+          type="button"
+          role="tab"
+        >
+          <i class="bi bi-file-earmark-text me-1"></i> Broadsheets & Analytics
+        </button>
+      </li>
+      {% endif %}
+    </ul>
+
+    <!-- TAB CONTENT -->
+    <div class="tab-content pt-3" id="examTabsContent">
+      <!-- ================= EXAM SETUP TAB ================= -->
+      <div class="tab-pane fade show active" id="exam-setup" role="tabpanel">
+        {% if current_user.is_admin %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="fw-bold mb-0">Exam Configuration</h6>
+
+          <button
+            class="btn btn-sm btn-secondary"
+            data-bs-toggle="modal"
+            data-bs-target="#createExamModal"
+          >
+            <i class="bi bi-plus-circle me-1"></i> Create Exam
+          </button>
         </div>
+        {% endif %}
+        <hr />
+
+        <div class="container-fluid">
+          {% if exams_list %}
+          <div class="row g-4">
+            {% for exam in exams_list %}
+            <div class="col-md-4 col-lg-3">
+              <div class="card h-100 shadow border-0 exam-card">
+                <!-- Card Header -->
+                <div
+                  class="card-header bg-light d-flex justify-content-between align-items-start"
+                >
+                  <div>
+                    <h6 class="fw-bold mb-0">{{ exam.name }}</h6>
+                    <small class="text-muted">
+                      {{ exam.year }} · Term {{ exam.term }}
+                    </small>
+                  </div>
+
+                  {% if exam.is_locked %}
+                  <span class="badge bg-danger">
+                    <i class="bi bi-lock-fill me-1"></i> Locked
+                  </span>
+                  {% else %}
+                  <span class="badge bg-success">
+                    <i class="bi bi-unlock-fill me-1"></i> Open
+                  </span>
+                  {% endif %}
+                </div>
+
+                <!-- Card Body -->
+                <div class="card-body pt-2">
+                  <div class="mb-2">
+                    <div class="small">
+                      {% for eb in exam.exam_branches %} {{
+                      eb.branch.branch_name }}{% if not loop.last %}, {% endif
+                      %} {% endfor %}
+                    </div>
+                  </div>
+
+                  <div class="mb-2">
+                    <small class="text-muted fw-semibold">Marks Entry</small
+                    ><br />
+                    {% if exam.is_locked %}
+                    <span class="text-danger small">
+                      <i class="bi bi-x-circle-fill"></i> Closed
+                    </span>
+                    {% else %}
+                    <span class="text-success small">
+                      <i class="bi bi-check-circle-fill"></i> Open
+                    </span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <!-- Card Footer -->
+                <div class="card-footer bg-white border-top-0 pt-0">
+                  <div class="d-grid gap-2">
+                    <!-- Primary Actions -->
+                    <div class="btn-group btn-group-sm" role="group">
+                      {% if not current_user.is_admin %}
+                      <button class="btn btn-outline-primary d-none" disabled>
+                        <i class="bi bi-pencil-fill"></i> Edit
+                      </button>
+                      {% else %}
+                      <button class="btn btn-outline-primary">
+                        <i class="bi bi-pencil-fill"></i> Edit
+                      </button>
+                      {% endif %}
+
+                      <a
+                        href="{{ url_for('admin.marks_entry', exam_id=exam.id) }}"
+                        class="btn btn-secondary"
+                      >
+                        <i class="bi bi-table me-2"></i>Enter Marks
+                      </a>
+                    </div>
+
+                    <!-- Lock / Unlock -->
+                    {% if exam.is_locked %}
+                    <form
+                      method="post"
+                      action="{{ url_for('admin.unlock_exam', exam_id=exam.id) }}"
+                    >
+                      {% if not current_user.is_admin %}
+                      <button
+                        class="btn btn-sm btn-success w-100 d-none"
+                        disabled
+                      >
+                        <i class="bi bi-unlock-fill me-1"></i> Unlock Exam
+                      </button>
+                      {% else %}
+                      <button class="btn btn-sm btn-success w-100">
+                        <i class="bi bi-unlock-fill me-1"></i> Unlock Exam
+                      </button>
+                      {% endif %}
+                    </form>
+                    {% else %}
+                    <form
+                      method="post"
+                      action="{{ url_for('admin.lock_exam', exam_id=exam.id) }}"
+                    >
+                      {% if not current_user.is_admin %}
+                      <button
+                        class="btn btn-sm btn-warning w-100 d-none"
+                        disabled
+                      >
+                        <i class="bi bi-lock-fill me-1"></i> Lock Exam
+                      </button>
+                      {% else %}
+                      <button class="btn btn-sm btn-warning w-100">
+                        <i class="bi bi-lock-fill me-1"></i> Lock Exam
+                      </button>
+                      {% endif %}
+                    </form>
+                    {% endif %}
+
+                    <!-- Danger Zone -->
+                    {% if current_user.is_admin %}
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger w-100 delete-exam-btn"
+                      data-bs-toggle="modal"
+                      data-bs-target="#deleteExamModal"
+                      data-exam-name="{{ exam.name }}"
+                      data-delete-url="{{ url_for('admin.delete_exam', exam_id=exam.id) }}"
+                    >
+                      <i class="bi bi-trash-fill me-1"></i> Delete Exam
+                    </button>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="alert alert-info">No exams created yet.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- ================= RESULTS TAB ================= -->
+      <div class="tab-pane fade" id="results" role="tabpanel">
+        <!-- Filters Card -->
+        <div class="results-filter-card card border-0 shadow-sm mb-4">
+          <div class="results-filter-header">
+            <div class="results-filter-title">
+              <span class="results-filter-icon">
+                <i class="bi bi-funnel-fill"></i>
+              </span>
+              <div>
+                <h6 class="mb-0">Filter Results</h6>
+                <small
+                  >Select school, class, and exam to load student reports</small
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body pt-0">
+            <div class="row g-3">
+              <!-- School -->
+              <div class="col-md-6 col-lg-3">
+                <label for="results-branch" class="form-label results-label">
+                  <i class="bi bi-house-door me-1"></i>School
+                </label>
+                <select
+                  id="results-branch"
+                  class="form-select form-select-sm"
+                ></select>
+              </div>
+
+              <!-- Grade/Class -->
+              <div class="col-md-6 col-lg-3">
+                <label for="results-grade" class="form-label results-label">
+                  <i class="bi bi-building me-1"></i>Grade / Class
+                </label>
+                <select
+                  id="results-grade"
+                  class="form-select form-select-sm"
+                ></select>
+              </div>
+
+              <!-- Stream -->
+              <div class="col-md-6 col-lg-3">
+                <label for="results-stream" class="form-label results-label">
+                  <i class="bi bi-list-ul me-1"></i>Stream
+                </label>
+                <select id="results-stream" class="form-select form-select-sm">
+                  <option value="">All</option>
+                </select>
+              </div>
+
+              <!-- Exam -->
+              <div class="col-md-6 col-lg-3">
+                <label for="results-exam" class="form-label results-label">
+                  <i class="bi bi-journal-text me-1"></i>Exam
+                </label>
+                <select id="results-exam" class="form-select form-select-sm">
+                  <option value="">--Select Exam--</option>
+                </select>
+              </div>
+
+              <!-- Subject (hidden) -->
+              <div class="col-md-3 d-none">
+                <label for="results-subject" class="form-label results-label">
+                  <i class="bi bi-book me-1"></i>Subject
+                </label>
+                <select
+                  id="results-subject"
+                  class="form-select form-select-sm"
+                ></select>
+              </div>
+            </div>
+
+            <div id="fetchResultsDiv" class="results-actions">
+              <button
+                id="load-results"
+                type="button"
+                class="btn results-fetch-btn"
+              >
+                <i class="bi bi-search me-1"></i> Fetch Results
+              </button>
+              <button
+                id="generate-pdf-btn"
+                type="button"
+                class="btn results-download-btn d-none"
+              >
+                <i class="bi bi-download me-1"></i> Download Report Cards
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Display -->
+        <div id="resultsContainer" class="results-display-area"></div>
+        <script>
+          const STATIC_URL = "{{ url_for('static', filename='') }}";
+        </script>
+      </div>
+
+      <!-- ================= GRADING TAB ================= -->
+
+      {% if current_user.is_admin %}
+      <div class="tab-pane fade" id="grading" role="tabpanel">
+        <div class="alert alert-secondary mb-2">
+          <small>
+            Configure Grading Rules. Select a System, Customize Boundaries, and
+            Assign to Grades.
+          </small>
+        </div>
+
+        <!-- Step 1: Choose Grading System -->
+        <div class="mb-2">
+          <label for="grading-system" class="form-label"
+            ><strong>Select Grading System</strong></label
+          >
+          <div class="input-group">
+            <span class="input-group-text"
+              ><i class="bi bi-diagram-3-fill"></i
+            ></span>
+            <select class="form-select" id="grading-system">
+              <option value="">-- Choose --</option>
+              <option value="8-4-4" disabled>8-4-4</option>
+              <option value="CBC">Competency-Based Education(CBE)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- CBC / Placeholder Inputs -->
+        <div id="grading-fields" class="mb-4" style="display: none">
+          <div class="card p-1 mb-1">
+            <h6 class="mb-3 fw-light text-center">
+              Customize CBE Grading Boundaries
+            </h6>
+            <span class="small text-center text-primary fw-bold"
+              >Supports 4-band rubric (Primary) and 8-point KJSEA scale (Junior
+              Secondary)</span
+            >
+          </div>
+          <div id="boundary-container" class="d-flex flex-column gap-3"></div>
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm mt-2"
+            id="add-boundary-btn"
+          >
+            <i class="bi bi-plus-circle"></i> Add Boundary
+          </button>
+        </div>
+
+        <!-- Placeholder for 8-4-4 -->
+        <div
+          id="grading-placeholder"
+          class="alert alert-info"
+          style="display: none"
+        >
+          8-4-4 grading configuration will be implemented later.
+        </div>
+
+        <!-- Step 2: Classes Selection -->
+        <div id="classes-section" class="mb-4 border p-2" style="display: none">
+          <label class="form-label fw-light small">
+            <strong>Select Classes to Apply This Scheme</strong>
+          </label>
+          <div class="d-flex flex-wrap gap-3">
+            {% for g in grades %}
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                value="{{ g.id }}"
+                id="{{ g.id }}"
+              />
+              <label class="form-check-label" for="{{ g.id }}"
+                >{{ g.grade_form }}</label
+              >
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Step 3: Save Button -->
+        <div class="mb-4">
+          <div class="row d-flex justify-content-end">
+            <div class="col-auto">
+              <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                id="save-grading"
+              >
+                <i class="bi bi-save"></i> Save Grading Configuration
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- MARKSHEETS TAB -->
+      {% if current_user.is_admin %}
+      <div class="tab-pane fade" id="marksheets" role="tabpanel">
+        <div class="card p-3 shadow-sm mb-4">
+          <h6 class="fw-bold mb-3 text-primary">
+            <i class="bi bi-funnel-fill me-2"></i>Select Class
+          </h6>
+
+          <div class="row g-3">
+            <!-- Branch -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Branch</label>
+              <select
+                id="marksheet-branch"
+                class="form-select form-select-sm"
+              ></select>
+            </div>
+
+            <!-- Grade -->
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Grade / Class</label>
+              <select
+                id="marksheet-grade"
+                class="form-select form-select-sm"
+              ></select>
+            </div>
+
+            <!-- Stream (hidden by default) -->
+            <div class="col-md-4 d-none" id="marksheet-stream-wrapper">
+              <label class="form-label fw-semibold">Stream</label>
+              <select id="marksheet-stream" class="form-select form-select-sm">
+                <option value="">All</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Subject</label>
+              <select
+                id="marksheet-subject"
+                class="form-select form-select-sm"
+              ></select>
+            </div>
+            <!-- Button -->
+            <div class="col-12 text-end">
+              <button
+                id="load-marksheet-students"
+                class="btn btn-sm btn-primary"
+              >
+                <i class="bi bi-search me-1"></i> Load Students
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Students Table -->
+        <div id="marksheetStudentsContainer"></div>
+      </div>
+      {% endif %}
+
+      <!-- ================= BROADSHEET TAB ================= -->
+      {% if current_user.is_admin %}
+      <div class="tab-pane fade" id="broadsheet" role="tabpanel">
+        <!-- Filters Card -->
+        <div class="card p-3 shadow-sm mb-4">
+          <h6 class="fw-bold mb-3 text-primary">
+            <i class="bi bi-funnel-fill me-2"></i>Filter Broadsheet
+          </h6>
+          <div class="row g-3">
+            <!-- Branch -->
+            <div class="col-md-3">
+              <label class="form-label fw-semibold"
+                ><i class="bi bi-house-door me-1"></i>Branch</label
+              >
+              <select
+                id="bs-branch"
+                class="form-select form-select-sm"
+              ></select>
+            </div>
+
+            <!-- Grade -->
+            <div class="col-md-3">
+              <label class="form-label fw-semibold"
+                ><i class="bi bi-building me-1"></i>Grade / Class</label
+              >
+              <select id="bs-grade" class="form-select form-select-sm"></select>
+            </div>
+
+            <!-- Stream -->
+            <div class="col-md-3">
+              <label class="form-label fw-semibold"
+                ><i class="bi bi-list-ul me-1"></i>Stream</label
+              >
+              <select id="bs-stream" class="form-select form-select-sm">
+                <option value="">All</option>
+              </select>
+            </div>
+
+            <!-- Exam -->
+            <div class="col-md-3">
+              <label class="form-label fw-semibold"
+                ><i class="bi bi-journal-text me-1"></i>Exam</label
+              >
+              <select id="bs-exam" class="form-select form-select-sm">
+                <option value="">--Select Exam--</option>
+              </select>
+            </div>
+
+            <!-- Button -->
+            <div class="col-12 text-end mt-2">
+              <button id="load-broadsheet" class="btn btn-sm btn-danger">
+                <i class="bi bi-graph-up"></i> Generate Analytics
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Output -->
+        <div id="broadsheetContainer" class="p-3"></div>
+      </div>
+      {% endif %}
     </div>
+  </div>
 </div>
 
 <!-- ================= CREATE EXAM MODAL ================= -->
-<div class="modal fade" id="createExamModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
-    data-bs-keyboard="false">
+<div
+  class="modal fade"
+  id="createExamModal"
+  tabindex="-1"
+  aria-hidden="true"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+>
+  <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post">
+        {{ exam_form.hidden_tag() }}
 
-    <div class="modal-dialog modal-md modal-dialog-centered">
-        <div class="modal-content">
-            <form method="post">
-                {{ exam_form.hidden_tag() }}
-
-                <div class="modal-header bg-danger text-white pt-2 pb-2 px-3">
-                    <h6 class="modal-title fw-bold">
-                        <i class="bi bi-journal-plus me-2"></i>Create New Exam
-                    </h6>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-
-                <div class="modal-body pt-1">
-                    <h6 class="text-center fw-light bg-light border-bottom p-2">
-                        Exam Data Entry
-                    </h6>
-
-                    <div class="border p-2">
-                        {% if current_user.is_admin and not current_user.is_super_admin %}
-                        <div class="mb-3" style="display: none;">
-                            {{ form_input(
-                            exam_form.branch_id,
-                            select_class="form-select",
-                            icon_class="bi bi-house",
-                            help_text="Select one branch or All branches"
-                            ) }}
-                        </div>
-                        {% else %}
-                         <div class="mb-3">
-                            {{ form_input(
-                            exam_form.branch_id,
-                            select_class="form-select",
-                            icon_class="bi bi-house",
-                            help_text="Select one branch or All branches"
-                            ) }}
-                        </div>
-                        {% endif %}
-                        <div class="mb-3">
-                            {{ form_input(
-                            exam_form.year,
-                            select_class="form-select",
-                            icon_class="bi bi-calendar"
-                            ) }}
-                        </div>
-
-                        <div class="mb-3">
-                            {{ form_input(
-                            exam_form.term,
-                            select_class="form-select",
-                            icon_class="bi bi-file-earmark-bar-graph"
-                            ) }}
-                        </div>
-
-                        <div class="mb-3">
-                            {{ form_input(
-                            exam_form.name,
-                            icon_class="bi bi-book"
-                            ) }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer justify-content-center">
-                    {{ exam_form.submit(class="btn btn-sm btn-danger") }}
-                </div>
-            </form>
+        <div class="modal-header bg-danger text-white pt-2 pb-2 px-3">
+          <h6 class="modal-title fw-bold">
+            <i class="bi bi-journal-plus me-2"></i>Create New Exam
+          </h6>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="modal"
+          ></button>
         </div>
+
+        <div class="modal-body pt-1">
+          <h6 class="text-center fw-light bg-light border-bottom p-2">
+            Exam Data Entry
+          </h6>
+
+          <div class="border p-2">
+            {% if current_user.is_admin and not current_user.is_super_admin %}
+            <div class="mb-3" style="display: none">
+              {{ form_input( exam_form.branch_id, select_class="form-select",
+              icon_class="bi bi-house", help_text="Select one branch or All
+              branches" ) }}
+            </div>
+            {% else %}
+            <div class="mb-3">
+              {{ form_input( exam_form.branch_id, select_class="form-select",
+              icon_class="bi bi-house", help_text="Select one branch or All
+              branches" ) }}
+            </div>
+            {% endif %}
+            <div class="mb-3">
+              {{ form_input( exam_form.year, select_class="form-select",
+              icon_class="bi bi-calendar" ) }}
+            </div>
+
+            <div class="mb-3">
+              {{ form_input( exam_form.term, select_class="form-select",
+              icon_class="bi bi-file-earmark-bar-graph" ) }}
+            </div>
+
+            <div class="mb-3">
+              {{ form_input( exam_form.name, icon_class="bi bi-book" ) }}
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer justify-content-center">
+          {{ exam_form.submit(class="btn btn-sm btn-danger") }}
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 
 {% if exam_form.errors %}
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        new bootstrap.Modal(
-            document.getElementById("createExamModal")
-        ).show();
-    });
+  document.addEventListener("DOMContentLoaded", function () {
+    new bootstrap.Modal(document.getElementById("createExamModal")).show();
+  });
 </script>
 {% endif %}
 
 <script>
-    function blockUI(message = "Please wait…This may take a while!", sub = "Processing request") {
-        const blocker = document.getElementById("uiBlocker");
-        blocker.querySelector("h6").textContent = message;
-        blocker.querySelector("small").textContent = sub;
-        blocker.classList.remove("d-none");
-    }
+  function blockUI(message = "Please wait…", sub = "Processing your request") {
+    const blocker = document.getElementById("uiBlocker");
+    if (!blocker) return;
 
-    function unblockUI() {
-        document.getElementById("uiBlocker").classList.add("d-none");
-    }
+    blocker.querySelector(".ui-blocker-title").textContent = message;
+    blocker.querySelector(".ui-blocker-message").textContent = sub;
+    blocker.classList.remove("d-none");
+    blocker.setAttribute("aria-busy", "true");
+    document.body.classList.add("ui-blocker-active");
+  }
+
+  function unblockUI() {
+    const blocker = document.getElementById("uiBlocker");
+    if (!blocker) return;
+
+    blocker.classList.add("d-none");
+    blocker.setAttribute("aria-busy", "false");
+    document.body.classList.remove("ui-blocker-active");
+  }
 </script>
 
 <!-- ================= UI BLOCKER ================= -->
-<div id="uiBlocker" class="ui-blocker d-none">
-    <div class="ui-blocker-content text-center">
-        <div class="spinner-border text-light mb-3" role="status"></div>
-        <h6 class="fw-bold text-light mb-1">Please wait…</h6>
-        <small class="text-light">Generating report cards</small>
+<div
+  id="uiBlocker"
+  class="ui-blocker d-none"
+  role="alertdialog"
+  aria-modal="true"
+  aria-labelledby="uiBlockerTitle"
+  aria-describedby="uiBlockerMessage"
+  aria-busy="false"
+>
+  <div class="ui-blocker-panel">
+    <div class="ui-blocker-spinner" aria-hidden="true">
+      <span class="ui-blocker-ring"></span>
+      <span class="ui-blocker-ring ui-blocker-ring-delay"></span>
+      <span class="ui-blocker-core">
+        <i class="bi bi-file-earmark-bar-graph"></i>
+      </span>
     </div>
+
+    <h6 id="uiBlockerTitle" class="ui-blocker-title">Please wait…</h6>
+    <p id="uiBlockerMessage" class="ui-blocker-message">
+      Processing your request
+    </p>
+
+    <div class="ui-blocker-progress" aria-hidden="true">
+      <div class="ui-blocker-progress-bar"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ================= DELETE EXAM MODAL (shared) ================= -->
 {% if current_user.is_admin %}
-<div class="modal fade"
-     id="deleteExamModal"
-     tabindex="-1"
-     aria-labelledby="deleteExamModalLabel"
-     aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered delete-exam-modal-dialog">
-        <div class="modal-content delete-exam-modal">
-            <div class="delete-exam-modal-header">
-                <div class="delete-exam-modal-title-group">
-                    <div class="delete-exam-modal-icon" aria-hidden="true">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                    </div>
-                    <div class="delete-exam-modal-heading">
-                        <h6 class="delete-exam-modal-title" id="deleteExamModalLabel">
-                            Delete Exam/Assessment
-                        </h6>
-                        <p class="delete-exam-modal-subtitle">
-                            This action cannot be undone
-                        </p>
-                    </div>
-                </div>
-                <button type="button"
-                        class="btn-close delete-exam-modal-close"
-                        data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-            </div>
-
-            <div class="modal-body delete-exam-modal-body">
-                <p class="delete-exam-lead">You are about to permanently remove:</p>
-
-                <div class="delete-exam-name-badge" id="deleteExamName" role="status"></div>
-
-                <div class="delete-exam-warning" role="alert">
-                    <div class="delete-exam-warning-icon" aria-hidden="true">
-                        <i class="bi bi-journal-x"></i>
-                    </div>
-                    <div class="delete-exam-warning-content">
-                        <strong>All entered marks will be lost</strong>
-                        <p>
-                            Every mark recorded for this exam/assessment will be permanently
-                            deleted. Teachers and administrators will no longer
-                            be able to recover this data.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-footer delete-exam-modal-footer">
-                <button type="button"
-                        class="btn delete-exam-btn-cancel"
-                        data-bs-dismiss="modal">
-                    <i class="bi bi-arrow-left-circle me-1"></i>
-                    Keep Exam
-                </button>
-                <form id="deleteExamForm" method="post" action="" class="delete-exam-form">
-                    <button type="submit" class="btn delete-exam-btn-confirm">
-                        <i class="bi bi-trash-fill me-1"></i>
-                        Yes, Delete Exam
-                    </button>
-                </form>
-            </div>
+<div
+  class="modal fade"
+  id="deleteExamModal"
+  tabindex="-1"
+  aria-labelledby="deleteExamModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered delete-exam-modal-dialog">
+    <div class="modal-content delete-exam-modal">
+      <div class="delete-exam-modal-header">
+        <div class="delete-exam-modal-title-group">
+          <div class="delete-exam-modal-icon" aria-hidden="true">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+          <div class="delete-exam-modal-heading">
+            <h6 class="delete-exam-modal-title" id="deleteExamModalLabel">
+              Delete Exam/Assessment
+            </h6>
+            <p class="delete-exam-modal-subtitle">
+              This action cannot be undone
+            </p>
+          </div>
         </div>
+        <button
+          type="button"
+          class="btn-close delete-exam-modal-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div class="modal-body delete-exam-modal-body">
+        <p class="delete-exam-lead">You are about to permanently remove:</p>
+
+        <div
+          class="delete-exam-name-badge"
+          id="deleteExamName"
+          role="status"
+        ></div>
+
+        <div class="delete-exam-warning" role="alert">
+          <div class="delete-exam-warning-icon" aria-hidden="true">
+            <i class="bi bi-journal-x"></i>
+          </div>
+          <div class="delete-exam-warning-content">
+            <strong>All entered marks will be lost</strong>
+            <p>
+              Every mark recorded for this exam/assessment will be permanently
+              deleted. Teachers and administrators will no longer be able to
+              recover this data.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer delete-exam-modal-footer">
+        <button
+          type="button"
+          class="btn delete-exam-btn-cancel"
+          data-bs-dismiss="modal"
+        >
+          <i class="bi bi-arrow-left-circle me-1"></i>
+          Keep Exam
+        </button>
+        <form
+          id="deleteExamForm"
+          method="post"
+          action=""
+          class="delete-exam-form"
+        >
+          <button type="submit" class="btn delete-exam-btn-confirm">
+            <i class="bi bi-trash-fill me-1"></i>
+            Yes, Delete Exam
+          </button>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const modalEl = document.getElementById("deleteExamModal");
-        if (!modalEl) return;
+  document.addEventListener("DOMContentLoaded", function () {
+    const modalEl = document.getElementById("deleteExamModal");
+    if (!modalEl) return;
 
-        const nameEl = document.getElementById("deleteExamName");
-        const formEl = document.getElementById("deleteExamForm");
+    const nameEl = document.getElementById("deleteExamName");
+    const formEl = document.getElementById("deleteExamForm");
 
-        modalEl.addEventListener("show.bs.modal", function (event) {
-            const button = event.relatedTarget;
-            if (!button || !button.classList.contains("delete-exam-btn")) return;
+    modalEl.addEventListener("show.bs.modal", function (event) {
+      const button = event.relatedTarget;
+      if (!button || !button.classList.contains("delete-exam-btn")) return;
 
-            nameEl.textContent = button.getAttribute("data-exam-name") || "";
-            formEl.action = button.getAttribute("data-delete-url") || "";
-        });
-
-        modalEl.addEventListener("hidden.bs.modal", function () {
-            nameEl.textContent = "";
-            formEl.action = "";
-        });
+      nameEl.textContent = button.getAttribute("data-exam-name") || "";
+      formEl.action = button.getAttribute("data-delete-url") || "";
     });
+
+    modalEl.addEventListener("hidden.bs.modal", function () {
+      nameEl.textContent = "";
+      formEl.action = "";
+    });
+  });
 </script>
 {% endif %}
 <script src="{{ url_for('admin.static', filename='js/assessment/result_display.js') }}"></script>
@@ -707,11 +813,11 @@
 <script src="{{ url_for('admin.static', filename='js/assessment/broadsheet.js') }}"></script>
 
 <style>
-    /* =========================================================
+  /* =========================================================
    EXAM TABS — brand navigation
    ========================================================= */
 
-.exam-tabs {
+  .exam-tabs {
     flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
@@ -721,22 +827,22 @@
     gap: 0.15rem;
     padding-bottom: 0;
     border-bottom: 1px solid #edf0f3;
-}
+  }
 
-.exam-tabs::-webkit-scrollbar {
+  .exam-tabs::-webkit-scrollbar {
     height: 4px;
-}
+  }
 
-.exam-tabs::-webkit-scrollbar-thumb {
+  .exam-tabs::-webkit-scrollbar-thumb {
     background: rgba(255, 121, 121, 0.35);
     border-radius: 4px;
-}
+  }
 
-.exam-tabs .nav-item {
+  .exam-tabs .nav-item {
     flex-shrink: 0;
-}
+  }
 
-.exam-tabs .nav-link {
+  .exam-tabs .nav-link {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
@@ -751,260 +857,248 @@
     line-height: 1.3;
     white-space: nowrap;
     transition:
-        color 0.2s ease,
-        background-color 0.2s ease,
-        border-color 0.2s ease;
-}
+      color 0.2s ease,
+      background-color 0.2s ease,
+      border-color 0.2s ease;
+  }
 
-.exam-tabs .nav-link i {
+  .exam-tabs .nav-link i {
     font-size: 0.88rem;
     opacity: 0.85;
     transition: opacity 0.2s ease;
-}
+  }
 
-.exam-tabs .nav-link:hover {
+  .exam-tabs .nav-link:hover {
     color: #ff7979;
     background-color: rgba(255, 121, 121, 0.06);
     border-bottom-color: rgba(255, 121, 121, 0.25) !important;
-}
+  }
 
-.exam-tabs .nav-link:hover i {
+  .exam-tabs .nav-link:hover i {
     opacity: 1;
-}
+  }
 
-.exam-tabs .nav-link.active {
+  .exam-tabs .nav-link.active {
     color: #ff7979 !important;
     background-color: rgba(255, 121, 121, 0.08) !important;
     border-bottom-color: #ff7979 !important;
     font-weight: 700;
-}
+  }
 
-.exam-tabs .nav-link.active i {
+  .exam-tabs .nav-link.active i {
     opacity: 1;
-}
+  }
 
-.exam-tabs .nav-link:focus-visible {
+  .exam-tabs .nav-link:focus-visible {
     outline: 2px solid rgba(255, 121, 121, 0.35);
     outline-offset: 2px;
-}
+  }
 
-@media (max-width: 767.98px) {
+  @media (max-width: 767.98px) {
     .exam-tabs .nav-link {
-        padding: 0.58rem 0.75rem;
-        font-size: 0.9rem;
+      padding: 0.58rem 0.75rem;
+      font-size: 0.9rem;
     }
-}
+  }
 
-@media (max-width: 575.98px) {
+  @media (max-width: 575.98px) {
     .exam-tabs {
-        margin-left: -0.25rem;
-        margin-right: -0.25rem;
+      margin-left: -0.25rem;
+      margin-right: -0.25rem;
     }
 
     .exam-tabs .nav-link {
-        padding: 0.55rem 0.65rem;
-        font-size: 0.9rem;
+      padding: 0.55rem 0.65rem;
+      font-size: 0.9rem;
     }
 
     .exam-tabs .nav-link i {
-        font-size: 0.84rem;
+      font-size: 0.84rem;
     }
-}
+  }
 
-
-/* =========================================================
+  /* =========================================================
    SHULEKA EXAM CARDS
    ========================================================= */
 
-.exam-card {
+  .exam-card {
     border: 1px solid #edf0f2 !important;
     border-radius: 12px;
     overflow: hidden;
     background: #fff;
     transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease,
-        border-color 0.2s ease;
-}
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
 
-.exam-card:hover {
+  .exam-card:hover {
     transform: translateY(-3px);
     border-color: rgba(255, 121, 121, 0.35) !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
-}
+  }
 
-
-/* =========================================================
+  /* =========================================================
    CARD HEADER
    ========================================================= */
 
-.exam-card .card-header {
+  .exam-card .card-header {
     background: #fff !important;
     border-bottom: 1px solid #f0f1f3;
     padding: 1rem;
-}
+  }
 
-.exam-card .card-header h6 {
+  .exam-card .card-header h6 {
     color: #252a2f;
     font-size: 0.95rem;
     line-height: 1.35;
-}
+  }
 
-.exam-card .card-header small {
+  .exam-card .card-header small {
     font-size: 0.78rem;
-}
+  }
 
-
-/* =========================================================
+  /* =========================================================
    STATUS BADGES
    ========================================================= */
 
-.exam-card .badge {
+  .exam-card .badge {
     font-size: 0.7rem;
     font-weight: 600;
     padding: 0.4rem 0.55rem;
     border-radius: 6px;
-}
+  }
 
-
-/* =========================================================
+  /* =========================================================
    CARD BODY
    ========================================================= */
 
-.exam-card .card-body {
+  .exam-card .card-body {
     padding: 0.9rem 1rem;
-}
+  }
 
-.exam-card .card-body .small {
+  .exam-card .card-body .small {
     color: #495057;
     font-size: 0.82rem;
-}
+  }
 
-.exam-card .card-body .text-muted {
+  .exam-card .card-body .text-muted {
     font-size: 0.75rem;
     letter-spacing: 0.01em;
-}
+  }
 
-
-/* =========================================================
+  /* =========================================================
    PRIMARY ACTION
    ========================================================= */
 
-.exam-card .btn-secondary {
+  .exam-card .btn-secondary {
     background-color: #ff7979;
     border-color: #ff7979;
     color: #fff;
     font-weight: 600;
-}
+  }
 
-.exam-card .btn-secondary:hover,
-.exam-card .btn-secondary:focus {
+  .exam-card .btn-secondary:hover,
+  .exam-card .btn-secondary:focus {
     background-color: #f56868;
     border-color: #f56868;
     color: #fff;
-}
+  }
 
-
-/* =========================================================
+  /* =========================================================
    EDIT BUTTON
    ========================================================= */
 
-.exam-card .btn-outline-primary {
+  .exam-card .btn-outline-primary {
     color: #ff7979;
     border-color: #ff7979;
-}
+  }
 
-.exam-card .btn-outline-primary:hover {
+  .exam-card .btn-outline-primary:hover {
     color: #fff;
     background-color: #ff7979;
     border-color: #ff7979;
-}
+  }
 
-
-/* =========================================================
+  /* =========================================================
    LOCK / UNLOCK
    ========================================================= */
 
-.exam-card .btn-success {
+  .exam-card .btn-success {
     font-weight: 500;
-}
+  }
 
-.exam-card .btn-warning {
+  .exam-card .btn-warning {
     font-weight: 500;
-}
+  }
 
-
-/* =========================================================
+  /* =========================================================
    DELETE
    ========================================================= */
 
-.exam-card .btn-outline-danger {
+  .exam-card .btn-outline-danger {
     font-weight: 500;
-}
+  }
 
-
-/* =========================================================
+  /* =========================================================
    CARD FOOTER
    ========================================================= */
 
-.exam-card .card-footer {
+  .exam-card .card-footer {
     padding: 0 1rem 1rem;
-}
+  }
 
-.exam-card .btn-group {
+  .exam-card .btn-group {
     width: 100%;
-}
+  }
 
-.exam-card .btn {
+  .exam-card .btn {
     font-size: 0.82rem;
     border-radius: 6px;
-}
+  }
 
-.exam-card .btn-group .btn {
+  .exam-card .btn-group .btn {
     border-radius: 6px;
-}
+  }
 
-
-/* =========================================================
+  /* =========================================================
    MOBILE
    ========================================================= */
 
-@media (max-width: 575.98px) {
-
+  @media (max-width: 575.98px) {
     .exam-card .card-header {
-        padding: 0.9rem;
+      padding: 0.9rem;
     }
 
     .exam-card .card-body {
-        padding: 0.8rem 0.9rem;
+      padding: 0.8rem 0.9rem;
     }
 
     .exam-card .card-footer {
-        padding: 0 0.9rem 0.9rem;
+      padding: 0 0.9rem 0.9rem;
     }
-}
+  }
 
-
-/* =========================================================
+  /* =========================================================
    DELETE EXAM MODAL — SaaS confirmation dialog
    ========================================================= */
 
-.delete-exam-modal-dialog {
+  .delete-exam-modal-dialog {
     max-width: 440px;
     margin: 1rem auto;
-}
+  }
 
-.delete-exam-modal {
+  .delete-exam-modal {
     border: 0;
     border-radius: 16px;
     overflow: hidden;
     background: #ffffff;
     box-shadow:
-        0 24px 64px rgba(37, 42, 47, 0.16),
-        0 8px 20px rgba(255, 121, 121, 0.08);
-}
+      0 24px 64px rgba(37, 42, 47, 0.16),
+      0 8px 20px rgba(255, 121, 121, 0.08);
+  }
 
-.delete-exam-modal-header {
+  .delete-exam-modal-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -1012,20 +1106,20 @@
     padding: 1.15rem 1.25rem 1rem;
     border-bottom: 1px solid #f0f1f3;
     background: linear-gradient(
-        180deg,
-        rgba(255, 121, 121, 0.07) 0%,
-        #ffffff 100%
+      180deg,
+      rgba(255, 121, 121, 0.07) 0%,
+      #ffffff 100%
     );
-}
+  }
 
-.delete-exam-modal-title-group {
+  .delete-exam-modal-title-group {
     display: flex;
     align-items: center;
     gap: 12px;
     min-width: 0;
-}
+  }
 
-.delete-exam-modal-icon {
+  .delete-exam-modal-icon {
     flex: 0 0 42px;
     width: 42px;
     height: 42px;
@@ -1037,50 +1131,50 @@
     color: #ff7979;
     font-size: 1.1rem;
     border: 1px solid rgba(255, 121, 121, 0.18);
-}
+  }
 
-.delete-exam-modal-heading {
+  .delete-exam-modal-heading {
     min-width: 0;
-}
+  }
 
-.delete-exam-modal-title {
+  .delete-exam-modal-title {
     margin: 0;
     font-size: 1rem;
     font-weight: 700;
     color: #252a2f;
     line-height: 1.3;
-}
+  }
 
-.delete-exam-modal-subtitle {
+  .delete-exam-modal-subtitle {
     margin: 0.2rem 0 0;
     font-size: 0.78rem;
     color: #8b939c;
     line-height: 1.35;
-}
+  }
 
-.delete-exam-modal-close {
+  .delete-exam-modal-close {
     flex-shrink: 0;
     margin-top: 2px;
     opacity: 0.55;
     transition: opacity 0.15s ease;
-}
+  }
 
-.delete-exam-modal-close:hover {
+  .delete-exam-modal-close:hover {
     opacity: 0.9;
-}
+  }
 
-.delete-exam-modal-body {
+  .delete-exam-modal-body {
     padding: 1.15rem 1.25rem 1rem;
-}
+  }
 
-.delete-exam-lead {
+  .delete-exam-lead {
     margin: 0 0 0.65rem;
     font-size: 0.84rem;
     color: #6c757d;
     text-align: center;
-}
+  }
 
-.delete-exam-name-badge {
+  .delete-exam-name-badge {
     display: block;
     width: 100%;
     margin: 0 auto 1rem;
@@ -1094,9 +1188,9 @@
     text-align: center;
     line-height: 1.4;
     word-break: break-word;
-}
+  }
 
-.delete-exam-warning {
+  .delete-exam-warning {
     display: flex;
     align-items: flex-start;
     gap: 12px;
@@ -1104,9 +1198,9 @@
     border-radius: 10px;
     background: rgba(255, 121, 121, 0.06);
     border: 1px solid rgba(255, 121, 121, 0.22);
-}
+  }
 
-.delete-exam-warning-icon {
+  .delete-exam-warning-icon {
     flex: 0 0 34px;
     width: 34px;
     height: 34px;
@@ -1117,25 +1211,25 @@
     background: rgba(255, 121, 121, 0.14);
     color: #e85f5f;
     font-size: 1rem;
-}
+  }
 
-.delete-exam-warning-content strong {
+  .delete-exam-warning-content strong {
     display: block;
     margin-bottom: 0.25rem;
     font-size: 0.82rem;
     font-weight: 700;
     color: #c94f4f;
     line-height: 1.35;
-}
+  }
 
-.delete-exam-warning-content p {
+  .delete-exam-warning-content p {
     margin: 0;
     font-size: 0.76rem;
     color: #697382;
     line-height: 1.5;
-}
+  }
 
-.delete-exam-modal-footer {
+  .delete-exam-modal-footer {
     display: flex;
     align-items: center;
     justify-content: stretch;
@@ -1143,15 +1237,15 @@
     padding: 0.85rem 1.25rem 1.15rem;
     border-top: 1px solid #f0f1f3;
     background: #fafbfc;
-}
+  }
 
-.delete-exam-form {
+  .delete-exam-form {
     flex: 1;
     margin: 0;
-}
+  }
 
-.delete-exam-btn-cancel,
-.delete-exam-btn-confirm {
+  .delete-exam-btn-cancel,
+  .delete-exam-btn-confirm {
     width: 100%;
     padding: 0.52rem 0.85rem;
     font-size: 0.82rem;
@@ -1159,83 +1253,573 @@
     border-radius: 8px;
     line-height: 1.3;
     transition:
-        background-color 0.15s ease,
-        border-color 0.15s ease,
-        color 0.15s ease,
-        box-shadow 0.15s ease,
-        transform 0.15s ease;
-}
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease,
+      box-shadow 0.15s ease,
+      transform 0.15s ease;
+  }
 
-.delete-exam-btn-cancel {
+  .delete-exam-btn-cancel {
     flex: 1;
     color: #495057;
     background: #ffffff;
     border: 1px solid #dfe3e8;
-}
+  }
 
-.delete-exam-btn-cancel:hover,
-.delete-exam-btn-cancel:focus {
+  .delete-exam-btn-cancel:hover,
+  .delete-exam-btn-cancel:focus {
     color: #252a2f;
     background: #f8f9fa;
     border-color: #cfd6dd;
-}
+  }
 
-.delete-exam-btn-confirm {
+  .delete-exam-btn-confirm {
     color: #ffffff;
     background: #ff7979;
     border: 1px solid #ff7979;
     box-shadow: 0 4px 14px rgba(255, 121, 121, 0.28);
-}
+  }
 
-.delete-exam-btn-confirm:hover,
-.delete-exam-btn-confirm:focus {
+  .delete-exam-btn-confirm:hover,
+  .delete-exam-btn-confirm:focus {
     color: #ffffff;
     background: #f56868;
     border-color: #f56868;
     box-shadow: 0 6px 18px rgba(255, 121, 121, 0.34);
-}
+  }
 
-.delete-exam-btn-confirm:active {
+  .delete-exam-btn-confirm:active {
     transform: translateY(1px);
     box-shadow: 0 2px 8px rgba(255, 121, 121, 0.24);
-}
+  }
 
-@media (max-width: 575.98px) {
+  @media (max-width: 575.98px) {
     .delete-exam-modal-dialog {
-        max-width: calc(100% - 1.25rem);
-        margin: 0.65rem auto;
+      max-width: calc(100% - 1.25rem);
+      margin: 0.65rem auto;
     }
 
     .delete-exam-modal-header {
-        padding: 1rem;
+      padding: 1rem;
     }
 
     .delete-exam-modal-body {
-        padding: 1rem;
+      padding: 1rem;
     }
 
     .delete-exam-modal-footer {
-        flex-direction: column-reverse;
-        align-items: stretch;
-        padding: 0.85rem 1rem 1rem;
+      flex-direction: column-reverse;
+      align-items: stretch;
+      padding: 0.85rem 1rem 1rem;
     }
 
     .delete-exam-form {
-        width: 100%;
+      width: 100%;
     }
 
     .delete-exam-warning {
-        gap: 10px;
-        padding: 0.75rem 0.8rem;
+      gap: 10px;
+      padding: 0.75rem 0.8rem;
     }
 
     .delete-exam-warning-content strong {
-        font-size: 0.8rem;
+      font-size: 0.8rem;
     }
 
     .delete-exam-warning-content p {
-        font-size: 0.74rem;
+      font-size: 0.74rem;
     }
-}
+  }
+
+  /* =========================================================
+   RESULTS & REPORTS TAB
+   ========================================================= */
+
+  .results-filter-card {
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .results-filter-header {
+    padding: 1rem 1.1rem 0.35rem;
+  }
+
+  .results-filter-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .results-filter-icon {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: rgba(255, 121, 121, 0.12);
+    color: #ff7979;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .results-filter-title h6 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #252a2f;
+  }
+
+  .results-filter-title small {
+    color: #6c757d;
+    font-size: 0.76rem;
+  }
+
+  .results-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.35rem;
+  }
+
+  .results-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #edf0f3;
+  }
+
+  .results-fetch-btn,
+  .results-download-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0.45rem 1rem;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .results-fetch-btn {
+    background: #ff7979;
+    border: 1px solid #ff7979;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(255, 121, 121, 0.22);
+  }
+
+  .results-fetch-btn:hover,
+  .results-fetch-btn:focus {
+    background: #f56868;
+    border-color: #f56868;
+    color: #fff;
+  }
+
+  .results-download-btn {
+    background: #fff;
+    border: 1.5px solid #ff7979;
+    color: #e85555;
+  }
+
+  .results-download-btn:hover,
+  .results-download-btn:focus {
+    background: rgba(255, 121, 121, 0.08);
+    border-color: #f56868;
+    color: #d94848;
+  }
+
+  .results-display-area {
+    margin-top: 0.25rem;
+  }
+
+  .results-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2.5rem 1rem;
+    border: 1px dashed #dfe3e8;
+    border-radius: 14px;
+    background: #fafbfc;
+    color: #6c757d;
+    text-align: center;
+  }
+
+  .results-state i {
+    font-size: 1.8rem;
+  }
+
+  .results-state-error {
+    color: #c0392b;
+    background: #fff7f7;
+    border-color: #f3d0d0;
+  }
+
+  .results-summary-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+    border: 1px solid rgba(255, 121, 121, 0.18);
+  }
+
+  .results-summary-bar strong {
+    color: #ff7979;
+    font-size: 1.1rem;
+    margin-right: 0.25rem;
+  }
+
+  .results-summary-context {
+    color: #6c757d;
+    font-size: 0.8rem;
+    text-align: right;
+  }
+
+  .student-results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .student-result-card {
+    border: 1px solid #e9ecef;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+  }
+
+  .student-result-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    background: linear-gradient(135deg, #ff7979 0%, #f56868 100%);
+    color: #fff;
+  }
+
+  .student-result-kicker {
+    margin: 0 0 0.2rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+
+  .student-result-name {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.25;
+  }
+
+  .student-result-context {
+    margin: 0.35rem 0 0;
+    font-size: 0.78rem;
+    opacity: 0.92;
+    line-height: 1.4;
+  }
+
+  .context-separator {
+    margin: 0 0.3rem;
+    opacity: 0.7;
+  }
+
+  .student-result-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    flex-shrink: 0;
+  }
+
+  .summary-pill {
+    min-width: 92px;
+    padding: 0.45rem 0.65rem;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.18);
+    text-align: center;
+  }
+
+  .summary-pill-muted {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .summary-value {
+    display: block;
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .summary-label {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.62rem;
+    opacity: 0.85;
+  }
+
+  .student-result-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.85rem 1rem;
+    background: #f8f9fb;
+    border-bottom: 1px solid #edf0f3;
+  }
+
+  .meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid #e7ebf0;
+    color: #495057;
+    font-size: 0.74rem;
+  }
+
+  .meta-chip i {
+    color: #ff7979;
+    font-size: 0.78rem;
+  }
+
+  .student-result-body {
+    padding: 1rem;
+  }
+
+  .student-result-section-title {
+    margin-bottom: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #495057;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .student-result-table {
+    margin-bottom: 0;
+    font-size: 0.8rem;
+  }
+
+  .student-result-table thead th {
+    background: #f1f3f5;
+    color: #495057;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-color: #e9ecef;
+    white-space: nowrap;
+  }
+
+  .student-result-table tbody td {
+    border-color: #edf0f3;
+    vertical-align: middle;
+  }
+
+  .subject-name {
+    font-weight: 600;
+    color: #252a2f;
+  }
+
+  .subject-code,
+  .subject-teacher {
+    color: #6c757d;
+    font-size: 0.76rem;
+  }
+
+  .performance-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .level-exceeds {
+    background: #d1f2e1;
+    color: #0f5132;
+  }
+
+  .level-meets {
+    background: #d8ecff;
+    color: #084298;
+  }
+
+  .level-approaching {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .level-below {
+    background: #f8d7da;
+    color: #842029;
+  }
+
+  .level-neutral {
+    background: #e9ecef;
+    color: #495057;
+  }
+
+  .student-subject-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .subject-score-card {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 0.75rem;
+    background: #fafbfc;
+  }
+
+  .subject-score-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .subject-score-card-code {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #ff7979;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .subject-score-card-name {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #252a2f;
+    line-height: 1.3;
+  }
+
+  .subject-score-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .score-metric {
+    padding: 0.45rem 0.55rem;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #edf0f3;
+  }
+
+  .score-metric-wide {
+    grid-column: 1 / -1;
+  }
+
+  .score-metric span {
+    display: block;
+    font-size: 0.64rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .score-metric strong {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.8rem;
+    color: #252a2f;
+    line-height: 1.3;
+  }
+
+  .student-result-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    align-items: flex-start;
+    padding: 0.85rem 1rem;
+    background: #f8f9fb;
+    border-top: 1px solid #edf0f3;
+  }
+
+  .footer-item {
+    min-width: 180px;
+  }
+
+  .footer-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6c757d;
+  }
+
+  .footer-value {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.82rem;
+    color: #252a2f;
+  }
+
+  .footer-item-remarks {
+    flex: 1 1 100%;
+  }
+
+  .footer-generated {
+    margin-left: auto;
+    font-size: 0.72rem;
+    color: #98a1af;
+  }
+
+  @media (max-width: 767.98px) {
+    .results-actions {
+      flex-direction: column;
+    }
+
+    .results-fetch-btn,
+    .results-download-btn {
+      width: 100%;
+    }
+
+    .results-summary-bar {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .results-summary-context {
+      text-align: left;
+    }
+
+    .student-result-header {
+      flex-direction: column;
+    }
+
+    .student-result-summary {
+      flex-direction: row;
+      width: 100%;
+    }
+
+    .summary-pill {
+      flex: 1;
+    }
+
+    .footer-generated {
+      margin-left: 0;
+      width: 100%;
+    }
+  }
 </style>
 {% endblock %}

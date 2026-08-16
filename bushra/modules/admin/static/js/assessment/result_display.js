@@ -1,6 +1,219 @@
+function getResultsContext() {
+  const gradeSelect = document.getElementById("results-grade");
+  const examSelect = document.getElementById("results-exam");
+  const streamSelect = document.getElementById("results-stream");
+  const branchSelect = document.getElementById("results-branch");
+
+  const streamValue = streamSelect.value;
+  const streamLabel =
+    streamValue && streamValue !== ""
+      ? streamValue
+      : streamSelect.selectedOptions[0]?.textContent?.trim() || "All Streams";
+
+  return {
+    schoolName: branchSelect.selectedOptions[0]?.textContent?.trim() || "",
+    className: gradeSelect.selectedOptions[0]?.textContent?.trim() || "",
+    examName: examSelect.selectedOptions[0]?.textContent?.trim() || "",
+    streamLabel,
+  };
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function performanceBadgeClass(level) {
+  const value = Number(level);
+  if (Number.isNaN(value)) return "level-neutral";
+  if (value >= 7) return "level-exceeds";
+  if (value >= 5) return "level-meets";
+  if (value >= 3) return "level-approaching";
+  return "level-below";
+}
+
+function renderSubjectRows(subjects) {
+  return subjects
+    .map(
+      (sub) => `
+      <tr>
+        <td class="text-center subject-code">${escapeHtml(sub.code || "-")}</td>
+        <td class="subject-name">${escapeHtml(sub.name || "-")}</td>
+        <td class="text-center subject-marks">${sub.marks ?? "-"}</td>
+        <td class="text-center">
+          <span class="performance-badge ${performanceBadgeClass(sub.performance_level)}">
+            ${escapeHtml(sub.performance_level ?? "-")}
+          </span>
+        </td>
+        <td class="text-center">${sub.points ?? "-"}</td>
+        <td class="subject-descriptor">${escapeHtml(sub.descriptor || "-")}</td>
+        <td class="text-center subject-teacher">${escapeHtml(sub.teacher || "-")}</td>
+      </tr>
+    `,
+    )
+    .join("");
+}
+
+function renderSubjectCards(subjects) {
+  return subjects
+    .map(
+      (sub) => `
+      <div class="subject-score-card">
+        <div class="subject-score-card-head">
+          <div>
+            <div class="subject-score-card-code">${escapeHtml(sub.code || "-")}</div>
+            <div class="subject-score-card-name">${escapeHtml(sub.name || "-")}</div>
+          </div>
+          <span class="performance-badge ${performanceBadgeClass(sub.performance_level)}">
+            L${escapeHtml(sub.performance_level ?? "-")}
+          </span>
+        </div>
+        <div class="subject-score-card-grid">
+          <div class="score-metric">
+            <span>Marks</span>
+            <strong>${sub.marks ?? "-"}</strong>
+          </div>
+          <div class="score-metric">
+            <span>Points</span>
+            <strong>${sub.points ?? "-"}</strong>
+          </div>
+          <div class="score-metric score-metric-wide">
+            <span>Descriptor</span>
+            <strong>${escapeHtml(sub.descriptor || "-")}</strong>
+          </div>
+          <div class="score-metric">
+            <span>Teacher</span>
+            <strong>${escapeHtml(sub.teacher || "-")}</strong>
+          </div>
+        </div>
+      </div>
+    `,
+    )
+    .join("");
+}
+
+function renderStudentResultCard(student, context) {
+  const totalPoints = student.subjects.reduce(
+    (sum, sub) => sum + (sub.points || 0),
+    0,
+  );
+  const maxPoints = student.subjects.length * 8;
+  const percentage =
+    maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
+
+  return `
+    <article class="student-result-card">
+      <header class="student-result-header">
+        <div class="student-result-heading">
+          <p class="student-result-kicker">Academic Performance</p>
+          <h5 class="student-result-name">${escapeHtml(student.full_name)}</h5>
+          <p class="student-result-context">
+            ${escapeHtml(context.examName)}
+            <span class="context-separator">•</span>
+            ${escapeHtml(context.className)}
+            <span class="context-separator">•</span>
+            ${escapeHtml(context.streamLabel)}
+          </p>
+        </div>
+        <div class="student-result-summary">
+          <div class="summary-pill">
+            <span class="summary-value">${totalPoints}</span>
+            <span class="summary-label">Total Points</span>
+          </div>
+          <div class="summary-pill summary-pill-muted">
+            <span class="summary-value">${percentage}%</span>
+            <span class="summary-label">of ${maxPoints} max</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="student-result-meta">
+        <div class="meta-chip">
+          <i class="bi bi-hash"></i>
+          <span>Adm No: <strong>${escapeHtml(student.admission_number || "-")}</strong></span>
+        </div>
+        <div class="meta-chip">
+          <i class="bi bi-card-text"></i>
+          <span>Assessment No: <strong>${escapeHtml(student.assessment_no || "-")}</strong></span>
+        </div>
+        ${
+          student.pathway
+            ? `<div class="meta-chip"><i class="bi bi-signpost-split"></i><span>Pathway: <strong>${escapeHtml(student.pathway)}</strong></span></div>`
+            : ""
+        }
+        <div class="meta-chip">
+          <i class="bi bi-house-door"></i>
+          <span>School: <strong>${escapeHtml(context.schoolName)}</strong></span>
+        </div>
+      </div>
+
+      <div class="student-result-body">
+        <div class="student-result-section-title">
+          <i class="bi bi-table me-1"></i> Subject Performance
+        </div>
+
+        <div class="d-none d-md-block table-responsive student-result-table-wrap">
+          <table class="table table-sm student-result-table">
+            <thead>
+              <tr>
+                <th class="text-center">Code</th>
+                <th>Subject</th>
+                <th class="text-center">Marks</th>
+                <th class="text-center">Level</th>
+                <th class="text-center">Points</th>
+                <th>Descriptor</th>
+                <th class="text-center">Teacher</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${renderSubjectRows(student.subjects)}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="d-md-none student-subject-cards">
+          ${renderSubjectCards(student.subjects)}
+        </div>
+      </div>
+
+      <footer class="student-result-footer">
+        <div class="footer-item">
+          <span class="footer-label">Class Teacher</span>
+          <span class="footer-value">${escapeHtml(student.class_teacher || "Not assigned")}</span>
+        </div>
+        ${
+          student.remarks
+            ? `<div class="footer-item footer-item-remarks"><span class="footer-label">Remarks</span><span class="footer-value">${escapeHtml(student.remarks)}</span></div>`
+            : ""
+        }
+        <div class="footer-generated">
+          Generated on ${new Date().toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
+        </div>
+      </footer>
+    </article>
+  `;
+}
+
+function setDownloadButtonVisible(visible) {
+  const downloadBtn = document.getElementById("generate-pdf-btn");
+  if (!downloadBtn) return;
+  downloadBtn.classList.toggle("d-none", !visible);
+}
+
 async function loadReportCards(branchId, classId, examId, stream = null) {
   const container = document.getElementById("resultsContainer");
-  container.innerHTML = `<p class="text-center">Loading report cards...</p>`;
+  const context = getResultsContext();
+
+  setDownloadButtonVisible(false);
+  blockUI("Fetching student results", "Loading academic performance data…");
 
   try {
     const res = await fetch(
@@ -10,176 +223,44 @@ async function loadReportCards(branchId, classId, examId, stream = null) {
     const students = data.students || [];
 
     if (students.length === 0) {
-      container.innerHTML = `<p class="text-center text-muted">No students found for this selection.</p>`;
+      container.innerHTML = `
+        <div class="results-state results-state-empty">
+          <i class="bi bi-inbox"></i>
+          <p>No students found for this selection.</p>
+        </div>
+      `;
       return;
     }
-    // No results found
-    container.innerHTML = ""; // Clear loading text
 
-    students.forEach((s) => {
-      const card = document.createElement("div");
-      card.className = "mb-4 px-3"; // full width, separated by margin
-
-      const passportUrl = s.passport
-        ? `${STATIC_URL}uploads/passports/${s.passport}`
-        : `${STATIC_URL}uploads/passports/default.jpg`;
-
-      // Calculate total points
-      const totalPoints = s.subjects.reduce(
-        (sum, sub) => sum + (sub.points || 0),
-        0,
-      );
-      const maxPoints = s.subjects.length * 8;
-
-      card.innerHTML = `
-        <div class="card shadow border-0 mb-4 report-card">
-
-            <!-- ===== SCHOOL HEADER ===== -->
-            <div class="header-primary text-white py-3 px-3 rounded-top">
-                <div class="row align-items-center">
-                    <div class="col-3 text-center">
-                <img src=""
-                    alt="Logo"
-                    class="img-fluid"
-                    style="max-width: 120px; max-height: 120px;">
-            </div>
-
-
-                    <div class="col-6 text-center">
-                        <h5 class="mb-1 fw-bold text-uppercase">${data.branch_name}</h5> 
-                    </div>
-
-                    <div class="col-3 text-center">
-                        <img src="${passportUrl}"
-                            class="rounded border"
-                            style="width:70px;height:70px;object-fit:cover"
-                            alt="Student Photo">
-                        <small class="d-block mt-1">Student</small>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ===== STUDENT INFO BAR ===== -->
-            <div class="px-3 py-2 border-bottom bg-light">
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>${s.full_name}</strong><br>
-                        <small class="text-muted">
-                            Admission No: ${s.admission_number}
-                        </small>
-                    </div>
-                    <div class="col-md-6 text-md-end">
-                        <small class="text-muted">
-                            Assessment No: <strong>${s.assessment_no || "-"}</strong>
-                        </small>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ===== SUBJECT TABLE ===== -->
-            <div class="card-body pt-3">
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle table-bordered">
-                        <thead class="table-secondary text-center">
-                            <tr>
-                                <th>Code</th>
-                                <th class="text-start">Subject</th>
-                                <th>Marks</th>
-                                <th>Level</th>
-                                <th>Points</th>
-                                <th class="text-start">Descriptor</th>
-                                <th class="text-start">Teacher</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${s.subjects
-                              .map(
-                                (sub) => `
-                                <tr>
-                                    <td class="text-center">${sub.code}</td>
-                                    <td class="text-uppercase">${sub.name}</td>
-                                    <td class="text-center fw-semibold">${sub.marks ?? "-"}</td>
-                                    <td class="text-center">
-                                        <span class="badge bg-info text-dark">
-                                            ${sub.performance_level ?? "-"}
-                                        </span>
-                                    </td>
-                                    <td class="text-center">${sub.points ?? "-"}</td>
-                                    <td>${sub.descriptor ?? "-"}</td>
-                                    <td>${sub.teacher ?? "-"}</td>
-                                </tr>
-                            `,
-                              )
-                              .join("")}
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- ===== TOTAL POINTS ===== -->
-                <div class="mb-3 px-2">
-                    <h6 class="fw-bold">Total Points</h6>
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span>${totalPoints}</span>
-                    </div>
-
-                </div>
-
-                <!-- ===== CLASS TEACHER & STAMP PLACEHOLDER ===== -->
-                <div class="mt-3 px-1">
-
-                    <!-- Class Teacher -->
-                    <div class="mb-2">
-                        <strong>Class Teacher:</strong>
-                        <span class="text-uppercase">${s.class_teacher || "____________________"}</span>
-                    </div>
-
-                    <div class="row g-3 align-items-stretch">
-
-                        <!-- Optional Remarks / Additional Info -->
-                        <div class="col-md-8">
-                            <div class="border rounded p-2 h-100">
-                                <h6 class="text-center mb-2 fw-bold">Remarks / Comments</h6>
-                                <p class="m-0">${s.remarks || ""}</p>
-                            </div>
-                        </div>
-
-                        <!-- School Stamp Placeholder -->
-                        <div class="col-md-4">
-                            <div class="border rounded h-100 d-flex align-items-center justify-content-center">
-                                <div class="text-center text-muted">
-                                    <small>Official School Stamp</small><br><br>
-                                    <div style="
-                                        width:140px;
-                                        height:90px;
-                                        border:2px dashed #999;
-                                    "></div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
-            <!-- ===== FOOTER ===== -->
-            <div class="bg-light px-3 py-2 text-end border-top">
-                <small class="text-muted">
-                    Generated on ${new Date().toLocaleDateString()}
-                </small>
-            </div>
-
+    container.innerHTML = `
+      <div class="results-summary-bar">
+        <div>
+          <strong>${students.length}</strong>
+          <span>student${students.length === 1 ? "" : "s"} loaded</span>
         </div>
-        `;
+        <div class="results-summary-context">
+          ${escapeHtml(context.examName)} · ${escapeHtml(context.className)}
+        </div>
+      </div>
+      <div class="student-results-list">
+        ${students.map((student) => renderStudentResultCard(student, context)).join("")}
+      </div>
+    `;
 
-      container.appendChild(card);
-    });
+    setDownloadButtonVisible(true);
   } catch (err) {
     console.error(err);
-    container.innerHTML = `<p class="text-center text-danger">Failed to load report cards.</p>`;
+    container.innerHTML = `
+      <div class="results-state results-state-error">
+        <i class="bi bi-exclamation-triangle"></i>
+        <p>Failed to load results. Please try again.</p>
+      </div>
+    `;
+  } finally {
+    unblockUI();
   }
 }
 
-// Trigger example
 document.getElementById("load-results").addEventListener("click", () => {
   const branchId = document.getElementById("results-branch").value;
   const classId = document.getElementById("results-grade").value;
@@ -187,36 +268,31 @@ document.getElementById("load-results").addEventListener("click", () => {
   const stream = document.getElementById("results-stream").value || null;
 
   if (!branchId || !classId || !examId) {
-    alert("Please select branch, grade, and exam.");
+    alert("Please select school, grade, and exam.");
     return;
   }
 
   loadReportCards(branchId, classId, examId, stream);
+});
 
-  // Create Generate PDF button only once
-  let existingBtn = document.getElementById("generate-pdf-btn");
-  if (existingBtn) return;
+document.getElementById("generate-pdf-btn").addEventListener("click", () => {
+  const branchId = document.getElementById("results-branch").value;
+  const classId = document.getElementById("results-grade").value;
+  const examId = document.getElementById("results-exam").value;
+  const stream = document.getElementById("results-stream").value || null;
 
-  const generatePdfBtn = document.createElement("button");
-  generatePdfBtn.id = "generate-pdf-btn";
-  generatePdfBtn.className = "btn btn-sm btn-danger mb-3 w-25";
-  generatePdfBtn.innerHTML = `<i class="bi bi-download me-1"></i> Download Report Cards`;
+  if (!branchId || !classId || !examId) {
+    alert("Please select school, grade, and exam.");
+    return;
+  }
 
-  generatePdfBtn.addEventListener("click", () => {
-    const branchId = document.getElementById("results-branch").value;
-    const classId = document.getElementById("results-grade").value;
-    const examId = document.getElementById("results-exam").value;
-    const stream = document.getElementById("results-stream").value || null;
-    generatePDF(branchId, classId, examId, stream);
-  });
-
-  document.getElementById("fetchResultsDiv").appendChild(generatePdfBtn);
+  generatePDF(branchId, classId, examId, stream);
 });
 
 function generatePDF(branchId, classId, examId, stream) {
   blockUI(
-    "Please wait…This may take upto 1 minute",
-    "Generating report cards PDF",
+    "Generating report cards",
+    "This may take up to a minute. Please keep this tab open.",
   );
 
   fetch("/admin/generate-reportcards-pdf", {
@@ -238,11 +314,8 @@ function generatePDF(branchId, classId, examId, stream) {
       }
 
       const blob = await response.blob();
-
-      // 🔥 Extract filename from Content-Disposition header
       const contentDisposition = response.headers.get("Content-Disposition");
-
-      let filename = "report.pdf"; // fallback
+      let filename = "report.pdf";
 
       if (contentDisposition) {
         const match = contentDisposition.match(
@@ -257,14 +330,11 @@ function generatePDF(branchId, classId, examId, stream) {
     })
     .then(({ blob, filename }) => {
       const url = window.URL.createObjectURL(blob);
-
       const a = document.createElement("a");
       a.href = url;
-      a.download = filename; // ✅ Uses backend filename
-
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
-
       a.remove();
       window.URL.revokeObjectURL(url);
     })
