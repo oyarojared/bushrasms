@@ -1,127 +1,127 @@
 {% extends "student_templates/student_dash_layout.html" %} {% from
 "_macros.html" import sidebar, form_input %} {% block body %}
-<div class="app-page-title">
+<div class="app-page-title stu-page">
   <div class="app-page-title-icon">
     <i class="bi bi-people-fill"></i>
   </div>
 
   <div class="app-page-title-content mb-2">
-    <h6 class="app-page-title-heading">Students Data</h6>
+    <h6 class="app-page-title-heading">Students</h6>
 
     <span class="app-page-title-subtitle">
       Manage student records and information
     </span>
   </div>
 </div>
-<!-- School Selector -->
-<div class="container bg-white pt-0 pb-3 px-0 mb-2 shadow-sm rounded-6">
-  <div class="container orange-line"></div>
-  <h6 class="fw-light text-center border-bottom pb-2 mt-2">
-    <i class="bi bi-filter me-2"></i> Filter Students
-  </h6>
-  <form method="POST" action="" id="branchForm">
+<!-- Filter -->
+<div class="stu-filter-card">
+  <div class="stu-filter-header">
+    <div>
+      <h6 class="stu-filter-title">Filter Students</h6>
+      <p class="stu-filter-subtitle">
+        Select school, grade, and stream to load records
+      </p>
+    </div>
+  </div>
+
+  <form method="POST" action="" id="branchForm" class="stu-filter-form">
     {{ select_branch_form.hidden_tag() }}
 
-    <div class="row px-5 align-items-end">
-      <!-- Branch Field -->
-      <div class="col-md-4">
-        {{ form_input(select_branch_form.branch, input_class="form-select",
-        label_class="form-label fw-bold", icon_class="bi bi-house",
-        icon_style="bg-secondary text-white", wrapper_class="mb-0") }}
+    <div class="row g-3 align-items-end">
+      <div class="col-md-6 col-lg-4">
+        <label class="stu-label" for="branch">School</label>
+        {{ select_branch_form.branch(class="form-select form-select-sm
+        stu-control", id="branch") }}
       </div>
 
-      <!-- Grade/Form Field -->
-      <div class="col-md-4">
-        <div class="mb-3 mb-lg-0">
-          {{ select_branch_form.grade_form.label(class="form-label fw-bold") }}
-          <div class="input-group">
-            <span class="input-group-text bg-secondary text-white"
-              ><i class="bi bi-building"></i
-            ></span>
-            {{ select_branch_form.grade_form(class="form-select") }}
-          </div>
-        </div>
+      <div class="col-md-6 col-lg-3">
+        <label class="stu-label" for="grade_form">Grade / Form</label>
+        {{ select_branch_form.grade_form(class="form-select form-select-sm
+        stu-control", id="grade_form") }}
       </div>
 
-      <!-- Stream Field -->
-      <div class="col-md-4" id="stream-container" style="display: none">
-        <div class="mb-3 mb-lg-0">
-          {{ select_branch_form.stream.label(class="form-label fw-bold") }}
-          <div class="input-group">
-            <span class="input-group-text bg-secondary text-white"
-              ><i class="bi bi-diagram-3"></i
-            ></span>
-            {{ select_branch_form.stream(class="form-select") }}
-          </div>
-        </div>
+      <div
+        class="col-md-6 col-lg-3"
+        id="stream-container"
+        style="display: none"
+      >
+        <label class="stu-label" for="stream">Stream</label>
+        {{ select_branch_form.stream(class="form-select form-select-sm
+        stu-control", id="stream") }}
       </div>
-    </div>
 
-    <div class="col-12 d-flex justify-content-center px-4 w-100">
-      <button class="btn btn-sm btn-dark mt-2">
-        <i class="bi bi-opencollective me-1"></i> Fetch Data
-      </button>
+      <div class="col-12 col-lg-auto ms-lg-auto d-flex justify-content-end">
+        <button type="submit" class="stu-btn stu-btn-primary">
+          <i class="bi bi-funnel"></i> Fetch Data
+        </button>
+      </div>
     </div>
   </form>
 </div>
 
-<div class="container mb-2">
-  <div class="row rounded-2 px-2">
-    <div class="col-sm-8"></div>
-    <div class="col-sm-4 d-flex bg-danger p-1">
-      <a
-        href="#"
-        data-bs-toggle="modal"
-        data-bs-target="#addStudentModal"
-        class="border-end"
-      >
-        <div class="nav-div small">
-          <span><i class="bi bi-plus-circle-dotted"></i></span>
-          <span>Add</span>
-        </div>
-      </a>
+<!-- Toolbar -->
+<div class="stu-toolbar">
+  <div class="stu-toolbar-copy">
+    <span class="stu-toolbar-label">Quick actions</span>
+    <span class="stu-toolbar-hint"
+      >Add, import, export, or print student records</span
+    >
+  </div>
 
-      <a
-        href="#"
-        data-bs-toggle="modal"
-        data-bs-target="#uploadModal"
-        class="border-end"
-      >
-        <div class="nav-div d-flex mx-2 small">
-          <span><i class="bi bi-upload me-1"></i></span>
-          <span>Upload</span>
-        </div>
-      </a>
+  <div class="stu-toolbar-actions">
+    <button
+      type="button"
+      class="stu-btn stu-btn-primary"
+      data-bs-toggle="modal"
+      data-bs-target="#addStudentModal"
+    >
+      <i class="bi bi-person-plus"></i>
+      <span>Add</span>
+    </button>
 
-      <a href="#" id="excel-btn" class="border-end">
-        <div class="nav-div mx-2 small">
-          <span><i class="bi bi-file-earmark-excel"></i></span>
-          <span>Excel</span>
-        </div>
-      </a>
+    <button
+      type="button"
+      class="stu-btn stu-btn-outline"
+      data-bs-toggle="modal"
+      data-bs-target="#uploadModal"
+    >
+      <i class="bi bi-upload"></i>
+      <span>Upload</span>
+    </button>
 
-      <a href="" class="border-end">
-        <div class="nav-div small">
-          <span><i class="bi bi-printer"></i></span>
-          <span>Print</span>
-        </div>
-      </a>
-    </div>
+    <button type="button" id="excel-btn" class="stu-btn stu-btn-outline">
+      <i class="bi bi-file-earmark-excel"></i>
+      <span>Excel</span>
+    </button>
+
+    <button
+      type="button"
+      class="stu-btn stu-btn-outline"
+      onclick="window.print()"
+    >
+      <i class="bi bi-printer"></i>
+      <span>Print</span>
+    </button>
   </div>
 </div>
 
 <!-- DISPLAY STUDENT OF THE SELECTED CLASS (& STREAM) -->
 {% if students %}
-<div class="container bg-white pt-3 pb-2 rounded-6">
-  <h5 class="text-center fw-light">
-    {% if selected_stream %} {{ selected_grade.grade_form }} ({{ selected_stream
-    }}) students of {{ selected_branch.branch_name }} {% else %} {{
-    selected_grade.grade_form }} students of {{ selected_branch.branch_name }}
-    {% endif %}
-    <span class="badge bg-success small fw-light">
-      {{ students | length }} students
-    </span>
-  </h5>
+<div class="stu-results-card" id="stu-results-card">
+  <div class="stu-results-header">
+    <div>
+      <h6 class="stu-results-title">
+        {% if selected_stream %} {{ selected_grade.grade_form }} · {{
+        selected_stream }} {% else %} {{ selected_grade.grade_form }} {% endif
+        %}
+      </h6>
+      <p class="stu-results-subtitle">{{ selected_branch.branch_name }}</p>
+    </div>
+    <span class="stu-count-badge"
+      >{{ students | length }} student{{ "s" if students | length != 1 else ""
+      }}</span
+    >
+  </div>
 
   <form
     id="excel-download-form"
@@ -144,109 +144,104 @@
     />
   </form>
 
-  <!-- Table -->
-  <div class="table-responsive mt-3">
-    <div class="scroll-table-wrapper">
-      {% if students %}
-      <table class="table table-bordered table-striped small">
-        <thead class="text-white bg-secondary">
-          <tr class="sticky-header">
-            <th class="text-center">#</th>
-            <th class="text-center">Adm No</th>
-            <th>Name</th>
-            <th>Gender</th>
-            <th>Ass. No</th>
-            {% if selected_grade.grade_form | lower == "grade 10" %}
-            <th>Pathway</th>
-            {% endif %}
-            <th>DOB</th>
-            <th>Phone</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for student in students %}
-          <tr>
-            <td class="text-center">{{ loop.index }}</td>
-            <td class="text-center">{{ student.admission_number }}</td>
-            <td>{{ student.fullname | upper }}</td>
-            <td>{{ student.gender }}</td>
-            <td>{{ student.knec_assessment_no or "---"}}</td>
-            {% if selected_grade.grade_form | lower == "grade 10" %}
-            <td>{{ student.pathway or "---"}}</td>
-            {% endif %}
-            <td>{{ student.dob or "---"}}</td>
-            <td>{{ student.parent_phone or "---" }}</td>
-            <td class="text-center">
-              <div class="dropdown">
-                <button
-                  class="btn btn-secondary btn-sm border dropdown-toggle p-1"
-                  type="button"
-                  data-bs-toggle="dropdown"
-                >
-                  <i class="bi bi-gear me-2"></i>
-                </button>
-                <ul class="dropdown-menu bg-light-green">
-                  <li>
-                    <a
-                      class="dropdown-item"
-                      href="{{ url_for('admin.student_profile', student_id=student.id) }}"
-                    >
-                      <i class="bi bi-pencil-square me-2"></i> Edit
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      class="dropdown-item"
-                      href="{{ url_for('admin.student_profile', student_id=student.id) }}"
-                    >
-                      <i class="bi bi-person-badge me-2"></i> Profile
-                    </a>
-                  </li>
-                  <li>
-                    <form
-                      method="POST"
-                      action="{{ url_for('admin.delete_student', student_id=student.id) }}"
-                      onsubmit="return confirm('Are you sure you want to delete {{ student.fullname | upper }}?');"
-                    >
-                      <button type="submit" class="dropdown-item text-white">
-                        <i class="bi bi-trash me-2"></i> Delete
-                      </button>
-                    </form>
-                  </li>
-                </ul>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% endif %}
-    </div>
+  <div class="stu-table-wrap scroll-table-wrapper">
+    <table class="stu-table">
+      <thead>
+        <tr class="sticky-header">
+          <th class="stu-col-index">#</th>
+          <th>Adm No</th>
+          <th class="stu-col-name">Student Name</th>
+          <th>Gender</th>
+          <th>Ass. No</th>
+          {% if selected_grade.grade_form | lower == "grade 10" %}
+          <th>Pathway</th>
+          {% endif %}
+          <th>DOB</th>
+          <th>Phone</th>
+          <th class="stu-col-action">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for student in students %}
+        <tr>
+          <td class="stu-col-index">{{ loop.index }}</td>
+          <td><span class="stu-adm">{{ student.admission_number }}</span></td>
+          <td class="stu-col-name stu-name">{{ student.fullname | upper }}</td>
+          <td>{{ student.gender or "—" }}</td>
+          <td>{{ student.knec_assessment_no or "—" }}</td>
+          {% if selected_grade.grade_form | lower == "grade 10" %}
+          <td>{{ student.pathway or "—" }}</td>
+          {% endif %}
+          <td>{{ student.dob or "—" }}</td>
+          <td>{{ student.parent_phone or "—" }}</td>
+          <td class="stu-col-action">
+            <div class="dropdown">
+              <button
+                class="stu-action-btn dropdown-toggle"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <i class="bi bi-three-dots"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end stu-dropdown-menu">
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="{{ url_for('admin.student_profile', student_id=student.id) }}"
+                  >
+                    <i class="bi bi-pencil-square"></i> Edit
+                  </a>
+                </li>
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="{{ url_for('admin.student_profile', student_id=student.id) }}"
+                  >
+                    <i class="bi bi-person-badge"></i> Profile
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <button
+                    type="button"
+                    class="dropdown-item stu-dropdown-danger js-delete-student"
+                    data-student-name="{{ student.fullname }}"
+                    data-delete-url="{{ url_for('admin.delete_student', student_id=student.id) }}"
+                  >
+                    <i class="bi bi-trash"></i> Delete
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
 {% else %}
-<!-- No Branch/class/(stream) selected yet -->
 <div
   id="warning-section"
-  class="row text-center mt-2"
+  class="stu-empty-state"
   {%
   if
   students
-  %}
-  style="display: none"
+  %}style="display: none"
   {%
   endif
   %}
 >
-  <span class="h2"
-    ><i class="bi bi-exclamation-triangle-fill text-danger"></i
-  ></span>
-  <h6 class="text-danger small">
-    No records found. Adjust filters above to load students.
-  </h6>
+  <div class="stu-empty-icon">
+    <i class="bi bi-people"></i>
+  </div>
+  <h6>No students loaded</h6>
+  <p>
+    Use the filters above and click <strong>Fetch Data</strong> to display
+    student records.
+  </p>
 </div>
-
 {% endif %}
 
 <!-- =========================
@@ -261,190 +256,161 @@
   data-bs-backdrop="static"
   data-bs-keyboard="false"
 >
-  <div class="modal-dialog modal-xl modal-dialog-centered">
-    <div class="modal-content">
-      <!-- Modal Header -->
-      <div class="modal-header bg-danger text-white py-2 px-3">
-        <h6 class="modal-title">
-          <i class="bi bi-person-plus-fill me-2"></i>
-          REGISTER NEW STUDENT
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content stu-modal stu-modal-compact stu-add-modal">
+      <div class="modal-header stu-modal-header">
+        <h6 class="stu-modal-title" id="addStudentModalLabel">
+          <i class="bi bi-person-plus"></i> Register New Student
         </h6>
         <button
           type="button"
-          class="btn-close btn-close-white"
+          class="btn-close"
           data-bs-dismiss="modal"
+          aria-label="Close"
         ></button>
       </div>
 
-      <!-- Modal Body -->
-      <div class="modal-body pt-1">
-        <div class="border p-2">
-          <form method="POST" action="{{ url_for('admin.add_student') }}">
-            {{ student_data_form.hidden_tag() }}
+      <div class="modal-body stu-modal-body">
+        <form
+          method="POST"
+          action="{{ url_for('admin.add_student') }}"
+          class="stu-modal-form"
+        >
+          {{ student_data_form.hidden_tag() }}
 
-            <div class="container">
-              <div class="row g-2">
-                <!-- Branch -->
-                <div class="col-md-4">
-                  <label>{{ student_data_form.branches.label }}</label>
-                  <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-secondary text-white">
-                      <i class="bi bi-hash"></i>
-                    </span>
-                    {{ student_data_form.branches(class="form-select
-                    form-select-sm", id="selected-branch") }}
-                  </div>
-                </div>
-
-                <!-- Grade -->
-                <div
-                  id="grade-container"
-                  class="col-md-4 d-flex align-items-end"
-                ></div>
-
-                <!-- Stream -->
-                <div
-                  id="stream-container-2"
-                  class="col-md-4 d-flex align-items-end"
-                ></div>
-
-                <!-- Admission -->
-                <div class="col-md-4 fw-bold">
-                  <label class="text-danger"
-                    >{{ student_data_form.admission_number.label }}</label
-                  >
-                  <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-danger text-white">
-                      <i class="bi bi-hash"></i>
-                    </span>
-                    {{ student_data_form.admission_number(class="form-control
-                    form-control-sm", id="adm-input") }} {% if
-                    current_user.is_super_admin %}
-                    <div class="form-text text-muted small">
-                      <small id="adm-no-text-warning"
-                        >You need to select the branch to see the next Adm
-                        No!</small
-                      >
-                    </div>
-                    {% endif %}
-                  </div>
-                </div>
-
-                <!-- Full Name -->
-                <div class="col-md-4">
-                  <label>{{ student_data_form.fullname.label }}</label>
-                  <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-secondary text-white">
-                      <i class="bi bi-person"></i>
-                    </span>
-                    {{ student_data_form.fullname(class="form-control
-                    form-control-sm") }}
-                  </div>
-                </div>
-
-                <!-- KNEC -->
-                <div class="col-md-4">
-                  <label
-                    >{{ student_data_form.knec_assessment_no.label }}</label
-                  >
-                  {{ student_data_form.knec_assessment_no(class="form-control
-                  form-control-sm") }}
-                </div>
-
-                <!-- NEMIS -->
-                <div class="col-md-4">
-                  <label>{{ student_data_form.nemis_number.label }}</label>
-                  {{ student_data_form.nemis_number(class="form-control
-                  form-control-sm") }}
-                </div>
-
-                <!-- Birth Cert -->
-                <div class="col-md-4">
-                  <label>{{ student_data_form.birth_cert_no.label }}</label>
-                  {{ student_data_form.birth_cert_no(class="form-control
-                  form-control-sm") }}
-                </div>
-
-                <!-- Gender -->
-                <div class="col-md-4">
-                  <label>{{ student_data_form.gender.label }}</label>
-                  {{ student_data_form.gender(class="form-select
-                  form-select-sm") }}
-                </div>
-
-                <!-- DOB -->
-                <div class="col-md-4">
-                  <label>{{ student_data_form.dob.label }}</label>
-                  {{ student_data_form.dob(class="form-control form-control-sm")
-                  }}
-                </div>
-
-                <!-- Boarding -->
-                <div class="col-md-4">
-                  <label>{{ student_data_form.boarding_status.label }}</label>
-                  {{ student_data_form.boarding_status(class="form-select
-                  form-select-sm") }}
-                </div>
-
-                <!-- Pathway -->
-                <div class="col-md-4">
-                  <label>{{ student_data_form.pathway.label }}</label>
-                  {{ student_data_form.pathway(class="form-select
-                  form-select-sm") }}
-                </div>
-
-                <!-- KCPE Marks -->
-                <div class="col-md-4">
-                  <label>{{ student_data_form.kcpe_marks.label }}</label>
-                  {{ student_data_form.kcpe_marks(class="form-control
-                  form-control-sm") }}
-                </div>
-
-                <!-- Index -->
-                <div class="col-md-4">
-                  <label>{{ student_data_form.kcpe_index_no.label }}</label>
-                  {{ student_data_form.kcpe_index_no(class="form-control
-                  form-control-sm") }}
-                </div>
-
-                <!-- Year -->
-                <div class="col-md-4">
-                  <label>{{ student_data_form.kcpe_year.label }}</label>
-                  {{ student_data_form.kcpe_year(class="form-control
-                  form-control-sm") }}
-                </div>
-
-                <!-- Admission Date -->
-                <div class="col-md-4">
-                  <label>{{ student_data_form.date_of_admission.label }}</label>
-                  {{ student_data_form.date_of_admission(class="form-control
-                  form-control-sm") }}
-                </div>
-
-                <!-- Parent -->
-                <div class="col-md-4">
-                  <label>{{ student_data_form.parent_fullname.label }}</label>
-                  {{ student_data_form.parent_fullname(class="form-control
-                  form-control-sm") }}
-                </div>
-
-                <!-- Phone -->
-                <div class="col-md-4">
-                  <label>{{ student_data_form.parent_phone.label }}</label>
-                  {{ student_data_form.parent_phone(class="form-control
-                  form-control-sm") }}
-                </div>
+          <section class="stu-form-section">
+            <div class="row g-2 stu-add-grid">
+              <div class="col-lg-4">
+                <label class="stu-label" for="selected-branch">School</label>
+                {{ student_data_form.branches(class="form-select form-select-sm
+                stu-control", id="selected-branch") }}
               </div>
 
-              <!-- Submit -->
-              <div class="mt-3 d-flex justify-content-end">
-                <button class="btn btn-secondary btn-sm px-3">
-                  <i class="bi bi-send-plus me-1"></i> Submit
-                </button>
+              <div id="grade-container" class="col-lg-4"></div>
+              <div id="stream-container-2" class="col-lg-4"></div>
+            </div>
+          </section>
+
+          <section class="stu-form-section">
+            <div class="row g-2 stu-add-grid">
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label stu-label-required" for="adm-input"
+                  >Admission No.</label
+                >
+                {{ student_data_form.admission_number(class="form-control
+                form-control-sm stu-control stu-adm-input", id="adm-input") }}
+                {% if current_user.is_super_admin %}
+                <p class="stu-field-hint" id="adm-no-text-warning">
+                  Select school for adm no.
+                </p>
+                {% endif %}
+              </div>
+
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label" for="student-fullname"
+                  >Full Name</label
+                >
+                {{ student_data_form.fullname(class="form-control
+                form-control-sm stu-control", id="student-fullname") }}
+              </div>
+
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label">Gender</label>
+                {{ student_data_form.gender(class="form-select form-select-sm
+                stu-control") }}
+              </div>
+
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label">Date of Birth</label>
+                {{ student_data_form.dob(class="form-control form-control-sm
+                stu-control") }}
+              </div>
+
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label">Birth Cert No.</label>
+                {{ student_data_form.birth_cert_no(class="form-control
+                form-control-sm stu-control") }}
+              </div>
+
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label">Boarding</label>
+                {{ student_data_form.boarding_status(class="form-select
+                form-select-sm stu-control") }}
               </div>
             </div>
-          </form>
-        </div>
+          </section>
+
+          <section class="stu-form-section">
+            <div class="row g-2 stu-add-grid">
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label">KNEC No.</label>
+                {{ student_data_form.knec_assessment_no(class="form-control
+                form-control-sm stu-control") }}
+              </div>
+
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label">NEMIS No.</label>
+                {{ student_data_form.nemis_number(class="form-control
+                form-control-sm stu-control") }}
+              </div>
+
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label">Pathway</label>
+                {{ student_data_form.pathway(class="form-select form-select-sm
+                stu-control") }}
+              </div>
+
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label">KCPE Marks</label>
+                {{ student_data_form.kcpe_marks(class="form-control
+                form-control-sm stu-control") }}
+              </div>
+
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label">KCPE Index</label>
+                {{ student_data_form.kcpe_index_no(class="form-control
+                form-control-sm stu-control") }}
+              </div>
+
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label">KCPE Year</label>
+                {{ student_data_form.kcpe_year(class="form-control
+                form-control-sm stu-control") }}
+              </div>
+
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label">Admission Date</label>
+                {{ student_data_form.date_of_admission(class="form-control
+                form-control-sm stu-control") }}
+              </div>
+
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label">Parent Name</label>
+                {{ student_data_form.parent_fullname(class="form-control
+                form-control-sm stu-control") }}
+              </div>
+
+              <div class="col-lg-3 col-md-4">
+                <label class="stu-label">Parent Phone</label>
+                {{ student_data_form.parent_phone(class="form-control
+                form-control-sm stu-control") }}
+              </div>
+            </div>
+          </section>
+
+          <div class="stu-modal-footer">
+            <button
+              type="button"
+              class="stu-btn stu-btn-outline"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="stu-btn stu-btn-primary">
+              <i class="bi bi-check2-circle"></i> Save
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -462,133 +428,1020 @@
   data-bs-backdrop="static"
   data-bs-keyboard="false"
 >
-  <div class="modal-dialog modal-dialog-centered modal-md">
-    <div class="modal-content mb-0">
-      <div class="modal-header bg-danger text-white p-2 px-3 mb-0">
-        <h6 class="modal-title" id="uploadModalLabel">
-          <i class="bi bi-upload me-2"></i> UPLOAD MUILTAPLE STUDENTS
-        </h6>
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content stu-modal stu-modal-compact">
+      <div class="modal-header stu-modal-header">
+        <div>
+          <h6 class="stu-modal-title" id="uploadModalLabel">
+            <i class="bi bi-upload"></i> Upload Multiple Students
+          </h6>
+          <p class="stu-modal-subtitle">
+            Import student records from an Excel spreadsheet
+          </p>
+        </div>
         <button
           type="button"
-          class="btn-close btn-close-white"
+          class="btn-close"
           data-bs-dismiss="modal"
+          aria-label="Close"
         ></button>
       </div>
-      <div class="modal-body pt-1">
-        <h5 class="text-center bg-light fw-light p-3 mb-0 border-bottom">
-          Data from MS Excel
-        </h5>
-        <p class="small">
-          <span class="fw-bold">Guidelines</span>: <br />
-          To avoid errors Ensure that the first column [A] is for adm number(s)
-          and second column [B] is for student names.
-        </p>
-        <div class="card p-3">
-          <h5 class="text-center text-orange fw-bold">
-            <i class="bi bi-filter"></i> Filter Grade / Form to import data
-          </h5>
-          <form
-            method="POST"
-            id="excel-upload-form"
-            action="{{ url_for('admin.muiltaple_students_upload') }}"
-            enctype="multipart/form-data"
-          >
-            {{ muiltable_students_upload_form.hidden_tag() }}
 
-            <div class="row">
-              <div class="col-md-6">
-                {{ muiltable_students_upload_form.branches.label(class="fw-bold
-                mb-2") }} {{
-                muiltable_students_upload_form.branches(class="form-control",
-                id="select-branch-element") }} {% for error in
-                muiltable_students_upload_form.branches.errors %}
-                <div class="text-danger small">{{ error }}</div>
-                {% endfor %}
-              </div>
-
-              <div class="col-md-6">
-                <div id="grade-forms-container"></div>
-              </div>
-            </div>
-            <div class="row mt-2">
-              <div class="col-md-6">
-                <div id="stream-select-container"></div>
-              </div>
-            </div>
-            <div class="row p-3">
-              <div class="mb-3">
-                {{
-                muiltable_students_upload_form.excel_file.label(class="form-label
-                fw-bold") }} {{
-                muiltable_students_upload_form.excel_file(class="form-control")
-                }} {% for error in
-                muiltable_students_upload_form.excel_file.errors %}
-                <div class="text-danger small">{{ error }}</div>
-                {% endfor %}
-              </div>
-            </div>
-            <div class="row mt-2">
-              <button class="btn btn-secondary">
-                <i class="bi bi-download me-2"></i> Import Data
-              </button>
-            </div>
-          </form>
+      <div class="modal-body stu-modal-body">
+        <div class="stu-upload-hint">
+          <i class="bi bi-info-circle" aria-hidden="true"></i>
+          <div>
+            <strong>Excel format</strong>
+            <p>
+              Column A: admission number. Column B: student name. Extra columns
+              are mapped automatically.
+            </p>
+          </div>
         </div>
+
+        <form
+          method="POST"
+          id="excel-upload-form"
+          action="{{ url_for('admin.muiltaple_students_upload') }}"
+          enctype="multipart/form-data"
+          class="stu-modal-form"
+        >
+          {{ muiltable_students_upload_form.hidden_tag() }}
+
+          <section class="stu-form-section">
+            <h6 class="stu-form-section-title">Class Placement</h6>
+            <div class="row g-2">
+              <div class="col-md-4">
+                <label
+                  class="stu-label stu-label-required"
+                  for="select-branch-element"
+                  >School</label
+                >
+                {{ muiltable_students_upload_form.branches( class="form-select
+                form-select-sm stu-control", id="select-branch-element" ) }} {%
+                for error in muiltable_students_upload_form.branches.errors %}
+                <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+
+              <div id="grade-forms-container" class="col-md-4"></div>
+              <div id="stream-select-container" class="col-md-4"></div>
+            </div>
+          </section>
+
+          <section class="stu-form-section">
+            <h6 class="stu-form-section-title">Excel File</h6>
+            <div class="row g-2">
+              <div class="col-12">
+                <label
+                  class="stu-label stu-label-required"
+                  for="excel-file-input"
+                  >Spreadsheet</label
+                >
+                {{ muiltable_students_upload_form.excel_file(
+                class="form-control form-control-sm stu-control stu-file-input",
+                id="excel-file-input", accept=".xls,.xlsx" ) }}
+                <p class="stu-field-hint">Accepted formats: .xls, .xlsx</p>
+                {% for error in muiltable_students_upload_form.excel_file.errors
+                %}
+                <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+            </div>
+          </section>
+
+          <div class="stu-modal-footer">
+            <button
+              type="button"
+              class="stu-btn stu-btn-outline"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="stu-btn stu-btn-primary">
+              <i class="bi bi-cloud-upload"></i> Import Data
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Student Confirmation -->
+<div
+  class="modal fade"
+  id="deleteStudentModal"
+  tabindex="-1"
+  aria-labelledby="deleteStudentModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered stu-delete-dialog">
+    <div class="modal-content stu-modal stu-delete-modal">
+      <button
+        type="button"
+        class="btn-close stu-delete-close"
+        data-bs-dismiss="modal"
+        aria-label="Close"
+      ></button>
+
+      <div class="stu-delete-body">
+        <div class="stu-delete-icon" aria-hidden="true">
+          <i class="bi bi-person-x"></i>
+        </div>
+
+        <h6 class="stu-delete-title" id="deleteStudentModalLabel">
+          Remove student?
+        </h6>
+
+        <div class="stu-delete-name" id="deleteStudentName">Student name</div>
+
+        <p class="stu-delete-text">
+          This permanently deletes the student record. This cannot be undone.
+        </p>
+      </div>
+
+      <div class="stu-delete-footer">
+        <button
+          type="button"
+          class="stu-btn stu-btn-outline"
+          data-bs-dismiss="modal"
+        >
+          Keep
+        </button>
+        <form method="POST" id="deleteStudentForm" class="stu-delete-form">
+          <button type="submit" class="stu-btn stu-btn-danger">
+            <i class="bi bi-trash"></i> Delete
+          </button>
+        </form>
       </div>
     </div>
   </div>
 </div>
 <style>
-  /* 🔥 compact mode */
-  .modal-body label {
+  .stu-page,
+  .stu-filter-card,
+  .stu-toolbar,
+  .stu-results-card {
+    font-family:
+      "Segoe UI",
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .stu-filter-card {
+    background: #fff;
+    border: 1px solid #e8ecef;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+    padding: 1rem 1.1rem 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .stu-filter-header {
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid #f0f2f4;
+  }
+
+  .stu-filter-title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1f2937;
+    letter-spacing: -0.01em;
+  }
+
+  .stu-filter-subtitle {
+    margin: 0.2rem 0 0;
     font-size: 0.78rem;
-    margin-bottom: 2px;
+    color: #6b7280;
   }
 
-  .form-control,
-  .form-select {
-    font-size: 0.85rem;
-    padding: 4px 8px;
-    height: 32px;
+  .stu-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #4b5563;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
   }
 
-  .input-group-text {
-    padding: 3px 8px;
+  .stu-control {
+    border-color: #dde3ea;
+    border-radius: 8px;
+    font-size: 0.86rem;
+    color: #1f2937;
+  }
+
+  .stu-control:focus {
+    border-color: #ff7979;
+    box-shadow: 0 0 0 0.15rem rgba(255, 121, 121, 0.15);
+  }
+
+  .stu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 34px;
+    padding: 0.42rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .stu-btn-primary {
+    background: #ff7979;
+    border-color: #ff7979;
+    color: #fff;
+  }
+
+  .stu-btn-primary:hover {
+    background: #f56868;
+    border-color: #f56868;
+    color: #fff;
+  }
+
+  .stu-btn-outline {
+    background: #fff;
+    border-color: #dde3ea;
+    color: #374151;
+  }
+
+  .stu-btn-outline:hover {
+    background: #fff8f8;
+    border-color: #ff7979;
+    color: #c24141;
+  }
+
+  .stu-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.85rem;
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    background: #fff;
+    border: 1px solid #e8ecef;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  }
+
+  .stu-toolbar-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #1f2937;
+  }
+
+  .stu-toolbar-hint {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.74rem;
+    color: #6b7280;
+  }
+
+  .stu-toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .stu-results-card {
+    background: #fff;
+    border: 1px solid #e8ecef;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+    overflow: hidden;
+  }
+
+  .stu-results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.95rem 1.1rem;
+    border-bottom: 1px solid #f0f2f4;
+    background: linear-gradient(180deg, #fff 0%, #fafbfc 100%);
+  }
+
+  .stu-results-title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1f2937;
+    letter-spacing: -0.01em;
+  }
+
+  .stu-results-subtitle {
+    margin: 0.15rem 0 0;
+    font-size: 0.76rem;
+    color: #6b7280;
+  }
+
+  .stu-count-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.28rem 0.65rem;
+    border-radius: 999px;
+    background: rgba(255, 121, 121, 0.1);
+    color: #c24141;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .stu-table-wrap {
+    padding: 0.35rem 0.65rem 0.85rem;
+  }
+
+  .stu-table-wrap.scroll-table-wrapper {
+    max-height: min(62vh, 680px);
+    overflow: auto;
+  }
+
+  .stu-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.82rem;
+    color: #1f2937;
+  }
+
+  .stu-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 0.62rem 0.7rem;
+    background: #2c3e50;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border-bottom: 1px solid #243442;
+    white-space: nowrap;
+  }
+
+  .stu-table thead th:first-child {
+    border-top-left-radius: 8px;
+  }
+
+  .stu-table thead th:last-child {
+    border-top-right-radius: 8px;
+  }
+
+  .stu-table tbody td {
+    padding: 0.62rem 0.7rem;
+    border-bottom: 1px solid #edf0f3;
+    vertical-align: middle;
+  }
+
+  .stu-table tbody tr:hover {
+    background: rgba(255, 121, 121, 0.04);
+  }
+
+  .stu-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .stu-col-index {
+    width: 42px;
+    text-align: center;
+    color: #6b7280;
+    font-weight: 600;
+  }
+
+  .stu-col-name {
+    min-width: 180px;
+    font-size: 0.84rem;
+  }
+
+  .stu-name {
+    font-weight: 500;
+    color: #1f2937;
+  }
+
+  .stu-col-action {
+    width: 72px;
+    text-align: center;
+  }
+
+  .stu-adm {
+    display: inline-block;
+    padding: 0.12rem 0.4rem;
+    border-radius: 6px;
+    background: #f3f4f6;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .stu-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid #dde3ea;
+    border-radius: 8px;
+    background: #fff;
+    color: #4b5563;
+  }
+
+  .stu-action-btn:hover,
+  .stu-action-btn:focus {
+    border-color: #ff7979;
+    color: #c24141;
+    background: #fff8f8;
+  }
+
+  .stu-dropdown-menu {
+    min-width: 10rem;
+    padding: 0.35rem;
+    border: 1px solid #e8ecef;
+    border-radius: 10px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
     font-size: 0.8rem;
   }
 
-  .row.g-3 {
-    --bs-gutter-y: 0.4rem;
-    --bs-gutter-x: 0.5rem;
+  .stu-dropdown-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    border-radius: 6px;
+    padding: 0.45rem 0.55rem;
+    color: #1f2937 !important;
+    background: transparent;
+  }
+
+  .stu-dropdown-menu .dropdown-item i {
+    color: #6b7280 !important;
+  }
+
+  .stu-dropdown-menu .dropdown-item:hover,
+  .stu-dropdown-menu .dropdown-item:focus {
+    background: #f8f9fa;
+    color: #1f2937 !important;
+  }
+
+  .stu-dropdown-menu button.dropdown-item {
+    width: 100%;
+    border: 0;
+    text-align: left;
+  }
+
+  .stu-dropdown-danger,
+  .stu-dropdown-danger i {
+    color: #dc3545 !important;
+  }
+
+  .stu-empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    background: #fff;
+    border: 1px dashed #dde3ea;
+    border-radius: 14px;
+    color: #6b7280;
+  }
+
+  .stu-empty-state h6 {
+    margin: 0.65rem 0 0.35rem;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #374151;
+  }
+
+  .stu-empty-state p {
+    margin: 0;
+    font-size: 0.8rem;
+  }
+
+  .stu-empty-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 121, 121, 0.1);
+    color: #ff7979;
+    font-size: 1.35rem;
+  }
+
+  .stu-modal {
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  }
+
+  .stu-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.15rem;
+    border-bottom: 1px solid #f0f2f4;
+    background: linear-gradient(180deg, #fff 0%, #fafbfc 100%);
+  }
+
+  .stu-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+    letter-spacing: -0.01em;
+  }
+
+  .stu-modal-title i {
+    color: #ff7979;
+  }
+
+  .stu-modal-subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 0.78rem;
+    color: #6b7280;
+  }
+
+  .stu-modal-body {
+    padding: 1rem 1.15rem 1.15rem;
+    background: #fff;
+    overflow: visible;
+    max-height: none;
+  }
+
+  .stu-modal-compact .stu-modal-header {
+    padding: 0.6rem 0.9rem;
+  }
+
+  .stu-modal-compact .stu-modal-subtitle {
+    display: none;
+  }
+
+  .stu-modal-compact .stu-modal-body {
+    padding: 0.55rem 0.9rem 0.65rem;
+  }
+
+  .stu-modal-compact .stu-form-section + .stu-form-section {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+  }
+
+  .stu-modal-compact .stu-form-section-title {
+    margin-bottom: 0.35rem;
+    font-size: 0.7rem;
+  }
+
+  .stu-modal-compact .stu-label {
+    margin-bottom: 0.18rem;
+    font-size: 0.68rem;
+  }
+
+  .stu-modal-compact .stu-field-hint {
+    margin-top: 0.15rem;
+    font-size: 0.66rem;
+    line-height: 1.3;
+  }
+
+  .stu-modal-compact .stu-modal-footer {
+    margin-top: 0.55rem;
+    padding-top: 0.55rem;
+  }
+
+  .stu-modal-compact .stu-btn {
+    min-height: 30px;
+    padding: 0.32rem 0.75rem;
+    font-size: 0.76rem;
+  }
+
+  .stu-modal-compact .form-control,
+  .stu-modal-compact .form-select {
+    min-height: 30px;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .stu-modal-compact .stu-upload-hint {
+    margin-bottom: 0.65rem;
+    padding: 0.55rem 0.7rem;
+  }
+
+  .stu-modal-compact .stu-upload-hint p {
+    font-size: 0.72rem;
+    line-height: 1.35;
+  }
+
+  #addStudentModal .stu-modal-header {
+    align-items: center;
+    padding: 0.7rem 1rem;
+  }
+
+  #addStudentModal .stu-modal-title {
+    font-size: 0.92rem;
+  }
+
+  #addStudentModal .btn-close {
+    padding: 0.4rem;
+    margin: 0;
+  }
+
+  #addStudentModal .stu-modal-body {
+    padding: 0.7rem 1rem 0.8rem;
+  }
+
+  #addStudentModal .stu-form-section + .stu-form-section {
+    margin-top: 0.7rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid #f0f2f4;
+  }
+
+  #addStudentModal .stu-form-section:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  #addStudentModal .stu-label {
+    display: block;
+    margin-bottom: 0.28rem;
+    font-size: 0.7rem;
+    line-height: 1.2;
+  }
+
+  #addStudentModal .stu-add-grid {
+    --bs-gutter-x: 0.75rem;
+    --bs-gutter-y: 0.55rem;
+  }
+
+  #addStudentModal .form-control,
+  #addStudentModal .form-select {
+    min-height: 32px;
+    padding: 0.28rem 0.55rem;
+    font-size: 0.82rem;
+    border-radius: 7px;
+  }
+
+  #addStudentModal .stu-field-hint {
+    margin: 0.22rem 0 0;
+    font-size: 0.68rem;
+    line-height: 1.3;
+  }
+
+  #addStudentModal .stu-modal-footer {
+    margin-top: 0.8rem;
+    padding-top: 0.75rem;
+    gap: 0.55rem;
+  }
+
+  #addStudentModal .stu-btn {
+    min-height: 32px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 991.98px) {
+    #addStudentModal .stu-add-grid {
+      --bs-gutter-y: 0.65rem;
+    }
+  }
+
+  .stu-btn-danger {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: #fff;
+  }
+
+  .stu-btn-danger:hover {
+    background: #c82333;
+    border-color: #bd2130;
+    color: #fff;
+  }
+
+  .stu-delete-dialog {
+    max-width: 380px;
+  }
+
+  .stu-delete-modal {
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .stu-delete-close {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.65rem;
+    z-index: 2;
+    padding: 0.35rem;
+    opacity: 0.55;
+  }
+
+  .stu-delete-close:hover {
+    opacity: 0.85;
+  }
+
+  .stu-delete-body {
+    padding: 1.35rem 1.25rem 0.9rem;
+  }
+
+  .stu-delete-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(
+      145deg,
+      rgba(255, 121, 121, 0.18),
+      rgba(255, 121, 121, 0.08)
+    );
+    color: #e85d5d;
+    font-size: 1.35rem;
+    box-shadow: inset 0 0 0 1px rgba(255, 121, 121, 0.22);
+  }
+
+  .stu-delete-title {
+    margin: 0 0 0.55rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+    letter-spacing: -0.01em;
+  }
+
+  .stu-delete-name {
+    display: inline-block;
+    max-width: 100%;
+    margin-bottom: 0.55rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 1px solid #e8ecef;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #374151;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .stu-delete-text {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: #6b7280;
+  }
+
+  .stu-delete-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
+    padding: 0.85rem 1.25rem 1.15rem;
+    background: #fafbfc;
+    border-top: 1px solid #f0f2f4;
+  }
+
+  .stu-delete-form {
+    margin: 0;
+  }
+
+  .stu-delete-footer .stu-btn {
+    width: 100%;
+    min-height: 34px;
+  }
+
+  .stu-form-section + .stu-form-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f0f2f4;
+  }
+
+  .stu-form-section-title {
+    margin: 0 0 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #6b7280;
+  }
+
+  .stu-label-required::after {
+    content: " *";
+    color: #ff7979;
+  }
+
+  .stu-field-hint {
+    margin: 0.3rem 0 0;
+    font-size: 0.72rem;
+    color: #6b7280;
+  }
+
+  .stu-adm-input {
+    font-weight: 700;
+    color: #c24141;
+  }
+
+  .stu-modal-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f0f2f4;
+  }
+
+  .stu-modal .form-control,
+  .stu-modal .form-select {
+    min-height: 34px;
+    font-size: 0.84rem;
+  }
+
+  @media (max-width: 767.98px) {
+    .stu-modal-footer .stu-btn {
+      flex: 1 1 calc(50% - 0.25rem);
+    }
+  }
+
+  .stu-file-input::file-selector-button {
+    margin-right: 0.65rem;
+    padding: 0.25rem 0.65rem;
+    border: 0;
+    border-radius: 6px;
+    background: rgba(255, 121, 121, 0.12);
+    color: #c24141;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .stu-upload-hint {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 121, 121, 0.2);
+    background: rgba(255, 121, 121, 0.06);
+    font-size: 0.8rem;
+    color: #4b5563;
+  }
+
+  .stu-upload-hint i {
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+    color: #ff7979;
+    font-size: 1rem;
+  }
+
+  .stu-upload-hint strong {
+    display: block;
+    margin-bottom: 0.2rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #1f2937;
+  }
+
+  .stu-upload-hint p {
+    margin: 0;
+    font-size: 0.76rem;
+    line-height: 1.45;
+    color: #6b7280;
+  }
+
+  .stu-table .sticky-header th {
+    background: #2c3e50 !important;
+    color: #fff !important;
+  }
+
+  @media (max-width: 767.98px) {
+    .stu-toolbar {
+      align-items: stretch;
+    }
+
+    .stu-toolbar-actions {
+      width: 100%;
+    }
+
+    .stu-toolbar-actions .stu-btn {
+      flex: 1 1 calc(50% - 0.25rem);
+    }
+
+    .stu-results-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  @media print {
+    .stu-toolbar,
+    .stu-filter-card,
+    .app-page-title {
+      display: none !important;
+    }
+
+    .stu-results-card {
+      border: none;
+      box-shadow: none;
+    }
   }
 
   .text-danger.small {
     font-size: 0.72rem;
-  }
-
-  #adm-input {
-    color: red;
-    font-weight: 900;
   }
 </style>
 <!-- Scripts -->
 <script>
   const branchesUrl = "{{ url_for('admin.api_branches') }}";
   const gradesUrlBase = "{{ url_for('admin.api_grades', branch_id=0)[:-1] }}";
+  const hasStudentResults = {{ "true" if students else "false" }};
 
   const admNoInput = document.getElementById("adm-input");
   const warningText = document.getElementById("adm-no-text-warning");
 
-  // call this when you fetch admission number
-  function setAdmissionNumber(value) {
-    admNoInput.value = value;
+  function scrollToStudentsTable() {
+    const target = document.getElementById("stu-results-card");
+    const scrollContainer = document.querySelector(".main-content");
+    if (!target || !scrollContainer) return;
 
-    if (value) {
-      warningText.style.display = "none";
-    } else {
-      warningText.style.display = "block";
-    }
+    requestAnimationFrame(() => {
+      const offset = 14;
+      const containerTop = scrollContainer.getBoundingClientRect().top;
+      const targetTop = target.getBoundingClientRect().top;
+      const nextScrollTop =
+        scrollContainer.scrollTop + (targetTop - containerTop) - offset;
+
+      scrollContainer.scrollTo({
+        top: Math.max(0, nextScrollTop),
+        behavior: "smooth",
+      });
+    });
   }
+
+  document.getElementById("branchForm")?.addEventListener("submit", () => {
+    if (typeof blockUI === "function") {
+      blockUI("Fetching students", "Loading student records…");
+    }
+  });
+
+  document.getElementById("excel-upload-form")?.addEventListener("submit", () => {
+    if (typeof blockUI === "function") {
+      blockUI("Importing students", "Uploading and processing Excel file…");
+    }
+  });
+
+  if (hasStudentResults) {
+    document.addEventListener("DOMContentLoaded", scrollToStudentsTable);
+  }
+
+  function setAdmissionNumber(value) {
+    if (admNoInput) {
+      admNoInput.value = value;
+    }
+    if (!warningText) return;
+
+    warningText.style.display = value ? "none" : "block";
+  }
+
+  const deleteStudentModal = document.getElementById("deleteStudentModal");
+  const deleteStudentForm = document.getElementById("deleteStudentForm");
+  const deleteStudentName = document.getElementById("deleteStudentName");
+  let deleteModalInstance = null;
+
+  document.querySelectorAll(".js-delete-student").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (!deleteStudentModal || !deleteStudentForm || !deleteStudentName) return;
+
+      deleteStudentName.textContent = btn.dataset.studentName || "this student";
+      deleteStudentForm.action = btn.dataset.deleteUrl || "";
+
+      deleteModalInstance =
+        deleteModalInstance || new bootstrap.Modal(deleteStudentModal);
+      deleteModalInstance.show();
+    });
+  });
 </script>
 <script src="{{ url_for('admin.static', filename='js/load_branches.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/insert_branches.js') }}"></script>

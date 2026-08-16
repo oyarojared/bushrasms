@@ -1,524 +1,454 @@
-{% extends "student_templates/student_dash_layout.html" %} {% block body %}
-<div class="container mb-2 go-back-btn">
+{% extends "student_templates/student_dash_layout.html" %}
+
+{% block body %}
+<div class="stu-profile-page">
   <a
     href="{{ request.referrer or url_for('admin.student_dash') }}"
-    class="text-secondary"
+    class="stu-back-link"
   >
-    <i class="bi bi-arrow-left"></i> Go Back
+    <i class="bi bi-arrow-left"></i> Back to students
   </a>
-</div>
 
-<!-- Student Card -->
-<div class="container mb-2">
-  <div class="shadow-sm bg-white rounded-6">
-    <div class="container orange-line"></div>
-    <div class="card-body">
-      <div class="row">
-        <!-- Left Panel -->
-        <div class="col-md-4">
-          <div class="border-end">
-            <div class="profile-photo-lg mx-auto my-1">
-              {% set passport = student.passport or "default.jpg" %}
-              <img
-                src="{{ url_for('admin.serve_passport', filename=passport) }}"
-                class="img-fluid"
-                alt="Photo"
-              />
+  <!-- Profile header -->
+  <div class="stu-profile-hero">
+    <div class="stu-profile-photo-col">
+      <div class="stu-profile-photo">
+        {% set passport = student.passport or "default.jpg" %}
+        <img
+          src="{{ url_for('admin.serve_passport', filename=passport) }}"
+          alt="{{ student.fullname }} passport photo"
+        />
+      </div>
+
+      <form
+        id="photoUploadForm"
+        action="{{ url_for('admin.student_profile', student_id=student.id) }}"
+        method="POST"
+        enctype="multipart/form-data"
+        class="d-none"
+      >
+        {{ passport_form.hidden_tag() }}
+        {{ passport_form.passport(id="passportInput") }}
+      </form>
+
+      <button
+        type="button"
+        id="triggerPassportUpload"
+        class="stu-btn stu-btn-outline stu-btn-sm"
+      >
+        <i class="bi bi-camera"></i> Update photo
+      </button>
+
+      {% if passport_form.passport.errors %}
+      <div class="stu-profile-photo-error">
+        {% for error in passport_form.passport.errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="stu-profile-main">
+      <div class="stu-profile-heading">
+        <div>
+          <h1 class="stu-profile-name">{{ student.fullname }}</h1>
+          <p class="stu-profile-meta">
+            {{ student_branch.branch_name }}
+            <span class="stu-profile-dot">·</span>
+            {{ student_class.grade_form if student_class else "---" }}
+            {% if student.stream %}<span class="stu-profile-dot">·</span>{{ student.stream }}{% endif %}
+          </p>
+        </div>
+        <span class="stu-profile-adm">Adm {{ student.admission_number }}</span>
+      </div>
+
+      <div class="stu-profile-tags">
+        {% if student.gender %}
+        <span class="stu-profile-tag">{{ student.gender }}</span>
+        {% endif %}
+        {% if student.boarding_status %}
+        <span class="stu-profile-tag">{{ student.boarding_status }}</span>
+        {% endif %}
+        {% if student_class and student_class.grade_form == "Grade 9" and student.pathway %}
+        <span class="stu-profile-tag">Pathway: {{ student.pathway }}</span>
+        {% endif %}
+        <span class="stu-profile-tag">
+          {{ student.subjects_taken | length }} subject{{ "s" if student.subjects_taken | length != 1 else "" }}
+        </span>
+      </div>
+
+      {% if student.subjects_taken %}
+      <div class="stu-profile-subjects">
+        <span class="stu-profile-subjects-label">Subjects</span>
+        <p class="stu-profile-subjects-list">
+          {{ student.subjects_taken | join(", ") }}
+        </p>
+      </div>
+      {% endif %}
+
+      <div class="stu-profile-actions">
+        <button
+          type="button"
+          class="stu-btn stu-btn-outline stu-btn-sm"
+          id="editStudentBtn"
+        >
+          <i class="bi bi-pencil"></i> Edit
+        </button>
+        <button
+          type="button"
+          class="stu-btn stu-btn-outline stu-btn-sm"
+          data-bs-toggle="modal"
+          data-bs-target="#moveStudentModal"
+        >
+          <i class="bi bi-arrow-left-right"></i> Move
+        </button>
+        <button
+          type="button"
+          class="stu-btn stu-btn-outline stu-btn-sm stu-btn-danger-outline js-delete-student"
+          data-student-name="{{ student.fullname }}"
+          data-delete-url="{{ url_for('admin.delete_student', student_id=student.id) }}"
+        >
+          <i class="bi bi-trash"></i> Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="stu-profile-card" id="stu-profile-card">
+    <ul class="nav stu-profile-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <a
+          class="nav-link active"
+          data-bs-toggle="tab"
+          href="#student-info"
+          role="tab"
+          >Student Info</a
+        >
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" data-bs-toggle="tab" href="#academics" role="tab"
+          >Academics</a
+        >
+      </li>
+    </ul>
+
+    <div class="tab-content stu-profile-tab-content">
+      <!-- Student Info -->
+      <div class="tab-pane fade show active" id="student-info" role="tabpanel">
+        <form
+          method="POST"
+          action="{{ url_for('admin.update_student', student_id=student.id) }}"
+          class="stu-profile-form"
+          id="studentInfoForm"
+        >
+          <div class="stu-form-section">
+            <h6 class="stu-form-section-title">Basic Details</h6>
+            <div class="row g-2">
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">Admission Number</label>
+                <input
+                  type="text"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student.admission_number }}"
+                  disabled
+                />
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">Full Name</label>
+                <input
+                  type="text"
+                  name="fullname"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student.fullname }}"
+                />
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">Gender</label>
+                <select name="gender" class="form-select form-select-sm stu-control">
+                  <option value="">Select gender</option>
+                  <option value="Male" {% if student.gender == "Male" %}selected{% endif %}>Male</option>
+                  <option value="Female" {% if student.gender == "Female" %}selected{% endif %}>Female</option>
+                </select>
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">Date of Birth</label>
+                <input
+                  type="date"
+                  name="dob"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student.dob }}"
+                />
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">Boarding Status</label>
+                <select name="boarding_status" class="form-select form-select-sm stu-control">
+                  <option value="">Select</option>
+                  <option value="Day" {% if student.boarding_status == "Day" %}selected{% endif %}>Day</option>
+                  <option value="Boarding" {% if student.boarding_status == "Boarding" %}selected{% endif %}>Boarding</option>
+                </select>
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">Date of Admission</label>
+                <input
+                  type="date"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student.date_of_admission }}"
+                  disabled
+                />
+              </div>
             </div>
           </div>
 
-          <div class="d-flex justify-content-center">
-            <form
-              id="photoUploadForm"
-              action="{{ url_for('admin.student_profile', student_id=student.id) }}"
-              method="POST"
-              enctype="multipart/form-data"
-              style="display: none"
-            >
-              {{ passport_form.hidden_tag() }} {{
-              passport_form.passport(id="passportInput") }}
-            </form>
+          <div class="stu-form-section">
+            <h6 class="stu-form-section-title">School Placement</h6>
+            <div class="row g-2">
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">Branch</label>
+                <input
+                  type="text"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student_branch.branch_name }}"
+                  disabled
+                />
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">Grade / Form</label>
+                <input
+                  type="text"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student_class.grade_form if student_class else '---' }}"
+                  disabled
+                />
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">Stream</label>
+                <input
+                  type="text"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student.stream }}"
+                  disabled
+                />
+              </div>
+            </div>
+          </div>
 
-            <button id="triggerPassportUpload" class="btn btn-sm btn-secondary">
-              <i class="bi bi-camera me-2"></i>Update Passport
+          <div class="stu-form-section">
+            <h6 class="stu-form-section-title">Academic Records</h6>
+            <div class="row g-2">
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">Pathway</label>
+                <input
+                  type="text"
+                  name="pathway"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student.pathway }}"
+                />
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">KCPE Marks</label>
+                <input
+                  type="number"
+                  name="kcpe_marks"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student.kcpe_marks }}"
+                />
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">KCPE Index</label>
+                <input
+                  type="text"
+                  name="kcpe_index_no"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student.kcpe_index_no }}"
+                />
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">KCPE Year</label>
+                <select name="kcpe_year" class="form-select form-select-sm stu-control">
+                  <option value="">Select year</option>
+                  {% for year in range(2000, 2030) %}
+                  <option value="{{ year }}" {% if student.kcpe_year == year %}selected{% endif %}>{{ year }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">KNEC Assessment No.</label>
+                <input
+                  type="text"
+                  name="knec_assessment_no"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student.knec_assessment_no }}"
+                />
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">NEMIS Number</label>
+                <input
+                  type="text"
+                  name="nemis_number"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student.nemis_number }}"
+                />
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <label class="stu-label">Birth Certificate No.</label>
+                <input
+                  type="text"
+                  name="birth_cert_no"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student.birth_cert_no }}"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="stu-form-section">
+            <h6 class="stu-form-section-title">Parent / Guardian</h6>
+            <div class="row g-2">
+              <div class="col-md-6">
+                <label class="stu-label">Parent Name</label>
+                <input
+                  type="text"
+                  name="parent_fullname"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student.parent_fullname }}"
+                />
+              </div>
+              <div class="col-md-6">
+                <label class="stu-label">Parent Phone</label>
+                <input
+                  type="text"
+                  name="parent_phone"
+                  class="form-control form-control-sm stu-control"
+                  value="{{ student.parent_phone }}"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="stu-profile-form-footer">
+            <button type="submit" class="stu-btn stu-btn-primary">
+              <i class="bi bi-check2-circle"></i> Save Changes
             </button>
           </div>
+        </form>
+      </div>
 
-          {% if passport_form.passport.errors %}
-          <div
-            class="text-danger mt-2 fw-bold d-flex justify-content-center"
-            style="font-size: 0.9rem"
-          >
-            {% for error in passport_form.passport.errors %} {{ error }} {%
-            endfor %}
-          </div>
-          {% endif %}
-        </div>
-
-        <!-- Right Panel -->
-        <div
-          class="col-md-8 align-items-center d-flex flex-column justify-content-center"
-        >
-          <h3 class="text-center text-orange">
-            {{ student.fullname | upper }}
-          </h3>
-          <h6 class="text-center">
-            ({{ student_branch.branch_name }} {{ student_class.grade_form }} {{
-            student.stream if student.stream else ""}})
-          </h6>
-          <div class="border p-3 w-100 mt-2">
-            {% if student_class.grade_form == "Grade 9" %}
-            <h6 class="fw-light">
-              <span class="fw-bold">Pathway: </span>
-              {{ student.pathway | default('N/A') }}
-            </h6>
-            {% endif %}
-            <h6 class="fw-bold">
-              Total Learning Areas/Subjects: {{ student.subjects_taken | length
-              }}
-            </h6>
-            <div class="card p-2">
-              <span class="text-muted small">
-                {{ student.subjects_taken | join(', ') if student.subjects_taken
-                else "No learning areas data available." }}
-              </span>
-            </div>
-          </div>
-          <div class="row rounded-2 w-100 d-flex justify-content-center">
-            <div class="col-sm-2"></div>
-            <div class="col-sm-10 d-flex">
-              <!-- Edit Student -->
-              <a
-                href="#"
-                id="editStudentBtn"
-                data-bs-toggle="modal"
-                data-bs-target="#addStudentModal"
-                class="border-end mt-2"
+      <!-- Academics -->
+      <div class="tab-pane fade" id="academics" role="tabpanel">
+        {% if academic_history %}
+        <div class="stu-rc-list">
+          {% for exam in academic_history %}
+          <article class="stu-rc-block">
+            <div class="stu-rc-block-head">
+              <div class="stu-rc-block-head-info">
+                <span class="stu-rc-block-label">Exam {{ loop.index }} of {{ academic_history | length }}</span>
+                <div class="stu-rc-preview-title">
+                  <strong>{{ exam.name }}</strong>
+                  <span>Term {{ exam.term }} · {{ exam.year }} · {{ exam.grade_form }}{% if exam.stream %} · {{ exam.stream }}{% endif %}</span>
+                  {% if exam.is_844 %}
+                  <span class="stu-rc-system-tag">8-4-4</span>
+                  {% else %}
+                  <span class="stu-rc-system-tag">CBE</span>
+                  {% endif %}
+                </div>
+              </div>
+              <button
+                type="button"
+                class="stu-btn stu-btn-outline stu-btn-sm js-download-report"
+                data-branch-id="{{ exam.branch_id }}"
+                data-class-id="{{ exam.class_id }}"
+                data-exam-id="{{ exam.exam_id }}"
+                data-stream="{{ exam.stream }}"
+                data-student-id="{{ student.id }}"
               >
-                <div class="btn btn-sm btn-danger">
-                  <i class="bi bi-pencil"></i>
-                  <span class="ms-1">Edit</span>
-                </div>
-              </a>
-
-              <!-- Transfer Student -->
-              <a
-                href="#"
-                data-bs-toggle="modal"
-                data-bs-target="#moveStudentModal"
-                class="border-end mx-2 mt-2"
-              >
-                <div class="btn-danger btn btn-sm small">
-                  <i class="bi bi-arrow-left-right me-2"></i> Move
-                </div>
-              </a>
-
-              <!-- Delete Student -->
-              <a href="#">
-                <div class="">
-                  <form
-                    method="POST"
-                    action="{{ url_for('admin.delete_student', student_id=student.id) }}"
-                    onsubmit="return confirm('Are you sure you want to delete {{ student.fullname | upper }} from the system?');"
-                  >
-                    <button
-                      type="submit"
-                      class="btn-danger btn btn-sm small mt-2"
-                    >
-                      <i class="bi bi-trash"></i> Delete
-                    </button>
-                  </form>
-                </div>
-              </a>
+                <i class="bi bi-download"></i> Download
+              </button>
             </div>
-          </div>
+
+            <div class="stu-rc-preview-card">
+              <div class="stu-rc-preview-banner">
+                Exam/Assessment Result · {{ exam.name | upper }} · {{ exam.year }}
+              </div>
+
+              <table class="stu-rc-table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Subject</th>
+                    <th>Marks</th>
+                    <th>{% if exam.is_844 %}Grade{% else %}Perf. Level{% endif %}</th>
+                    <th>Pts</th>
+                    <th>{% if exam.is_844 %}Comment{% else %}Description{% endif %}</th>
+                    <th>Teacher</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for subject in exam.subjects %}
+                  <tr>
+                    <td>{{ subject.subject_code or "—" }}</td>
+                    <td class="text-left">{{ subject.subject_name }}</td>
+                    <td>
+                      {{ subject.marks }}{% if subject.marks_out_of %}/{{ subject.marks_out_of }}{% endif %}
+                    </td>
+                    <td>
+                      {% if exam.is_844 %}
+                      {{ subject.grade or "—" }}
+                      {% else %}
+                      {{ subject.performance_level or subject.grade or "—" }}
+                      {% endif %}
+                    </td>
+                    <td>{{ subject.points if subject.points is not none else "—" }}</td>
+                    <td class="text-left">{{ subject.comment or "—" }}</td>
+                    <td>{{ subject.teacher_initials or "—" }}</td>
+                  </tr>
+                  {% endfor %}
+                  <tr class="stu-rc-total-row">
+                    <td colspan="2"><strong>Summary</strong></td>
+                    {% if exam.is_844 %}
+                    <td>{{ exam.summary.total_marks }}</td>
+                    <td>{{ exam.summary.mean_grade }}</td>
+                    <td>{{ exam.summary.total_points }}</td>
+                    <td></td>
+                    <td></td>
+                    {% else %}
+                    <td>{{ exam.summary.total_marks }}</td>
+                    <td>{{ exam.summary.performance_level or "—" }}</td>
+                    <td>{{ exam.summary.points if exam.summary.points is not none else "—" }}</td>
+                    <td class="text-left">{{ exam.summary.descriptor or "—" }}</td>
+                    <td></td>
+                    {% endif %}
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="stu-rc-preview-foot">
+                {% if exam.is_844 %}
+                <span>Total Points: <strong>{{ exam.summary.total_points }}</strong></span>
+                <span>Mean Grade: <strong>{{ exam.summary.mean_grade }}</strong></span>
+                <span>Average Marks: <strong>{{ exam.summary.average }}</strong></span>
+                {% else %}
+                <span>Total Marks: <strong>{{ exam.summary.total_marks }}</strong></span>
+                <span>Average: <strong>{{ exam.summary.average }}</strong></span>
+                <span>Overall Level: <strong>{{ exam.summary.performance_level or "—" }}</strong></span>
+                <span>Points: <strong>{{ exam.summary.points if exam.summary.points is not none else "—" }}</strong></span>
+                {% endif %}
+              </div>
+            </div>
+          </article>
+          {% endfor %}
         </div>
+        {% else %}
+        <div class="stu-profile-empty">
+          <i class="bi bi-journal-text"></i>
+          <h6>No exam records yet</h6>
+          <p>This student has no recorded marks for any exam.</p>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
 </div>
 
-<!-- Tabs -->
-<div class="container bg-white shadow-sm pt-2 pb-2 rounded-6">
-  <ul class="nav nav-tabs mb-3">
-    <li class="nav-item">
-      <a
-        class="nav-link active text-dark"
-        data-bs-toggle="tab"
-        href="#student-info"
-        >Student Info</a
-      >
-    </li>
-
-    <li class="nav-item">
-      <a class="nav-link text-dark" data-bs-toggle="tab" href="#academics"
-        >Academics</a
-      >
-    </li>
-  </ul>
-
-  <div class="tab-content px-5 pb-2">
-    <!-- Student Info Tab -->
-    <div class="tab-pane fade show active" id="student-info">
-      <form
-        method="POST"
-        action="{{ url_for('admin.update_student', student_id=student.id) }}"
-      >
-        <div class="row g-3">
-          <!-- Admission Number (DISABLED) -->
-          <div class="col-md-6">
-            <label class="form-label">Admission Number</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-credit-card"></i>
-              </span>
-              <input
-                type="text"
-                class="form-control fw-bold"
-                value="{{ student.admission_number }}"
-                disabled
-              />
-            </div>
-          </div>
-
-          <!-- Full Name -->
-          <div class="col-md-6">
-            <label class="form-label">Full Name</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-person"></i>
-              </span>
-              <input
-                type="text"
-                name="fullname"
-                class="form-control fw-bold"
-                value="{{ student.fullname }}"
-              />
-            </div>
-          </div>
-
-          <!-- Branch -->
-          <div class="col-md-6">
-            <label class="form-label">Branch</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-building"></i>
-              </span>
-              <input
-                type="text"
-                class="form-control fw-bold"
-                value="{{ student_branch.branch_name }}"
-                disabled
-              />
-            </div>
-          </div>
-
-          <!-- Grade/Form -->
-          <div class="col-md-6">
-            <label class="form-label">Grade/Form</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-card-list"></i>
-              </span>
-              <input
-                type="text"
-                class="form-control fw-bold"
-                value="{{ student_class.grade_form if student_class else '---' }}"
-                disabled
-              />
-            </div>
-          </div>
-
-          <!-- Stream -->
-          <div class="col-md-6">
-            <label class="form-label">Stream</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-diagram-3"></i>
-              </span>
-              <input
-                type="text"
-                class="form-control fw-bold"
-                value="{{ student.stream }}"
-                disabled
-              />
-            </div>
-          </div>
-
-          <!-- Gender -->
-          <div class="col-md-6">
-            <label class="form-label">Gender</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-gender-ambiguous"></i>
-              </span>
-              <select name="gender" class="form-select fw-bold">
-                <option value="">-- Select Gender --</option>
-                <option
-                  value="Male"
-                  {%
-                  if
-                  student.gender=="Male"
-                  %}selected{%
-                  endif
-                  %}
-                >
-                  Male
-                </option>
-                <option
-                  value="Female"
-                  {%
-                  if
-                  student.gender=="Female"
-                  %}selected{%
-                  endif
-                  %}
-                >
-                  Female
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Date of Birth -->
-          <div class="col-md-6">
-            <label class="form-label">Date of Birth</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-calendar"></i>
-              </span>
-              <input
-                type="date"
-                name="dob"
-                class="form-control fw-bold"
-                value="{{ student.dob }}"
-              />
-            </div>
-          </div>
-
-          <!-- Boarding Status -->
-          <div class="col-md-6">
-            <label class="form-label">Boarding Status</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-house-door"></i>
-              </span>
-              <select name="boarding_status" class="form-select fw-bold">
-                <option value="">-- Select --</option>
-                <option
-                  value="Day"
-                  {%
-                  if
-                  student.boarding_status=="Day"
-                  %}selected{%
-                  endif
-                  %}
-                >
-                  Day
-                </option>
-                <option
-                  value="Boarding"
-                  {%
-                  if
-                  student.boarding_status=="Boarding"
-                  %}selected{%
-                  endif
-                  %}
-                >
-                  Boarding
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Pathway -->
-          <div class="col-md-6">
-            <label class="form-label">Pathway</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-map"></i>
-              </span>
-              <input
-                type="text"
-                name="pathway"
-                class="form-control fw-bold"
-                value="{{ student.pathway }}"
-              />
-            </div>
-          </div>
-
-          <!-- KCPE Marks -->
-          <div class="col-md-6">
-            <label class="form-label">KCPE Marks</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-123"></i>
-              </span>
-              <input
-                type="number"
-                name="kcpe_marks"
-                class="form-control fw-bold"
-                value="{{ student.kcpe_marks }}"
-              />
-            </div>
-          </div>
-
-          <!-- KCPE Index -->
-          <div class="col-md-6">
-            <label class="form-label">KCPE Index Number</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-file-text"></i>
-              </span>
-              <input
-                type="text"
-                name="kcpe_index_no"
-                class="form-control fw-bold"
-                value="{{ student.kcpe_index_no }}"
-              />
-            </div>
-          </div>
-
-          <!-- KCPE Year -->
-          <div class="col-md-6">
-            <label class="form-label">KCPE Year</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-calendar-year"></i>
-              </span>
-              <select name="kcpe_year" class="form-select fw-bold">
-                <option value="">-- Select Year --</option>
-                {% for year in range(2000, 2030) %}
-                <option
-                  value="{{ year }}"
-                  {%
-                  if
-                  student.kcpe_year=="year"
-                  %}selected{%
-                  endif
-                  %}
-                >
-                  {{ year }}
-                </option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-
-          <!-- KNEC -->
-          <div class="col-md-6">
-            <label class="form-label">KNEC Assessment No.</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-123"></i>
-              </span>
-              <input
-                type="text"
-                name="knec_assessment_no"
-                class="form-control fw-bold"
-                value="{{ student.knec_assessment_no }}"
-              />
-            </div>
-          </div>
-
-          <!-- NEMIS -->
-          <div class="col-md-6">
-            <label class="form-label">NEMIS Number</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-card-heading"></i>
-              </span>
-              <input
-                type="text"
-                name="nemis_number"
-                class="form-control fw-bold"
-                value="{{ student.nemis_number }}"
-              />
-            </div>
-          </div>
-
-          <!-- Birth Cert -->
-          <div class="col-md-6">
-            <label class="form-label">Birth Certificate No.</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-file-earmark-text"></i>
-              </span>
-              <input
-                type="text"
-                name="birth_cert_no"
-                class="form-control fw-bold"
-                value="{{ student.birth_cert_no }}"
-              />
-            </div>
-          </div>
-
-          <!-- Date of Admission -->
-          <div class="col-md-6">
-            <label class="form-label">Date of Admission</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-calendar-check"></i>
-              </span>
-              <input
-                type="date"
-                class="form-control fw-bold"
-                value="{{ student.date_of_admission }}"
-                disabled
-              />
-            </div>
-          </div>
-
-          <!-- Parent Name -->
-          <div class="col-md-6">
-            <label class="form-label">Parent/Guardian Name</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-person-lines-fill"></i>
-              </span>
-              <input
-                type="text"
-                name="parent_fullname"
-                class="form-control fw-bold"
-                value="{{ student.parent_fullname }}"
-              />
-            </div>
-          </div>
-
-          <!-- Parent Phone -->
-          <div class="col-md-6">
-            <label class="form-label">Parent/Guardian Phone</label>
-            <div class="input-group">
-              <span class="input-group-text bg-secondary text-white">
-                <i class="bi bi-telephone"></i>
-              </span>
-              <input
-                type="text"
-                name="parent_phone"
-                class="form-control fw-bold"
-                value="{{ student.parent_phone }}"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-3 d-flex justify-content-end">
-          <button type="submit" class="btn btn-secondary">
-            <i class="bi bi-send"></i> Save Changes
-          </button>
-        </div>
-        <hr />
-      </form>
-    </div>
-
-    <!-- Academics Tab -->
-    <div class="tab-pane fade" id="academics">
-      <p>Academic information will go here...</p>
-    </div>
-  </div>
-</div>
-<div style="height: 70px"></div>
-<!-- MOVE STUDENT MODAL -->
+<!-- Move Student Modal -->
 <div
   class="modal fade"
   id="moveStudentModal"
@@ -529,78 +459,912 @@
   aria-hidden="true"
 >
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header pt-2 pb-2 px-6 bg-danger text-white mb-0">
-        <h6 class="modal-title" id="moveStudentModalLabel">
-          <i class="bi bi-arrow-left-right me-3"></i>MOVE {{ student.fullname |
-          upper }}
+    <div class="modal-content stu-modal stu-modal-compact">
+      <div class="modal-header stu-modal-header">
+        <h6 class="stu-modal-title" id="moveStudentModalLabel">
+          <i class="bi bi-arrow-left-right"></i> Move Student
         </h6>
         <button
           type="button"
-          class="btn-close btn-close-white"
+          class="btn-close"
           data-bs-dismiss="modal"
           aria-label="Close"
         ></button>
       </div>
 
-      <div class="modal-body mt-1 pt-0">
-        <div class="bg-light p-2 border-bottom">
-          <h6 class="text-center text-orange">
-            {{ student_branch.branch_name }}
-          </h6>
-          <h6 class="text-center text-orange">
-            {{ student_class.grade_form }} {% if student.stream %} {{ " " ~
-            student.stream }} {% endif %}
-          </h6>
+      <div class="modal-body stu-modal-body">
+        <div class="stu-move-from">
+          <span class="stu-move-label">Current class</span>
+          <strong>{{ student_branch.branch_name }}</strong>
+          <span>{{ student_class.grade_form }}{% if student.stream %} · {{ student.stream }}{% endif %}</span>
         </div>
 
-        <div class="d-flex align-items-center my-4">
-          <span class="flex-grow-1 border-bottom"></span>
-          <h6 class="mx-3 mb-0 text-danger fw-bold">
-            Move To <i class="bi bi-arrow-right"></i>
-          </h6>
-          <span class="flex-grow-1 border-bottom"></span>
-        </div>
+        <form
+          action="{{ url_for('admin.move_student', student_id=student.id) }}"
+          method="post"
+        >
+          {{ transfer_form.hidden_tag() }}
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label
+                class="stu-label stu-label-required"
+                for="select-branch-element"
+                >School</label
+              >
+              {{ transfer_form.branches(class="form-select form-select-sm stu-control", id="select-branch-element") }}
+              {% for error in transfer_form.branches.errors %}
+              <div class="text-danger small">{{ error }}</div>
+              {% endfor %}
+            </div>
+            <div class="col-md-6" id="grade-forms-container"></div>
+            <div class="col-md-6" id="stream-select-container"></div>
+          </div>
 
-        <div class="card px-3 pt-2 pb-2 shadow-sm">
-          <form
-            action="{{ url_for('admin.move_student', student_id=student.id) }}"
-            method="post"
-          >
-            {{ transfer_form.hidden_tag() }}
-            <div class="row">
-              <div class="col-md-6">
-                {{ transfer_form.branches.label(class="fw-bold mb-2") }} {{
-                transfer_form.branches(class="form-control",
-                id="select-branch-element") }} {% for error in
-                transfer_form.branches.errors %}
-                <div class="text-danger small">{{ error }}</div>
-                {% endfor %}
-              </div>
-              <div class="col-md-6">
-                <div id="grade-forms-container"></div>
-              </div>
-            </div>
-            <div class="row">
-              <div id="stream-select-container"></div>
-            </div>
-            <div class="row">
-              <div class="col-12 d-flex justify-content-end">
-                <button class="btn btn-sm btn-secondary mt-2">
-                  <i class="bi bi-arrow-left-right me-2"></i>Move
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-        <hr />
+          <div class="stu-modal-footer">
+            <button
+              type="button"
+              class="stu-btn stu-btn-outline"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="stu-btn stu-btn-primary">
+              <i class="bi bi-arrow-left-right"></i> Move
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 </div>
 
-<script src="{{ url_for('admin.static', filename='js/remove_alerts.js') }}"></script>
-<script src="{{ url_for('admin.static', filename='js/update_passport.js')}}"></script>
-<script src="{{ url_for('admin.static', filename='js/load_grade_streams.js') }}"></script>
+<!-- Delete confirmation -->
+<div
+  class="modal fade"
+  id="deleteStudentModal"
+  tabindex="-1"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered stu-delete-dialog">
+    <div class="modal-content stu-modal stu-delete-modal">
+      <button
+        type="button"
+        class="btn-close stu-delete-close"
+        data-bs-dismiss="modal"
+        aria-label="Close"
+      ></button>
+      <div class="stu-delete-body">
+        <div class="stu-delete-icon" aria-hidden="true">
+          <i class="bi bi-person-x"></i>
+        </div>
+        <h6 class="stu-delete-title">Remove student?</h6>
+        <div class="stu-delete-name" id="deleteStudentName">Student name</div>
+        <p class="stu-delete-text">
+          This permanently deletes the student record. This cannot be undone.
+        </p>
+      </div>
+      <div class="stu-delete-footer">
+        <button
+          type="button"
+          class="stu-btn stu-btn-outline"
+          data-bs-dismiss="modal"
+        >
+          Keep
+        </button>
+        <form method="POST" id="deleteStudentForm" class="stu-delete-form">
+          <button type="submit" class="stu-btn stu-btn-danger">
+            <i class="bi bi-trash"></i> Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
+<style>
+  .stu-profile-page {
+    font-family:
+      "Segoe UI",
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      sans-serif;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 0.5rem 2rem;
+  }
+
+  .stu-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #6b7280 !important;
+    text-decoration: none;
+  }
+
+  .stu-back-link:hover {
+    color: #ff7979 !important;
+  }
+
+  .stu-profile-hero {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 1.25rem;
+    padding: 1.1rem;
+    margin-bottom: 1rem;
+    background: #fff;
+    border: 1px solid #e8ecef;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+  }
+
+  .stu-profile-photo-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .stu-profile-photo {
+    width: 130px;
+    height: 130px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid #f0f2f4;
+    background: #f8fafc;
+  }
+
+  .stu-profile-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .stu-profile-photo-error {
+    font-size: 0.72rem;
+    color: #dc3545;
+    text-align: center;
+  }
+
+  .stu-profile-main {
+    min-width: 0;
+  }
+
+  .stu-profile-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .stu-profile-name {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #1f2937;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+
+  .stu-profile-meta {
+    margin: 0.25rem 0 0;
+    font-size: 0.84rem;
+    color: #6b7280;
+  }
+
+  .stu-profile-dot {
+    margin: 0 0.2rem;
+    opacity: 0.5;
+  }
+
+  .stu-profile-adm {
+    flex-shrink: 0;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    background: rgba(255, 121, 121, 0.1);
+    border: 1px solid rgba(255, 121, 121, 0.22);
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #c24141;
+    white-space: nowrap;
+  }
+
+  .stu-profile-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .stu-profile-tag {
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid #e8ecef;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #4b5563;
+  }
+
+  .stu-profile-subjects {
+    margin-bottom: 0.75rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 8px;
+    background: #fafbfc;
+    border: 1px solid #f0f2f4;
+  }
+
+  .stu-profile-subjects-label {
+    display: block;
+    margin-bottom: 0.2rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #9ca3af;
+  }
+
+  .stu-profile-subjects-list {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: #4b5563;
+  }
+
+  .stu-profile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .stu-profile-card {
+    background: #fff;
+    border: 1px solid #e8ecef;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+    overflow: hidden;
+  }
+
+  .stu-profile-tabs {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.65rem 0.85rem 0;
+    border-bottom: 1px solid #f0f2f4;
+    background: #fafbfc;
+  }
+
+  .stu-profile-tabs .nav-link {
+    padding: 0.45rem 0.85rem;
+    border: 0;
+    border-radius: 8px 8px 0 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #6b7280 !important;
+    background: transparent;
+  }
+
+  .stu-profile-tabs .nav-link:hover {
+    color: #374151 !important;
+  }
+
+  .stu-profile-tabs .nav-link.active {
+    color: #c24141 !important;
+    background: #fff;
+    box-shadow:
+      0 -1px 0 #fff,
+      inset 0 -2px 0 #ff7979;
+  }
+
+  .stu-profile-tab-content {
+    padding: 1rem 1.1rem 1.15rem;
+  }
+
+  .stu-label {
+    display: block;
+    margin-bottom: 0.28rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #4b5563;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .stu-label-required::after {
+    content: " *";
+    color: #ff7979;
+  }
+
+  .stu-control {
+    border-color: #dde3ea;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    color: #1f2937;
+  }
+
+  .stu-control:focus {
+    border-color: #ff7979;
+    box-shadow: 0 0 0 0.15rem rgba(255, 121, 121, 0.15);
+  }
+
+  .stu-form-section + .stu-form-section {
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid #f0f2f4;
+  }
+
+  .stu-form-section-title {
+    margin: 0 0 0.55rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #9ca3af;
+  }
+
+  .stu-profile-form-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid #f0f2f4;
+  }
+
+  .stu-profile-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #6b7280;
+  }
+
+  .stu-profile-empty i {
+    font-size: 1.75rem;
+    color: #ff7979;
+    opacity: 0.7;
+  }
+
+  .stu-profile-empty h6 {
+    margin: 0.55rem 0 0.25rem;
+    font-weight: 700;
+    color: #374151;
+  }
+
+  .stu-profile-empty p {
+    margin: 0;
+    font-size: 0.82rem;
+  }
+
+  .stu-rc-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.1rem;
+    padding: 0.35rem 0 0.75rem;
+  }
+
+  .stu-rc-block {
+    width: 100%;
+    max-width: 640px;
+    padding: 0.85rem 0.9rem 0.95rem;
+    background: #f8fafc;
+    border: 1px solid #e8ecef;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  }
+
+  .stu-rc-block + .stu-rc-block {
+    margin-top: 0.15rem;
+    border-top: 3px solid rgba(255, 121, 121, 0.15);
+    padding-top: 1.1rem;
+  }
+
+  .stu-rc-block-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.55rem;
+  }
+
+  .stu-rc-block-head-info {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .stu-rc-block-head .js-download-report {
+    flex-shrink: 0;
+    align-self: flex-start;
+    color: #374151 !important;
+  }
+
+  .stu-rc-block-label {
+    display: block;
+    margin-bottom: 0.2rem;
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #9ca3af;
+  }
+
+  .stu-rc-preview-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    font-size: 0.76rem;
+    color: #6b7280;
+  }
+
+  .stu-rc-preview-title strong {
+    font-size: 0.84rem;
+    color: #1f2937;
+  }
+
+  .stu-rc-system-tag {
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #6b7280;
+  }
+
+  .stu-rc-preview-card {
+    width: 100%;
+    margin: 0 auto;
+    border: 2px solid #923006;
+    border-radius: 5px;
+    overflow: hidden;
+    background: #fff;
+    font-size: 10px;
+    line-height: 1.3;
+    color: #333;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.07);
+  }
+
+  .stu-rc-preview-banner {
+    padding: 0.35rem 0.5rem;
+    background: linear-gradient(180deg, #f4f6f7 0%, #ecf0f1 100%);
+    border-bottom: 1px solid #d5d9dc;
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-align: center;
+    color: #374151;
+  }
+
+  .stu-rc-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+  }
+
+  .stu-rc-table th {
+    padding: 0.28rem 0.35rem;
+    background: #923006;
+    color: #fff;
+    font-size: 0.64rem;
+    font-weight: 700;
+    text-align: center;
+    border: 0.5px solid #7a2805;
+  }
+
+  .stu-rc-table td {
+    padding: 0.22rem 0.35rem;
+    font-size: 0.7rem;
+    text-align: center;
+    border: 0.5px solid #d1d5db;
+    color: #374151;
+  }
+
+  .stu-rc-table tbody tr:nth-child(even):not(.stu-rc-total-row) {
+    background: #fafbfc;
+  }
+
+  .stu-rc-table td.text-left {
+    text-align: left;
+  }
+
+  .stu-rc-total-row td {
+    background: #e5e7eb;
+    font-weight: 700;
+  }
+
+  .stu-rc-preview-foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0.5rem;
+    background: #fafbfc;
+    border-top: 1px solid #e5e7eb;
+    font-size: 0.7rem;
+    color: #4b5563;
+    text-align: center;
+  }
+
+  .stu-rc-preview-foot strong {
+    color: #923006;
+  }
+
+  .js-download-report {
+    color: #374151 !important;
+  }
+
+  @media (max-width: 767.98px) {
+    .stu-rc-block {
+      max-width: 100%;
+    }
+
+    .stu-rc-block-head {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .stu-rc-block-head .js-download-report {
+      align-self: flex-end;
+    }
+  }
+
+  .stu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 34px;
+    padding: 0.42rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.2;
+    cursor: pointer;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .stu-btn-sm {
+    min-height: 30px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.76rem;
+  }
+
+  .stu-btn-primary {
+    background: #ff7979;
+    border-color: #ff7979;
+    color: #fff;
+  }
+
+  .stu-btn-primary:hover {
+    background: #f56868;
+    border-color: #f56868;
+    color: #fff;
+  }
+
+  .stu-btn-outline {
+    background: #fff;
+    border-color: #dde3ea;
+    color: #374151;
+  }
+
+  .stu-btn-outline:hover {
+    background: #fff8f8;
+    border-color: #ff7979;
+    color: #c24141;
+  }
+
+  .stu-btn-danger-outline {
+    color: #dc3545;
+    border-color: rgba(220, 53, 69, 0.35);
+  }
+
+  .stu-btn-danger-outline:hover {
+    background: rgba(220, 53, 69, 0.06);
+    border-color: #dc3545;
+    color: #c82333;
+  }
+
+  .stu-btn-danger {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: #fff;
+  }
+
+  .stu-btn-danger:hover {
+    background: #c82333;
+    border-color: #bd2130;
+    color: #fff;
+  }
+
+  .stu-modal {
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  }
+
+  .stu-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid #f0f2f4;
+    background: linear-gradient(180deg, #fff 0%, #fafbfc 100%);
+  }
+
+  .stu-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #1f2937;
+  }
+
+  .stu-modal-title i {
+    color: #ff7979;
+  }
+
+  .stu-modal-body {
+    padding: 0.85rem 1rem 1rem;
+  }
+
+  .stu-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f0f2f4;
+  }
+
+  .stu-move-from {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin-bottom: 0.85rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 8px;
+    background: #fafbfc;
+    border: 1px solid #f0f2f4;
+    font-size: 0.82rem;
+    color: #6b7280;
+  }
+
+  .stu-move-from strong {
+    color: #1f2937;
+    font-size: 0.88rem;
+  }
+
+  .stu-move-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #9ca3af;
+  }
+
+  .stu-delete-dialog {
+    max-width: 380px;
+  }
+  .stu-delete-modal {
+    position: relative;
+    text-align: center;
+  }
+  .stu-delete-close {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.65rem;
+    z-index: 2;
+    opacity: 0.55;
+  }
+  .stu-delete-body {
+    padding: 1.35rem 1.25rem 0.9rem;
+  }
+  .stu-delete-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(
+      145deg,
+      rgba(255, 121, 121, 0.18),
+      rgba(255, 121, 121, 0.08)
+    );
+    color: #e85d5d;
+    font-size: 1.35rem;
+    box-shadow: inset 0 0 0 1px rgba(255, 121, 121, 0.22);
+  }
+  .stu-delete-title {
+    margin: 0 0 0.55rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+  }
+  .stu-delete-name {
+    display: inline-block;
+    max-width: 100%;
+    margin-bottom: 0.55rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 1px solid #e8ecef;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #374151;
+  }
+  .stu-delete-text {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: #6b7280;
+  }
+  .stu-delete-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
+    padding: 0.85rem 1.25rem 1.15rem;
+    background: #fafbfc;
+    border-top: 1px solid #f0f2f4;
+  }
+  .stu-delete-form {
+    margin: 0;
+  }
+  .stu-delete-footer .stu-btn {
+    width: 100%;
+    min-height: 34px;
+  }
+
+  @media (max-width: 767.98px) {
+    .stu-profile-hero {
+      grid-template-columns: 1fr;
+      text-align: center;
+    }
+
+    .stu-profile-heading {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stu-profile-tags,
+    .stu-profile-actions {
+      justify-content: center;
+    }
+  }
+</style>
+
+<script src="{{ url_for('admin.static', filename='js/remove_alerts.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/update_passport.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/load_grade_streams.js') }}"></script>
+<script>
+  document.getElementById("editStudentBtn")?.addEventListener("click", () => {
+    const tabTrigger = document.querySelector('[href="#student-info"]');
+    if (tabTrigger) {
+      bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
+    }
+    document
+      .getElementById("studentInfoForm")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  function scrollToProfileCard() {
+    const target = document.getElementById("stu-profile-card");
+    const scrollContainer = document.querySelector(".main-content");
+    if (!target || !scrollContainer) return;
+
+    requestAnimationFrame(() => {
+      const offset = 14;
+      const containerTop = scrollContainer.getBoundingClientRect().top;
+      const targetTop = target.getBoundingClientRect().top;
+      const nextScrollTop =
+        scrollContainer.scrollTop + (targetTop - containerTop) - offset;
+
+      scrollContainer.scrollTo({
+        top: Math.max(0, nextScrollTop),
+        behavior: "smooth",
+      });
+    });
+  }
+
+  document.querySelector('[href="#academics"]')?.addEventListener("shown.bs.tab", scrollToProfileCard);
+
+  const deleteStudentModal = document.getElementById("deleteStudentModal");
+  const deleteStudentForm = document.getElementById("deleteStudentForm");
+  const deleteStudentName = document.getElementById("deleteStudentName");
+  let deleteModalInstance = null;
+
+  document.querySelectorAll(".js-delete-student").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (!deleteStudentModal || !deleteStudentForm || !deleteStudentName)
+        return;
+      deleteStudentName.textContent = btn.dataset.studentName || "this student";
+      deleteStudentForm.action = btn.dataset.deleteUrl || "";
+      deleteModalInstance =
+        deleteModalInstance || new bootstrap.Modal(deleteStudentModal);
+      deleteModalInstance.show();
+    });
+  });
+
+  document.querySelectorAll(".js-download-report").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const branchId = Number(btn.dataset.branchId);
+      const classId = Number(btn.dataset.classId);
+      const examId = Number(btn.dataset.examId);
+      const studentId = Number(btn.dataset.studentId);
+      const stream = btn.dataset.stream || null;
+
+      if (!branchId || !classId || !examId || !studentId) {
+        alert("Missing report details for this exam.");
+        return;
+      }
+
+      if (typeof blockUI === "function") {
+        blockUI("Generating result", "Preparing PDF download…");
+      }
+
+      try {
+        const response = await fetch("/admin/generate-reportcards-pdf", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: JSON.stringify({
+            branch_id: branchId,
+            class_id: classId,
+            exam_id: examId,
+            stream: stream,
+            student_id: studentId,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to generate PDF");
+        }
+
+        const blob = await response.blob();
+        const contentDisposition = response.headers.get("Content-Disposition");
+        let filename = "exam_assessment_result.pdf";
+
+        if (contentDisposition) {
+          const match = contentDisposition.match(
+            /filename\*?=(?:UTF-8'')?["']?([^"';]+)/,
+          );
+          if (match && match[1]) {
+            filename = decodeURIComponent(match[1]);
+          }
+        }
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error(error);
+        alert("Could not generate the exam/assessment result. Please try again.");
+      } finally {
+        if (typeof unblockUI === "function") {
+          unblockUI();
+        }
+      }
+    });
+  });
+</script>
 {% endblock %}

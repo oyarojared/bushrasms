@@ -25,7 +25,7 @@ from flask_login import login_required
 
 from ..services.subs import auto_allocate_subjects 
 
-from ..services.studs import get_next_adm_no
+from ..services.studs import get_next_adm_no, get_student_academic_history
 from flask_login import current_user
 
 UNRESTRICTED_SUPER_ADMIN_ID = 11
@@ -495,6 +495,8 @@ def student_profile(student_id):
         "subjects_taken": student.subjects_taken
     }
 
+    academic_history = get_student_academic_history(student.id)
+
     return render_template(
         "student_templates/student_profile.html",
         student=data,
@@ -502,6 +504,7 @@ def student_profile(student_id):
         student_class=student_class,
         passport_form=passport_form,
         transfer_form=transfer_form,
+        academic_history=academic_history,
     )
 
 

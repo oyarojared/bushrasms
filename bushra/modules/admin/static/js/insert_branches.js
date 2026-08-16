@@ -2,81 +2,103 @@ const selectedBranch = document.getElementById("selected-branch");
 const gradeContainer = document.getElementById("grade-container");
 const streamContainer = document.getElementById("stream-container-2");
 
-selectedBranch.addEventListener("change", () => {
-  const branchId = selectedBranch.value;
-  if (!branchId) return;
+function buildLabeledSelect(id, name, labelText, required = false) {
+  const wrapper = document.createDocumentFragment();
+  const label = document.createElement("label");
+  label.className = "stu-label";
+  label.setAttribute("for", id);
+  label.textContent = labelText;
 
-  const url = gradesUrlBase + branchId;
+  const select = document.createElement("select");
+  select.id = id;
+  select.name = name;
+  select.className = "form-select form-select-sm stu-control";
+  if (required) {
+    select.required = true;
+  }
 
-  fetch(url)
-    .then((res) => res.json())
-    .then((data) => {
-      // Remove old grade select if it exists
-      let oldGradeSelect = document.getElementById("grade-form-select");
-      if (oldGradeSelect) oldGradeSelect.remove();
+  wrapper.appendChild(label);
+  wrapper.appendChild(select);
+  return { wrapper, select };
+}
 
-      // Create grade select
-      const gradeSelect = document.createElement("select");
-      gradeSelect.id = "grade-form-select";
-      gradeSelect.name = "grade_form";
-      gradeSelect.className = "form-select";
-      gradeSelect.setAttribute("required", "true");
-      gradeSelect.innerHTML =
-        '<option value="">--- Select grade/form ---</option>';
+if (selectedBranch && gradeContainer && streamContainer) {
+  selectedBranch.addEventListener("change", () => {
+    const branchId = selectedBranch.value;
+    gradeContainer.innerHTML = "";
+    streamContainer.innerHTML = "";
 
-      data.forEach((item) => {
-        const option = document.createElement("option");
-        option.value = item.id;
-        option.textContent = item.grade_form;
-        option.dataset.streams = JSON.stringify(item.streams); // store streams
-        gradeSelect.appendChild(option);
-      });
+    if (!branchId) return;
 
-      gradeContainer.appendChild(gradeSelect);
+    fetch(`${gradesUrlBase}${branchId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const { wrapper, select: gradeSelect } = buildLabeledSelect(
+          "grade-form-select",
+          "grade_form",
+          "Grade / Form",
+          true,
+        );
 
-      // Remove stream select if previously there
-      streamContainer.innerHTML = "";
+        gradeSelect.innerHTML = '<option value="">Select grade / form</option>';
+        data.forEach((item) => {
+          const option = document.createElement("option");
+          option.value = item.id;
+          option.textContent = item.grade_form;
+          option.dataset.streams = JSON.stringify(item.streams || []);
+          gradeSelect.appendChild(option);
+        });
 
-      // Listen to grade change
-      gradeSelect.addEventListener("change", () => {
-        const selectedOption = gradeSelect.selectedOptions[0];
-        const streams = JSON.parse(selectedOption.dataset.streams || "[]");
+        gradeContainer.appendChild(wrapper);
 
-        // Clear previous stream select
-        streamContainer.innerHTML = "";
+        gradeSelect.addEventListener("change", () => {
+          streamContainer.innerHTML = "";
+          const selectedOption = gradeSelect.selectedOptions[0];
+          const streams = JSON.parse(selectedOption?.dataset.streams || "[]");
 
-        if (streams.length > 0) {
-          // Create stream select dynamically
-          const streamSelect = document.createElement("select");
-          streamSelect.name = "stream";
-          streamSelect.className = "form-select";
-          streamSelect.setAttribute("required", "true");
-          streamSelect.innerHTML =
-            '<option value="">--- Select Stream ---</option>';
+          if (!streams.length) return;
 
-          streams.forEach((s) => {
+          const streamField = buildLabeledSelect(
+            "student-stream-select",
+            "stream",
+            "Stream",
+            true,
+          );
+          const streamSelect = streamField.select;
+          streamSelect.innerHTML = '<option value="">Select stream</option>';
+
+          streams.forEach((stream) => {
             const opt = document.createElement("option");
-            opt.value = s;
-            opt.textContent = s;
+            opt.value = stream;
+            opt.textContent = stream;
             streamSelect.appendChild(opt);
           });
 
-          streamContainer.appendChild(streamSelect);
+          streamContainer.appendChild(streamField.wrapper);
+        });
+      })
+      .catch((err) => console.error(err));
+
+    fetch(`/admin/get_next_admission_no/${branchId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const admInput = document.querySelector("input[name='admission_number']");
+        if (admInput) {
+          admInput.value = data.admission_no;
+          if (typeof setAdmissionNumber === "function") {
+            setAdmissionNumber(data.admission_no);
+          }
         }
-      });
-    })
-    .catch((err) => console.error(err));
+      })
+      .catch((err) => console.error(err));
+  });
 
-  // 2. NEW: fetch admission number
-  fetch(`/admin/get_next_admission_no/${branchId}`)
-    .then((res) => res.json())
-    .then((data) => {
-      const admInput = document.querySelector("input[name='admission_number']");
-
-      if (admInput) {
-        admInput.value = data.admission_no;
-        setAdmissionNumber(data.admission_no);
+  const addStudentModal = document.getElementById("addStudentModal");
+  if (addStudentModal) {
+    addStudentModal.addEventListener("shown.bs.modal", () => {
+      if (selectedBranch.value) {
+        selectedBranch.dispatchEvent(new Event("change"));
       }
-    })
-    .catch((err) => console.error(err));
-});
+    });
+  }
+}

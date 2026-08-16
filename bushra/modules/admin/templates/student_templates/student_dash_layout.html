@@ -12,6 +12,57 @@
  {% endblock %}
 
 <script>
+  function blockUI(message = "Please wait…", sub = "Processing your request") {
+    const blocker = document.getElementById("uiBlocker");
+    if (!blocker) return;
+
+    blocker.querySelector(".ui-blocker-title").textContent = message;
+    blocker.querySelector(".ui-blocker-message").textContent = sub;
+    blocker.classList.remove("d-none");
+    blocker.setAttribute("aria-busy", "true");
+    document.body.classList.add("ui-blocker-active");
+  }
+
+  function unblockUI() {
+    const blocker = document.getElementById("uiBlocker");
+    if (!blocker) return;
+
+    blocker.classList.add("d-none");
+    blocker.setAttribute("aria-busy", "false");
+    document.body.classList.remove("ui-blocker-active");
+  }
+</script>
+
+<div
+  id="uiBlocker"
+  class="ui-blocker d-none"
+  role="alertdialog"
+  aria-modal="true"
+  aria-labelledby="uiBlockerTitle"
+  aria-describedby="uiBlockerMessage"
+  aria-busy="false"
+>
+  <div class="ui-blocker-panel">
+    <div class="ui-blocker-spinner" aria-hidden="true">
+      <span class="ui-blocker-ring"></span>
+      <span class="ui-blocker-ring ui-blocker-ring-delay"></span>
+      <span class="ui-blocker-core">
+        <i class="bi bi-people"></i>
+      </span>
+    </div>
+
+    <h6 id="uiBlockerTitle" class="ui-blocker-title">Please wait…</h6>
+    <p id="uiBlockerMessage" class="ui-blocker-message">
+      Processing your request
+    </p>
+
+    <div class="ui-blocker-progress" aria-hidden="true">
+      <div class="ui-blocker-progress-bar"></div>
+    </div>
+  </div>
+</div>
+
+<script>
     setTimeout(function () {
         const alert = document.getElementById("alertDiv");
         if (alert) {

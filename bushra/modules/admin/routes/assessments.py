@@ -14,7 +14,7 @@ from weasyprint import HTML
 from flask_login import login_required, current_user
 from ...admin.utils.route_protect import admin_required
 
-from ..services.grading_844 import generate_class_reports, normalize_form_name
+from ..services.grading_844 import generate_class_reports, normalize_form_name, generate_student_report
 
 from urllib.parse import quote
 import traceback
@@ -276,12 +276,17 @@ def generate_reportcards_pdf():
 
         # 🔹 1️⃣ Fetch data (CBC or 8-4-4)
         if is_844:
-            report_data = generate_class_reports(
-                branch_id=branch_id,
-                class_id=class_id,
-                exam_id=exam_id,
-                stream=stream
-            )
+            exam = Exam.query.get_or_404(exam_id)
+            if student_id:
+                student_obj = Student.query.get_or_404(student_id)
+                report_data = [generate_student_report(student_obj, exam)]
+            else:
+                report_data = generate_class_reports(
+                    branch_id=branch_id,
+                    class_id=class_id,
+                    exam_id=exam_id,
+                    stream=stream,
+                )
             template = "academics/report_card_844.html"
         else:
             report_data = get_report_card_data(   # existing CBC function
@@ -307,7 +312,10 @@ def generate_reportcards_pdf():
         if stream:
             class_name += f" {stream}"      
         
-        student_name = Student.query.get(student_id).full_name if student_id else ""    
+        student_name = ""
+        if student_id:
+            student_obj = Student.query.get(student_id)
+            student_name = student_obj.fullname if student_obj else ""    
         # 🔹 4️⃣ Send response
         response = make_response(pdf)
         response.headers["Content-Type"] = "application/pdf"
