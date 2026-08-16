@@ -314,16 +314,19 @@ def api_subjects():
         if stream:
             query = query.filter(Lesson.stream == stream)
 
-        lessons = query.distinct(Lesson.subject_id).all()
+        lessons = query.order_by(Subject.name).all()
 
-        subjects = [
-            {
+        seen_subject_ids = set()
+        subjects = []
+        for lesson in lessons:
+            if lesson.subject_id in seen_subject_ids:
+                continue
+            seen_subject_ids.add(lesson.subject_id)
+            subjects.append({
                 "id": lesson.subject.id,
                 "name": lesson.subject.name,
-                "code": lesson.subject.code
-            }
-            for lesson in lessons
-        ]
+                "code": lesson.subject.code,
+            })
 
         return jsonify(subjects)
 
