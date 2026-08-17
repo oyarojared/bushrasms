@@ -4,14 +4,20 @@
    ========================================================= */
 
 html {
-  font-size: 106.25%; /* 17px when browser default is 16px */
+  font-size: 108%; /* ~17.3px when browser default is 16px */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 
 @media (min-width: 1200px) {
   html {
-    font-size: 107.5%; /* ~17.2px on large screens */
+    font-size: 109%; /* ~17.4px on large screens */
+  }
+}
+
+@media (max-width: 767.98px) {
+  html {
+    font-size: 106.25%; /* Match original mobile scale */
   }
 }
 

@@ -1050,7 +1050,7 @@
 
   color: #343a40;
 
-  font-size: 0.78rem;
+  font-size: 0.88rem;
 
   font-weight: 800;
 
@@ -1071,7 +1071,7 @@
 
   color: #ff7979;
 
-  font-size: 0.65rem;
+  font-size: 0.75rem;
 }
 
 /* =========================================================
@@ -1097,7 +1097,7 @@
 
   color: #343a40;
 
-  font-size: 0.69rem;
+  font-size: 0.82rem;
 
   font-weight: 800;
 }
@@ -1116,9 +1116,9 @@
   align-items: center;
   justify-content: space-between;
 
-  min-height: 31px;
+  min-height: 34px;
 
-  padding: 4px 0;
+  padding: 5px 0;
 
   gap: 15px;
 
@@ -1132,7 +1132,7 @@
 .branch-info-label {
   color: #6c757d;
 
-  font-size: 0.61rem;
+  font-size: 0.76rem;
 
   font-weight: 600;
 
@@ -1144,7 +1144,7 @@
 
   color: #343a40;
 
-  font-size: 0.62rem;
+  font-size: 0.78rem;
 
   font-weight: 500;
 
@@ -1190,7 +1190,7 @@
 .branch-chart-title {
   color: #343a40;
 
-  font-size: 0.69rem;
+  font-size: 0.82rem;
 
   font-weight: 800;
 }
@@ -1200,7 +1200,7 @@
 
   color: #98a1ad;
 
-  font-size: 0.53rem;
+  font-size: 0.68rem;
 
   font-weight: 500;
 }
@@ -1410,7 +1410,7 @@
   }
 
   .branch-name {
-    font-size: 0.67rem;
+    font-size: 0.78rem;
 
     gap: 5px;
   }
@@ -1431,11 +1431,11 @@
   }
 
   .branch-info-title {
-    font-size: 0.63rem;
+    font-size: 0.76rem;
   }
 
   .branch-info-row {
-    min-height: 29px;
+    min-height: 31px;
 
     gap: 10px;
 
@@ -1443,13 +1443,13 @@
   }
 
   .branch-info-label {
-    font-size: 0.56rem;
+    font-size: 0.7rem;
   }
 
   .branch-info-value {
     max-width: 60%;
 
-    font-size: 0.56rem;
+    font-size: 0.72rem;
   }
 
   /* Chart */
@@ -1459,11 +1459,11 @@
   }
 
   .branch-chart-title {
-    font-size: 0.63rem;
+    font-size: 0.76rem;
   }
 
   .branch-chart-subtitle {
-    font-size: 0.5rem;
+    font-size: 0.64rem;
   }
 
   .branch-chart-container {
@@ -1524,7 +1524,7 @@
   }
 
   .branch-name {
-    font-size: 0.61rem;
+    font-size: 0.72rem;
   }
 
   .branch-name-icon {
@@ -1545,11 +1545,11 @@
   }
 
   .branch-info-label {
-    font-size: 0.52rem;
+    font-size: 0.66rem;
   }
 
   .branch-info-value {
-    font-size: 0.52rem;
+    font-size: 0.68rem;
   }
 
   .branch-overview-chart {

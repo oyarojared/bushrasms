@@ -551,7 +551,7 @@ footer .text-break {
 
   .sidebar-nav .nav-label {
     display: block;
-    font-size: 0.68rem;
+    font-size: 0.70rem;
     line-height: 1.15;
     margin-top: 2px;
     max-width: 72px;
@@ -965,7 +965,7 @@ body.ui-blocker-active {
 
   color: rgba(255, 255, 255, 0.92);
 
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 500;
 
   transition:
@@ -982,7 +982,7 @@ body.ui-blocker-active {
   align-items: center;
   justify-content: center;
 
-  font-size: 0.9rem;
+  font-size: 0.93rem;
 
   opacity: 0.9;
 }
@@ -1053,7 +1053,7 @@ body.ui-blocker-active {
     padding: 5px 7px;
     margin: 0;
     border-radius: 10px;
-    font-size: 0.68rem;
+    font-size: 0.70rem;
     transform: none !important;
     transition:
       background-color 0.22s ease,
@@ -1138,7 +1138,7 @@ body.ui-blocker-active {
 
   color: rgba(255, 255, 255, 0.92);
 
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 500;
 
   text-decoration: none;
@@ -1160,7 +1160,7 @@ body.ui-blocker-active {
   align-items: center;
   justify-content: center;
 
-  font-size: 0.9rem;
+  font-size: 0.93rem;
 }
 
 .sidebar-logout-link:hover {
@@ -1206,7 +1206,7 @@ body.ui-blocker-active {
     gap: 2px;
     padding: 5px 7px;
     border-radius: 10px;
-    font-size: 0.68rem;
+    font-size: 0.70rem;
     white-space: nowrap;
     transition:
       background-color 0.22s ease,
@@ -1229,5 +1229,41 @@ body.ui-blocker-active {
     width: auto;
     flex: none;
     font-size: 1.05rem;
+  }
+}
+
+/* =========================================================
+   DESKTOP SIDEBAR — COMPACT SPACING
+   Tighter vertical rhythm to fit more nav items
+   ========================================================= */
+
+@media (min-width: 769px) {
+  .sidebar-nav {
+    padding-top: 6px;
+    padding-bottom: 54px !important;
+  }
+
+  .sidebar-nav .nav {
+    gap: 1px;
+    padding: 2px 0;
+  }
+
+  .sidebar-nav .nav-link {
+    padding: 7px 11px;
+    margin: 0;
+    gap: 8px;
+  }
+
+  .sidebar-nav .nav-link.active::before {
+    height: 16px;
+  }
+
+  .sidebar-logout {
+    padding: 5px 0;
+  }
+
+  .sidebar-logout-link {
+    padding: 7px 11px;
+    gap: 8px;
   }
 }

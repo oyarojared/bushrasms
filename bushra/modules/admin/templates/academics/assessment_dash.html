@@ -98,157 +98,332 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     <div class="tab-content pt-3" id="examTabsContent">
       <!-- ================= EXAM SETUP TAB ================= -->
       <div class="tab-pane fade show active" id="exam-setup" role="tabpanel">
-        {% if current_user.is_admin %}
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h6 class="fw-bold mb-0">Exam Configuration</h6>
+        <div class="container-fluid px-0">
+          {% if current_user.is_admin and not exams_list %}
+          <div class="exam-setup-top-bar d-flex justify-content-end mb-2">
+            <button
+              class="btn btn-sm exam-setup-create-btn"
+              data-bs-toggle="modal"
+              data-bs-target="#createExamModal"
+            >
+              <i class="bi bi-journal-plus me-1"></i> Create New Exam/Assessment
+            </button>
+          </div>
+          {% endif %}
 
-          <button
-            class="btn btn-sm btn-secondary"
-            data-bs-toggle="modal"
-            data-bs-target="#createExamModal"
-          >
-            <i class="bi bi-plus-circle me-1"></i> Create Exam
-          </button>
-        </div>
-        {% endif %}
-        <hr />
-
-        <div class="container-fluid">
           {% if exams_list %}
-          <div class="row g-4">
-            {% for exam in exams_list %}
-            <div class="col-md-4 col-lg-3">
-              <div class="card h-100 shadow border-0 exam-card">
-                <!-- Card Header -->
-                <div
-                  class="card-header bg-light d-flex justify-content-between align-items-start"
+          <div class="exam-setup-toolbar mb-2">
+            <div class="exam-setup-toolbar-filters">
+              <div class="exam-setup-filter-inline">
+                <label class="exam-setup-filter-label" for="examYearFilter">Year</label>
+                <select
+                  id="examYearFilter"
+                  class="form-select form-select-sm exam-setup-filter-select"
+                ></select>
+              </div>
+
+              <div class="exam-setup-filter-inline">
+                <label class="exam-setup-filter-label" for="examTermFilter">Term</label>
+                <select
+                  id="examTermFilter"
+                  class="form-select form-select-sm exam-setup-filter-select"
                 >
-                  <div>
-                    <h6 class="fw-bold mb-0">{{ exam.name }}</h6>
-                    <small class="text-muted">
-                      {{ exam.year }} · Term {{ exam.term }}
-                    </small>
-                  </div>
+                  <option value="all">All terms</option>
+                  <option value="I">Term I</option>
+                  <option value="II">Term II</option>
+                  <option value="III">Term III</option>
+                </select>
+              </div>
 
-                  {% if exam.is_locked %}
-                  <span class="badge bg-danger">
-                    <i class="bi bi-lock-fill me-1"></i> Locked
-                  </span>
-                  {% else %}
-                  <span class="badge bg-success">
-                    <i class="bi bi-unlock-fill me-1"></i> Open
-                  </span>
-                  {% endif %}
-                </div>
-
-                <!-- Card Body -->
-                <div class="card-body pt-2">
-                  <div class="mb-2">
-                    <div class="small">
-                      {% for eb in exam.exam_branches %} {{
-                      eb.branch.branch_name }}{% if not loop.last %}, {% endif
-                      %} {% endfor %}
-                    </div>
-                  </div>
-
-                  <div class="mb-2">
-                    <small class="text-muted fw-semibold">Marks Entry</small
-                    ><br />
-                    {% if exam.is_locked %}
-                    <span class="text-danger small">
-                      <i class="bi bi-x-circle-fill"></i> Closed
-                    </span>
-                    {% else %}
-                    <span class="text-success small">
-                      <i class="bi bi-check-circle-fill"></i> Open
-                    </span>
-                    {% endif %}
-                  </div>
-                </div>
-
-                <!-- Card Footer -->
-                <div class="card-footer bg-white border-top-0 pt-0">
-                  <div class="d-grid gap-2">
-                    <!-- Primary Actions -->
-                    <div class="btn-group btn-group-sm" role="group">
-                      {% if not current_user.is_admin %}
-                      <button class="btn btn-outline-primary d-none" disabled>
-                        <i class="bi bi-pencil-fill"></i> Edit
-                      </button>
-                      {% else %}
-                      <button class="btn btn-outline-primary">
-                        <i class="bi bi-pencil-fill"></i> Edit
-                      </button>
-                      {% endif %}
-
-                      <a
-                        href="{{ url_for('admin.marks_entry', exam_id=exam.id) }}"
-                        class="btn btn-secondary"
-                      >
-                        <i class="bi bi-table me-2"></i>Enter Marks
-                      </a>
-                    </div>
-
-                    <!-- Lock / Unlock -->
-                    {% if exam.is_locked %}
-                    <form
-                      method="post"
-                      action="{{ url_for('admin.unlock_exam', exam_id=exam.id) }}"
-                    >
-                      {% if not current_user.is_admin %}
-                      <button
-                        class="btn btn-sm btn-success w-100 d-none"
-                        disabled
-                      >
-                        <i class="bi bi-unlock-fill me-1"></i> Unlock Exam
-                      </button>
-                      {% else %}
-                      <button class="btn btn-sm btn-success w-100">
-                        <i class="bi bi-unlock-fill me-1"></i> Unlock Exam
-                      </button>
-                      {% endif %}
-                    </form>
-                    {% else %}
-                    <form
-                      method="post"
-                      action="{{ url_for('admin.lock_exam', exam_id=exam.id) }}"
-                    >
-                      {% if not current_user.is_admin %}
-                      <button
-                        class="btn btn-sm btn-warning w-100 d-none"
-                        disabled
-                      >
-                        <i class="bi bi-lock-fill me-1"></i> Lock Exam
-                      </button>
-                      {% else %}
-                      <button class="btn btn-sm btn-warning w-100">
-                        <i class="bi bi-lock-fill me-1"></i> Lock Exam
-                      </button>
-                      {% endif %}
-                    </form>
-                    {% endif %}
-
-                    <!-- Danger Zone -->
-                    {% if current_user.is_admin %}
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-danger w-100 delete-exam-btn"
-                      data-bs-toggle="modal"
-                      data-bs-target="#deleteExamModal"
-                      data-exam-name="{{ exam.name }}"
-                      data-delete-url="{{ url_for('admin.delete_exam', exam_id=exam.id) }}"
-                    >
-                      <i class="bi bi-trash-fill me-1"></i> Delete Exam
-                    </button>
-                    {% endif %}
-                  </div>
+              {% if current_user.is_admin %}
+              <div class="exam-setup-filter-inline exam-setup-filter-archived">
+                <div class="form-check form-switch exam-setup-archived-check mb-0">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    id="examShowArchived"
+                  />
+                  <label class="exam-setup-filter-label mb-0" for="examShowArchived">
+                    Show archived
+                  </label>
                 </div>
               </div>
+              {% endif %}
             </div>
-            {% endfor %}
+
+            {% if current_user.is_admin %}
+            <button
+              class="btn btn-sm exam-setup-create-btn"
+              data-bs-toggle="modal"
+              data-bs-target="#createExamModal"
+            >
+              <i class="bi bi-journal-plus me-1"></i> Create New Exam/Assessment
+            </button>
+            {% endif %}
           </div>
+
+          <p id="examSetupArchiveHint" class="exam-setup-archive-hint d-none mb-2" role="status">
+            <span id="examSetupArchiveHintText"></span>
+          </p>
+
+          <div class="exam-setup-table-wrap">
+            <table class="table table-hover align-middle exam-setup-table mb-0">
+              <thead>
+                <tr>
+                  <th scope="col">Exam</th>
+                  <th scope="col" class="text-nowrap">Term</th>
+                  <th scope="col" class="d-none d-md-table-cell">Schools</th>
+                  <th scope="col" class="text-nowrap">Status</th>
+                  <th scope="col" class="text-end text-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for exam in exams_list %}
+                <tr
+                  class="exam-setup-row"
+                  data-year="{{ exam.year }}"
+                  data-term="{{ exam.term }}"
+                  data-exam-id="{{ exam.id }}"
+                  data-locked="{{ 'true' if exam.is_locked else 'false' }}"
+                >
+                  <td>
+                    <span class="exam-setup-name fw-semibold">{{ exam.name }}</span>
+                  </td>
+
+                  <td class="text-muted text-nowrap">Term {{ exam.term }}</td>
+
+                  <td class="d-none d-md-table-cell">
+                    <span class="exam-setup-schools text-muted">
+                      {% for eb in exam.exam_branches %}{{
+                      eb.branch.branch_name }}{% if not loop.last %}, {% endif
+                      %}{% else %}—{% endfor %}
+                    </span>
+                  </td>
+
+                  <td>
+                    {% if exam.is_locked %}
+                    <span class="badge exam-setup-status exam-setup-status-locked">
+                      <i class="bi bi-lock-fill me-1"></i>Locked
+                    </span>
+                    {% else %}
+                    <span class="badge exam-setup-status exam-setup-status-open">
+                      <i class="bi bi-unlock-fill me-1"></i>Open
+                    </span>
+                    {% endif %}
+                  </td>
+
+                  <td class="text-end position-static exam-setup-actions-cell">
+                    <div
+                      class="d-flex justify-content-end align-items-center gap-2 exam-setup-actions"
+                    >
+                      <a
+                        href="{{ url_for('admin.marks_entry', exam_id=exam.id) }}"
+                        class="btn btn-sm btn-exam-enter text-nowrap"
+                      >
+                        <i class="bi bi-table me-1"></i>Enter Marks
+                      </a>
+
+                      {% if current_user.is_admin %}
+                      <div class="dropdown exam-setup-dropdown">
+                        <button
+                          class="btn btn-sm btn-outline-secondary exam-setup-menu-btn"
+                          type="button"
+                          data-bs-toggle="dropdown"
+                          data-bs-boundary="viewport"
+                          aria-expanded="false"
+                          aria-label="More actions for {{ exam.name }}"
+                        >
+                          <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm exam-setup-dropdown-menu">
+                          <li>
+                            <button class="dropdown-item" type="button" disabled>
+                              <i class="bi bi-pencil me-2"></i>Edit
+                            </button>
+                          </li>
+                          <li><hr class="dropdown-divider" /></li>
+
+                          {% if exam.is_locked %}
+                          <li>
+                            <form
+                              method="post"
+                              action="{{ url_for('admin.unlock_exam', exam_id=exam.id) }}"
+                              class="m-0"
+                            >
+                              <button type="submit" class="dropdown-item text-success">
+                                <i class="bi bi-unlock-fill me-2"></i>Unlock Exam
+                              </button>
+                            </form>
+                          </li>
+                          {% else %}
+                          <li>
+                            <form
+                              method="post"
+                              action="{{ url_for('admin.lock_exam', exam_id=exam.id) }}"
+                              class="m-0"
+                            >
+                              <button type="submit" class="dropdown-item text-warning">
+                                <i class="bi bi-lock-fill me-2"></i>Lock Exam
+                              </button>
+                            </form>
+                          </li>
+                          {% endif %}
+
+                          <li><hr class="dropdown-divider" /></li>
+                          <li>
+                            <button
+                              type="button"
+                              class="dropdown-item text-danger delete-exam-btn"
+                              data-bs-toggle="modal"
+                              data-bs-target="#deleteExamModal"
+                              data-exam-name="{{ exam.name }}"
+                              data-delete-url="{{ url_for('admin.delete_exam', exam_id=exam.id) }}"
+                            >
+                              <i class="bi bi-trash-fill me-2"></i>Delete Exam
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div id="examSetupNoMatches" class="alert alert-light border text-center d-none mt-3 mb-0">
+            <i class="bi bi-inbox me-1"></i>No exams match the selected filters.
+          </div>
+
+          <script>
+            document.addEventListener("DOMContentLoaded", function () {
+              const yearFilter = document.getElementById("examYearFilter");
+              const termFilter = document.getElementById("examTermFilter");
+              const archivedToggle = document.getElementById("examShowArchived");
+              const tbody = document.querySelector(".exam-setup-table tbody");
+              let rows = Array.from(document.querySelectorAll(".exam-setup-row"));
+              const noMatches = document.getElementById("examSetupNoMatches");
+              const tableWrap = document.querySelector(".exam-setup-table-wrap");
+              const archiveHint = document.getElementById("examSetupArchiveHint");
+
+              if (!yearFilter || rows.length === 0 || !tbody) return;
+
+              const termRank = (term) => ({ I: 1, II: 2, III: 3 }[term] || 0);
+
+              function sortExamRows() {
+                rows = Array.from(document.querySelectorAll(".exam-setup-row"));
+                rows
+                  .sort((a, b) => {
+                    const yearA = parseInt(a.dataset.year, 10);
+                    const yearB = parseInt(b.dataset.year, 10);
+                    if (yearB !== yearA) return yearB - yearA;
+
+                    const termDiff =
+                      termRank(b.dataset.term) - termRank(a.dataset.term);
+                    if (termDiff !== 0) return termDiff;
+
+                    return (
+                      parseInt(b.dataset.examId, 10) -
+                      parseInt(a.dataset.examId, 10)
+                    );
+                  })
+                  .forEach((row) => tbody.appendChild(row));
+              }
+
+              function initExamSetupDropdowns() {
+                document
+                  .querySelectorAll(".exam-setup-dropdown [data-bs-toggle='dropdown']")
+                  .forEach((toggle) => {
+                    bootstrap.Dropdown.getOrCreateInstance(toggle, {
+                      popperConfig(defaultBsPopperConfig) {
+                        return {
+                          ...defaultBsPopperConfig,
+                          strategy: "fixed",
+                        };
+                      },
+                    });
+                  });
+              }
+
+              sortExamRows();
+              initExamSetupDropdowns();
+
+              const currentYear = new Date().getFullYear();
+              const years = [
+                ...new Set(rows.map((row) => parseInt(row.dataset.year, 10))),
+              ].sort((a, b) => b - a);
+
+              years.forEach((year) => {
+                const option = document.createElement("option");
+                option.value = String(year);
+                option.textContent = String(year);
+                yearFilter.appendChild(option);
+              });
+
+              if (years.includes(currentYear)) {
+                yearFilter.value = String(currentYear);
+              } else if (years.length) {
+                yearFilter.value = String(years[0]);
+              }
+
+              function applyExamSetupFilters() {
+                const year = parseInt(yearFilter.value, 10);
+                const term = termFilter.value;
+                const showArchived = archivedToggle ? archivedToggle.checked : true;
+                const isPastYear = year < currentYear;
+
+                let visible = 0;
+                let hiddenArchived = 0;
+
+                rows.forEach((row) => {
+                  const rowYear = parseInt(row.dataset.year, 10);
+                  const rowTerm = row.dataset.term;
+                  const isLocked = row.dataset.locked === "true";
+
+                  let show = rowYear === year;
+                  if (term !== "all" && rowTerm !== term) show = false;
+                  if (!showArchived && !isPastYear && isLocked) {
+                    hiddenArchived += 1;
+                    show = false;
+                  }
+
+                  row.classList.toggle("d-none", !show);
+                  if (show) visible += 1;
+                });
+
+                if (noMatches) noMatches.classList.toggle("d-none", visible > 0);
+                if (tableWrap) tableWrap.classList.toggle("d-none", visible === 0);
+
+                if (archiveHint && archivedToggle) {
+                  const hintText = document.getElementById("examSetupArchiveHintText");
+                  if (!showArchived && !isPastYear && hiddenArchived > 0) {
+                    const message =
+                      hiddenArchived +
+                      " locked exam(s) hidden — turn on Show archived to view.";
+                    if (hintText) hintText.textContent = message;
+                    else archiveHint.textContent = message;
+                    archiveHint.classList.remove("d-none");
+                  } else {
+                    archiveHint.classList.add("d-none");
+                  }
+                }
+              }
+
+              yearFilter.addEventListener("change", applyExamSetupFilters);
+              termFilter.addEventListener("change", applyExamSetupFilters);
+              if (archivedToggle) {
+                archivedToggle.addEventListener("change", applyExamSetupFilters);
+              }
+
+              applyExamSetupFilters();
+            });
+          </script>
           {% else %}
-          <div class="alert alert-info">No exams created yet.</div>
+          <div class="alert alert-info mb-0">No exams created yet.</div>
           {% endif %}
         </div>
       </div>
@@ -639,63 +814,90 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
   class="modal fade"
   id="createExamModal"
   tabindex="-1"
+  aria-labelledby="createExamModalLabel"
   aria-hidden="true"
   data-bs-backdrop="static"
   data-bs-keyboard="false"
 >
-  <div class="modal-dialog modal-md modal-dialog-centered">
-    <div class="modal-content">
+  <div class="modal-dialog modal-dialog-centered create-exam-modal-dialog">
+    <div class="modal-content create-exam-modal">
       <form method="post">
         {{ exam_form.hidden_tag() }}
 
-        <div class="modal-header bg-danger text-white pt-2 pb-2 px-3">
-          <h6 class="modal-title fw-bold">
-            <i class="bi bi-journal-plus me-2"></i>Create New Exam
+        <div class="modal-header create-exam-modal-header">
+          <h6 class="modal-title" id="createExamModalLabel">
+            <i class="bi bi-journal-plus me-2"></i>Create New Exam/Assessment
           </h6>
           <button
             type="button"
-            class="btn-close btn-close-white"
+            class="btn-close"
             data-bs-dismiss="modal"
+            aria-label="Close"
           ></button>
         </div>
 
-        <div class="modal-body pt-1">
-          <h6 class="text-center fw-light bg-light border-bottom p-2">
-            Exam Data Entry
-          </h6>
+        <div class="modal-body create-exam-modal-body">
+          {% if current_user.is_admin and not current_user.is_super_admin %}
+          <div class="d-none">
+            {{ form_input(
+              exam_form.branch_id,
+              wrapper_class="mb-0",
+              select_class="form-select form-select-sm",
+              icon_class="bi bi-house"
+            ) }}
+          </div>
+          {% else %}
+          <div class="mb-3">
+            {{ form_input(
+              exam_form.branch_id,
+              wrapper_class="mb-0",
+              select_class="form-select form-select-sm",
+              icon_class="bi bi-house",
+              help_text="Select the school for this exam"
+            ) }}
+          </div>
+          {% endif %}
 
-          <div class="border p-2">
-            {% if current_user.is_admin and not current_user.is_super_admin %}
-            <div class="mb-3" style="display: none">
-              {{ form_input( exam_form.branch_id, select_class="form-select",
-              icon_class="bi bi-house", help_text="Select one branch or All
-              branches" ) }}
-            </div>
-            {% else %}
-            <div class="mb-3">
-              {{ form_input( exam_form.branch_id, select_class="form-select",
-              icon_class="bi bi-house", help_text="Select one branch or All
-              branches" ) }}
-            </div>
-            {% endif %}
-            <div class="mb-3">
-              {{ form_input( exam_form.year, select_class="form-select",
-              icon_class="bi bi-calendar" ) }}
+          <div class="row g-3">
+            <div class="col-sm-6">
+              {{ form_input(
+                exam_form.year,
+                wrapper_class="mb-0",
+                select_class="form-select form-select-sm",
+                icon_class="bi bi-calendar3"
+              ) }}
             </div>
 
-            <div class="mb-3">
-              {{ form_input( exam_form.term, select_class="form-select",
-              icon_class="bi bi-file-earmark-bar-graph" ) }}
+            <div class="col-sm-6">
+              {{ form_input(
+                exam_form.term,
+                wrapper_class="mb-0",
+                select_class="form-select form-select-sm",
+                icon_class="bi bi-bookmark"
+              ) }}
             </div>
 
-            <div class="mb-3">
-              {{ form_input( exam_form.name, icon_class="bi bi-book" ) }}
+            <div class="col-12">
+              {{ form_input(
+                exam_form.name,
+                wrapper_class="mb-0",
+                input_class="form-control form-control-sm",
+                icon_class="bi bi-pencil-square",
+                placeholder="e.g. Mid Term Exam"
+              ) }}
             </div>
           </div>
         </div>
 
-        <div class="modal-footer justify-content-center">
-          {{ exam_form.submit(class="btn btn-sm btn-danger") }}
+        <div class="modal-footer create-exam-modal-footer">
+          <button
+            type="button"
+            class="btn btn-sm btn-light create-exam-cancel-btn"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          {{ exam_form.submit(class="btn btn-sm create-exam-submit-btn", value="Create") }}
         </div>
       </form>
     </div>
@@ -1083,164 +1285,396 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
   }
 
   /* =========================================================
-   SHULEKA EXAM CARDS
+   EXAM SETUP — CREATE BUTTON
    ========================================================= */
 
-  .exam-card {
-    border: 1px solid #edf0f2 !important;
+  .exam-setup-create-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0.38rem 0.85rem;
+    border: 1px solid #ff7979;
+    border-radius: 8px;
+    background: #ff7979;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .exam-setup-create-btn:hover,
+  .exam-setup-create-btn:focus {
+    background: #f56868;
+    border-color: #f56868;
+    color: #fff;
+  }
+
+  @media (max-width: 575.98px) {
+    .exam-setup-top-bar {
+      justify-content: stretch !important;
+    }
+
+    .exam-setup-create-btn {
+      width: 100%;
+      white-space: normal;
+    }
+  }
+
+  /* =========================================================
+   CREATE EXAM MODAL
+   ========================================================= */
+
+  .create-exam-modal-dialog {
+    max-width: 480px;
+  }
+
+  .create-exam-modal {
+    border: 1px solid #edf0f2;
     border-radius: 12px;
     overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  }
+
+  .create-exam-modal-header {
+    padding: 1rem 1.1rem 0.5rem;
+    border-bottom: 0;
     background: #fff;
-    transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease,
-      border-color 0.2s ease;
   }
 
-  .exam-card:hover {
-    transform: translateY(-3px);
-    border-color: rgba(255, 121, 121, 0.35) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
-  }
-
-  /* =========================================================
-   CARD HEADER
-   ========================================================= */
-
-  .exam-card .card-header {
-    background: #fff !important;
-    border-bottom: 1px solid #f0f1f3;
-    padding: 1rem;
-  }
-
-  .exam-card .card-header h6 {
-    color: #252a2f;
+  .create-exam-modal-header .modal-title {
     font-size: 0.95rem;
-    line-height: 1.35;
+    font-weight: 700;
+    color: #252a2f;
   }
 
-  .exam-card .card-header small {
+  .create-exam-modal-header .modal-title i {
+    color: #ff7979;
+  }
+
+  .create-exam-modal-body {
+    padding: 0.5rem 1.1rem 1rem;
+  }
+
+  .create-exam-modal-body .form-label {
+    margin-bottom: 0.3rem;
     font-size: 0.78rem;
-  }
-
-  /* =========================================================
-   STATUS BADGES
-   ========================================================= */
-
-  .exam-card .badge {
-    font-size: 0.7rem;
     font-weight: 600;
-    padding: 0.4rem 0.55rem;
-    border-radius: 6px;
-  }
-
-  /* =========================================================
-   CARD BODY
-   ========================================================= */
-
-  .exam-card .card-body {
-    padding: 0.9rem 1rem;
-  }
-
-  .exam-card .card-body .small {
     color: #495057;
+  }
+
+  .create-exam-modal-body .input-group-text {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+    color: #6c757d;
+  }
+
+  .create-exam-modal-body .form-control,
+  .create-exam-modal-body .form-select {
+    border-color: #dee2e6;
+    font-size: 0.84rem;
+  }
+
+  .create-exam-modal-body .form-control:focus,
+  .create-exam-modal-body .form-select:focus {
+    border-color: rgba(255, 121, 121, 0.55);
+    box-shadow: 0 0 0 0.2rem rgba(255, 121, 121, 0.12);
+  }
+
+  .create-exam-modal-footer {
+    padding: 0 1.1rem 1rem;
+    border-top: 0;
+    gap: 0.5rem;
+  }
+
+  .create-exam-cancel-btn {
+    min-width: 78px;
+    border-radius: 8px;
     font-size: 0.82rem;
-  }
-
-  .exam-card .card-body .text-muted {
-    font-size: 0.75rem;
-    letter-spacing: 0.01em;
-  }
-
-  /* =========================================================
-   PRIMARY ACTION
-   ========================================================= */
-
-  .exam-card .btn-secondary {
-    background-color: #ff7979;
-    border-color: #ff7979;
-    color: #fff;
     font-weight: 600;
   }
 
-  .exam-card .btn-secondary:hover,
-  .exam-card .btn-secondary:focus {
-    background-color: #f56868;
+  .create-exam-submit-btn {
+    min-width: 88px;
+    border: 1px solid #ff7979;
+    border-radius: 8px;
+    background: #ff7979;
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  .create-exam-submit-btn:hover,
+  .create-exam-submit-btn:focus {
+    background: #f56868;
     border-color: #f56868;
     color: #fff;
   }
 
   /* =========================================================
-   EDIT BUTTON
+   EXAM SETUP TOOLBAR
    ========================================================= */
 
-  .exam-card .btn-outline-primary {
-    color: #ff7979;
-    border-color: #ff7979;
+  .exam-setup-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.65rem 1rem;
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #edf0f2;
+    border-radius: 8px;
+    background: #cfcfcf;
   }
 
-  .exam-card .btn-outline-primary:hover {
-    color: #fff;
+  .exam-setup-toolbar-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.65rem 1rem;
+    flex: 1 1 auto;
+  }
+
+  .exam-setup-filter-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 110px;
+  }
+
+  .exam-setup-filter-archived {
+    min-width: auto;
+    justify-content: flex-end;
+    padding-bottom: 0.2rem;
+  }
+
+  .exam-setup-filter-label {
+    margin-bottom: 0;
+    color: #6c757d;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .exam-setup-filter-select {
+    width: 100%;
+    min-width: 110px;
+    min-height: 30px;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    border-color: #dee2e6;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    background: #fff;
+  }
+
+  .exam-setup-filter-select:focus {
+    border-color: rgba(255, 121, 121, 0.55);
+    box-shadow: 0 0 0 0.15rem rgba(255, 121, 121, 0.12);
+  }
+
+  .exam-setup-archived-check {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 30px;
+  }
+
+  .exam-setup-archived-check .form-check-input {
+    width: 2em;
+    height: 1em;
+    margin-top: 0;
+    cursor: pointer;
+  }
+
+  .exam-setup-archived-check .form-check-input:checked {
     background-color: #ff7979;
     border-color: #ff7979;
   }
 
+  .exam-setup-archived-check .form-check-input:focus {
+    box-shadow: 0 0 0 0.15rem rgba(255, 121, 121, 0.15);
+  }
+
+  .exam-setup-archive-hint {
+    margin: 0;
+    padding: 0 0.15rem;
+    color: #6c757d;
+    font-size: 0.74rem;
+    line-height: 1.35;
+  }
+
+  @media (max-width: 767.98px) {
+    .exam-setup-toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .exam-setup-toolbar-filters {
+      width: 100%;
+    }
+
+    .exam-setup-filter-inline {
+      flex: 1 1 calc(50% - 0.5rem);
+      min-width: 0;
+    }
+
+    .exam-setup-filter-archived {
+      flex: 1 1 100%;
+      padding-bottom: 0;
+    }
+
+    .exam-setup-create-btn {
+      width: 100%;
+    }
+  }
+
   /* =========================================================
-   LOCK / UNLOCK
+   EXAM SETUP TABLE
    ========================================================= */
 
-  .exam-card .btn-success {
-    font-weight: 500;
+  .exam-setup-table-wrap {
+    border: 1px solid #edf0f2;
+    border-radius: 10px;
+    overflow: visible;
+    background: #fff;
   }
 
-  .exam-card .btn-warning {
-    font-weight: 500;
+  .exam-setup-actions-cell {
+    overflow: visible;
   }
 
-  /* =========================================================
-   DELETE
-   ========================================================= */
-
-  .exam-card .btn-outline-danger {
-    font-weight: 500;
+  .exam-setup-dropdown {
+    position: static;
   }
 
-  /* =========================================================
-   CARD FOOTER
-   ========================================================= */
-
-  .exam-card .card-footer {
-    padding: 0 1rem 1rem;
+  .exam-setup-dropdown-menu {
+    z-index: 1080;
+    min-width: 11.5rem;
   }
 
-  .exam-card .btn-group {
-    width: 100%;
+  .exam-setup-table {
+    margin-bottom: 0;
   }
 
-  .exam-card .btn {
-    font-size: 0.82rem;
+  .exam-setup-table thead th {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #edf0f2;
+    background: #f8f9fa;
+    color: #495057;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .exam-setup-table tbody td {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+  }
+
+  .exam-setup-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .exam-setup-table tbody tr:hover {
+    background: #fcfcfd;
+  }
+
+  .exam-setup-name {
+    color: #252a2f;
+    font-size: 0.9rem;
+  }
+
+  .exam-setup-schools {
+    display: inline-block;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.84rem;
+  }
+
+  .exam-setup-status {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.35rem 0.55rem;
     border-radius: 6px;
   }
 
-  .exam-card .btn-group .btn {
-    border-radius: 6px;
+  .exam-setup-status-open {
+    background: rgba(25, 135, 84, 0.12);
+    color: #198754;
   }
 
-  /* =========================================================
-   MOBILE
-   ========================================================= */
+  .exam-setup-status-locked {
+    background: rgba(220, 53, 69, 0.12);
+    color: #dc3545;
+  }
 
-  @media (max-width: 575.98px) {
-    .exam-card .card-header {
-      padding: 0.9rem;
+  .btn-exam-enter {
+    background-color: #ff7979;
+    border-color: #ff7979;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .btn-exam-enter:hover,
+  .btn-exam-enter:focus {
+    background-color: #f56868;
+    border-color: #f56868;
+    color: #fff;
+  }
+
+  .exam-setup-menu-btn {
+    width: 31px;
+    height: 31px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-color: #dee2e6;
+    color: #6c757d;
+  }
+
+  .exam-setup-menu-btn:hover,
+  .exam-setup-menu-btn:focus {
+    background: #f8f9fa;
+    border-color: #ced4da;
+    color: #495057;
+  }
+
+  .exam-setup-table .dropdown-item {
+    font-size: 0.84rem;
+  }
+
+  @media (max-width: 767.98px) {
+    .exam-setup-table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
-    .exam-card .card-body {
-      padding: 0.8rem 0.9rem;
+    .exam-setup-table thead th,
+    .exam-setup-table tbody td {
+      padding: 0.7rem 0.75rem;
     }
 
-    .exam-card .card-footer {
-      padding: 0 0.9rem 0.9rem;
+    .exam-setup-name {
+      font-size: 0.86rem;
+    }
+
+    .btn-exam-enter {
+      font-size: 0.76rem;
+      padding: 0.3rem 0.55rem;
+    }
+
+    .exam-setup-actions {
+      gap: 0.35rem !important;
     }
   }
 
