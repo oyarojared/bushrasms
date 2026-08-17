@@ -1,4 +1,5 @@
 from ....modals.assessment_db import *
+from ....modals import db
 from ....modals.branches_db import Branch, BranchClasses
 from ....modals.staff_db import ClassTeacher, Teacher
 from ....modals.students_db import Student
@@ -285,6 +286,73 @@ def build_passport_path(student):
 
 
 from collections import defaultdict
+from sqlalchemy import func
+
+
+def compute_cbe_exam_rankings(branch_id, class_id, exam_id):
+    """
+    Lightweight class rankings for CBE exams.
+    Returns a dict keyed by student_id with stream/overall positions.
+    """
+    students = Student.query.filter_by(
+        branch_id=branch_id,
+        class_id=class_id,
+    ).all()
+
+    total_rows = (
+        db.session.query(
+            StudentExamMark.student_id,
+            func.coalesce(func.sum(StudentExamMark.marks), 0),
+        )
+        .join(ExamPaper, StudentExamMark.exam_paper_id == ExamPaper.id)
+        .filter(
+            ExamPaper.exam_id == exam_id,
+            ExamPaper.branch_id == branch_id,
+            ExamPaper.class_id == class_id,
+        )
+        .group_by(StudentExamMark.student_id)
+        .all()
+    )
+    totals = {student_id: float(total) for student_id, total in total_rows}
+
+    student_rows = [
+        {
+            "id": student.id,
+            "stream": student.stream,
+            "total_marks": totals.get(student.id, 0.0),
+        }
+        for student in students
+    ]
+
+    overall_students = sorted(
+        student_rows,
+        key=lambda row: row["total_marks"],
+        reverse=True,
+    )
+    class_total = len(overall_students)
+    ranking_map = {}
+
+    for position, row in enumerate(overall_students, start=1):
+        ranking_map[row["id"]] = {
+            "overall_position": position,
+            "overall_total": class_total,
+            "stream_position": None,
+            "stream_total": None,
+        }
+
+    stream_groups = defaultdict(list)
+    for row in overall_students:
+        stream_groups[row["stream"]].append(row)
+
+    for group in stream_groups.values():
+        group.sort(key=lambda row: row["total_marks"], reverse=True)
+        stream_total = len(group)
+        for position, row in enumerate(group, start=1):
+            ranking_map[row["id"]]["stream_position"] = position
+            ranking_map[row["id"]]["stream_total"] = stream_total
+
+    return ranking_map
+
 
 def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=None):
     """

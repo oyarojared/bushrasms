@@ -1,8 +1,9 @@
+from ....modals import db
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 from ....modals.students_db import Student
 from ....modals.staff_db import Teacher, ClassTeacher
-from ....modals.subjects_db import Lesson
+from ....modals.subjects_db import Lesson, Subject
 from ....modals.assessment_db import Exam, ExamPaper, StudentExamMark
 from ....modals.branches_db import Branch 
 from .report import build_passport_path, build_static_image_path 
@@ -475,3 +476,88 @@ def generate_class_reports(branch_id, class_id, stream, exam_id):
         r["summary"]["final_grade"] = aggregate_to_final_grade(r["summary"]["total_points"])
 
     return stream_reports
+
+
+def compute_class_exam_rankings(branch_id, class_id, exam_id):
+    """
+    Lightweight class rankings for 8-4-4 exams.
+    Returns a dict keyed by student_id with stream/overall positions.
+    """
+    from collections import defaultdict
+
+    students = (
+        Student.query
+        .options(joinedload(Student.subject_allocations))
+        .filter_by(branch_id=branch_id, class_id=class_id)
+        .all()
+    )
+
+    mark_rows = (
+        db.session.query(StudentExamMark, ExamPaper, Subject)
+        .join(ExamPaper, StudentExamMark.exam_paper_id == ExamPaper.id)
+        .join(Subject, ExamPaper.subject_id == Subject.id)
+        .filter(
+            ExamPaper.exam_id == exam_id,
+            ExamPaper.branch_id == branch_id,
+            ExamPaper.class_id == class_id,
+        )
+        .all()
+    )
+
+    mark_by_student_subject = {}
+    for mark, paper, subject in mark_rows:
+        mark_by_student_subject[(mark.student_id, subject.id)] = {
+            "marks": mark.marks,
+            "category": subject.category,
+        }
+
+    summaries = []
+    for student in students:
+        point_rows = []
+        for alloc in student.subject_allocations:
+            if not alloc.subject_id:
+                continue
+            entry = mark_by_student_subject.get((student.id, alloc.subject_id))
+            if not entry:
+                continue
+            _, points = resolve_844_grade(entry["marks"], entry["category"])
+            point_rows.append(
+                {
+                    "points": points,
+                    "category": entry["category"],
+                }
+            )
+
+        agg = compute_844_aggregate(point_rows)
+        summaries.append(
+            {
+                "student_id": student.id,
+                "stream": student.stream,
+                "total_points": agg["total_points"],
+            }
+        )
+
+    summaries.sort(key=lambda row: row["total_points"], reverse=True)
+    ranking_map = {}
+    class_total = len(summaries)
+
+    for position, row in enumerate(summaries, start=1):
+        ranking_map[row["student_id"]] = {
+            "overall_position": position,
+            "overall_total": class_total,
+            "stream_position": None,
+            "stream_total": None,
+        }
+
+    stream_groups = defaultdict(list)
+    for row in summaries:
+        stream_groups[row["stream"]].append(row)
+
+    for group in stream_groups.values():
+        group.sort(key=lambda item: item["total_points"], reverse=True)
+        stream_total = len(group)
+        for position, row in enumerate(group, start=1):
+            ranking_map[row["student_id"]]["stream_position"] = position
+            ranking_map[row["student_id"]]["stream_total"] = stream_total
+
+    return ranking_map

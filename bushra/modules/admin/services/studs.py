@@ -13,9 +13,9 @@ from ..services.grading_844 import (
     resolve_844_grade,
     subject_comment,
     compute_844_aggregate,
-    generate_class_reports,
+    compute_class_exam_rankings,
 )
-from ..services.report import get_report_card_data
+from ..services.report import compute_cbe_exam_rankings
 
 import threading
 
@@ -93,51 +93,32 @@ def _subject_teacher_initials(branch_id, class_id, stream, subject_id):
     return ".".join(name[0].upper() for name in names)
 
 
-def _attach_exam_ranking(student_id, exam, student_stream=None):
-    """Attach class/stream rankings using the same logic as report card PDFs."""
-    stream = exam.get("stream") or student_stream or None
+def _get_exam_ranking_map(branch_id, class_id, exam_id, is_844, ranking_cache):
+    cache_key = (branch_id, class_id, exam_id, is_844)
+    if cache_key not in ranking_cache:
+        if is_844:
+            ranking_cache[cache_key] = compute_class_exam_rankings(
+                branch_id, class_id, exam_id
+            )
+        else:
+            ranking_cache[cache_key] = compute_cbe_exam_rankings(
+                branch_id, class_id, exam_id
+            )
+    return ranking_cache[cache_key]
 
-    if exam["is_844"]:
-        reports = generate_class_reports(
-            exam["branch_id"],
-            exam["class_id"],
-            stream,
-            exam["exam_id"],
-        )
-        match = next(
-            (report for report in reports if report["student_id"] == student_id),
-            None,
-        )
-        if not match:
-            return
 
-        summary = match.get("summary", {})
-        exam["ranking"] = {
-            "stream_position": summary.get("position"),
-            "stream_total": summary.get("out_of"),
-            "overall_position": summary.get("general_position"),
-            "overall_total": summary.get("general_out_of"),
-        }
-        return
-
-    report_data = get_report_card_data(
+def _attach_exam_ranking(student_id, exam, ranking_cache, student_stream=None):
+    """Attach class/stream rankings using batched per-exam lookups."""
+    ranking_map = _get_exam_ranking_map(
         exam["branch_id"],
         exam["class_id"],
         exam["exam_id"],
-        stream=stream,
-        student_id=student_id,
+        exam["is_844"],
+        ranking_cache,
     )
-    students = report_data.get("students") or []
-    if not students:
-        return
-
-    student_row = students[0]
-    exam["ranking"] = {
-        "stream_position": student_row.get("stream_position"),
-        "stream_total": student_row.get("stream_total"),
-        "overall_position": student_row.get("overall_position"),
-        "overall_total": student_row.get("class_total"),
-    }
+    ranking = ranking_map.get(student_id)
+    if ranking:
+        exam["ranking"] = ranking
 
 
 def get_student_academic_history(student_id):
@@ -165,6 +146,7 @@ def get_student_academic_history(student_id):
     )
 
     exams_map = {}
+    teacher_cache = {}
 
     for mark, paper, exam, subject, class_ in rows:
         exam_key = exam.id
@@ -187,12 +169,15 @@ def get_student_academic_history(student_id):
             }
 
         entry = exams_map[exam_key]
-        teacher = _subject_teacher_initials(
-            paper.branch_id,
-            paper.class_id,
-            paper.stream,
-            subject.id,
-        )
+        teacher_key = (paper.branch_id, paper.class_id, paper.stream or "", subject.id)
+        if teacher_key not in teacher_cache:
+            teacher_cache[teacher_key] = _subject_teacher_initials(
+                paper.branch_id,
+                paper.class_id,
+                paper.stream,
+                subject.id,
+            )
+        teacher = teacher_cache[teacher_key]
 
         if entry["is_844"]:
             letter_grade, points = resolve_844_grade(mark.marks, subject.category)
@@ -229,6 +214,7 @@ def get_student_academic_history(student_id):
         entry["_total_raw"] += float(mark.marks or 0)
 
     history = []
+    ranking_cache = {}
 
     for exam in exams_map.values():
         count = len(exam["subjects"])
@@ -260,7 +246,7 @@ def get_student_academic_history(student_id):
                 "descriptor": overall["descriptor"],
             }
 
-        _attach_exam_ranking(student_id, exam, student.stream)
+        _attach_exam_ranking(student_id, exam, ranking_cache, student.stream)
 
         history.append(exam)
 
