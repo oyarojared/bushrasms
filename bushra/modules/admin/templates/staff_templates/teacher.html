@@ -1,371 +1,689 @@
-{% extends "super_admin_dash.html" %} {% from "_macros.html" import
-render_flash_messages, sidebar %} {% block side_nav %} {{ sidebar("School Staff", current_user) }} {% endblock %} {% block main_content %}
-<div class="container py-4">
-  <!-- Flash messages -->
+{% extends "super_admin_dash.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar %}
+
+{% block side_nav %}
+{{ sidebar("School Staff", current_user) }}
+{% endblock %}
+
+{% block main_content %}
+<div class="teacher-portal-page">
+  <div class="app-page-title">
+    <div class="app-page-title-icon">
+      <i class="bi bi-person-workspace"></i>
+    </div>
+
+    <div class="app-page-title-content">
+      <h6 class="app-page-title-heading">Teacher Portal</h6>
+      <span class="app-page-title-subtitle">
+        Your classes, school details &amp; quick actions
+      </span>
+    </div>
+  </div>
+
   {{ render_flash_messages() }}
 
-  <div class="card border-0 shadow-sm mb-4">
-    <div class="card-body py-4 px-4">
-      <div
-        class="d-flex flex-column flex-md-row align-items-center justify-content-between"
-      >
-        <div class="text-center text-md-start">
-          <h5 class="fw-bold mb-1">
-            <i class="bi bi-person-workspace text-primary me-2"></i>
-            Welcome,
-            <span class="text-primary">{{ teacher.fullname }}</span>
-          </h5>
+  <!-- Welcome + primary action -->
+  <div class="teacher-hero welcome-shell">
+    <div class="welcome-line"></div>
 
-          <p class="text-muted mb-0">
-            Capture and update student assessment marks with ease.
-          </p>
+    <div class="teacher-hero-body">
+      <div class="teacher-hero-main">
+        <div class="teacher-hero-title">
+          <span class="welcome-greeting">Welcome,</span>
+          <span class="welcome-name">{{ teacher.fullname }}</span>
         </div>
 
-        <div class="mt-2 mt-md-0">
-          <span class="badge bg-primary fs-6 px-2 py-1"> Teacher Portal </span>
-        </div>
-      </div>
-    </div>
-  </div>
+        <p class="teacher-hero-text">
+          Capture and update student assessment marks with ease.
+        </p>
 
-  <!-- ===================== INFO CARDS ===================== -->
-  <div class="row g-4">
-    <!-- ===================== Personal Info ===================== -->
-    <div class="col-12 col-md-6 col-xl-4">
-      <div class="card border-0 shadow-sm rounded-4 h-100">
-        <div class="orange-line"></div>
+        <div class="teacher-hero-meta">
+          <span class="teacher-meta-chip">
+            <i class="bi bi-journal-bookmark me-1" aria-hidden="true"></i>
+            {{ lessons|length }} class{{ "es" if lessons|length != 1 else "" }} taught
+          </span>
 
-        <div class="card-body p-4">
-          <div class="d-flex align-items-center mb-4">
-            <div
-              class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-3"
-              style="width: 70px; height: 70px"
-            >
-              <i class="bi bi-person-circle fs-1 text-primary"></i>
-            </div>
-
-            <div>
-              <h5 class="fw-bold mb-1">Personal Info</h5>
-              <small class="text-muted"> Your account information </small>
-            </div>
-          </div>
-
-          <hr />
-
-          <div class="d-flex justify-content-between mb-3">
-            <span class="text-muted">Title</span>
-            <span class="fw-semibold">{{ teacher.title }}</span>
-          </div>
-
-          <div class="d-flex justify-content-between mb-3">
-            <span class="text-muted">Email</span>
-            <span class="fw-semibold text-end">{{ teacher.email }}</span>
-          </div>
-
-          <div class="d-flex justify-content-between align-items-center">
-            <span class="text-muted">Role</span>
-
-            {% if teacher.is_admin %}
-            <span class="badge bg-primary px-3 py-2"> Admin </span>
-            {% else %}
-            <span class="badge bg-success px-3 py-2"> Teacher </span>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===================== School Info ===================== -->
-    <div class="col-12 col-md-6 col-xl-4">
-      <div class="card border-0 shadow-sm rounded-4 h-100">
-        <div class="orange-line"></div>
-
-        <div class="card-body p-4">
-          <div class="d-flex align-items-center mb-4">
-            <div
-              class="rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center me-3"
-              style="width: 70px; height: 70px"
-            >
-              <i class="bi bi-building fs-1 text-warning"></i>
-            </div>
-
-            <div>
-              <h5 class="fw-bold mb-1">School Info</h5>
-              <small class="text-muted"> Assigned school details </small>
-            </div>
-          </div>
-
-          <hr />
-
-          <div class="d-flex justify-content-between mb-3">
-            <span class="text-muted">School</span>
-            <span class="fw-semibold text-end"> {{ branch.branch_name }} </span>
-          </div>
-
-          <div class="d-flex justify-content-between mb-3">
-            <span class="text-muted">Manager</span>
-            <span class="fw-semibold text-end">
-              {{ branch.branch_manager }}
-            </span>
-          </div>
-
-          <div class="d-flex justify-content-between mb-3">
-            <span class="text-muted">School Type</span>
-            <span class="fw-semibold"> {{ branch.school_type }} </span>
-          </div>
-
-          <div class="d-flex justify-content-between">
-            <span class="text-muted">Gender</span>
-            <span class="fw-semibold"> {{ branch.school_gender }} </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===================== Teaching Stats ===================== -->
-    <div class="col-12 col-md-6 col-xl-4">
-      <div class="card border-0 shadow-sm rounded-4 h-100">
-        <div class="orange-line"></div>
-
-        <div class="card-body p-4">
-          <div class="d-flex align-items-center mb-4">
-            <div
-              class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center me-3"
-              style="width: 70px; height: 70px"
-            >
-              <i class="bi bi-bar-chart-line fs-1 text-success"></i>
-            </div>
-
-            <div>
-              <h5 class="fw-bold mb-1">Teaching Stats</h5>
-              <small class="text-muted"> Quick overview </small>
-            </div>
-          </div>
-
-          <hr />
-
-          <div class="text-center py-3">
-            <h1 class="display-4 fw-bold text-success mb-1">
-              {{ lessons|length }}
-            </h1>
-
-            <p class="text-muted mb-0">Classes Taught</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================== Classes & Subjects ===================== -->
-  <!-- ===================== Classes & Subjects ===================== -->
-  <div class="row mt-5">
-    <div class="col-12">
-      <div class="card border-0 shadow-sm rounded-4">
-        <!-- Card Header -->
-        <div class="card-header bg-primary text-white py-3 rounded-top-4">
-          <h5 class="mb-0 fw-semibold">
-            <i class="bi bi-journal-bookmark-fill me-2"></i>
-            Classes & Subjects
-          </h5>
-        </div>
-
-        <div class="card-body p-0">
-          {% if lessons %}
-
-          <!-- ================= Desktop & Tablet Table ================= -->
-          <div class="table-responsive d-none d-md-block">
-            <table class="table table-hover align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th width="70">#</th>
-                  <th>Class</th>
-                  <th>Streams</th>
-                  <th>Subject</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {% for cls in lessons %}
-
-                <tr>
-                  <td>
-                    <span class="badge bg-light text-dark border">
-                      {{ loop.index }}
-                    </span>
-                  </td>
-
-                  <td class="fw-semibold">{{ cls.grade_form }}</td>
-
-                  <td>
-                    {% if cls.streams %} {% for stream in cls.streams %}
-                    <span class="badge bg-secondary me-1 mb-1">
-                      {{ stream }}
-                    </span>
-                    {% endfor %} {% else %}
-                    <span class="text-muted">—</span>
-                    {% endif %}
-                  </td>
-
-                  <td>
-                    <span class="badge bg-primary-subtle text-primary border">
-                      {{ cls.subject_name }}
-                    </span>
-                  </td>
-                </tr>
-
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-
-          <!-- ================= Mobile View ================= -->
-          <div class="d-md-none p-3">
-            {% for cls in lessons %}
-
-            <div class="card border-0 shadow-sm rounded-3 mb-3">
-              <div class="card-body">
-                <div
-                  class="d-flex justify-content-between align-items-center mb-3"
-                >
-                  <span class="badge bg-primary"> #{{ loop.index }} </span>
-
-                  <span class="fw-bold"> {{ cls.grade_form }} </span>
-                </div>
-
-                {% if cls.streams %}
-                <div class="mb-3">
-                  <small class="text-muted d-block mb-2"> Streams </small>
-
-                  {% for stream in cls.streams %}
-                  <span class="badge bg-secondary me-1 mb-1">
-                    {{ stream }}
-                  </span>
-                  {% endfor %}
-                </div>
-                {% endif %}
-
-                <div>
-                  <small class="text-muted d-block mb-2"> Subject </small>
-
-                  <span class="badge bg-success"> {{ cls.subject_name }} </span>
-                </div>
-              </div>
-            </div>
-
-            {% endfor %}
-          </div>
-
+          {% if teacher.is_admin %}
+          <span class="teacher-meta-chip teacher-meta-chip--role">Admin</span>
           {% else %}
-
-          <div class="text-center py-5">
-            <i class="bi bi-journal-x display-5 text-muted"></i>
-
-            <h5 class="mt-3">No Classes Assigned</h5>
-
-            <p class="text-muted mb-0">
-              You have not been assigned any classes or subjects yet.
-            </p>
-          </div>
-
+          <span class="teacher-meta-chip teacher-meta-chip--role">Teacher</span>
           {% endif %}
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- ===================== Quick Actions ===================== -->
-  <div class="mt-5">
-    <div class="d-flex align-items-center mb-4">
-      <i class="bi bi-lightning-charge-fill text-warning fs-4 me-2"></i>
-      <h5 class="fw-bold mb-0">Quick Actions</h5>
-    </div>
-
-    <div class="row g-3">
-      <!-- Enter Marks -->
-      <div class="col-12 col-lg-6">
-        <a
-          href="{{ url_for('admin.assessment_dash') }}"
-          class="text-decoration-none"
-        >
-          <div class="card border-0 shadow-sm rounded-4 quick-action">
-            <div class="card-body py-3 px-4">
-              <div class="d-flex align-items-center">
-                <div class="action-icon bg-primary bg-opacity-10 me-3">
-                  <i class="bi bi-pencil-square text-primary fs-3"></i>
-                </div>
-
-                <div class="flex-grow-1">
-                  <h6 class="fw-bold text-dark mb-1">Enter Marks</h6>
-
-                  <small class="text-muted">
-                    Record and update student assessment marks.
-                  </small>
-                </div>
-
-                <i class="bi bi-chevron-right text-muted fs-5"></i>
-              </div>
-            </div>
-          </div>
-        </a>
-      </div>
-
-      <!-- Logout -->
-      <div class="col-12 col-lg-6">
-        <a href="{{ url_for('auth.logout') }}" class="text-decoration-none">
-          <div class="card border-0 shadow-sm rounded-4 quick-action">
-            <div class="card-body py-3 px-4">
-              <div class="d-flex align-items-center">
-                <div class="action-icon bg-danger bg-opacity-10 me-3">
-                  <i class="bi bi-box-arrow-right text-danger fs-3"></i>
-                </div>
-
-                <div class="flex-grow-1">
-                  <h6 class="fw-bold text-dark mb-1">Logout</h6>
-
-                  <small class="text-muted">
-                    Securely sign out of your account.
-                  </small>
-                </div>
-
-                <i class="bi bi-chevron-right text-muted fs-5"></i>
-              </div>
-            </div>
-          </div>
-        </a>
-      </div>
-    </div>
-  </div>
-  <!-- ===================== Footer ===================== -->
-  <footer class="mt-5 pt-4 border-top">
-    <div class="text-center">
-      <h6 class="fw-bold mb-2">
-        <i class="bi bi-code-slash text-primary me-1"></i>
-        Developed by Oyaro Jared
-      </h6>
-
-      <div
-        class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2"
+      <a
+        href="{{ url_for('admin.assessment_dash') }}"
+        class="btn teacher-cta-btn d-none d-md-inline-flex"
       >
-        <div class="text-muted small">
-          <i class="bi bi-telephone-fill me-2 text-success"></i>
-          0701948782 / 0782811403
+        <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>
+        Enter Marks
+      </a>
+    </div>
+  </div>
+
+  <!-- Account & school details -->
+  <div class="row g-3 teacher-info-grid">
+    <div class="col-12 col-lg-6">
+      <div class="branch-info-panel h-100">
+        <div class="branch-info-title">
+          <i class="bi bi-person-circle me-1 text-brand" aria-hidden="true"></i>
+          Personal Info
         </div>
 
-        <div class="d-none d-md-block text-muted">•</div>
+        <div class="branch-info-list">
+          <div class="branch-info-row">
+            <span class="branch-info-label">Title</span>
+            <span class="branch-info-value">{{ teacher.title }}</span>
+          </div>
 
-        <div class="text-muted small text-break">
-          <i class="bi bi-envelope-fill me-2 text-danger"></i>
-          oyarojared278@gmail.com
+          <div class="branch-info-row">
+            <span class="branch-info-label">Email</span>
+            <span class="branch-info-value">{{ teacher.email }}</span>
+          </div>
+
+          <div class="branch-info-row">
+            <span class="branch-info-label">Role</span>
+            <span class="branch-info-value">
+              {% if teacher.is_admin %}
+              <span class="teacher-role-pill teacher-role-pill--admin">Admin</span>
+              {% else %}
+              <span class="teacher-role-pill">Teacher</span>
+              {% endif %}
+            </span>
+          </div>
         </div>
       </div>
-
-      <hr class="my-4" />
-
-      <small class="text-muted">
-        © {{ current_year if current_year else "2026" }} Acadex. All Rights
-        Reserved.
-      </small>
     </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="branch-info-panel h-100">
+        <div class="branch-info-title">
+          <i class="bi bi-building me-1 text-brand" aria-hidden="true"></i>
+          School Info
+        </div>
+
+        <div class="branch-info-list">
+          <div class="branch-info-row">
+            <span class="branch-info-label">School</span>
+            <span class="branch-info-value">{{ branch.branch_name }}</span>
+          </div>
+
+          <div class="branch-info-row">
+            <span class="branch-info-label">Manager</span>
+            <span class="branch-info-value">{{ branch.branch_manager }}</span>
+          </div>
+
+          <div class="branch-info-row">
+            <span class="branch-info-label">School Type</span>
+            <span class="branch-info-value">{{ branch.school_type }}</span>
+          </div>
+
+          <div class="branch-info-row">
+            <span class="branch-info-label">Gender</span>
+            <span class="branch-info-value">{{ branch.school_gender }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Classes & subjects -->
+  <section class="teacher-section" aria-labelledby="teacherClassesHeading">
+    <div class="teacher-section-header">
+      <div class="teacher-section-heading">
+        <span class="teacher-section-icon" aria-hidden="true">
+          <i class="bi bi-journal-bookmark-fill"></i>
+        </span>
+        <div>
+          <h2 id="teacherClassesHeading" class="teacher-section-title">
+            Classes &amp; Subjects
+          </h2>
+          <p class="teacher-section-subtitle">Your assigned teaching load</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="teacher-section-body">
+      {% if lessons %}
+      <div class="teacher-lessons-table-wrap d-none d-md-block">
+        <table class="table table-sm table-hover teacher-lessons-table mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="text-center" width="56">#</th>
+              <th>Class</th>
+              <th>Streams</th>
+              <th>Subject</th>
+              <th class="text-end">Students</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cls in lessons %}
+            <tr>
+              <td class="text-center text-muted">{{ loop.index }}</td>
+              <td class="fw-semibold">{{ cls.grade_form }}</td>
+              <td>
+                {% if cls.streams %}
+                  {% for stream in cls.streams %}
+                  <span class="teacher-stream-badge">{{ stream }}</span>
+                  {% endfor %}
+                {% else %}
+                <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="teacher-subject-badge">{{ cls.subject_name }}</span>
+              </td>
+              <td class="text-end branch-stat-number">{{ cls.num_students }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="teacher-lesson-list d-md-none">
+        {% for cls in lessons %}
+        <article class="teacher-lesson-item">
+          <div class="teacher-lesson-top">
+            <span class="teacher-lesson-index">#{{ loop.index }}</span>
+            <span class="teacher-lesson-class">{{ cls.grade_form }}</span>
+            <span class="teacher-lesson-students">
+              {{ cls.num_students }} student{{ "s" if cls.num_students != 1 else "" }}
+            </span>
+          </div>
+
+          <div class="teacher-lesson-bottom">
+            <div class="teacher-lesson-field">
+              <span class="teacher-lesson-label">Subject</span>
+              <span class="teacher-subject-badge">{{ cls.subject_name }}</span>
+            </div>
+
+            {% if cls.streams %}
+            <div class="teacher-lesson-field">
+              <span class="teacher-lesson-label">Streams</span>
+              <div class="teacher-lesson-streams">
+                {% for stream in cls.streams %}
+                <span class="teacher-stream-badge">{{ stream }}</span>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="teacher-empty-state">
+        <i class="bi bi-journal-x" aria-hidden="true"></i>
+        <h3>No Classes Assigned</h3>
+        <p>You have not been assigned any classes or subjects yet.</p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- Secondary actions -->
+  <div class="teacher-secondary-actions">
+    <a href="{{ url_for('auth.logout') }}" class="teacher-logout-link">
+      <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+      <span>Sign out</span>
+      <i class="bi bi-chevron-right ms-auto" aria-hidden="true"></i>
+    </a>
+  </div>
+
+  <footer class="teacher-portal-footer">
+    <div class="teacher-portal-footer-main">
+      <span class="teacher-portal-footer-credit">
+        <i class="bi bi-code-slash me-1" aria-hidden="true"></i>
+        Developed by Oyaro Jared
+      </span>
+
+      <div class="teacher-portal-footer-contacts">
+        <span>
+          <i class="bi bi-telephone-fill me-1" aria-hidden="true"></i>
+          0701948782 / 0782811403
+        </span>
+        <span class="teacher-portal-footer-dot d-none d-sm-inline" aria-hidden="true">•</span>
+        <span class="teacher-portal-footer-email">
+          <i class="bi bi-envelope-fill me-1" aria-hidden="true"></i>
+          oyarojared278@gmail.com
+        </span>
+      </div>
+    </div>
+
+    <small class="teacher-portal-footer-copy">
+      © {{ current_year if current_year else "2026" }} Acadex. All Rights Reserved.
+    </small>
   </footer>
 </div>
+
+<!-- Mobile sticky primary action -->
+<a
+  href="{{ url_for('admin.assessment_dash') }}"
+  class="teacher-mobile-cta d-md-none"
+  aria-label="Enter marks"
+>
+  <i class="bi bi-pencil-square" aria-hidden="true"></i>
+  Enter Marks
+</a>
+
+<style>
+  .teacher-portal-page {
+    padding-bottom: 4.75rem;
+  }
+
+  .teacher-portal-page .text-brand {
+    color: #ff7979;
+  }
+
+  .teacher-hero {
+    margin-top: 12px;
+    margin-bottom: 14px;
+  }
+
+  .teacher-hero-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 18px;
+  }
+
+  .teacher-hero-main {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .teacher-hero-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    margin: 0;
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    font-weight: 800;
+    line-height: 1.25;
+  }
+
+  .teacher-hero-text {
+    margin: 8px 0 0;
+    color: #6c757d;
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  .teacher-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .teacher-meta-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(255, 121, 121, 0.1);
+    color: #c95f5f;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .teacher-meta-chip--role {
+    background: #f4f6f8;
+    color: #495057;
+  }
+
+  .teacher-cta-btn {
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0.45rem 0.95rem;
+    border: 0;
+    border-radius: 10px;
+    background: #ff7979;
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(255, 121, 121, 0.28);
+    transition: background-color 0.2s ease, transform 0.2s ease;
+  }
+
+  .teacher-cta-btn:hover,
+  .teacher-cta-btn:focus {
+    background: #f56868;
+    color: #fff;
+  }
+
+  .teacher-info-grid {
+    margin-bottom: 14px;
+  }
+
+  .teacher-role-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(255, 121, 121, 0.12);
+    color: #c95f5f;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .teacher-role-pill--admin {
+    background: rgba(25, 135, 84, 0.12);
+    color: #198754;
+  }
+
+  .teacher-section {
+    margin-top: 14px;
+    border: 1px solid #edf0f2;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  }
+
+  .teacher-section-header {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #f0f1f3;
+    background: #fcfcfd;
+  }
+
+  .teacher-section-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .teacher-section-icon {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: rgba(255, 121, 121, 0.1);
+    color: #ff7979;
+    font-size: 0.9rem;
+  }
+
+  .teacher-section-title {
+    margin: 0;
+    color: #343a40;
+    font-size: 0.9rem;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .teacher-section-subtitle {
+    margin: 3px 0 0;
+    color: #98a1ad;
+    font-size: 0.68rem;
+    font-weight: 500;
+  }
+
+  .teacher-lessons-table thead th {
+    font-size: 0.74rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .teacher-lessons-table tbody td {
+    font-size: 0.8rem;
+    vertical-align: middle;
+  }
+
+  .teacher-stream-badge,
+  .teacher-subject-badge {
+    display: inline-flex;
+    align-items: center;
+    margin: 0 0.2rem 0.2rem 0;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .teacher-stream-badge {
+    background: #f1f3f5;
+    color: #495057;
+  }
+
+  .teacher-subject-badge {
+    background: rgba(255, 121, 121, 0.12);
+    color: #c95f5f;
+  }
+
+  .teacher-lesson-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 0.75rem;
+  }
+
+  .teacher-lesson-item {
+    padding: 0.75rem 0.8rem;
+    border: 1px solid #edf0f2;
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .teacher-lesson-top {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.55rem;
+  }
+
+  .teacher-lesson-index {
+    color: #98a1ad;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .teacher-lesson-class {
+    color: #343a40;
+    font-size: 0.86rem;
+    font-weight: 800;
+  }
+
+  .teacher-lesson-students {
+    margin-left: auto;
+    color: #6c757d;
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .teacher-lesson-bottom {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .teacher-lesson-field {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+  }
+
+  .teacher-lesson-label {
+    color: #98a1ad;
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .teacher-lesson-streams {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .teacher-empty-state {
+    padding: 2.5rem 1rem;
+    text-align: center;
+  }
+
+  .teacher-empty-state i {
+    color: #ced4da;
+    font-size: 2rem;
+  }
+
+  .teacher-empty-state h3 {
+    margin: 0.75rem 0 0.35rem;
+    color: #343a40;
+    font-size: 0.95rem;
+    font-weight: 800;
+  }
+
+  .teacher-empty-state p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.78rem;
+  }
+
+  .teacher-secondary-actions {
+    margin-top: 14px;
+  }
+
+  .teacher-logout-link {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.8rem 0.95rem;
+    border: 1px solid #edf0f2;
+    border-radius: 10px;
+    background: #fff;
+    color: #495057;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+  }
+
+  .teacher-logout-link:hover,
+  .teacher-logout-link:focus {
+    border-color: rgba(220, 53, 69, 0.25);
+    background: rgba(220, 53, 69, 0.04);
+    color: #dc3545;
+  }
+
+  .teacher-portal-footer {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid #edf0f2;
+    text-align: center;
+  }
+
+  .teacher-portal-footer-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .teacher-portal-footer-credit {
+    color: #343a40;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .teacher-portal-footer-contacts {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: #6c757d;
+    font-size: 0.72rem;
+  }
+
+  .teacher-portal-footer-email {
+    word-break: break-word;
+  }
+
+  .teacher-portal-footer-copy {
+    display: block;
+    margin-top: 10px;
+    color: #98a1ad;
+    font-size: 0.68rem;
+  }
+
+  .teacher-mobile-cta {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 1035;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-height: 46px;
+    border-radius: 12px;
+    background: #ff7979;
+    color: #fff;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 8px 24px rgba(255, 121, 121, 0.35);
+  }
+
+  .teacher-mobile-cta:hover,
+  .teacher-mobile-cta:focus {
+    color: #fff;
+    background: #f56868;
+  }
+
+  @media (max-width: 767.98px) {
+    .teacher-portal-page {
+      padding-bottom: 5.5rem;
+    }
+
+    .teacher-hero-body {
+      padding: 14px;
+    }
+
+    .teacher-portal-page .branch-info-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      min-height: 0;
+      padding: 7px 0;
+    }
+
+    .teacher-portal-page .branch-info-value {
+      max-width: 100%;
+      text-align: left;
+    }
+
+    .teacher-portal-footer-contacts {
+      padding: 0 0.5rem;
+    }
+  }
+
+  @media (min-width: 576px) {
+    .teacher-portal-footer-contacts {
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+  }
+
+  @media (hover: none) {
+    .teacher-portal-page .card:hover {
+      transform: none;
+      box-shadow: inherit !important;
+    }
+  }
+</style>
 {% endblock %}
