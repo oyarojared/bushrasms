@@ -1323,7 +1323,13 @@ render_flash_messages, sidebar %} {% block side_nav %}
       }
     });
 
+    let lastMobileLayout = isMobileLayout();
+
     window.addEventListener("resize", () => {
+      const mobileNow = isMobileLayout();
+      if (mobileNow === lastMobileLayout) return;
+      lastMobileLayout = mobileNow;
+
       if (!subjectSelect.value || !currentStudents.students?.length) return;
       const subjectText =
         subjectSelect.options[subjectSelect.selectedIndex]?.text || "Subject";
