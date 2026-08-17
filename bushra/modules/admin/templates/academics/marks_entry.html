@@ -3,50 +3,42 @@ render_flash_messages, sidebar %} {% block side_nav %}
 <div class="sidebar">{{ sidebar("Exams", current_user) }}</div>
 {% endblock %} {% block main_content %} {{ render_flash_messages() }}
 
-<!-- Header -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <div>
-    <h6 class="fw-bold mb-0">
-      <i class="bi bi-pencil-square me-2"></i> Marks Entry
-    </h6>
-    <small class="text-muted">
-      {{ exam.name }} · {{ exam.year }} · Term {{ exam.term }}
-    </small>
-    <input id="examId" type="hidden" value="{{ exam.id }}" />
+<div class="marks-entry-page">
+  <!-- Header -->
+  <div class="marks-entry-header d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+    <div>
+      <a
+        href="{{ url_for('admin.assessment_dash') }}"
+        class="btn btn-light btn-sm marks-entry-back mb-2"
+      >
+        <i class="bi bi-arrow-left me-1"></i>Back to Exams
+      </a>
+      <h6 class="fw-bold mb-0">
+        <i class="bi bi-pencil-square me-2"></i>Marks Entry
+      </h6>
+      <small class="text-muted">
+        {{ exam.name }} · {{ exam.year }} · Term {{ exam.term }}
+      </small>
+      <input id="examId" type="hidden" value="{{ exam.id }}" />
+    </div>
+
+    <span class="badge bg-success marks-entry-status-badge">
+      <i class="bi bi-unlock-fill me-1"></i>Open
+    </span>
   </div>
 
-  <span class="badge bg-success">
-    <i class="bi bi-unlock-fill me-1"></i> Open
-  </span>
-</div>
-
-<a
-  href="{{ url_for('admin.assessment_dash') }}"
-  class="btn btn-secondary btn-sm mb-1"
->
-  <i class="bi bi-arrow-left me-2"></i>Back
-</a>
-
-<!-- Selection Controls -->
-<div class="card shadow-sm mb-4">
-  <div class="orange-line"></div>
-  <div class="card-body">
-    <div class="row g-3">
+  <!-- Setup toolbar -->
+  <div class="marks-setup-toolbar mb-3">
+    <div class="marks-setup-filters">
       {% if exam.exam_branches|length > 1 %}
-      <!-- Branch -->
-      <div class="col-md-4">
-        <label class="form-label small fw-semibold">Branch</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-house"></i></span>
-          <select id="branchSelect" class="form-select">
-            <option value="">Select branch</option>
-            {% for eb in exam.exam_branches %}
-            <option value="{{ eb.branch.id }}">
-              {{ eb.branch.branch_name }}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
+      <div class="marks-setup-field">
+        <label class="marks-setup-label" for="branchSelect">School</label>
+        <select id="branchSelect" class="form-select form-select-sm marks-setup-control">
+          <option value="">Select school</option>
+          {% for eb in exam.exam_branches %}
+          <option value="{{ eb.branch.id }}">{{ eb.branch.branch_name }}</option>
+          {% endfor %}
+        </select>
       </div>
       {% else %}
       <input
@@ -56,490 +48,1287 @@ render_flash_messages, sidebar %} {% block side_nav %}
       />
       {% endif %}
 
-      <!-- Grade -->
-      <div class="col-md-4">
-        <label class="form-label small fw-semibold">Grade / Class</label>
-        <div class="input-group">
-          <span class="input-group-text"
-            ><i class="bi bi-mortarboard-fill"></i
-          ></span>
-          <select id="gradeSelect" class="form-select" disabled>
-            <option value="">--- Select grade ---</option>
-          </select>
-        </div>
+      <div class="marks-setup-field">
+        <label class="marks-setup-label" for="gradeSelect">Class</label>
+        <select id="gradeSelect" class="form-select form-select-sm marks-setup-control" disabled>
+          <option value="">Select class</option>
+        </select>
       </div>
 
-      <!-- Stream -->
-      <div class="col-md-4 d-none" id="streamWrapper">
-        <label class="form-label small fw-semibold">Stream</label>
-        <div class="input-group">
-          <span class="input-group-text"
-            ><i class="bi bi-diagram-3-fill"></i
-          ></span>
-          <select id="streamSelect" class="form-select">
-            <option value="">--- Select stream ---</option>
-          </select>
-        </div>
+      <div class="marks-setup-field d-none" id="streamWrapper">
+        <label class="marks-setup-label" for="streamSelect">Stream</label>
+        <select id="streamSelect" class="form-select form-select-sm marks-setup-control">
+          <option value="">Select stream</option>
+        </select>
       </div>
 
-      <!-- Subject -->
-      <div class="col-md-4">
-        <label class="form-label small fw-semibold">Subject</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-book-fill"></i></span>
-          <select id="subjectSelect" class="form-select" disabled>
-            <option value="">--- Select subject ---</option>
-          </select>
-        </div>
+      <div class="marks-setup-field">
+        <label class="marks-setup-label" for="subjectSelect">Subject</label>
+        <select id="subjectSelect" class="form-select form-select-sm marks-setup-control" disabled>
+          <option value="">Select subject</option>
+        </select>
       </div>
-    </div>
-  </div>
-</div>
 
-<!-- Paper Settings -->
-<div class="card shadow-sm mb-4 d-none" id="paperSettingsCard">
-  <!-- <div class="orange-line"></div> -->
-  <div class="card-body">
-    <h6 class="fw-bold mb-3">
-      <i class="bi bi-file-earmark-text me-1"></i> Paper Settings
-    </h6>
-
-    <div class="col-md-4">
-      <label class="form-label small fw-semibold">Marks Out Of</label>
-      <div class="input-group">
-        <span class="input-group-text"><i class="bi bi-123"></i></span>
+      <div class="marks-setup-field marks-setup-field-outof">
+        <label class="marks-setup-label" for="marksOutOf">Out of</label>
         <input
           type="number"
           id="marksOutOf"
-          class="form-control"
+          class="form-control form-control-sm marks-setup-control"
           min="1"
           max="100"
           value="100"
+          disabled
         />
       </div>
-      <small class="text-muted">Maximum allowed is 100</small>
     </div>
+  </div>
+
+  <p id="marksSetupHint" class="marks-setup-hint text-muted mb-2">
+  </p>
+
+  <div id="marksSearchBar" class="marks-search-bar d-none mb-2">
+    <input
+      type="search"
+      id="marksStudentSearch"
+      class="form-control form-control-sm marks-students-search"
+      placeholder="Search by adm no or name…"
+      autocomplete="off"
+    >
+    <button type="button" class="btn btn-light btn-sm marks-search-clear d-none" id="marksSearchClear">
+      Clear
+    </button>
+  </div>
+
+  <!-- Students -->
+  <div id="studentsContainer" class="marks-students-container"></div>
+</div>
+
+<!-- Sticky save bar -->
+<div id="marksSaveBar" class="marks-save-bar d-none" aria-live="polite">
+  <div class="marks-save-bar-inner">
+    <div class="marks-save-bar-meta">
+      <span id="marksEntryCount" class="marks-entry-count">0 / 0 entered</span>
+      <small id="marksSaveHint" class="marks-save-hint text-muted d-none"></small>
+    </div>
+    <button type="button" class="btn btn-sm marks-save-btn" id="saveMarksBtn" disabled>
+      <i class="bi bi-save me-1"></i>Save Marks
+    </button>
   </div>
 </div>
 
-<!-- Students Container -->
-<div id="studentsContainer">
-  <div class="orange-line"></div>
-  <div class="card shadow-sm">
-    <div class="card-body text-center py-5">
-      <i class="bi bi-people-fill fs-1 text-muted"></i>
-      <p class="mt-3 mb-1 fw-semibold">Marks entry not yet available</p>
-      <small class="text-muted">
-        This section will display students once selections are complete.
-      </small>
+<div id="saveMarksAlert" class="marks-save-alert d-none" role="status"></div>
+
+<script>
+  function setBlockerLoading(message = "Please wait…", sub = "Processing your request") {
+    const blocker = document.getElementById("uiBlocker");
+    if (!blocker) return;
+
+    blocker.classList.remove("ui-blocker--success", "ui-blocker--error");
+    blocker.querySelector(".ui-blocker-spinner")?.classList.remove("d-none");
+    blocker.querySelector(".ui-blocker-progress")?.classList.remove("d-none");
+    blocker.querySelector(".ui-blocker-result")?.classList.add("d-none");
+    blocker.querySelector(".ui-blocker-dismiss")?.classList.add("d-none");
+
+    blocker.querySelector(".ui-blocker-title").textContent = message;
+    blocker.querySelector(".ui-blocker-message").textContent = sub;
+    blocker.classList.remove("d-none");
+    blocker.setAttribute("aria-busy", "true");
+    document.body.classList.add("ui-blocker-active");
+  }
+
+  function blockUI(message = "Please wait…", sub = "Processing your request") {
+    setBlockerLoading(message, sub);
+  }
+
+  function showBlockerResult(type, title, message, autoCloseMs = 2800) {
+    const blocker = document.getElementById("uiBlocker");
+    if (!blocker) return;
+
+    blocker.classList.remove("ui-blocker--success", "ui-blocker--error");
+    blocker.classList.add(type === "success" ? "ui-blocker--success" : "ui-blocker--error");
+    blocker.setAttribute("aria-busy", "false");
+
+    blocker.querySelector(".ui-blocker-spinner")?.classList.add("d-none");
+    blocker.querySelector(".ui-blocker-progress")?.classList.add("d-none");
+
+    const result = blocker.querySelector(".ui-blocker-result");
+    if (result) {
+      result.classList.remove("d-none");
+      result.innerHTML =
+        type === "success"
+          ? '<i class="bi bi-check-circle-fill"></i>'
+          : '<i class="bi bi-x-circle-fill"></i>';
+    }
+
+    blocker.querySelector(".ui-blocker-title").textContent = title;
+    blocker.querySelector(".ui-blocker-message").textContent = message;
+
+    const dismissBtn = blocker.querySelector(".ui-blocker-dismiss");
+    if (dismissBtn) {
+      dismissBtn.classList.remove("d-none");
+      dismissBtn.onclick = () => unblockUI();
+    }
+
+    if (autoCloseMs > 0) {
+      window.clearTimeout(showBlockerResult._timer);
+      showBlockerResult._timer = window.setTimeout(() => unblockUI(), autoCloseMs);
+    }
+  }
+
+  function unblockUI() {
+    const blocker = document.getElementById("uiBlocker");
+    if (!blocker) return;
+
+    window.clearTimeout(showBlockerResult._timer);
+    blocker.classList.add("d-none");
+    blocker.classList.remove("ui-blocker--success", "ui-blocker--error");
+    blocker.setAttribute("aria-busy", "false");
+    document.body.classList.remove("ui-blocker-active");
+  }
+</script>
+
+<div
+  id="uiBlocker"
+  class="ui-blocker d-none"
+  role="alertdialog"
+  aria-modal="true"
+  aria-labelledby="uiBlockerTitle"
+  aria-describedby="uiBlockerMessage"
+  aria-busy="false"
+>
+  <div class="ui-blocker-panel">
+    <div class="ui-blocker-spinner" aria-hidden="true">
+      <span class="ui-blocker-ring"></span>
+      <span class="ui-blocker-ring ui-blocker-ring-delay"></span>
+      <span class="ui-blocker-core">
+        <i class="bi bi-pencil-square"></i>
+      </span>
     </div>
+
+    <div class="ui-blocker-result d-none" aria-hidden="true"></div>
+
+    <h6 id="uiBlockerTitle" class="ui-blocker-title">Please wait…</h6>
+    <p id="uiBlockerMessage" class="ui-blocker-message">Processing your request</p>
+
+    <div class="ui-blocker-progress" aria-hidden="true">
+      <div class="ui-blocker-progress-bar"></div>
+    </div>
+
+    <button type="button" class="btn btn-sm ui-blocker-dismiss d-none">Close</button>
   </div>
 </div>
+
+<style>
+  .marks-entry-page {
+    padding-bottom: 5.5rem;
+  }
+
+  .marks-entry-back {
+    border: 1px solid #dee2e6;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .marks-entry-status-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .marks-setup-toolbar {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #edf0f2;
+    border-radius: 8px;
+    background: #f8f9fa;
+  }
+
+  .marks-setup-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.65rem 1rem;
+  }
+
+  .marks-setup-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 130px;
+    flex: 1 1 130px;
+  }
+
+  .marks-setup-field-outof {
+    min-width: 88px;
+    max-width: 110px;
+    flex: 0 0 88px;
+  }
+
+  .marks-setup-label {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .marks-setup-control {
+    min-height: 30px;
+    font-size: 0.82rem;
+    border-color: #dee2e6;
+    background: #fff;
+  }
+
+  .marks-setup-control:focus {
+    border-color: rgba(255, 121, 121, 0.55);
+    box-shadow: 0 0 0 0.15rem rgba(255, 121, 121, 0.12);
+  }
+
+  .marks-setup-hint {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .marks-students-card {
+    border: 1px solid #edf0f2;
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .marks-students-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #f0f1f3;
+    background: #fcfcfd;
+  }
+
+  .marks-students-title {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #252a2f;
+  }
+
+  .marks-sort-control {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .marks-sort-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #6c757d;
+    white-space: nowrap;
+  }
+
+  .marks-sort-label i {
+    font-size: 0.82rem;
+    color: #ff7979;
+  }
+
+  .marks-sort-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.15rem;
+    border: 1px solid #e9ecef;
+    border-radius: 999px;
+    background: #fff;
+  }
+
+  .marks-sort-btn {
+    border: 0;
+    background: transparent;
+    color: #6c757d;
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+  }
+
+  .marks-sort-btn.active {
+    background: #ff7979;
+    color: #fff;
+  }
+
+  .marks-students-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .marks-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #edf0f2;
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  .marks-students-search {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 32px;
+    font-size: 0.82rem;
+    border-radius: 8px;
+  }
+
+  .marks-students-search:focus {
+    border-color: rgba(255, 121, 121, 0.55);
+    box-shadow: 0 0 0 0.15rem rgba(255, 121, 121, 0.12);
+  }
+
+  .marks-search-clear {
+    flex: 0 0 auto;
+    font-size: 0.76rem;
+    font-weight: 600;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+
+  .marks-entry-item--match {
+    background: rgba(255, 121, 121, 0.08) !important;
+  }
+
+  .marks-entry-item--match .marks-input {
+    border-color: rgba(255, 121, 121, 0.45);
+  }
+
+  .ui-blocker-result {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.4rem;
+  }
+
+  .ui-blocker--success .ui-blocker-result {
+    color: #198754;
+  }
+
+  .ui-blocker--error .ui-blocker-result {
+    color: #dc3545;
+  }
+
+  .ui-blocker-dismiss {
+    margin-top: 1rem;
+    min-width: 88px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  .ui-blocker--success .ui-blocker-dismiss {
+    border-color: #198754;
+    color: #198754;
+  }
+
+  .ui-blocker--error .ui-blocker-dismiss {
+    border-color: #dc3545;
+    color: #dc3545;
+  }
+
+  .marks-entry-table thead th {
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .marks-entry-table tbody td {
+    font-size: 0.82rem;
+    vertical-align: middle;
+  }
+
+  .marks-input {
+    min-width: 72px;
+    max-width: 110px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .marks-entry-cards {
+    display: none;
+    padding: 0.75rem;
+    gap: 0.65rem;
+  }
+
+  .marks-entry-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid #edf0f2;
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .marks-entry-card.is-empty .marks-input {
+    border-color: #ffc107;
+    background: #fffdf5;
+  }
+
+  .marks-entry-card-meta {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .marks-entry-card-name {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #252a2f;
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .marks-entry-card-adm {
+    font-size: 0.74rem;
+    color: #6c757d;
+  }
+
+  .marks-entry-card .marks-input {
+    width: 84px;
+    min-height: 42px;
+    font-size: 1rem;
+    flex: 0 0 auto;
+  }
+
+  .marks-empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    border: 1px dashed #dee2e6;
+    border-radius: 10px;
+    background: #fcfcfd;
+  }
+
+  .marks-empty-state i {
+    font-size: 2rem;
+    color: #adb5bd;
+  }
+
+  .marks-empty-state p {
+    margin: 0.75rem 0 0.2rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #495057;
+  }
+
+  .marks-empty-state small {
+    font-size: 0.78rem;
+    color: #6c757d;
+  }
+
+  .marks-save-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1040;
+    padding: 0.65rem 0.85rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid #edf0f2;
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(8px);
+  }
+
+  .marks-save-bar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .marks-save-bar-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  .marks-entry-count {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #252a2f;
+  }
+
+  .marks-save-hint {
+    font-size: 0.72rem;
+  }
+
+  .marks-save-btn {
+    min-width: 120px;
+    min-height: 38px;
+    border: 1px solid #ff7979;
+    background: #ff7979;
+    color: #fff;
+    font-size: 0.84rem;
+    font-weight: 700;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+
+  .marks-save-btn:hover:not(:disabled),
+  .marks-save-btn:focus:not(:disabled) {
+    background: #f56868;
+    border-color: #f56868;
+    color: #fff;
+  }
+
+  .marks-save-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .marks-save-alert {
+    position: fixed;
+    left: 50%;
+    bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    z-index: 1041;
+    width: min(92vw, 420px);
+    padding: 0.7rem 0.9rem;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .marks-save-alert.alert-success {
+    background: #d1e7dd;
+    color: #0f5132;
+    border: 1px solid #badbcc;
+  }
+
+  .marks-save-alert.alert-danger {
+    background: #f8d7da;
+    color: #842029;
+    border: 1px solid #f5c2c7;
+  }
+
+  .marks-save-alert.alert-warning {
+    background: #fff3cd;
+    color: #664d03;
+    border: 1px solid #ffecb5;
+  }
+
+  @media (max-width: 767.98px) {
+    .marks-setup-field,
+    .marks-setup-field-outof {
+      flex: 1 1 calc(50% - 0.5rem);
+      min-width: 0;
+      max-width: none;
+    }
+
+    .marks-entry-table-wrap {
+      display: none;
+    }
+
+    .marks-entry-cards {
+      display: grid;
+    }
+
+    .marks-save-bar-inner {
+      align-items: stretch;
+    }
+
+    .marks-save-btn {
+      width: auto;
+      flex: 0 0 auto;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .marks-save-bar {
+      left: 200px;
+    }
+  }
+</style>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+    const branchSelect = document.getElementById("branchSelect");
+    const gradeSelect = document.getElementById("gradeSelect");
+    const streamWrapper = document.getElementById("streamWrapper");
+    const streamSelect = document.getElementById("streamSelect");
+    const subjectSelect = document.getElementById("subjectSelect");
+    const marksOutOf = document.getElementById("marksOutOf");
+    const studentsContainer = document.getElementById("studentsContainer");
+    const marksSetupHint = document.getElementById("marksSetupHint");
+    const marksSearchBar = document.getElementById("marksSearchBar");
+    const marksStudentSearch = document.getElementById("marksStudentSearch");
+    const marksSearchClear = document.getElementById("marksSearchClear");
+    const marksSaveBar = document.getElementById("marksSaveBar");
+    const marksEntryCount = document.getElementById("marksEntryCount");
+    const saveMarksBtn = document.getElementById("saveMarksBtn");
+    const saveMarksAlert = document.getElementById("saveMarksAlert");
 
-      const branchSelect   = document.getElementById("branchSelect");
-      const gradeSelect    = document.getElementById("gradeSelect");
-      const streamWrapper  = document.getElementById("streamWrapper");
-      const streamSelect   = document.getElementById("streamSelect");
-      const subjectSelect  = document.getElementById("subjectSelect");
-      const paperCard      = document.getElementById("paperSettingsCard");
-      const marksOutOf     = document.getElementById("marksOutOf");
-      const studentsContainer = document.getElementById("studentsContainer");
+    let currentStudents = { students: [] };
+    let sortBy = "admission_number";
+    let searchQuery = "";
+    let isSaving = false;
 
-      let currentStudents = [];
-      let sortBy = "admission_number";
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
 
+    function studentMatchesSearch(student, query) {
+      const adm = String(student.admission_number).toLowerCase();
+      const name = String(student.full_name).toLowerCase();
+      return adm.includes(query) || name.includes(query);
+    }
 
-      /* ---------- Reset Helpers ---------- */
-
-      function resetStudents() {
-          currentStudents = [];
-          studentsContainer.innerHTML = `
-              <div class="card shadow-sm">
-                  <div class="orange-line"></div>
-                  <div class="card-body text-center py-5">
-                      <i class="bi bi-people-fill fs-1 text-muted"></i>
-                      <p class="mt-3 mb-1 fw-semibold">Marks entry not yet available</p>
-                      <small class="text-muted">Select grade and subject.</small>
-                  </div>
-              </div>
-          `;
-      }
-
-      function resetGrades() {
-          gradeSelect.innerHTML = '<option value="">--- Select grade ---</option>';
-          gradeSelect.disabled = true;
-          resetStreams();
-          resetSubjects();
-          paperCard.classList.add("d-none");
-          resetStudents();
-      }
-
-      function resetStreams() {
-          streamSelect.innerHTML = '<option value="">--- Select stream ---</option>';
-          streamWrapper.classList.add("d-none");
-      }
-
-      function resetSubjects() {
-          subjectSelect.innerHTML = '<option value="">--- Select subject ---</option>';
-          subjectSelect.disabled = true;
-          paperCard.classList.add("d-none");
-          resetStudents();
-      }
-
-      /* ---------- Load Grades ---------- */
-
-      function loadGrades(branchId) {
-          resetGrades();
-          if (!branchId) return;
-
-          fetch(`/admin/api/grades/${branchId}`)
-              .then(r => r.json())
-              .then(data => {
-                  data.forEach(cls => {
-                      const opt = document.createElement("option");
-                      opt.value = cls.id;
-                      opt.textContent = cls.grade_form;
-                      opt.dataset.streams = JSON.stringify(cls.streams || []);
-                      gradeSelect.appendChild(opt);
-                  });
-                  gradeSelect.disabled = false;
-              });
-      }
-
-      /* ---------- Load Subjects ---------- */
-
-      function loadSubjects(branchId, classId, stream=null) {
-          resetSubjects();
-          if (!branchId || !classId) return;
-
-          const params = new URLSearchParams({
-              branch_id: branchId,
-              class_id: classId
-          });
-          if (stream) params.append("stream", stream);
-
-          fetch(`/admin/api/subjects?${params}`)
-              .then(r => r.json())
-              .then(data => {
-                  data.forEach(subj => {
-                      const opt = document.createElement("option");
-                      opt.value = subj.id;
-                      opt.textContent = `${subj.code} -- ${subj.name}`;
-                      subjectSelect.appendChild(opt);
-                  });
-                  subjectSelect.disabled = false;
-              });
-      }
-
-      /* ---------- Load Students ---------- */
-
-      function loadStudents() {
-          const branchId  = branchSelect.value;
-          const classId   = gradeSelect.value;
-          const subjectId = subjectSelect.value;
-          const stream    = streamSelect.value || "";
-          const examId = document.getElementById("examId").value;
-
-          const subjectText = subjectSelect.options[subjectSelect.selectedIndex].text;
-
-
-          fetch(`/admin/api/exam-students?branch_id=${branchId}&exam_id=${examId}&class_id=${classId}&subject_id=${subjectId}&stream=${stream}`)
-              .then(r => r.json())
-              .then(data => {
-                  currentStudents = data;
-
-                  // 1. Update marks out of if paper exists
-                  if (data.paper && data.paper.marks_out_of) {
-                      marksOutOf.value = data.paper.marks_out_of;
-                  }
-                  renderStudents(subjectText);
-              });
-
-      }
-
-      function renderStudents(subjectname) {
-          if (!currentStudents.students.length) {
-              resetStudents();
-              return;
-          }
-
-          currentStudents.students.sort((a, b) => {
-              if (sortBy === "full_name") {
-                  return a.full_name.localeCompare(b.full_name);
-              }
-              return String(a.admission_number)
-                  .localeCompare(String(b.admission_number), undefined, { numeric: true });
-          });
-
-          let html = `
-              <div class="card shadow-sm">
-                  <div class="orange-line"></div>
-                  <div class="card-body">
-                      <div class="d-flex justify-content-between mb-2">
-                          <h6 class="fw-bold text-primary">${subjectname} Marks Entry</h6>
-                          <div class="btn-group btn-group-sm">
-                              <i class="bi bi-filter mt-1"></i><small class="me-2 mt-1">Sort</small>
-                              <button class="btn btn-outline-secondary" id="sortNameBtn">Name</button>
-                              <button class="btn btn-secondary" id="sortAdmBtn">Adm No</button>
-                          </div>
-                      </div>
-
-                      <div class="table-responsive fix-top-customized-lg">
-                          <table class="table table-sm table-hover border table-bordered">
-                              <thead class="bg-secondary text-white" style="font-size: 0.8rem;">
-                                  <tr>
-                                      <th class="text-center">#</th>
-                                      <th class="text-center">ADM NO</th>
-                                      <th>FULLNAME</th>
-                                      <th>MARKS / ${marksOutOf.value}</th>
-                                  </tr>
-                              </thead>
-                              <tbody  style="color: #555555 !important; font-size: 0.75rem">
-          `;
-
-          currentStudents.students.forEach((s, i) => {
-              html += `
-                 <tr data-student-id="${s.id}">
-
-                      <td class="text-center">${i + 1}</td>
-                      <td class="text-center">${s.admission_number}</td>
-                      <td class="text-uppercase">${s.full_name}</td>
-                      <td>
-                          <input type="number"
-                              class="form-control form-control-sm marks-input"
-                              min="0"
-                              max="${marksOutOf.value}"
-                              inputmode="numeric"
-                              value="${s.marks !== null && s.marks !== undefined ? s.marks : ""}"
-                              style="
-                                  font-weight: 500;
-                              "
-                          >
-                      </td>
-                  </tr>
-              `;
-          });
-
-          html += `
-              </tbody></table></div></div>
-              <div id="saveMarksAlert" class="text-center text-orange alert d-none mx-4 mt-0 mb-2">
-              </div>
-              <div class="row d-flex justify-content-center mb-3">
-                  <div class="col-auto">
-                      <button class="btn btn-secondary btn-sm" id="saveMarksBtn">
-                          <i class="bi bi-save me-1"></i> Save Marks
-                      </button>
-                  </div>
-              </div>
-              </div>
-          `;
-          studentsContainer.innerHTML = html;
-
-          const subjectText = subjectSelect.options[subjectSelect.selectedIndex].text;
-          document.getElementById("sortNameBtn").onclick = () => {
-              sortBy = "full_name"; renderStudents(subjectText);
-          };
-          document.getElementById("sortAdmBtn").onclick = () => {
-              sortBy = "admission_number"; renderStudents(subjectText);
-          };
-
-
-          document.querySelectorAll(".marks-input").forEach((input, i, arr) => {
-              input.addEventListener("keydown", e => {
-                  if (e.key === "Enter") {
-                      e.preventDefault();
-                      arr[i + 1]?.focus();
-                  }
-              });
-          });
-
-          document.getElementById("saveMarksBtn").onclick = collectAndSaveMarks;
-
-      }
-
-      /* ---------- Events ---------- */
-
-      branchSelect.addEventListener("change", () => loadGrades(branchSelect.value));
-
-      if (branchSelect.value) {
-          loadGrades(branchSelect.value);
-      }
-
-      gradeSelect.addEventListener("change", function () {
-          resetStreams();
-          resetSubjects();
-
-          const selected = this.options[this.selectedIndex];
-          const streams = JSON.parse(selected.dataset.streams || "[]");
-
-          if (streams.length) {
-              streams.forEach(s => {
-                  const opt = document.createElement("option");
-                  opt.value = s;
-                  opt.textContent = s;
-                  streamSelect.appendChild(opt);
-              });
-              streamWrapper.classList.remove("d-none");
-          } else {
-              loadSubjects(branchSelect.value, gradeSelect.value);
-          }
+    function orderStudentsForDisplay(students) {
+      const sorted = [...students].sort((a, b) => {
+        if (sortBy === "full_name") {
+          return a.full_name.localeCompare(b.full_name);
+        }
+        return String(a.admission_number).localeCompare(
+          String(b.admission_number),
+          undefined,
+          { numeric: true }
+        );
       });
 
-      streamSelect.addEventListener("change", () => {
-          loadSubjects(branchSelect.value, gradeSelect.value, streamSelect.value);
+      const query = searchQuery.trim().toLowerCase();
+      if (!query) return sorted;
+
+      const matches = [];
+      const rest = [];
+
+      sorted.forEach((student) => {
+        if (studentMatchesSearch(student, query)) {
+          matches.push(student);
+        } else {
+          rest.push(student);
+        }
       });
 
-      subjectSelect.addEventListener("change", function () {
-          if (this.value) {
-              paperCard.classList.remove("d-none");
-              loadStudents();
-          }
+      matches.sort((a, b) => {
+        const aAdm = String(a.admission_number).toLowerCase();
+        const bAdm = String(b.admission_number).toLowerCase();
+        const aName = String(a.full_name).toLowerCase();
+        const bName = String(b.full_name).toLowerCase();
+
+        if (aAdm === query && bAdm !== query) return -1;
+        if (bAdm === query && aAdm !== query) return 1;
+        if (aAdm.startsWith(query) && !bAdm.startsWith(query)) return -1;
+        if (bAdm.startsWith(query) && !aAdm.startsWith(query)) return 1;
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+        return 0;
       });
 
-      marksOutOf.addEventListener("input", () => renderStudents());
+      return [...matches, ...rest];
+    }
 
-      resetStudents();
-
-      document.addEventListener("input", function (e) {
-          if (!e.target.classList.contains("marks-input")) return;
-
-          const input = e.target;
-          const maxMarks = parseInt(document.getElementById("marksOutOf").value, 10);
-
-          let value = input.value;
-
-          // Allow empty (teacher may still be typing)
-          if (value === "") {
-              clearError(input);
-              return;
-          }
-
-          // Digits only
-          if (!/^\d+$/.test(value)) {
-              input.value = value.replace(/\D/g, "");
-              return;
-          }
-
-          const marks = parseInt(value, 10);
-
-          if (marks > maxMarks) {
-              showError(input, `Marks cannot exceed ${maxMarks}. Please enter valid marks!`);
-          } else {
-              clearError(input);
-          }
-      });
-
-
-      function showError(input, message) {
-          input.classList.add("is-invalid");
-
-          let feedback = input.nextElementSibling;
-          if (!feedback || !feedback.classList.contains("invalid-feedback")) {
-              feedback = document.createElement("div");
-              feedback.className = "invalid-feedback";
-              input.after(feedback);
-          }
-          feedback.textContent = message;
-          input.value = '';
+    function focusFirstSearchMatch() {
+      const firstMatch = document.querySelector(
+        ".marks-entry-item--match .marks-input"
+      );
+      if (firstMatch) {
+        firstMatch.focus();
+        firstMatch.select?.();
       }
 
-      function clearError(input) {
-          input.classList.remove("is-invalid");
+      const scrollTarget = document.querySelector(".marks-entry-item--match");
+      scrollTarget?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
 
-          const feedback = input.nextElementSibling;
-          if (feedback && feedback.classList.contains("invalid-feedback")) {
-              feedback.remove();
-          }
-      }
+    function setSetupHint(message) {
+      marksSetupHint.textContent = message || "";
+    }
 
+    function showEmptyState(title, message) {
+      marksSaveBar.classList.add("d-none");
+      marksSearchBar.classList.add("d-none");
+      saveMarksBtn.disabled = true;
+      studentsContainer.innerHTML = `
+        <div class="marks-empty-state">
+          <i class="bi bi-people"></i>
+          <p>${title}</p>
+          <small>${message}</small>
+        </div>
+      `;
+    }
 
-      document.addEventListener("keydown", function (e) {
-          if (!e.target.classList.contains("marks-input")) return;
+    function resetStudents(message = "Select class and subject to load students.") {
+      currentStudents = { students: [] };
+      marksOutOf.disabled = true;
+      showEmptyState("No students to show yet", message);
+    }
 
-          if (e.key === "Enter") {
-              e.preventDefault();
+    function resetGrades() {
+      gradeSelect.innerHTML = '<option value="">Select class</option>';
+      gradeSelect.disabled = true;
+      resetStreams();
+      resetSubjects();
+      setSetupHint("Select a class to continue.");
+      resetStudents("Select class and subject to load students.");
+    }
 
-              if (e.target.classList.contains("is-invalid")) {
-                  return; // Stay on the same input
-              }
+    function resetStreams() {
+      streamSelect.innerHTML = '<option value="">Select stream</option>';
+      streamWrapper.classList.add("d-none");
+    }
 
-              const inputs = [...document.querySelectorAll(".marks-input")];
-              const index = inputs.indexOf(e.target);
+    function resetSubjects() {
+      subjectSelect.innerHTML = '<option value="">Select subject</option>';
+      subjectSelect.disabled = true;
+      marksOutOf.disabled = true;
+      resetStudents("Select class and subject to load students.");
+    }
 
-              if (inputs[index + 1]) {
-                  inputs[index + 1].focus();
-              }
-          }
+    function isMobileLayout() {
+      return window.matchMedia("(max-width: 767.98px)").matches;
+    }
+
+    function getMarkEntryItems() {
+      const root = isMobileLayout()
+        ? document.querySelector(".marks-entry-cards")
+        : document.querySelector(".marks-entry-table-wrap");
+      return root ? [...root.querySelectorAll(".marks-entry-item")] : [];
+    }
+
+    function captureMarksFromDom() {
+      if (!currentStudents.students || !currentStudents.students.length) return;
+
+      getMarkEntryItems().forEach((row) => {
+        const studentId = row.dataset.studentId;
+        const input = row.querySelector(".marks-input");
+        const student = currentStudents.students.find(
+          (s) => String(s.id) === String(studentId)
+        );
+        if (!student || !input) return;
+        student.marks = input.value === "" ? null : parseInt(input.value, 10);
       });
+    }
 
+    function updateMarksCount() {
+      const inputs = getMarkEntryItems()
+        .map((row) => row.querySelector(".marks-input"))
+        .filter(Boolean);
+      const total = inputs.length;
+      const entered = inputs.filter((input) => input.value !== "").length;
 
+      marksEntryCount.textContent = `${entered} / ${total} entered`;
+      saveMarksBtn.disabled = isSaving || entered === 0;
 
+      document.querySelectorAll(".marks-entry-card").forEach((card) => {
+        const input = card.querySelector(".marks-input");
+        card.classList.toggle("is-empty", !!(input && input.value === ""));
+      });
+    }
 
-      function collectAndSaveMarks() {
-      const saveMarksAlert = document.getElementById("saveMarksAlert");
+    function showSaveAlert(type, message) {
+      saveMarksAlert.className = `marks-save-alert alert-${type}`;
+      saveMarksAlert.textContent = message;
       saveMarksAlert.classList.remove("d-none");
-      saveMarksAlert.classList.add("alert-warning");
-      saveMarksAlert.innerHTML = `
-          <div class="d-flex justify-content-center align-items-center text-warning">
-              <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-              <span class="h6">Please wait, saving marks…</span>
-          </div>`
+
+      window.clearTimeout(showSaveAlert._timer);
+      showSaveAlert._timer = window.setTimeout(() => {
+        saveMarksAlert.classList.add("d-none");
+      }, 5000);
+    }
+
+    function loadGrades(branchId) {
+      resetGrades();
+      if (!branchId) return;
+
+      fetch(`/admin/api/grades/${branchId}`)
+        .then((r) => r.json())
+        .then((data) => {
+          data.forEach((cls) => {
+            const opt = document.createElement("option");
+            opt.value = cls.id;
+            opt.textContent = cls.grade_form;
+            opt.dataset.streams = JSON.stringify(cls.streams || []);
+            gradeSelect.appendChild(opt);
+          });
+          gradeSelect.disabled = false;
+          setSetupHint("Choose the class, then subject.");
+        });
+    }
+
+    function loadSubjects(branchId, classId, stream = null) {
+      resetSubjects();
+      if (!branchId || !classId) return;
+
+      const params = new URLSearchParams({
+        branch_id: branchId,
+        class_id: classId,
+      });
+      if (stream) params.append("stream", stream);
+
+      fetch(`/admin/api/subjects?${params}`)
+        .then((r) => r.json())
+        .then((data) => {
+          data.forEach((subj) => {
+            const opt = document.createElement("option");
+            opt.value = subj.id;
+            opt.textContent = `${subj.code} — ${subj.name}`;
+            subjectSelect.appendChild(opt);
+          });
+          subjectSelect.disabled = false;
+          setSetupHint("Choose the subject to load students.");
+        });
+    }
+
+    function loadStudents() {
+      const branchId = branchSelect.value;
+      const classId = gradeSelect.value;
+      const subjectId = subjectSelect.value;
+      const stream = streamSelect.value || "";
+      const examId = document.getElementById("examId").value;
+      const subjectText =
+        subjectSelect.options[subjectSelect.selectedIndex]?.text || "Subject";
+
+      if (!branchId || !classId || !subjectId) {
+        resetStudents();
+        return;
+      }
+
+      searchQuery = "";
+      marksStudentSearch.value = "";
+      marksSearchClear.classList.add("d-none");
+      setSetupHint("Loading students…");
+      marksOutOf.disabled = true;
+      saveMarksBtn.disabled = true;
+
+      fetch(
+        `/admin/api/exam-students?branch_id=${branchId}&exam_id=${examId}&class_id=${classId}&subject_id=${subjectId}&stream=${stream}`
+      )
+        .then((r) => r.json())
+        .then((data) => {
+          currentStudents = data;
+          if (data.paper && data.paper.marks_out_of) {
+            marksOutOf.value = data.paper.marks_out_of;
+          }
+          marksOutOf.disabled = false;
+          renderStudents(subjectText);
+          setSetupHint("Enter marks, then tap Save Marks.");
+        })
+        .catch(() => {
+          resetStudents("Could not load students. Please try again.");
+          setSetupHint("Failed to load students.");
+        });
+    }
+
+    function renderStudents(subjectName) {
+      captureMarksFromDom();
+
+      if (!currentStudents.students || !currentStudents.students.length) {
+        resetStudents("No students found for this class and subject.");
+        setSetupHint("No students found for the selected class and subject.");
+        return;
+      }
+
+      const query = searchQuery.trim().toLowerCase();
+      const displayStudents = orderStudentsForDisplay(currentStudents.students);
+
+      const maxMarks = marksOutOf.value;
+      const sortNameActive = sortBy === "full_name" ? "active" : "";
+      const sortAdmActive = sortBy === "admission_number" ? "active" : "";
+
+      let tableRows = "";
+      let cards = "";
+      let matchCount = 0;
+
+      displayStudents.forEach((s, i) => {
+        const markValue =
+          s.marks !== null && s.marks !== undefined ? s.marks : "";
+        const isMatch = query && studentMatchesSearch(s, query);
+        if (isMatch) matchCount += 1;
+        const matchClass = isMatch ? " marks-entry-item--match" : "";
+        const safeName = escapeHtml(s.full_name);
+        const safeAdm = escapeHtml(s.admission_number);
+
+        tableRows += `
+          <tr class="marks-entry-item${matchClass}" data-student-id="${s.id}" data-adm="${safeAdm}" data-name="${safeName}">
+            <td class="text-center text-muted">${i + 1}</td>
+            <td class="text-center">${safeAdm}</td>
+            <td class="text-uppercase">${safeName}</td>
+            <td>
+              <input
+                type="number"
+                class="form-control form-control-sm marks-input"
+                min="0"
+                max="${maxMarks}"
+                inputmode="numeric"
+                value="${markValue}"
+              >
+            </td>
+          </tr>
+        `;
+
+        cards += `
+          <div class="marks-entry-card marks-entry-item${matchClass}${markValue === "" ? " is-empty" : ""}" data-student-id="${s.id}" data-adm="${safeAdm}" data-name="${safeName}">
+            <div class="marks-entry-card-meta">
+              <div class="marks-entry-card-name text-uppercase">${safeName}</div>
+              <div class="marks-entry-card-adm">Adm: ${safeAdm}</div>
+            </div>
+            <input
+              type="number"
+              class="form-control marks-input"
+              min="0"
+              max="${maxMarks}"
+              inputmode="numeric"
+              value="${markValue}"
+              aria-label="Marks for ${safeName}"
+            >
+          </div>
+        `;
+      });
+
+      studentsContainer.innerHTML = `
+        <div class="marks-students-card">
+          <div class="marks-students-card-header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 w-100">
+              <h6 class="marks-students-title">${escapeHtml(subjectName)}</h6>
+              <div class="marks-sort-control">
+                <span class="marks-sort-label" id="marksSortLabel">
+                  <i class="bi bi-sort-down-alt" aria-hidden="true"></i>
+                  Sort by:
+                </span>
+                <div class="marks-sort-group" role="group" aria-labelledby="marksSortLabel">
+                  <button
+                    type="button"
+                    class="marks-sort-btn ${sortAdmActive}"
+                    id="sortAdmBtn"
+                    aria-pressed="${sortBy === "admission_number" ? "true" : "false"}"
+                    title="Sort students by admission number"
+                  >
+                    Adm No
+                  </button>
+                  <button
+                    type="button"
+                    class="marks-sort-btn ${sortNameActive}"
+                    id="sortNameBtn"
+                    aria-pressed="${sortBy === "full_name" ? "true" : "false"}"
+                    title="Sort students by name"
+                  >
+                    Name
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="marks-entry-table-wrap table-responsive">
+            <table class="table table-sm table-hover marks-entry-table mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="text-center">#</th>
+                  <th class="text-center">Adm No</th>
+                  <th>Name</th>
+                  <th>Marks / ${maxMarks}</th>
+                </tr>
+              </thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+          </div>
+
+          <div class="marks-entry-cards">${cards}</div>
+        </div>
+      `;
+
+      marksSaveBar.classList.remove("d-none");
+      marksSearchBar.classList.remove("d-none");
+      marksSearchClear.classList.toggle("d-none", !query);
+
+      document.getElementById("sortNameBtn").onclick = () => {
+        sortBy = "full_name";
+        renderStudents(subjectName);
+      };
+      document.getElementById("sortAdmBtn").onclick = () => {
+        sortBy = "admission_number";
+        renderStudents(subjectName);
+      };
+
+      if (query && matchCount === 0) {
+        setSetupHint(`No student found for "${searchQuery.trim()}".`);
+      } else if (query) {
+        setSetupHint(`${matchCount} student(s) matched. Matches are shown at the top.`);
+      } else {
+        setSetupHint("Enter marks, then tap Save Marks.");
+      }
+
+      updateMarksCount();
+    }
+
+    function showError(input, message) {
+      input.classList.add("is-invalid");
+
+      let feedback = input.nextElementSibling;
+      if (!feedback || !feedback.classList.contains("invalid-feedback")) {
+        feedback = document.createElement("div");
+        feedback.className = "invalid-feedback";
+        input.after(feedback);
+      }
+      feedback.textContent = message;
+      input.value = "";
+      updateMarksCount();
+    }
+
+    function clearError(input) {
+      input.classList.remove("is-invalid");
+
+      const feedback = input.nextElementSibling;
+      if (feedback && feedback.classList.contains("invalid-feedback")) {
+        feedback.remove();
+      }
+    }
+
+    function collectAndSaveMarks() {
+      if (isSaving) return;
+
+      const invalidInput = document.querySelector(".marks-input.is-invalid");
+      if (invalidInput) {
+        invalidInput.focus();
+        showSaveAlert("warning", "Fix invalid marks before saving.");
+        return;
+      }
+
+      captureMarksFromDom();
 
       const marksData = [];
 
-      document.querySelectorAll("tbody tr").forEach(row => {
-          const input = row.querySelector(".marks-input");
-          const studentId = row.dataset.studentId;
+      getMarkEntryItems().forEach((row) => {
+        const input = row.querySelector(".marks-input");
+        const studentId = row.dataset.studentId;
 
-          if (input && studentId && input.value !== "") {
-              marksData.push({
-                  student_id: parseInt(studentId),
-                  marks: parseInt(input.value)
-              });
-          }
-
+        if (input && studentId && input.value !== "") {
+          marksData.push({
+            student_id: parseInt(studentId, 10),
+            marks: parseInt(input.value, 10),
+          });
+        }
       });
+
+      if (!marksData.length) {
+        showSaveAlert("warning", "Enter at least one mark before saving.");
+        return;
+      }
+
+      isSaving = true;
+      saveMarksBtn.disabled = true;
+      saveMarksAlert.classList.add("d-none");
+
+      setBlockerLoading(
+        "Saving marks",
+        `Saving ${marksData.length} student mark(s) to the database…`
+      );
 
       fetch("/admin/api/save-exam-marks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-              exam_id: {{ exam.id }},
-              branch_id: branchSelect.value,
-              class_id: gradeSelect.value,
-              stream: streamSelect.value || null,
-              subject_id: subjectSelect.value,
-              marks_out_of: parseInt(marksOutOf.value),
-              marks: marksData
-          })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          exam_id: {{ exam.id }},
+          branch_id: branchSelect.value,
+          class_id: gradeSelect.value,
+          stream: streamSelect.value || null,
+          subject_id: subjectSelect.value,
+          marks_out_of: parseInt(marksOutOf.value, 10),
+          marks: marksData,
+        }),
       })
-      .then(r => r.json())
-      .then(resp => {
-          if (resp.success) {
-              saveMarksAlert.classList.remove("alert-warning");
-              saveMarksAlert.classList.add("alert-success");
-              saveMarksAlert.innerHTML = `
-                  <div class="d-flex justify-content-center align-items-center text-success">
-                      <i class="bi bi-check-circle-fill me-2"></i>
-                      <span class="h6">Marks saved successfully!</span>
-                  </div>
-              `;
-          } else {
-              saveMarksAlert.classList.remove("alert-warning");
-              saveMarksAlert.classList.add("alert-danger");
-              saveMarksAlert.innerHTML = `
-                  <div class="d-flex justify-content-center align-items-center text-danger">
-                      <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                      <span class="h6">Error saving marks: ${resp.error || "Unknown error"}</span>
-                  </div>
-              `;
+        .then(async (response) => {
+          let resp = {};
+          try {
+            resp = await response.json();
+          } catch (error) {
+            throw new Error("Unexpected server response. Marks were not saved.");
           }
-      });
-  }
 
+          if (!response.ok || !resp.success) {
+            throw new Error(resp.error || "Failed to save marks to the database.");
+          }
+
+          return resp;
+        })
+        .then(() => {
+          showBlockerResult(
+            "success",
+            "Marks saved successfully",
+            `All ${marksData.length} mark(s) were saved to the database.`
+          );
+        })
+        .catch((error) => {
+          showBlockerResult(
+            "error",
+            "Save failed",
+            error.message || "Marks could not be saved. Please try again."
+          );
+        })
+        .finally(() => {
+          isSaving = false;
+          updateMarksCount();
+        });
+    }
+
+    if (branchSelect && branchSelect.tagName === "SELECT") {
+      branchSelect.addEventListener("change", () => loadGrades(branchSelect.value));
+    }
+
+    if (branchSelect && branchSelect.value) {
+      loadGrades(branchSelect.value);
+    } else {
+      setSetupHint("Select a school to continue.");
+      resetStudents();
+    }
+
+    gradeSelect.addEventListener("change", function () {
+      resetStreams();
+      resetSubjects();
+
+      const selected = this.options[this.selectedIndex];
+      const streams = JSON.parse(selected.dataset.streams || "[]");
+
+      if (streams.length) {
+        streams.forEach((s) => {
+          const opt = document.createElement("option");
+          opt.value = s;
+          opt.textContent = s;
+          streamSelect.appendChild(opt);
+        });
+        streamWrapper.classList.remove("d-none");
+        setSetupHint("Select a stream, then subject.");
+      } else {
+        loadSubjects(branchSelect.value, gradeSelect.value);
+      }
+    });
+
+    streamSelect.addEventListener("change", () => {
+      loadSubjects(branchSelect.value, gradeSelect.value, streamSelect.value);
+    });
+
+    subjectSelect.addEventListener("change", function () {
+      if (this.value) {
+        loadStudents();
+      } else {
+        resetStudents();
+        setSetupHint("Choose the subject to load students.");
+      }
+    });
+
+    marksOutOf.addEventListener("input", () => {
+      if (subjectSelect.value) {
+        const subjectText =
+          subjectSelect.options[subjectSelect.selectedIndex]?.text || "Subject";
+        renderStudents(subjectText);
+      }
+    });
+
+    document.addEventListener("input", function (e) {
+      if (!e.target.classList.contains("marks-input")) return;
+
+      const input = e.target;
+      const maxMarks = parseInt(marksOutOf.value, 10);
+      let value = input.value;
+
+      if (value === "") {
+        clearError(input);
+        updateMarksCount();
+        return;
+      }
+
+      if (!/^\d+$/.test(value)) {
+        input.value = value.replace(/\D/g, "");
+        updateMarksCount();
+        return;
+      }
+
+      const marks = parseInt(value, 10);
+      if (marks > maxMarks) {
+        showError(
+          input,
+          `Marks cannot exceed ${maxMarks}. Please enter a valid mark.`
+        );
+      } else {
+        clearError(input);
+        updateMarksCount();
+      }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (!e.target.classList.contains("marks-input")) return;
+
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (e.target.classList.contains("is-invalid")) return;
+
+        const inputs = getMarkEntryItems()
+          .map((row) => row.querySelector(".marks-input"))
+          .filter(Boolean);
+        const index = inputs.indexOf(e.target);
+        if (inputs[index + 1]) {
+          inputs[index + 1].focus();
+        }
+      }
+    });
+
+    saveMarksBtn.addEventListener("click", collectAndSaveMarks);
+
+    marksStudentSearch.addEventListener("input", () => {
+      searchQuery = marksStudentSearch.value;
+      marksSearchClear.classList.toggle("d-none", !searchQuery.trim());
+      const subjectText =
+        subjectSelect.options[subjectSelect.selectedIndex]?.text || "Subject";
+      if (subjectSelect.value && currentStudents.students?.length) {
+        renderStudents(subjectText);
+      }
+    });
+
+    marksStudentSearch.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        focusFirstSearchMatch();
+      }
+    });
+
+    marksSearchClear.addEventListener("click", () => {
+      searchQuery = "";
+      marksStudentSearch.value = "";
+      marksSearchClear.classList.add("d-none");
+      const subjectText =
+        subjectSelect.options[subjectSelect.selectedIndex]?.text || "Subject";
+      if (subjectSelect.value && currentStudents.students?.length) {
+        renderStudents(subjectText);
+        marksStudentSearch.focus();
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      if (!subjectSelect.value || !currentStudents.students?.length) return;
+      const subjectText =
+        subjectSelect.options[subjectSelect.selectedIndex]?.text || "Subject";
+      renderStudents(subjectText);
+    });
   });
 </script>
 
