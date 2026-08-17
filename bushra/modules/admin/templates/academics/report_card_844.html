@@ -1,609 +1,823 @@
-
-</html>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Report Card</title>
-
+<title>8-4-4 Report Card</title>
 <style>
 @page {
     size: A4;
-    margin: 15mm;
+    margin: 9mm;
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body {
-    font-family: Arial, sans-serif;
-    font-size: 11.5px;
-    line-height: 1.3;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 11px;
+    line-height: 1.35;
     margin: 0;
     padding: 0;
-    color: #333;
+    color: #2f2f2f;
 }
 
 .report-card {
-    border: 3px solid #923006;
-    padding: 18px;
-    box-sizing: border-box;
-    page-break-inside: avoid;
     position: relative;
-}
-
-/* ================= HEADER ================= */
-.header {
+    width: 100%;
+    min-height: 279mm;
+    border: 2.5px solid #923006;
+    border-radius: 4px;
+    padding: 11px 13px 0;
+    page-break-inside: avoid;
+    page-break-after: avoid;
+    background-color: #fff;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px #f0e0d6;
     display: flex;
+    flex-direction: column;
+}
+
+.rc-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
+}
+
+.rc-header {
+    display: flex;
+    align-items: flex-start;
     justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 9px;
+}
+
+.rc-logo-wrap,
+.rc-passport-wrap {
+    width: 78px;
+    flex-shrink: 0;
+}
+
+.rc-logo,
+.rc-passport {
+    width: 78px;
+    height: 78px;
+    object-fit: contain;
+    display: block;
+    border: 1px solid #d9c4b8;
+    border-radius: 3px;
+    background: #fff;
+}
+
+.rc-passport {
+    object-fit: cover;
+}
+
+.rc-logo-placeholder,
+.rc-passport-placeholder {
+    width: 78px;
+    height: 78px;
+    border: 1px dashed #b5a090;
+    border-radius: 3px;
+    display: flex;
     align-items: center;
-    margin-bottom: 15px;
+    justify-content: center;
+    font-size: 9px;
+    color: #8a7a70;
+    background: rgba(250, 247, 245, 0.75);
 }
 
-.school-info {
+.rc-school {
+    flex: 1;
     text-align: center;
-    flex-grow: 1;
+    min-width: 0;
 }
 
-.school-info h2 {
+.rc-school h2 {
+    margin: 0 0 2px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #923006;
+    line-height: 1.15;
+}
+
+.rc-school-code {
     margin: 0;
-    font-size: 20px;
+    font-size: 10px;
+    color: #6b5b52;
+    letter-spacing: 0.05em;
 }
 
-.school-info p {
-    margin: 1px 0;
-}
-
-.contact-blue {
+.rc-school-contact {
+    margin: 2px 0 4px;
+    font-size: 10px;
     color: #1e6bd6;
     font-weight: 600;
 }
 
-.student-passport {
-    width: 90px;
-    height: 100px;
-    border: 1px solid #2c3e50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.rc-exam-title {
+    margin: 3px 0 0;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #374151;
 }
 
-/* ================= STUDENT INFO ================= */
-.student-info {
-    background: #ecf0f1;
-    padding: 10px;
-    margin-bottom: 12px;
+.rc-exam-meta {
+    margin: 2px 0 0;
+    font-size: 10px;
+    color: #6b7280;
+}
+
+.rc-student-meta {
+    margin-bottom: 7px;
+    padding: 5px 8px;
+    background: #f8f3f0;
+    border: 1px solid #e8d5cc;
     border-radius: 4px;
 }
 
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 8px;
-    font-size: 10px;
+.rc-meta-name {
+    margin-bottom: 4px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid #e8d5cc;
 }
 
-th, td {
-    padding: 3px 4px;
-    border: 1px solid #7f8c8d;
+.rc-meta-name .rc-meta-value-lg {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1f2937;
+    text-transform: uppercase;
+    line-height: 1.2;
+}
+
+.rc-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2px 8px;
+}
+
+.rc-meta-item {
+    min-width: 0;
+    line-height: 1.25;
+}
+
+.rc-meta-label {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #9a8478;
+}
+
+.rc-meta-value {
+    font-size: 10px;
+    font-weight: 600;
+    color: #2f2f2f;
+    word-break: break-word;
+}
+
+.rc-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 7px;
+    font-size: 9.5px;
+}
+
+.rc-table th {
+    padding: 4px 4px;
+    background: rgba(146, 48, 6, 0.92);
+    color: #fff;
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    border: 1px solid #7a2805;
     text-align: center;
 }
 
-th {
-    background-color: #923006;
-    color: white;
-    font-size: 10px;
+.rc-table td {
+    padding: 3px 4px;
+    border: 1px solid #ddd5cf;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 1.25;
 }
 
-.text-left { text-align: left; }
+.rc-table tbody tr:nth-child(even) {
+    background: rgba(250, 248, 247, 0.82);
+}
 
-.subject-uppercase {
+.rc-table .text-left {
+    text-align: left;
+}
+
+.rc-subject-name {
+    font-weight: 600;
     text-transform: uppercase;
+    font-size: 9px;
 }
 
-.subject-bar-container {
-    margin-top: 8px;
+.marks-scored {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.marks-denom {
+    font-size: 8px;
+    font-weight: 500;
+    color: #9a8478;
+}
+
+.rc-chart-wrap {
+    margin-bottom: 6px;
+    padding: 7px 8px 5px;
+    border: 1px solid #e8d5cc;
+    border-radius: 4px;
+    background: rgba(255, 253, 251, 0.82);
+}
+
+.rc-chart-title {
+    margin: 0 0 5px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #6b5b52;
+    text-align: center;
+}
+
+.rc-chart {
     display: flex;
     align-items: flex-end;
     justify-content: space-around;
-    gap: 4px;
-    height: 150px;
-    overflow: hidden;
-    border-left: 1px solid #000;
-    border-bottom: 1px solid #000;
-    padding: 4px;
+    gap: 3px;
+    height: 76px;
+    padding: 2px 1px 0;
+    border-left: 1px solid #c9b8ae;
+    border-bottom: 1px solid #c9b8ae;
 }
 
-.subject-bar {
-    width: 34px;
+.rc-chart-bar {
+    flex: 1;
+    max-width: 30px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-end;
+    min-width: 0;
+    height: 100%;
 }
 
-.bar-label {
-    font-size: 8px;
-    color: #000;
-    margin-bottom: 3px;
+.rc-chart-label {
+    font-size: 7px;
+    color: #5c4f48;
     text-align: center;
+    line-height: 1.1;
+    margin-bottom: 2px;
+    max-height: 16px;
+    overflow: hidden;
     word-break: break-word;
+}
+
+.rc-chart-fill {
+    width: 100%;
+    min-height: 3px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 1px;
+    border-radius: 2px 2px 0 0;
+    font-size: 7.5px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.rc-bar-excellent { background: #16a34a; }
+.rc-bar-very-good { background: #65a30d; }
+.rc-bar-good { background: #eab308; color: #1f2937; }
+.rc-bar-fair { background: #f97316; }
+.rc-bar-poor { background: #dc2626; }
+
+.rc-subject-stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 18px;
+    margin-bottom: 8px;
+    padding: 6px 8px;
+    font-size: 9.5px;
+    color: #4b5563;
+    background: rgba(248, 243, 240, 0.82);
+    border: 1px solid #e8d5cc;
+    border-radius: 4px;
+}
+
+.rc-subject-stats strong {
+    color: #923006;
+    font-weight: 700;
+}
+
+.rc-history-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    page-break-inside: avoid;
+}
+
+.rc-history-table-wrap,
+.rc-history-chart-wrap {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid #e8d5cc;
+    border-radius: 4px;
+    padding: 7px 8px;
+    background: rgba(255, 253, 251, 0.82);
+}
+
+.rc-history-title {
+    margin: 0 0 5px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #6b5b52;
+    text-align: center;
+}
+
+.rc-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+}
+
+.rc-history-table th {
+    padding: 3px 4px;
+    background: rgba(243, 235, 230, 0.9);
+    color: #5c3d2e;
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    border: 1px solid #e0cfc4;
+}
+
+.rc-history-table td {
+    padding: 3px 4px;
+    border: 1px solid #ece2dc;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.rc-history-table td.text-left {
+    text-align: left;
+}
+
+.rc-history-table tr.is-current td {
+    background: rgba(255, 245, 235, 0.88);
+    font-weight: 700;
+}
+
+.rc-trend-svg {
+    width: 100%;
+    height: 80px;
+    display: block;
+}
+
+.rc-trend-note {
+    margin: 3px 0 0;
+    font-size: 7.5px;
+    color: #9a8478;
+    text-align: center;
+    font-style: italic;
+}
+
+.rc-footer-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+    page-break-inside: avoid;
+}
+
+.rc-summary {
+    flex: 1.45;
+    border: 1px solid #d9c4b8;
+    border-radius: 4px;
+    padding: 9px 10px;
+    background: rgba(253, 248, 244, 0.88);
+}
+
+.rc-summary h4 {
+    margin: 0 0 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #d9c4b8;
+    text-align: center;
+    font-size: 10.5px;
+    color: #923006;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.rc-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    margin-bottom: 6px;
+}
+
+.rc-summary-card {
+    padding: 5px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ead9cf;
+    text-align: center;
+}
+
+.rc-summary-card.is-primary {
+    background: rgba(255, 249, 244, 0.92);
+    border-color: #e0c4b0;
+}
+
+.rc-summary-card .label {
+    display: block;
+    font-size: 7.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #8a7568;
+    margin-bottom: 2px;
+}
+
+.rc-summary-card .value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #923006;
     line-height: 1.1;
 }
 
-.bar-fill {
-    width: 100%;
+.rc-summary-card .value-sm {
+    font-size: 11.5px;
+}
+
+.rc-remarks {
+    padding: 6px 8px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px dashed #d9c4b8;
+    font-size: 9.5px;
+    color: #374151;
+    line-height: 1.35;
+}
+
+.rc-remarks strong {
+    color: #923006;
+}
+
+.rc-signatures {
+    flex: 1;
+    border: 1px solid #d9c4b8;
+    border-radius: 4px;
+    padding: 9px;
     display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    font-size: 9px;
-    font-weight: bold;
-    color: #fff;
-    padding-bottom: 2px;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.88);
 }
 
-/* FOOTER */
-.footer {
-    text-align: center;
+.rc-signature-block {
+    text-align: left;
+}
+
+.rc-signature-field {
     font-size: 10px;
-    margin-top: 10px;
-    color: #7f8c8d;
-    border-top: 1px solid #ccc;
-    padding-top: 4px;
+    font-weight: 600;
+    color: #1f2937;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
 }
 
-/* Bar colors */
-.excellent { background-color: #4CAF50; }
-.very-good { background-color: #8BC34A; }
-.good { background-color: #FFC107; color:#000; }
-.fair { background-color: #FF9800; }
-.poor { background-color: #F44336; }
-
-/* ================= WATERMARK ================= */
-.report-card::before {
-    content: "{{ data[0].branch_name }}";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-30deg);
-    font-size: 60px;
-    color: rgba(170, 170, 170, 0.25);
-    z-index: 0;
-    pointer-events: none;
-    white-space: nowrap;
-}
-/* ================= SUBTLE DECORATIONS ================= */
-
-/* Decorative corner lines */
-.report-card::after {
-    content: "";
-    position: absolute;
-    inset: 12px;
-    border: 1px dashed rgba(146, 48, 6, 0.15);
-    z-index: 0;
-    pointer-events: none;
+.rc-signature-name {
+    margin-top: 4px;
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #374151;
+    text-align: center;
 }
 
-/* Corner accents */
-.report-card .corner {
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    border: 3px solid rgba(146, 48, 6, 0.25);
-    z-index: 0;
-    pointer-events: none;
+.rc-signature-role {
+    margin-top: 3px;
+    font-size: 8.5px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 700;
+    text-align: center;
 }
 
-.corner.top-left {
-    top: 10px;
-    left: 10px;
-    border-right: none;
-    border-bottom: none;
+.rc-stamp-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
-.corner.bottom-right {
-    bottom: 10px;
-    right: 10px;
-    border-left: none;
-    border-top: none;
+.rc-stamp-label {
+    margin: 0 0 4px;
+    font-size: 8.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #6b7280;
+    text-align: center;
 }
 
-/* Subtle dotted paper texture */
-.report-card {
-    background-image: radial-gradient(
-        rgba(0,0,0,0.04) 0.6px,
-        transparent 0.6px
-    );
-    background-size: 14px 14px;
+.rc-stamp {
+    flex: 1;
+    border: 2px dotted #9a8478;
+    border-radius: 4px;
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-style: italic;
+    color: #8a7568;
+    text-align: center;
+    padding: 8px;
+    line-height: 1.4;
 }
 
-/* Decorative divider behind summary */
-.summary-signature-container::before {
-    content: "";
-    position: absolute;
-    left: 5%;
-    right: 5%;
-    top: -10px;
-    height: 1px;
-    background: linear-gradient(
-        to right,
-        transparent,
-        rgba(146, 48, 6, 0.3),
-        transparent
-    );
+.rc-page-footer {
+    margin-top: auto;
+    flex-shrink: 0;
+    padding: 4px 13px 4px;
+    margin-left: -13px;
+    margin-right: -13px;
+    margin-bottom: -1px;
+    border-top: 1px solid #e5ddd8;
+    text-align: center;
+    font-size: 8.5px;
+    color: #8a7568;
+    line-height: 1.25;
+    background: #fff;
 }
-
 </style>
 </head>
-
 <body>
 
 {% for student in data %}
+{% set max_mark = student.subjects | map(attribute='marks') | max if student.subjects else 0 %}
+{% set subject_count = student.subjects | length %}
 
 <div class="report-card">
-    <div class="corner top-left"></div>
-    <div class="corner bottom-right"></div>
-
-    <!-- HEADER -->
-    <div class="header">
-        {% if student.school_logo %}
-        <img src="{{ student.school_logo }}" style="max-width:100px; max-height:100px;">
-        {% else %}
-        <div style="width:100px;height:100px;border:1px dashed #333;display:flex;align-items:center;justify-content:center;">
-            Logo
+    <div class="rc-card-body">
+    <div class="rc-header">
+        <div class="rc-logo-wrap">
+            {% if student.school_logo %}
+            <img src="{{ student.school_logo }}" alt="School logo" class="rc-logo">
+            {% else %}
+            <div class="rc-logo-placeholder">School Logo</div>
+            {% endif %}
         </div>
-        {% endif %}
 
-        <div class="school-info">
+        <div class="rc-school">
             <h2>{{ student.branch_name }}</h2>
-            <p>{{ (school.school_code or '') | upper }}</p>
-            <p>
-                <span class="contact-blue">{{ school.email }}</span> 
+            {% if school and school.school_code %}
+            <p class="rc-school-code">{{ school.school_code | upper }}</p>
+            {% endif %}
+            {% if school and school.email %}
+            <p class="rc-school-contact">Email: {{ school.email }}</p>
+            {% endif %}
+            <p class="rc-exam-title">{{ student.exam.name | upper }}</p>
+            <p class="rc-exam-meta">
+                Term {{ student.exam.term }} · {{ student.exam.year }} ·
+                {{ student.class }}{% if student.stream %} · {{ student.stream }}{% endif %}
             </p>
-            <h5>STUDENT'S REPORT CARD</h5>
-            <h5>{{ student.exam.name }} - {{ student.exam.year }} - Term: {{ student.exam.term }}</h5>
         </div>
 
-        <div class="student-passport">
-            <img src="{{ student.passport_path }}" style="width:90px;height:100px;object-fit:cover;">
+        <div class="rc-passport-wrap">
+            {% if student.passport_path %}
+            <img src="{{ student.passport_path }}" alt="Student photo" class="rc-passport">
+            {% else %}
+            <div class="rc-passport-placeholder">Photo</div>
+            {% endif %}
         </div>
     </div>
 
-    <!-- STUDENT INFO -->
-    <div class="student-info">
-        <strong>Name:</strong> {{ student.name }} |
-        <strong>Adm No:</strong> {{ student.admission_number }} |
-        <strong>Class:</strong> {{ student.class }} |
-        <strong>Stream:</strong> {{ student.stream }} |
-        <strong>Gender:</strong> {{ student.gender }} |
+    <div class="rc-student-meta">
+        <div class="rc-meta-name">
+            <span class="rc-meta-label">Student Name: </span>
+            <span class="rc-meta-value rc-meta-value-lg">{{ student.name }}</span>
+        </div>
+        <div class="rc-meta-grid">
+            <div class="rc-meta-item">
+                <span class="rc-meta-label">Gender: </span>
+                <span class="rc-meta-value">{{ student.gender or "—" }}</span>
+            </div>
+            <div class="rc-meta-item">
+                <span class="rc-meta-label">Adm No.: </span>
+                <span class="rc-meta-value">{{ student.admission_number or "—" }}</span>
+            </div>
+            <div class="rc-meta-item">
+                <span class="rc-meta-label">Class: </span>
+                <span class="rc-meta-value">{{ student.class }}{% if student.stream %} · {{ student.stream }}{% endif %}</span>
+            </div>
+            <div class="rc-meta-item">
+                <span class="rc-meta-label">Mean Grade: </span>
+                <span class="rc-meta-value">{{ student.summary.final_grade or "—" }}</span>
+            </div>
+        </div>
     </div>
 
-    <!-- SUBJECT TABLE --> 
-    <table>
+    <table class="rc-table">
         <thead>
             <tr>
                 <th>Code</th>
                 <th>Subject</th>
                 <th>Marks</th>
                 <th>Grade</th>
-                <th>Points</th>
+                <th>Pts</th>
                 <th>Comment</th>
                 <th>Teacher</th>
             </tr>
         </thead>
         <tbody>
-        {% for s in student.subjects %}
-
+            {% for s in student.subjects %}
             <tr>
-                <td>{{ s.code }}</td>
-                <td class="text-left subject-uppercase">{{ s.subject }}</td>
-                <td>{{ s.marks|int }}</td>
-                <td>{{ s.grade }}</td>
-                <td>{{ s.points }}</td>
-                <td class="text-left">{{ s.comment }}</td>
-                <td>{{ s.teacher_initials }}</td>
+                <td>{{ s.code or "—" }}</td>
+                <td class="text-left rc-subject-name">{{ s.subject }}</td>
+                <td>
+                    {% if s.marks is not none %}
+                    <span class="marks-scored">{{ s.marks | int }}</span><span class="marks-denom">/100</span>
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+                <td>{{ s.grade or "—" }}</td>
+                <td>{{ s.points if s.points is not none else "—" }}</td>
+                <td class="text-left">{{ s.comment or "—" }}</td>
+                <td>{{ s.teacher_initials or "—" }}</td>
             </tr>
-        {% endfor %}
+            {% endfor %}
         </tbody>
     </table>
 
-    <!-- BAR CHART -->
-    <div class="subject-bar-container">
-        {% for s in student.subjects %}
+    {% if student.subjects %}
+    <div class="rc-chart-wrap">
+        <p class="rc-chart-title">Subject Performance Overview</p>
+        <div class="rc-chart">
+            {% for s in student.subjects %}
             {% if s.marks >= 75 %}
-                {% set cls = "excellent" %}
+                {% set bar_cls = "rc-bar-excellent" %}
             {% elif s.marks >= 65 %}
-                {% set cls = "very-good" %}
+                {% set bar_cls = "rc-bar-very-good" %}
             {% elif s.marks >= 50 %}
-                {% set cls = "good" %}
+                {% set bar_cls = "rc-bar-good" %}
             {% elif s.marks >= 40 %}
-                {% set cls = "fair" %}
+                {% set bar_cls = "rc-bar-fair" %}
             {% else %}
-                {% set cls = "poor" %}
+                {% set bar_cls = "rc-bar-poor" %}
             {% endif %}
-
-            <div class="subject-bar">
-                <div class="bar-label subject-uppercase">{{ s.subject }}</div> 
-                <div class="bar-fill {{ cls }}" style="height: {{ s.marks * 1.4 }}px;"> 
-                    {{ s.marks }}
+            {% set bar_height = ((s.marks / max_mark) * 60) if max_mark else 0 %}
+            <div class="rc-chart-bar">
+                <div class="rc-chart-label">{{ s.subject[:8] }}{% if s.subject|length > 8 %}…{% endif %}</div>
+                <div class="rc-chart-fill {{ bar_cls }}" style="height: {{ bar_height }}px;">
+                    {{ s.marks | int }}
                 </div>
             </div>
-        {% endfor %}
-    </div>
-
-    <div class="summary-signature-container">
-
-    <!-- LEFT: SUMMARY -->
-    <div class="summary-box">
-        <h4>Summary</h4>
-
-        <div class="summary-grid">
-            <div class="summary-item highlight-points">
-                <span class="label">Total Points</span>
-                <span class="value">{{ student.summary.total_points }}</span>
-            </div>
-
-            <div class="summary-item highlight-grade">
-                <span class="label">Mean Grade</span>
-                 {{ student.summary.final_grade }}
-            </div>
-
-            <div class="summary-item">
-                <span class="label">Stream Rank</span>
-                <span class="rank-pill">
-                    {{ student.summary.position }} / {{ student.summary.out_of }}
-                </span>
-            </div>
-
-            <div class="summary-item">
-                <span class="label">Overall Rank</span>
-                <span class="rank-pill dark">
-                    {{ student.summary.general_position }} / {{ student.summary.general_out_of }}
-                </span>
-            </div>
-        </div>
-
-        <div class="summary-remarks">
-            <strong>Remarks:</strong>
-            {{ student.principal_comment or '_____________' }}
+            {% endfor %}
         </div>
     </div>
 
-    <!-- RIGHT: SIGNATURES & STAMP -->
-    <div class="signature-box">
+    <div class="rc-subject-stats">
+        <span>Total subjects attempted: <strong>{{ subject_count }}</strong></span>
+        <span>Used for grading: <strong>7</strong></span>
+    </div>
+    {% endif %}
 
-        <div class="signature-line">
-            <div class="signature-name">
-                {{ student.class_teacher }}
+    {% if student.exam_trend and student.exam_trend | length >= 1 %}
+    {% set trend = student.exam_trend %}
+    {% set point_vals = trend | map(attribute='total_points') | list %}
+    {% set min_p = point_vals | min %}
+    {% set max_p = point_vals | max %}
+    {% set span = max_p - min_p if max_p != min_p else 1 %}
+    {% set svg_w = 200 %}
+    {% set svg_h = 72 %}
+    {% set pad_x = 14 %}
+    {% set pad_y = 10 %}
+    {% set chart_w = svg_w - (pad_x * 2) %}
+    {% set chart_h = svg_h - (pad_y * 2) %}
+    {% set ns = namespace(points=[]) %}
+    <div class="rc-history-row">
+        <div class="rc-history-table-wrap">
+            <h5 class="rc-history-title">Recent Exam Performance</h5>
+            <table class="rc-history-table">
+                <thead>
+                    <tr>
+                        <th class="text-left">Exam</th>
+                        <th>Grade</th>
+                        <th>Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in trend %}
+                    <tr{% if item.is_current %} class="is-current"{% endif %}>
+                        <td class="text-left">{{ item.exam_name }} (T{{ item.term }} {{ item.year }})</td>
+                        <td>{{ item.grade }}</td>
+                        <td>{{ item.total_points }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if trend | length >= 2 %}
+        <div class="rc-history-chart-wrap">
+            <h5 class="rc-history-title">Points Trend</h5>
+            <svg class="rc-trend-svg" viewBox="0 0 {{ svg_w }} {{ svg_h }}" aria-hidden="true">
+                <line x1="{{ pad_x }}" y1="{{ svg_h - pad_y }}" x2="{{ svg_w - pad_x }}" y2="{{ svg_h - pad_y }}" stroke="#c9b8ae" stroke-width="0.8"/>
+                <line x1="{{ pad_x }}" y1="{{ pad_y }}" x2="{{ pad_x }}" y2="{{ svg_h - pad_y }}" stroke="#c9b8ae" stroke-width="0.8"/>
+                {% for item in trend %}
+                {% set i = loop.index0 %}
+                {% set x = pad_x + ((i * chart_w) / (trend|length - 1)) if trend|length > 1 else (pad_x + chart_w / 2) %}
+                {% set y = pad_y + chart_h - (((item.total_points - min_p) / span) * chart_h) %}
+                {% set _ = ns.points.append((x|string) ~ ',' ~ (y|string)) %}
+                {% endfor %}
+                <polyline
+                    points="{{ ns.points | join(' ') }}"
+                    fill="none"
+                    stroke="#923006"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+                {% for item in trend %}
+                {% set i = loop.index0 %}
+                {% set x = pad_x + ((i * chart_w) / (trend|length - 1)) if trend|length > 1 else (pad_x + chart_w / 2) %}
+                {% set y = pad_y + chart_h - (((item.total_points - min_p) / span) * chart_h) %}
+                <circle cx="{{ x }}" cy="{{ y }}" r="2.8" fill="{% if item.is_current %}#923006{% else %}#c9a88a{% endif %}" stroke="#fff" stroke-width="0.6"/>
+                {% endfor %}
+            </svg>
+            <p class="rc-trend-note">Lower points indicate better performance</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="rc-footer-row">
+        <div class="rc-summary">
+            <h4>Performance Summary</h4>
+            <div class="rc-summary-grid">
+                <div class="rc-summary-card is-primary">
+                    <span class="label">Total Points</span>
+                    <span class="value">{{ student.summary.total_points }}</span>
+                </div>
+                <div class="rc-summary-card is-primary">
+                    <span class="label">Mean Grade</span>
+                    <span class="value">{{ student.summary.final_grade or "—" }}</span>
+                </div>
+                <div class="rc-summary-card">
+                    <span class="label">Mean Score</span>
+                    <span class="value value-sm">{{ student.summary.mean_score if student.summary.mean_score is not none else "—" }}</span>
+                </div>
+                {% if student.summary.position is defined and student.summary.out_of %}
+                <div class="rc-summary-card">
+                    <span class="label">Stream Rank</span>
+                    <span class="value value-sm">{{ student.summary.position }}/{{ student.summary.out_of }}</span>
+                </div>
+                {% endif %}
+                {% if student.summary.general_position is defined and student.summary.general_out_of %}
+                <div class="rc-summary-card">
+                    <span class="label">Class Rank</span>
+                    <span class="value value-sm">{{ student.summary.general_position }}/{{ student.summary.general_out_of }}</span>
+                </div>
+                {% endif %}
             </div>
-            <div class="signature-title">
-                Class Teacher
+            <div class="rc-remarks">
+                <strong>Remarks:</strong>
+                {{ student.summary.remarks or "_______________________________________________" }}
             </div>
         </div>
 
-        <div class="signature-line">
-            <div class="signature-name">
-                ______________________
+        <div class="rc-signatures">
+            <div class="rc-signature-block">
+                <div class="rc-signature-field">Signature: _____________________</div>
+                {% if student.class_teacher %}
+                <div class="rc-signature-name">{{ student.class_teacher }}</div>
+                {% endif %}
+                <div class="rc-signature-role">Class Teacher</div>
             </div>
-            <div class="signature-title">
-                Principal
+            <div class="rc-stamp-block">
+                <div class="rc-stamp">Official school stamp</div>
             </div>
         </div>
-
-        <div class="stamp-box">
-            OFFICIAL SCHOOL STAMP
-        </div>
-
+    </div>
     </div>
 
-</div>
-
-
-
-<div class="footer">
-        © 2026 {{ student.branch_name }}.
-        <br>Developed by Oyaro Jared. All Rights Reserved.
+    <div class="rc-page-footer">
+        © {{ student.exam.year }} {{ student.branch_name }} · Developed by Shuleka Tech · 0701948782 / 0782811403
     </div>
-
-<style>
-/* ================= SUMMARY & SIGNATURE STYLING ================= */
-/* ================= SUMMARY + SIGNATURE LAYOUT ================= */
-
-.summary-signature-container {
-    display: flex;
-    gap: 15px;
-    margin-top: 20px;
-    page-break-inside: avoid;
-}
-
-/* LEFT */
-.summary-box {
-    width: 60%;
-}
-
-/* RIGHT */
-.signature-box {
-    width: 40%;
-    border: 2px solid #923006;
-    border-radius: 6px;
-    padding: 12px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-/* Signature lines */
-.signature-line {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.signature-name {
-    border-top: 1px solid #000;
-    padding-top: 4px;
-    font-weight: bold;
-}
-
-.signature-title {
-    font-size: 10px;
-    color: #555;
-    margin-top: 2px;
-}
-
-/* Stamp box */
-.stamp-box {
-    border: 2px dotted #000;
-    height: 70px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-style: italic;
-    color: #555;
-}
-
-.summary-signature-container {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 20px;
-    page-break-inside: avoid;
-    gap: 15px;
-}
-
-.summary-box, .signature-box {
-    border: 2px solid #923006;
-    border-radius: 6px;
-    padding: 12px;
-    box-sizing: border-box;
-}
-
-.summary-box {
-    width: 60%;
-    background: #fdf5e6; /* subtle cream background for clarity */
-}
-
-.summary-box h4 {
-    margin-top: 0;
-    margin-bottom: 8px;
-    text-align: center;
-    color: #923006;
-    border-bottom: 1px solid #923006;
-    padding-bottom: 4px;
-}
-
-.signature-box {
-    width: 35%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.signature-line {
-    margin-bottom: 18px;
-}
-
-.signature {
-    border-top: 1px solid #000;
-    text-align: center;
-    padding-top: 4px;
-    font-weight: bold;
-}
-
-.stamp-line {
-    margin-top: 10px;
-    border-top: 1px dotted #000;
-    text-align: center;
-    padding-top: 4px;
-    font-style: italic;
-    font-size: 11px;
-    color: #555;
-}
-/* ================= SUMMARY VISUAL EMPHASIS ================= */
-
-.summary-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-bottom: 10px;
-}
-
-.summary-item {
-    background: #fff;
-    border: 1px solid rgba(146, 48, 6, 0.25);
-    border-radius: 6px;
-    padding: 8px 10px;
-    text-align: center;
-}
-
-.summary-item .label {
-    display: block;
-    font-size: 10px;
-    color: #555;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-}
-
-.summary-item .value {
-    font-size: 20px;
-    font-weight: bold;
-    color: #923006;
-}
-
-/* ===== TOTAL POINTS ===== */
-.highlight-points {
-    background: linear-gradient(135deg, #fff5e6, #fde2c7);
-    border: 2px solid #923006;
-}
-
-/* ===== GRADE BADGE ===== */
-.grade-badge {
-    display: inline-block;
-    font-size: 26px;
-    font-weight: bold;
-    padding: 8px 16px;
-    border-radius: 50%;
-    color: #fff;
-}
-
-/* Grade colors */
-.grade-a,
-.grade-a- { background: #2ecc71; }
-
-.grade-b,
-.grade-b- { background: #27ae60; }
-
-.grade-c,
-.grade-c- { background: #f1c40f; color: #000; }
-
-.grade-d,
-.grade-d- { background: #e67e22; }
-
-.grade-e { background: #e74c3c; }
-
-/* ===== RANK PILLS ===== */
-.rank-pill {
-    display: inline-block;
-    background: #3498db;
-    color: #fff;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 14px;
-}
-
-.rank-pill.dark {
-    background: #2c3e50;
-}
-
-/* ===== REMARKS ===== */
-.summary-remarks {
-    margin-top: 8px;
-    padding-top: 6px;
-    border-top: 1px dashed #923006;
-    font-size: 11px;
-}
-
-</style>
-
 </div>
 
 {% if not loop.last %}

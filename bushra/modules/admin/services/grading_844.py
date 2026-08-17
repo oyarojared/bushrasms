@@ -5,7 +5,7 @@ from ....modals.students_db import Student
 from ....modals.staff_db import Teacher, ClassTeacher
 from ....modals.subjects_db import Lesson, Subject
 from ....modals.assessment_db import Exam, ExamPaper, StudentExamMark
-from ....modals.branches_db import Branch 
+from ....modals.branches_db import Branch, BranchClasses
 from .report import build_passport_path, build_static_image_path 
 
 
@@ -265,6 +265,122 @@ def subject_comment(marks):
         return "Poor."
 
 
+def _term_sort_key(term):
+    return {"I": 1, "II": 2, "III": 3}.get(term, 0)
+
+
+def _exam_chronological_key(exam):
+    return (exam.year, _term_sort_key(exam.term), (exam.name or "").lower())
+
+
+def _collect_844_point_rows(student, exam):
+    """Collect subject point rows for aggregate grading on one exam."""
+    branch = student.branch
+    class_ = student.class_info
+    if not branch or not class_:
+        return []
+
+    point_rows = []
+    for alloc in student.subject_allocations:
+        subject = alloc.subject
+        if not subject:
+            continue
+
+        exam_paper = (
+            ExamPaper.query
+            .filter_by(
+                exam_id=exam.id,
+                branch_id=branch.id,
+                class_id=class_.id,
+                stream=student.stream,
+                subject_id=subject.id,
+            )
+            .first()
+        )
+        if not exam_paper:
+            continue
+
+        mark = (
+            StudentExamMark.query
+            .filter_by(
+                exam_paper_id=exam_paper.id,
+                student_id=student.id,
+            )
+            .first()
+        )
+        if not mark:
+            continue
+
+        _, points = resolve_844_grade(mark.marks, subject.category)
+        point_rows.append(
+            {
+                "points": points,
+                "category": subject.category,
+            }
+        )
+
+    return point_rows
+
+
+def get_student_844_exam_trend(student, current_exam_id, previous_count=3):
+    """
+    Return recent 8-4-4 exam summaries for trend display on report cards.
+    Includes the current exam and up to `previous_count` earlier exams.
+    """
+    class_ = student.class_info
+    if not class_ or not is_844_form(normalize_form_name(class_.grade_form)):
+        return []
+
+    exam_rows = (
+        db.session.query(Exam)
+        .join(ExamPaper, ExamPaper.exam_id == Exam.id)
+        .join(StudentExamMark, StudentExamMark.exam_paper_id == ExamPaper.id)
+        .filter(
+            StudentExamMark.student_id == student.id,
+            ExamPaper.branch_id == student.branch_id,
+            ExamPaper.class_id == student.class_id,
+        )
+        .distinct()
+        .all()
+    )
+
+    eligible_exams = list(exam_rows)
+    if not eligible_exams:
+        return []
+
+    eligible_exams.sort(key=_exam_chronological_key)
+    current_index = next(
+        (idx for idx, exam in enumerate(eligible_exams) if exam.id == current_exam_id),
+        None,
+    )
+    if current_index is None:
+        return []
+
+    start_index = max(0, current_index - previous_count)
+    selected_exams = eligible_exams[start_index: current_index + 1]
+
+    trend = []
+    for exam in selected_exams:
+        point_rows = _collect_844_point_rows(student, exam)
+        if not point_rows:
+            continue
+        aggregate = compute_844_aggregate(point_rows)
+        trend.append(
+            {
+                "exam_id": exam.id,
+                "exam_name": exam.name,
+                "term": exam.term,
+                "year": exam.year,
+                "label": f"{exam.name} T{exam.term} {exam.year}",
+                "total_points": aggregate["total_points"],
+                "grade": aggregate["mean_grade"],
+                "is_current": exam.id == current_exam_id,
+            }
+        )
+
+    return trend
+
+
 # =========================================================
 # SINGLE STUDENT REPORT WITH AGGREGATE RULE
 # =========================================================
@@ -436,6 +552,7 @@ def generate_student_report(student: Student, exam: Exam):
         "class_teacher": class_teacher.teacher.fullname if class_teacher and class_teacher.teacher else None,
         "school_logo": build_static_image_path(branch.logo) if branch.logo else None,
         "branch_name": branch.branch_name.upper(),
+        "exam_trend": get_student_844_exam_trend(student, exam.id),
     }
 
  
