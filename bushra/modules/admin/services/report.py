@@ -335,17 +335,12 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
     # ------------------------------------------------------------------
     # IMPORTANT:
     # Always load ALL students in the class.
-    # Ranking is calculated before filtering by stream.
+    # Ranking is calculated before filtering by stream or student.
     # ------------------------------------------------------------------
-    query = Student.query.filter_by(
+    students = Student.query.filter_by(
         branch_id=branch_id,
         class_id=class_id
-    )
-
-    if student_id:
-        query = query.filter_by(id=student_id)
-
-    students = query.all()
+    ).all()
 
     student_list = []
 
@@ -492,7 +487,14 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
     # ==================================================================
     # Filter only after rankings have been computed
     # ==================================================================
-    if stream:
+    if student_id:
+        output_students = [
+            s for s in overall_students
+            if s["id"] == int(student_id)
+        ]
+        if not output_students:
+            raise ValueError(f"Student {student_id} not found in class rankings")
+    elif stream:
         output_students = [
             s for s in overall_students
             if s["stream"] == stream

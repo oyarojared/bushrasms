@@ -4,6 +4,7 @@ from ....modals.assessment_db import StudentExamMark, ExamPaper, Exam, GradeGrad
 from ....modals.subjects_db import Subject, Lesson
 from ....modals.branches_db import BranchClasses
 from sqlalchemy import func
+from collections import defaultdict
 
 from ..utils.general_utils import resolve_grade
 from ..services.grading_844 import (
@@ -12,7 +13,9 @@ from ..services.grading_844 import (
     resolve_844_grade,
     subject_comment,
     compute_844_aggregate,
+    generate_class_reports,
 )
+from ..services.report import get_report_card_data
 
 import threading
 
@@ -90,10 +93,61 @@ def _subject_teacher_initials(branch_id, class_id, stream, subject_id):
     return ".".join(name[0].upper() for name in names)
 
 
+def _attach_exam_ranking(student_id, exam, student_stream=None):
+    """Attach class/stream rankings using the same logic as report card PDFs."""
+    stream = exam.get("stream") or student_stream or None
+
+    if exam["is_844"]:
+        reports = generate_class_reports(
+            exam["branch_id"],
+            exam["class_id"],
+            stream,
+            exam["exam_id"],
+        )
+        match = next(
+            (report for report in reports if report["student_id"] == student_id),
+            None,
+        )
+        if not match:
+            return
+
+        summary = match.get("summary", {})
+        exam["ranking"] = {
+            "stream_position": summary.get("position"),
+            "stream_total": summary.get("out_of"),
+            "overall_position": summary.get("general_position"),
+            "overall_total": summary.get("general_out_of"),
+        }
+        return
+
+    report_data = get_report_card_data(
+        exam["branch_id"],
+        exam["class_id"],
+        exam["exam_id"],
+        stream=stream,
+        student_id=student_id,
+    )
+    students = report_data.get("students") or []
+    if not students:
+        return
+
+    student_row = students[0]
+    exam["ranking"] = {
+        "stream_position": student_row.get("stream_position"),
+        "stream_total": student_row.get("stream_total"),
+        "overall_position": student_row.get("overall_position"),
+        "overall_total": student_row.get("class_total"),
+    }
+
+
 def get_student_academic_history(student_id):
     """
     Return exam results for a student grouped by exam, newest first.
     """
+    student = Student.query.get(student_id)
+    if not student:
+        return []
+
     rows = (
         db.session.query(StudentExamMark, ExamPaper, Exam, Subject, BranchClasses)
         .join(ExamPaper, StudentExamMark.exam_paper_id == ExamPaper.id)
@@ -206,6 +260,8 @@ def get_student_academic_history(student_id):
                 "descriptor": overall["descriptor"],
             }
 
+        _attach_exam_ranking(student_id, exam, student.stream)
+
         history.append(exam)
 
     history.sort(
@@ -217,6 +273,114 @@ def get_student_academic_history(student_id):
     )
 
     return history
+
+
+def _subject_mark_pct(mark, marks_out_of):
+    if mark is None:
+        return None
+    out_of = float(marks_out_of or 100)
+    if not out_of:
+        return None
+    return round((float(mark) / out_of) * 100, 1)
+
+
+def _exam_average_pct(exam):
+    total = 0.0
+    out_of = 0.0
+    for subject in exam.get("subjects", []):
+        if subject.get("marks") is None:
+            continue
+        total += float(subject["marks"])
+        out_of += float(subject.get("marks_out_of") or 100)
+    if not out_of:
+        return None
+    return round((total / out_of) * 100, 1)
+
+
+def _exam_chronological_sort_key(exam):
+    return (exam["year"], _term_sort_key(exam["term"]), exam["name"].lower())
+
+
+def build_student_academic_analysis(history):
+    """
+    Build chart and improvement analytics from a student's exam history.
+    """
+    uses_subjects_label = bool(history) and all(exam.get("is_844") for exam in history)
+    area_label = "Subject" if uses_subjects_label else "Learning area"
+    area_label_plural = "Subjects" if uses_subjects_label else "Learning areas"
+
+    empty = {
+        "uses_subjects_label": uses_subjects_label,
+        "area_label": area_label,
+        "area_label_plural": area_label_plural,
+        "exam_trend": {"labels": [], "averages": []},
+        "subject_improvements": [],
+        "most_improved": None,
+        "exam_count": len(history),
+        "has_trend": False,
+        "has_improvements": False,
+    }
+
+    if not history:
+        return empty
+
+    chronological = sorted(history, key=_exam_chronological_sort_key)
+    trend_labels = []
+    trend_averages = []
+
+    for exam in chronological:
+        average_pct = _exam_average_pct(exam)
+        if average_pct is None:
+            continue
+        trend_labels.append(f"{exam['name']} T{exam['term']} {exam['year']}")
+        trend_averages.append(average_pct)
+
+    subject_scores = defaultdict(list)
+
+    for exam in chronological:
+        exam_label = f"T{exam['term']} {exam['year']}"
+        for subject in exam.get("subjects", []):
+            pct = _subject_mark_pct(subject.get("marks"), subject.get("marks_out_of"))
+            if pct is None:
+                continue
+            subject_scores[subject["subject_name"]].append(
+                {"exam_label": exam_label, "pct": pct}
+            )
+
+    improvements = []
+    for name, scores in subject_scores.items():
+        if len(scores) < 2:
+            continue
+        first_pct = scores[0]["pct"]
+        latest_pct = scores[-1]["pct"]
+        change = round(latest_pct - first_pct, 1)
+        improvements.append(
+            {
+                "name": name,
+                "first": first_pct,
+                "latest": latest_pct,
+                "change": change,
+                "exams_count": len(scores),
+            }
+        )
+
+    improvements.sort(key=lambda row: row["change"], reverse=True)
+    most_improved = improvements[0] if improvements and improvements[0]["change"] > 0 else None
+
+    return {
+        "uses_subjects_label": uses_subjects_label,
+        "area_label": area_label,
+        "area_label_plural": area_label_plural,
+        "exam_trend": {
+            "labels": trend_labels,
+            "averages": trend_averages,
+        },
+        "subject_improvements": improvements[:12],
+        "most_improved": most_improved,
+        "exam_count": len(history),
+        "has_trend": len(trend_averages) > 0,
+        "has_improvements": len(improvements) > 0,
+    }
 
 
 def get_next_adm_no(branch_id):

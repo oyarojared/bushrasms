@@ -25,7 +25,11 @@ from flask_login import login_required
 
 from ..services.subs import auto_allocate_subjects 
 
-from ..services.studs import get_next_adm_no, get_student_academic_history
+from ..services.studs import (
+    get_next_adm_no,
+    get_student_academic_history,
+    build_student_academic_analysis,
+)
 from flask_login import current_user
 
 UNRESTRICTED_SUPER_ADMIN_ID = 11
@@ -496,6 +500,7 @@ def student_profile(student_id):
     }
 
     academic_history = get_student_academic_history(student.id)
+    academic_analysis = build_student_academic_analysis(academic_history)
 
     return render_template(
         "student_templates/student_profile.html",
@@ -505,6 +510,7 @@ def student_profile(student_id):
         passport_form=passport_form,
         transfer_form=transfer_form,
         academic_history=academic_history,
+        academic_analysis=academic_analysis,
     )
 
 

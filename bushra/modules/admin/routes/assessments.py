@@ -14,7 +14,7 @@ from weasyprint import HTML
 from flask_login import login_required, current_user
 from ...admin.utils.route_protect import admin_required
 
-from ..services.grading_844 import generate_class_reports, normalize_form_name, generate_student_report
+from ..services.grading_844 import generate_class_reports, normalize_form_name
 
 from urllib.parse import quote
 import traceback
@@ -279,7 +279,19 @@ def generate_reportcards_pdf():
             exam = Exam.query.get_or_404(exam_id)
             if student_id:
                 student_obj = Student.query.get_or_404(student_id)
-                report_data = [generate_student_report(student_obj, exam)]
+                ranking_stream = student_obj.stream or stream
+                class_reports = generate_class_reports(
+                    branch_id=branch_id,
+                    class_id=class_id,
+                    exam_id=exam_id,
+                    stream=ranking_stream,
+                )
+                report_data = [
+                    report for report in class_reports
+                    if report["student_id"] == int(student_id)
+                ]
+                if not report_data:
+                    raise ValueError("Student report not found in class rankings")
             else:
                 report_data = generate_class_reports(
                     branch_id=branch_id,
