@@ -8,12 +8,55 @@ from ..utils import resolve_grade
 from ....modals.students_db import StudentSubjectAllocation
 
 from pathlib import Path
+import base64
+import io
 import os
 from flask import current_app
 from ..services.grading import get_max_points_for_class
+from PIL import Image
 
-from pathlib import Path
-from flask import current_app
+_pdf_image_cache = {}
+
+
+def build_pdf_image_data_uri(source, max_size=96, quality=72):
+    """
+    Return a compact JPEG data URI for PDF rendering.
+    WeasyPrint is much faster with embedded thumbnails than repeated file:// loads.
+    """
+    if not source:
+        return None
+
+    cache_key = (source, max_size, quality)
+    if cache_key in _pdf_image_cache:
+        return _pdf_image_cache[cache_key]
+
+    if source.startswith("data:image"):
+        _pdf_image_cache[cache_key] = source
+        return source
+
+    if source.startswith("file:///"):
+        path = Path(source[8:])
+    elif source.startswith("file://"):
+        path = Path(source[7:])
+    else:
+        path = Path(source)
+
+    if not path.exists():
+        _pdf_image_cache[cache_key] = source
+        return source
+
+    try:
+        image = Image.open(path).convert("RGB")
+        image.thumbnail((max_size, max_size))
+        buffer = io.BytesIO()
+        image.save(buffer, format="JPEG", quality=quality, optimize=True)
+        data_uri = "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
+        _pdf_image_cache[cache_key] = data_uri
+        return data_uri
+    except Exception:
+        _pdf_image_cache[cache_key] = source
+        return source
+
 
 def build_static_image_path(filename, folder="uploads/passports", default="default-logo.PNG"):
     """
@@ -287,6 +330,7 @@ def build_passport_path(student):
 
 from collections import defaultdict
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 
 def compute_cbe_exam_rankings(branch_id, class_id, exam_id):
@@ -405,10 +449,55 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
     # Always load ALL students in the class.
     # Ranking is calculated before filtering by stream or student.
     # ------------------------------------------------------------------
-    students = Student.query.filter_by(
-        branch_id=branch_id,
-        class_id=class_id
-    ).all()
+    students = (
+        Student.query
+        .options(
+            joinedload(Student.subject_allocations).joinedload(StudentSubjectAllocation.subject)
+        )
+        .filter_by(branch_id=branch_id, class_id=class_id)
+        .all()
+    )
+
+    mark_rows = (
+        db.session.query(StudentExamMark, ExamPaper, Subject)
+        .join(ExamPaper, StudentExamMark.exam_paper_id == ExamPaper.id)
+        .join(Subject, ExamPaper.subject_id == Subject.id)
+        .filter(
+            ExamPaper.exam_id == exam_id,
+            ExamPaper.branch_id == branch_id,
+            ExamPaper.class_id == class_id,
+        )
+        .all()
+    )
+
+    marks_by_student_subject = {}
+    papers_by_stream_subject = {}
+    for mark, paper, subject in mark_rows:
+        marks_by_student_subject[(mark.student_id, subject.id)] = mark.marks
+        stream_key = paper.stream if paper.stream not in (None, "") else ""
+        papers_by_stream_subject[(stream_key, subject.id)] = paper
+
+    lessons = (
+        Lesson.query
+        .filter_by(branch_id=branch_id, class_id=class_id)
+        .options(joinedload(Lesson.teacher))
+        .all()
+    )
+    lessons_by_stream_subject = {}
+    for lesson in lessons:
+        stream_key = lesson.stream if lesson.stream not in (None, "") else ""
+        lessons_by_stream_subject[(stream_key, lesson.subject_id)] = lesson
+
+    class_teachers = (
+        ClassTeacher.query
+        .filter_by(branch_id=branch_id, class_id=class_id)
+        .options(joinedload(ClassTeacher.teacher))
+        .all()
+    )
+    class_teachers_by_stream = {}
+    for class_teacher in class_teachers:
+        stream_key = class_teacher.stream if class_teacher.stream not in (None, "") else ""
+        class_teachers_by_stream[stream_key] = class_teacher
 
     student_list = []
 
@@ -416,19 +505,17 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
     # Build student data
     # ==================================================================
     for s in students:
+        stream_key = s.stream if s.stream not in (None, "") else ""
 
-        teacher_name = class_teacher_name
-
-        # If generating all streams, fetch each student's own teacher
         if stream is None:
-            ct = ClassTeacher.query.filter_by(
-                branch_id=branch_id,
-                class_id=class_id,
-                stream=s.stream
-            ).first()
-
-            if ct and ct.teacher:
-                teacher_name = ct.teacher.fullname
+            class_teacher_obj = class_teachers_by_stream.get(stream_key)
+            teacher_name = (
+                class_teacher_obj.teacher.fullname
+                if class_teacher_obj and class_teacher_obj.teacher
+                else class_teacher_name
+            )
+        else:
+            teacher_name = class_teacher_name
 
         student_data = {
             "id": s.id,
@@ -438,29 +525,19 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
             "pathway": s.pathway,
             "gender": s.gender,
             "stream": s.stream,
-            "passport_path": build_passport_path(s),
+            "passport_path": build_pdf_image_data_uri(build_passport_path(s)),
             "class_teacher": teacher_name,
             "subjects": [],
             "total_marks": 0
         }
 
         for alloc in s.subject_allocations:
-
             subject = alloc.subject
 
             if not subject:
                 continue
 
-            # ----------------------------------------------------------
-            # Lesson
-            # ----------------------------------------------------------
-            lesson = Lesson.query.filter_by(
-                branch_id=branch_id,
-                class_id=class_id,
-                stream=s.stream,
-                subject_id=subject.id
-            ).first()
-
+            lesson = lessons_by_stream_subject.get((stream_key, subject.id))
             teacher_initials = None
 
             if lesson and lesson.teacher:
@@ -469,31 +546,14 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
                     n[0].upper() for n in names
                 )
 
-            # ----------------------------------------------------------
-            # Exam paper
-            # ----------------------------------------------------------
-            exam_paper = ExamPaper.query.filter_by(
-                exam_id=exam_id,
-                branch_id=branch_id,
-                class_id=class_id,
-                stream=s.stream,
-                subject_id=subject.id
-            ).first()
-
+            exam_paper = papers_by_stream_subject.get((stream_key, subject.id))
             marks = None
 
             if exam_paper:
+                marks = marks_by_student_subject.get((s.id, subject.id))
 
-                mark_obj = StudentExamMark.query.filter_by(
-                    exam_paper_id=exam_paper.id,
-                    student_id=s.id
-                ).first()
-
-                if mark_obj:
-                    marks = mark_obj.marks
-
-                    if marks is not None:
-                        student_data["total_marks"] += marks
+                if marks is not None:
+                    student_data["total_marks"] += marks
 
             grade_info = (
                 resolve_grade(class_id, marks)
@@ -588,7 +648,7 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
     school_logo_path = None
 
     if branch.logo:
-        school_logo_path = build_static_image_path(branch.logo)
+        school_logo_path = build_pdf_image_data_uri(build_static_image_path(branch.logo))
 
     # ------------------------------------------------------------------
     # Result

@@ -338,7 +338,7 @@ document.getElementById("generate-pdf-btn").addEventListener("click", () => {
 function generatePDF(branchId, classId, examId, stream) {
   blockUI(
     "Generating report cards",
-    "This may take up to a minute. Please keep this tab open.",
+    "This may take 1–2 minutes for a full class. Please keep this tab open.",
     { progress: true },
   );
 

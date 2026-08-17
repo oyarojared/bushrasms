@@ -15,6 +15,7 @@ from flask_login import login_required, current_user
 from ...admin.utils.route_protect import admin_required
 
 from ..services.grading_844 import generate_class_reports, normalize_form_name
+from ..services.pdf_render import render_bulk_report_pdf
 
 from urllib.parse import quote
 import traceback
@@ -314,11 +315,30 @@ def generate_reportcards_pdf():
         if not report_data:
             raise ValueError("No report data generated")
 
-        # 🔹 2️⃣ Render HTML
-        rendered_html = render_template(template, data=report_data, school=school)
-
-        # 🔹 3️⃣ Generate PDF
-        pdf = HTML(string=rendered_html).write_pdf()
+        # 🔹 2️⃣ Render HTML and generate PDF
+        if not student_id and template == "academics/report_card_844.html" and len(report_data) > 1:
+            html_documents = [
+                render_template(template, data=[student_report], school=school)
+                for student_report in report_data
+            ]
+            pdf = render_bulk_report_pdf(html_documents)
+        elif (
+            not student_id
+            and template == "academics/report_card.html"
+            and len(report_data.get("students", [])) > 1
+        ):
+            html_documents = [
+                render_template(
+                    template,
+                    data={**report_data, "students": [student]},
+                    school=school,
+                )
+                for student in report_data["students"]
+            ]
+            pdf = render_bulk_report_pdf(html_documents)
+        else:
+            rendered_html = render_template(template, data=report_data, school=school)
+            pdf = HTML(string=rendered_html).write_pdf()
 
         class_name = class_obj.grade_form
         if stream:

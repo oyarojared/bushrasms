@@ -1,12 +1,13 @@
 from ....modals import db
+from collections import defaultdict
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
-from ....modals.students_db import Student
+from ....modals.students_db import Student, StudentSubjectAllocation
 from ....modals.staff_db import Teacher, ClassTeacher
 from ....modals.subjects_db import Lesson, Subject
 from ....modals.assessment_db import Exam, ExamPaper, StudentExamMark
 from ....modals.branches_db import Branch, BranchClasses
-from .report import build_passport_path, build_static_image_path 
+from .report import build_passport_path, build_static_image_path, build_pdf_image_data_uri
 
 
 # =========================================================
@@ -381,98 +382,286 @@ def get_student_844_exam_trend(student, current_exam_id, previous_count=3):
     return trend
 
 
+def _stream_key(stream):
+    return stream if stream not in (None, "") else ""
+
+
+def _resolve_class_teacher(class_teachers_by_stream, student):
+    if student.stream:
+        teacher = class_teachers_by_stream.get(_stream_key(student.stream))
+        if teacher:
+            return teacher
+    return class_teachers_by_stream.get("")
+
+
+def _build_844_class_context(branch_id, class_id, exam_id, students):
+    """Pre-load marks, papers, lessons, teachers, and trend data for a class."""
+    branch = Branch.query.get(branch_id)
+    class_ = BranchClasses.query.get(class_id)
+    exam = Exam.query.get(exam_id)
+    school_logo = build_static_image_path(branch.logo) if branch and branch.logo else None
+    school_logo_data_uri = build_pdf_image_data_uri(school_logo) if school_logo else None
+
+    mark_rows = (
+        db.session.query(StudentExamMark, ExamPaper, Subject)
+        .join(ExamPaper, StudentExamMark.exam_paper_id == ExamPaper.id)
+        .join(Subject, ExamPaper.subject_id == Subject.id)
+        .filter(
+            ExamPaper.exam_id == exam_id,
+            ExamPaper.branch_id == branch_id,
+            ExamPaper.class_id == class_id,
+        )
+        .all()
+    )
+
+    marks_by_student_subject = {}
+    papers_by_stream_subject = {}
+    for mark, paper, subject in mark_rows:
+        marks_by_student_subject[(mark.student_id, subject.id)] = mark.marks
+        papers_by_stream_subject[(_stream_key(paper.stream), subject.id)] = paper
+
+    lessons = (
+        Lesson.query
+        .filter_by(branch_id=branch_id, class_id=class_id)
+        .options(joinedload(Lesson.teacher))
+        .all()
+    )
+    lessons_by_stream_subject = {
+        (_stream_key(lesson.stream), lesson.subject_id): lesson for lesson in lessons
+    }
+
+    class_teachers = (
+        ClassTeacher.query
+        .filter_by(branch_id=branch_id, class_id=class_id)
+        .options(joinedload(ClassTeacher.teacher))
+        .all()
+    )
+    class_teachers_by_stream = {
+        _stream_key(ct.stream): ct for ct in class_teachers
+    }
+
+    student_ids = [student.id for student in students]
+    marks_by_student_exam_subject = defaultdict(lambda: defaultdict(dict))
+    exams_by_id = {}
+
+    if student_ids:
+        trend_rows = (
+            db.session.query(StudentExamMark, ExamPaper, Exam, Subject)
+            .join(ExamPaper, StudentExamMark.exam_paper_id == ExamPaper.id)
+            .join(Exam, ExamPaper.exam_id == Exam.id)
+            .join(Subject, ExamPaper.subject_id == Subject.id)
+            .filter(
+                StudentExamMark.student_id.in_(student_ids),
+                ExamPaper.branch_id == branch_id,
+                ExamPaper.class_id == class_id,
+            )
+            .all()
+        )
+
+        for mark, paper, exam_row, subject in trend_rows:
+            exams_by_id[exam_row.id] = exam_row
+            marks_by_student_exam_subject[mark.student_id][exam_row.id][subject.id] = {
+                "marks": mark.marks,
+                "category": subject.category,
+            }
+
+    return {
+        "branch": branch,
+        "class_": class_,
+        "exam": exam,
+        "school_logo": school_logo,
+        "school_logo_data_uri": school_logo_data_uri,
+        "marks_by_student_subject": marks_by_student_subject,
+        "papers_by_stream_subject": papers_by_stream_subject,
+        "lessons_by_stream_subject": lessons_by_stream_subject,
+        "class_teachers_by_stream": class_teachers_by_stream,
+        "marks_by_student_exam_subject": marks_by_student_exam_subject,
+        "exams_by_id": exams_by_id,
+    }
+
+
+def _exam_trend_from_cache(student, current_exam_id, ctx, previous_count=3):
+    class_ = student.class_info
+    if not class_ or not is_844_form(normalize_form_name(class_.grade_form)):
+        return []
+
+    student_exams = ctx["marks_by_student_exam_subject"].get(student.id, {})
+    if not student_exams:
+        return []
+
+    eligible_exams = [
+        ctx["exams_by_id"][exam_id]
+        for exam_id in student_exams
+        if exam_id in ctx["exams_by_id"]
+    ]
+    if not eligible_exams:
+        return []
+
+    eligible_exams.sort(key=_exam_chronological_key)
+    current_index = next(
+        (idx for idx, exam in enumerate(eligible_exams) if exam.id == current_exam_id),
+        None,
+    )
+    if current_index is None:
+        return []
+
+    start_index = max(0, current_index - previous_count)
+    selected_exams = eligible_exams[start_index: current_index + 1]
+
+    trend = []
+    for exam in selected_exams:
+        point_rows = []
+        exam_subjects = student_exams.get(exam.id, {})
+        for alloc in student.subject_allocations:
+            if not alloc.subject_id:
+                continue
+            entry = exam_subjects.get(alloc.subject_id)
+            if not entry:
+                continue
+            _, points = resolve_844_grade(entry["marks"], entry["category"])
+            point_rows.append(
+                {
+                    "points": points,
+                    "category": entry["category"],
+                }
+            )
+
+        if not point_rows:
+            continue
+
+        aggregate = compute_844_aggregate(point_rows)
+        trend.append(
+            {
+                "exam_id": exam.id,
+                "exam_name": exam.name,
+                "term": exam.term,
+                "year": exam.year,
+                "label": f"{exam.name} T{exam.term} {exam.year}",
+                "total_points": aggregate["total_points"],
+                "grade": aggregate["mean_grade"],
+                "is_current": exam.id == current_exam_id,
+            }
+        )
+
+    return trend
+
+
 # =========================================================
 # SINGLE STUDENT REPORT WITH AGGREGATE RULE
 # =========================================================
-def generate_student_report(student: Student, exam: Exam):
-    branch = student.branch 
-    class_ = student.class_info
+def generate_student_report(student: Student, exam: Exam, ctx=None):
+    if ctx is None:
+        branch = student.branch
+        class_ = student.class_info
+    else:
+        branch = ctx["branch"]
+        class_ = ctx["class_"]
+        exam = ctx["exam"]
+
     normalized_form = normalize_form_name(class_.grade_form)
 
     if not is_844_form(normalized_form):
         raise ValueError("This report generator is for Form 3 & 4 only")
 
-    class_teacher_query = ClassTeacher.query.filter_by(
-        branch_id=branch.id,
-        class_id=class_.id
-    )
-
-    if student.stream:
-        class_teacher_query = class_teacher_query.filter_by(stream=student.stream)
-    else:
-        class_teacher_query = class_teacher_query.filter(
-        or_(
-            ClassTeacher.stream.is_(None),
-            ClassTeacher.stream == ""
+    if ctx is None:
+        class_teacher_query = ClassTeacher.query.filter_by(
+            branch_id=branch.id,
+            class_id=class_.id
         )
-    )
 
-    class_teacher = class_teacher_query.first()
+        if student.stream:
+            class_teacher_query = class_teacher_query.filter_by(stream=student.stream)
+        else:
+            class_teacher_query = class_teacher_query.filter(
+                or_(
+                    ClassTeacher.stream.is_(None),
+                    ClassTeacher.stream == ""
+                )
+            )
+
+        class_teacher = class_teacher_query.first()
+    else:
+        class_teacher = _resolve_class_teacher(ctx["class_teachers_by_stream"], student)
 
     subjects = []
     all_subject_points = []
+    stream_key = _stream_key(student.stream)
 
     for alloc in student.subject_allocations:
         subject = alloc.subject
-
-        exam_paper = (
-            ExamPaper.query
-            .filter_by(
-                exam_id=exam.id,
-                branch_id=branch.id,
-                class_id=class_.id,
-                stream=student.stream,
-                subject_id=subject.id
-            )
-            .first()
-        )
-
-        if not exam_paper:
+        if not subject:
             continue
 
-        mark = (
-            StudentExamMark.query
-            .filter_by(
-                exam_paper_id=exam_paper.id,
-                student_id=student.id
+        if ctx is None:
+            exam_paper = (
+                ExamPaper.query
+                .filter_by(
+                    exam_id=exam.id,
+                    branch_id=branch.id,
+                    class_id=class_.id,
+                    stream=student.stream,
+                    subject_id=subject.id,
+                )
+                .first()
             )
-            .first()
-        )
 
-        if not mark:
-            continue
+            if not exam_paper:
+                continue
 
-        grade, points = resolve_844_grade(mark.marks, subject.category)
-
-        lesson = (
-            Lesson.query
-            .filter_by(
-                branch_id=branch.id,
-                class_id=class_.id,
-                stream=student.stream,
-                subject_id=subject.id
+            mark = (
+                StudentExamMark.query
+                .filter_by(
+                    exam_paper_id=exam_paper.id,
+                    student_id=student.id,
+                )
+                .first()
             )
-            .first()
-        )
 
+            if not mark:
+                continue
+
+            marks = mark.marks
+
+            lesson = (
+                Lesson.query
+                .filter_by(
+                    branch_id=branch.id,
+                    class_id=class_.id,
+                    stream=student.stream,
+                    subject_id=subject.id,
+                )
+                .first()
+            )
+        else:
+            paper = ctx["papers_by_stream_subject"].get((stream_key, subject.id))
+            if not paper:
+                continue
+
+            marks = ctx["marks_by_student_subject"].get((student.id, subject.id))
+            if marks is None:
+                continue
+
+            lesson = ctx["lessons_by_stream_subject"].get((stream_key, subject.id))
+
+        grade, points = resolve_844_grade(marks, subject.category)
         teacher = lesson.teacher if lesson else None
 
         subjects.append({
             "subject": subject.name,
             "code": subject.code,
             "category": subject.category,
-            "marks": mark.marks,
+            "marks": marks,
             "grade": grade,
             "points": points,
             "teacher": teacher.fullname if teacher else None,
             "teacher_initials": teacher_initials(teacher),
-            "comment": subject_comment(mark.marks),
+            "comment": subject_comment(marks),
         })
 
         all_subject_points.append({
             "subject": subject.name,
             "points": points,
-            "category": subject.category
+            "category": subject.category,
         })
 
     # ==========================
@@ -528,19 +717,30 @@ def generate_student_report(student: Student, exam: Exam):
     total_marks = sum(s["marks"] for s in subjects)
     mean_score = round(total_marks / len(subjects), 2) if subjects else 0
 
+    if ctx is None:
+        school_logo = build_pdf_image_data_uri(
+            build_static_image_path(branch.logo) if branch.logo else None
+        )
+        exam_trend = get_student_844_exam_trend(student, exam.id)
+        passport_path = build_pdf_image_data_uri(build_passport_path(student))
+    else:
+        school_logo = ctx.get("school_logo_data_uri")
+        exam_trend = _exam_trend_from_cache(student, exam.id, ctx)
+        passport_path = build_pdf_image_data_uri(build_passport_path(student))
+
     return {
         "student_id": student.id,
-        "passport_path": build_passport_path(student), 
+        "passport_path": passport_path,
         "name": student.fullname.upper(),
         "admission_number": student.admission_number,
         "gender": student.gender,
         "class": normalized_form,
         "stream": student.stream,
         "exam": {
-        "id": exam.id,
-        "name": exam.name,
-        "year": exam.year,
-        "term": exam.term,
+            "id": exam.id,
+            "name": exam.name,
+            "year": exam.year,
+            "term": exam.term,
         },
         "subjects": subjects,
         "summary": {
@@ -550,28 +750,28 @@ def generate_student_report(student: Student, exam: Exam):
             "remarks": performance_remark(total_points),
         },
         "class_teacher": class_teacher.teacher.fullname if class_teacher and class_teacher.teacher else None,
-        "school_logo": build_static_image_path(branch.logo) if branch.logo else None,
+        "school_logo": school_logo,
         "branch_name": branch.branch_name.upper(),
-        "exam_trend": get_student_844_exam_trend(student, exam.id),
+        "exam_trend": exam_trend,
     }
 
- 
 
 def generate_class_reports(branch_id, class_id, stream, exam_id):
     exam = Exam.query.get(exam_id)
 
-    # -----------------------------
-    # Get all students in the class (all streams)
-    # -----------------------------
     all_students = (
         Student.query
-        .options(joinedload(Student.subject_allocations))
+        .options(
+            joinedload(Student.subject_allocations).joinedload(StudentSubjectAllocation.subject),
+            joinedload(Student.branch),
+            joinedload(Student.class_info),
+        )
         .filter_by(branch_id=branch_id, class_id=class_id)
         .all()
     )
 
-    # Generate reports for all students
-    all_reports = [generate_student_report(s, exam) for s in all_students]
+    ctx = _build_844_class_context(branch_id, class_id, exam_id, all_students)
+    all_reports = [generate_student_report(s, exam, ctx) for s in all_students]
 
     # -----------------------------
     # General ranking (across all streams)
