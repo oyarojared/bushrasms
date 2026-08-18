@@ -123,7 +123,11 @@ def _attach_exam_ranking(student_id, exam, ranking_cache, student_stream=None):
 
 def get_student_academic_history(student_id):
     """
-    Return exam results for a student grouped by exam, newest first.
+    Return exam results for a student grouped by exam sitting
+    (exam + class + stream), newest first.
+
+    Marks stay attached to the class they were entered in, so moving a
+    student to a new class does not hide earlier results.
     """
     student = Student.query.get(student_id)
     if not student:
@@ -149,7 +153,7 @@ def get_student_academic_history(student_id):
     teacher_cache = {}
 
     for mark, paper, exam, subject, class_ in rows:
-        exam_key = exam.id
+        exam_key = (exam.id, paper.class_id, paper.stream or "")
 
         if exam_key not in exams_map:
             normalized_form = normalize_form_name(class_.grade_form)
@@ -255,6 +259,8 @@ def get_student_academic_history(student_id):
             -item["year"],
             -_term_sort_key(item["term"]),
             item["name"].lower(),
+            0 if item["class_id"] == student.class_id else 1,
+            item["grade_form"].lower(),
         )
     )
 
@@ -284,7 +290,12 @@ def _exam_average_pct(exam):
 
 
 def _exam_chronological_sort_key(exam):
-    return (exam["year"], _term_sort_key(exam["term"]), exam["name"].lower())
+    return (
+        exam["year"],
+        _term_sort_key(exam["term"]),
+        exam["name"].lower(),
+        exam.get("grade_form", "").lower(),
+    )
 
 
 def build_student_academic_analysis(history):
@@ -318,13 +329,15 @@ def build_student_academic_analysis(history):
         average_pct = _exam_average_pct(exam)
         if average_pct is None:
             continue
-        trend_labels.append(f"{exam['name']} T{exam['term']} {exam['year']}")
+        trend_labels.append(
+            f"{exam['grade_form']} · {exam['name']} T{exam['term']} {exam['year']}"
+        )
         trend_averages.append(average_pct)
 
     subject_scores = defaultdict(list)
 
     for exam in chronological:
-        exam_label = f"T{exam['term']} {exam['year']}"
+        exam_label = f"{exam['grade_form']} T{exam['term']} {exam['year']}"
         for subject in exam.get("subjects", []):
             pct = _subject_mark_pct(subject.get("marks"), subject.get("marks_out_of"))
             if pct is None:

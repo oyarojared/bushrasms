@@ -742,6 +742,9 @@ def move_student(student_id):
         current_branch_id = student.branch_id
         current_class_id = student.class_id
         current_stream = student.stream or None
+        previous_grade_form = (
+            student.class_info.grade_form if student.class_info else None
+        )
 
         # Prevent moving to SAME branch + SAME class + SAME stream
         if (
@@ -755,6 +758,14 @@ def move_student(student_id):
                 "The student is already in the selected branch, grade/form, and stream.",
                 "warning",
             )
+            return redirect(url_for("admin.student_profile", student_id=student.id))
+
+        new_class = BranchClasses.query.filter_by(
+            id=new_class_id,
+            branch_id=new_branch_id,
+        ).first()
+        if not new_class:
+            flash("The selected class does not belong to that school.", "warning")
             return redirect(url_for("admin.student_profile", student_id=student.id))
 
         # --- Only generate a new admission number if the branch is changing ---
@@ -771,6 +782,15 @@ def move_student(student_id):
         student.branch_id = new_branch_id
         student.class_id = new_class_id
         student.stream = new_stream or None
+
+        db.session.flush()
+
+        if new_class_id != current_class_id:
+            db.session.expire(student, ["class_info"])
+            auto_allocate_subjects(
+                student,
+                previous_grade_form=previous_grade_form,
+            )
 
         db.session.commit()
 

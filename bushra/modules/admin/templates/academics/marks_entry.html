@@ -916,6 +916,8 @@ render_flash_messages, sidebar %} {% block side_nav %}
       searchQuery = "";
       marksStudentSearch.value = "";
       marksSearchClear.classList.add("d-none");
+      currentStudents = { students: [] };
+      studentsContainer.innerHTML = "";
       setSetupHint("Loading students…");
       marksOutOf.disabled = true;
       saveMarksBtn.disabled = true;
@@ -930,7 +932,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
             marksOutOf.value = data.paper.marks_out_of;
           }
           marksOutOf.disabled = false;
-          renderStudents(subjectText);
+          renderStudents(subjectText, { preserveTypedMarks: false });
           setSetupHint("Enter marks, then tap Save Marks.");
         })
         .catch(() => {
@@ -939,8 +941,10 @@ render_flash_messages, sidebar %} {% block side_nav %}
         });
     }
 
-    function renderStudents(subjectName) {
-      captureMarksFromDom();
+    function renderStudents(subjectName, { preserveTypedMarks = true } = {}) {
+      if (preserveTypedMarks) {
+        captureMarksFromDom();
+      }
 
       if (!currentStudents.students || !currentStudents.students.length) {
         resetStudents("No students found for this class and subject.");
@@ -980,6 +984,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
                 min="0"
                 max="${maxMarks}"
                 inputmode="numeric"
+                autocomplete="off"
                 value="${markValue}"
               >
             </td>
@@ -998,6 +1003,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
               min="0"
               max="${maxMarks}"
               inputmode="numeric"
+              autocomplete="off"
               value="${markValue}"
               aria-label="Marks for ${safeName}"
             >

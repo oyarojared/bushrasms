@@ -13,6 +13,24 @@ from ....modals.assessment_db import ExamPaper, StudentExamMark
 from sqlalchemy import func
 
 
+FORM_3_4_DEFAULT_SUBJECTS = frozenset(
+    ("english", "kiswahili", "mathematics", "chemistry")
+)
+
+FORM_3_4_SUBJECT_ALIASES = {
+    "english": "english",
+    "english language": "english",
+    "kiswahili": "kiswahili",
+    "kiswahili language": "kiswahili",
+    "swahili": "kiswahili",
+    "mathematics": "mathematics",
+    "maths": "mathematics",
+    "math": "mathematics",
+    "chemistry": "chemistry",
+    "chem": "chemistry",
+}
+
+
 def get_subjects():
     try:
         subjects = (
@@ -221,6 +239,9 @@ def update_subject_service(subject_id, form, selected_grades):
 
 
 def get_subjects_by_grade(grade_form):
+    if not grade_form:
+        return []
+
     return (
         Subject.query
         .join(SubjectEligibility)
@@ -233,46 +254,123 @@ def get_subjects_by_grade(grade_form):
     )
 
 
+def _normalize_subject_name(name):
+    if not name:
+        return ""
+    return " ".join(str(name).strip().lower().split())
 
 
-def auto_allocate_subjects(student):
+def _is_form_3_or_4(grade_form):
+    if not grade_form:
+        return False
+    name = str(grade_form).strip().lower()
+    if "form" not in name:
+        return False
+    number = "".join(ch for ch in name if ch.isdigit())
+    return number in ("3", "4")
+
+
+def _canonical_form34_subject(name):
+    normalized = _normalize_subject_name(name)
+    if normalized in FORM_3_4_DEFAULT_SUBJECTS:
+        return normalized
+    return FORM_3_4_SUBJECT_ALIASES.get(normalized)
+
+
+def _form34_default_subjects(eligible_subjects):
     """
-    Automatically allocate subjects to a student
-    based on their grade/form eligibility.
+    Pick at most one eligible subject per default Form 3/4 learning area.
+    Exact names win over aliases if both exist.
     """
-    if not student or not student.class_info:
-        return
+    selected = {}
 
-    grade_form = student.class_info.grade_form
+    for subject in eligible_subjects:
+        canonical = _canonical_form34_subject(subject.name)
+        if not canonical:
+            continue
 
-    # Get all compulsory subjects eligible for this grade
-    eligible_subjects = db.session.query(Subject).join(SubjectEligibility).filter(
-        SubjectEligibility.grade_form == grade_form,
-        Subject.is_compulsory == True
-    ).all()
+        current = selected.get(canonical)
+        if current is None or _normalize_subject_name(subject.name) == canonical:
+            selected[canonical] = subject
 
+    return list(selected.values())
+
+
+def _eligible_subject_ids(grade_form):
+    return {subject.id for subject in get_subjects_by_grade(grade_form)}
+
+
+def default_subjects_for_grade(grade_form):
+    """
+    Subjects assigned automatically for a class.
+
+    Form 3 and Form 4: English, Kiswahili, Mathematics, Chemistry
+    (only if eligible for that grade). Other subjects are teacher-assigned.
+
+    All other classes: every subject offered in that grade.
+    """
+    eligible_subjects = get_subjects_by_grade(grade_form)
     if not eligible_subjects:
+        return []
+
+    if _is_form_3_or_4(grade_form):
+        return _form34_default_subjects(eligible_subjects)
+
+    return eligible_subjects
+
+
+def auto_allocate_subjects(student, previous_grade_form=None):
+    """
+    Allocate the default subjects for the student's current class.
+
+    If the student moved from a class whose offered subjects differ,
+    previous allocations are replaced. Exam papers and marks are not touched.
+    Does not commit; the caller owns the transaction.
+    """
+    if not student or not getattr(student, "id", None) or not student.class_info:
         return
 
-    # Get already allocated subject IDs (avoid duplicates)
+    new_grade_form = student.class_info.grade_form
+    if not new_grade_form:
+        return
+
+    should_replace = False
+    if previous_grade_form:
+        should_replace = (
+            _eligible_subject_ids(previous_grade_form)
+            != _eligible_subject_ids(new_grade_form)
+        )
+
+    desired_subjects = default_subjects_for_grade(new_grade_form)
+    desired_ids = {subject.id for subject in desired_subjects}
+
+    if should_replace:
+        for alloc in list(student.subject_allocations):
+            if alloc.subject_id not in desired_ids:
+                student.subject_allocations.remove(alloc)
+
     existing_subject_ids = {
         alloc.subject_id for alloc in student.subject_allocations
     }
 
     new_allocations = []
-
-    for subject in eligible_subjects:
-        if subject.id not in existing_subject_ids:
-            new_allocations.append(
-                StudentSubjectAllocation(
-                    student_id=student.id,
-                    subject_id=subject.id
-                )
+    for subject in desired_subjects:
+        if subject.id in existing_subject_ids:
+            continue
+        new_allocations.append(
+            StudentSubjectAllocation(
+                student_id=student.id,
+                subject_id=subject.id,
             )
+        )
 
     if new_allocations:
         db.session.add_all(new_allocations)
-    
+
     current_app.logger.info(
-        f"[AUTO-ALLOC] Student {student.id}: {len(new_allocations)} subjects assigned"
+        "[AUTO-ALLOC] student_id=%s grade=%s replaced=%s assigned=%s",
+        student.id,
+        new_grade_form,
+        should_replace,
+        len(new_allocations),
     )

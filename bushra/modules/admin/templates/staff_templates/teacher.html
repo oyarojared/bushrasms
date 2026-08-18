@@ -1,11 +1,6 @@
-{% extends "super_admin_dash.html" %}
-{% from "_macros.html" import render_flash_messages, sidebar %}
-
-{% block side_nav %}
-{{ sidebar("School Staff", current_user) }}
-{% endblock %}
-
-{% block main_content %}
+{% extends "super_admin_dash.html" %} {% from "_macros.html" import
+render_flash_messages, sidebar %} {% block side_nav %} {{ sidebar("School
+Staff", current_user) }} {% endblock %} {% block main_content %}
 <div class="teacher-portal-page">
   <div class="app-page-title">
     <div class="app-page-title-icon">
@@ -40,14 +35,9 @@
         <div class="teacher-hero-meta">
           <span class="teacher-meta-chip">
             <i class="bi bi-journal-bookmark me-1" aria-hidden="true"></i>
-            {{ lessons|length }} class{{ "es" if lessons|length != 1 else "" }} taught
+            {{ lessons|length }} class{{ "es" if lessons|length != 1 else "" }}
+            taught
           </span>
-
-          {% if teacher.is_admin %}
-          <span class="teacher-meta-chip teacher-meta-chip--role">Admin</span>
-          {% else %}
-          <span class="teacher-meta-chip teacher-meta-chip--role">Teacher</span>
-          {% endif %}
         </div>
       </div>
 
@@ -85,7 +75,9 @@
             <span class="branch-info-label">Role</span>
             <span class="branch-info-value">
               {% if teacher.is_admin %}
-              <span class="teacher-role-pill teacher-role-pill--admin">Admin</span>
+              <span class="teacher-role-pill teacher-role-pill--admin"
+                >Admin</span
+              >
               {% else %}
               <span class="teacher-role-pill">Teacher</span>
               {% endif %}
@@ -162,18 +154,20 @@
               <td class="text-center text-muted">{{ loop.index }}</td>
               <td class="fw-semibold">{{ cls.grade_form }}</td>
               <td>
-                {% if cls.streams %}
-                  {% for stream in cls.streams %}
-                  <span class="teacher-stream-badge">{{ stream }}</span>
-                  {% endfor %}
-                {% else %}
+                {% if cls.streams %} {% for stream in cls.streams %}
+                <span class="teacher-stream-badge">{{ stream }}</span>
+                {% endfor %} {% else %}
                 <span class="text-muted">—</span>
                 {% endif %}
               </td>
               <td>
-                <span class="teacher-subject-badge">{{ cls.subject_name }}</span>
+                <span class="teacher-subject-badge"
+                  >{{ cls.subject_name }}</span
+                >
               </td>
-              <td class="text-end branch-stat-number">{{ cls.num_students }}</td>
+              <td class="text-end branch-stat-number">
+                {{ cls.num_students }}
+              </td>
             </tr>
             {% endfor %}
           </tbody>
@@ -187,7 +181,8 @@
             <span class="teacher-lesson-index">#{{ loop.index }}</span>
             <span class="teacher-lesson-class">{{ cls.grade_form }}</span>
             <span class="teacher-lesson-students">
-              {{ cls.num_students }} student{{ "s" if cls.num_students != 1 else "" }}
+              {{ cls.num_students }} student{{ "s" if cls.num_students != 1 else
+              "" }}
             </span>
           </div>
 
@@ -242,7 +237,11 @@
           <i class="bi bi-telephone-fill me-1" aria-hidden="true"></i>
           0701948782 / 0782811403
         </span>
-        <span class="teacher-portal-footer-dot d-none d-sm-inline" aria-hidden="true">•</span>
+        <span
+          class="teacher-portal-footer-dot d-none d-sm-inline"
+          aria-hidden="true"
+          >•</span
+        >
         <span class="teacher-portal-footer-email">
           <i class="bi bi-envelope-fill me-1" aria-hidden="true"></i>
           oyarojared278@gmail.com
@@ -251,7 +250,8 @@
     </div>
 
     <small class="teacher-portal-footer-copy">
-      © {{ current_year if current_year else "2026" }} Acadex. All Rights Reserved.
+      © {{ current_year if current_year else "2026" }} Acadex. All Rights
+      Reserved.
     </small>
   </footer>
 </div>
@@ -350,7 +350,9 @@
     white-space: nowrap;
     text-decoration: none;
     box-shadow: 0 4px 14px rgba(255, 121, 121, 0.28);
-    transition: background-color 0.2s ease, transform 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      transform 0.2s ease;
   }
 
   .teacher-cta-btn:hover,
@@ -567,7 +569,9 @@
     font-size: 0.82rem;
     font-weight: 600;
     text-decoration: none;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease;
   }
 
   .teacher-logout-link:hover,

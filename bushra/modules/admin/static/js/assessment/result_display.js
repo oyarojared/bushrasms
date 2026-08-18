@@ -265,11 +265,14 @@ async function loadReportCards(branchId, classId, examId, stream = null) {
       return;
     }
 
-    const gradingLabel = is844Grading(context) ? "8-4-4" : "CBC";
+    const gradingLabel = is844Grading(context) ? "8-4-4" : "CBE";
 
     container.innerHTML = `
       <div class="results-summary-bar">
-        <span><strong>${students.length}</strong> student${students.length === 1 ? "" : "s"} · <span class="results-grading-tag">${gradingLabel}</span></span>
+        <div class="results-summary-meta">
+          <span>Total Students: <strong>${students.length}</strong></span>
+          <span>Grading system: <strong>${gradingLabel}</strong></span>
+        </div>
         <span class="results-summary-context">${escapeHtml(context.examName)} · ${escapeHtml(context.className)}</span>
       </div>
       <div class="student-results-list">
@@ -288,7 +291,20 @@ async function loadReportCards(branchId, classId, examId, stream = null) {
     `;
   } finally {
     unblockUI();
+    scrollResultsIntoView();
   }
+}
+
+function scrollResultsIntoView() {
+  const container = document.getElementById("resultsContainer");
+  if (!container || !container.innerHTML.trim()) return;
+
+  const target =
+    container.querySelector(".results-summary-bar") || container;
+
+  window.setTimeout(() => {
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 60);
 }
 
 document.getElementById("load-results").addEventListener("click", () => {
