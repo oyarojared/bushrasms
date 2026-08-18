@@ -296,32 +296,80 @@ def _form34_default_subjects(eligible_subjects):
     return list(selected.values())
 
 
-def _eligible_subject_ids(grade_form):
-    return {subject.id for subject in get_subjects_by_grade(grade_form)}
-
-
-def default_subjects_for_grade(grade_form):
-    """
-    Subjects assigned automatically for a class.
-
-    Form 3 and Form 4: English, Kiswahili, Mathematics, Chemistry
-    (only if eligible for that grade). Other subjects are teacher-assigned.
-
-    All other classes: every subject offered in that grade.
-    """
-    eligible_subjects = get_subjects_by_grade(grade_form)
-    if not eligible_subjects:
+def _compulsory_subjects_for_grade(grade_form):
+    if not grade_form:
         return []
 
-    if _is_form_3_or_4(grade_form):
-        return _form34_default_subjects(eligible_subjects)
+    return (
+        Subject.query
+        .join(SubjectEligibility)
+        .filter(
+            func.lower(SubjectEligibility.grade_form) == func.lower(grade_form),
+            Subject.is_compulsory.is_(True),
+        )
+        .order_by(Subject.name.asc())
+        .all()
+    )
 
-    return eligible_subjects
 
-
-def auto_allocate_subjects(student, previous_grade_form=None):
+def get_subjects_offered_in_class(class_obj):
     """
-    Allocate the default subjects for the student's current class.
+    Subjects actually taught in this school class, not every school
+    with the same grade name.
+
+    If no teachers have been assigned yet, falls back to compulsory
+    subjects eligible for that grade.
+    """
+    if not class_obj:
+        return []
+
+    lesson_ids = {
+        subject_id
+        for (subject_id,) in db.session.query(Lesson.subject_id)
+        .filter(
+            Lesson.branch_id == class_obj.branch_id,
+            Lesson.class_id == class_obj.id,
+        )
+        .distinct()
+        .all()
+        if subject_id
+    }
+
+    if lesson_ids:
+        return (
+            Subject.query.filter(Subject.id.in_(lesson_ids))
+            .order_by(Subject.name.asc())
+            .all()
+        )
+
+    return _compulsory_subjects_for_grade(class_obj.grade_form)
+
+
+def default_subjects_for_class(class_obj):
+    """
+    Subjects assigned automatically for a specific school class.
+
+    Form 3 and Form 4: English, Kiswahili, Mathematics, Chemistry.
+    Other classes: subjects taught in that school class.
+    """
+    if not class_obj:
+        return []
+
+    if _is_form_3_or_4(class_obj.grade_form):
+        return _form34_default_subjects(
+            get_subjects_by_grade(class_obj.grade_form)
+        )
+
+    return get_subjects_offered_in_class(class_obj)
+
+
+def _subject_id_set(subjects):
+    return {subject.id for subject in subjects}
+
+
+def auto_allocate_subjects(student, previous_class_id=None):
+    """
+    Allocate the default subjects for the student's current school class.
 
     If the student moved from a class whose offered subjects differ,
     previous allocations are replaced. Exam papers and marks are not touched.
@@ -330,19 +378,18 @@ def auto_allocate_subjects(student, previous_grade_form=None):
     if not student or not getattr(student, "id", None) or not student.class_info:
         return
 
-    new_grade_form = student.class_info.grade_form
-    if not new_grade_form:
-        return
+    new_class = student.class_info
+    previous_class = (
+        BranchClasses.query.get(previous_class_id) if previous_class_id else None
+    )
+
+    desired_subjects = default_subjects_for_class(new_class)
+    desired_ids = _subject_id_set(desired_subjects)
 
     should_replace = False
-    if previous_grade_form:
-        should_replace = (
-            _eligible_subject_ids(previous_grade_form)
-            != _eligible_subject_ids(new_grade_form)
-        )
-
-    desired_subjects = default_subjects_for_grade(new_grade_form)
-    desired_ids = {subject.id for subject in desired_subjects}
+    if previous_class:
+        previous_ids = _subject_id_set(default_subjects_for_class(previous_class))
+        should_replace = previous_ids != desired_ids
 
     if should_replace:
         for alloc in list(student.subject_allocations):
@@ -368,9 +415,10 @@ def auto_allocate_subjects(student, previous_grade_form=None):
         db.session.add_all(new_allocations)
 
     current_app.logger.info(
-        "[AUTO-ALLOC] student_id=%s grade=%s replaced=%s assigned=%s",
+        "[AUTO-ALLOC] student_id=%s class_id=%s grade=%s replaced=%s assigned=%s",
         student.id,
-        new_grade_form,
+        new_class.id,
+        new_class.grade_form,
         should_replace,
         len(new_allocations),
     )

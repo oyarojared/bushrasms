@@ -742,9 +742,7 @@ def move_student(student_id):
         current_branch_id = student.branch_id
         current_class_id = student.class_id
         current_stream = student.stream or None
-        previous_grade_form = (
-            student.class_info.grade_form if student.class_info else None
-        )
+        previous_class_id = student.class_id
 
         # Prevent moving to SAME branch + SAME class + SAME stream
         if (
@@ -789,7 +787,7 @@ def move_student(student_id):
             db.session.expire(student, ["class_info"])
             auto_allocate_subjects(
                 student,
-                previous_grade_form=previous_grade_form,
+                previous_class_id=previous_class_id,
             )
 
         db.session.commit()

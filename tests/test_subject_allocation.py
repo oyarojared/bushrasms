@@ -1,7 +1,8 @@
 from ..bushra.modals.assessment_db import Exam, ExamPaper, StudentExamMark
 from ..bushra.modals.branches_db import Branch, BranchClasses
+from ..bushra.modals.staff_db import Teacher
 from ..bushra.modals.students_db import Student, StudentSubjectAllocation
-from ..bushra.modals.subjects_db import Subject, SubjectEligibility
+from ..bushra.modals.subjects_db import Lesson, Subject, SubjectEligibility
 from ..bushra.modules.admin.services.subs import auto_allocate_subjects
 
 
@@ -32,13 +33,29 @@ def _make_class(db, branch, grade_form, year="2026"):
     return cls
 
 
-def _make_subject(db, name, code, grades):
+def _make_teacher(db, branch, phone="0700000001"):
+    teacher = Teacher(
+        branch_id=branch.id,
+        employer="TSC",
+        fullname="Test Teacher",
+        gender="M",
+        title="Mr.",
+        phone=phone,
+        username=f"teacher{phone[-4:]}",
+        password_hash="hashed",
+    )
+    db.session.add(teacher)
+    db.session.flush()
+    return teacher
+
+
+def _make_subject(db, name, code, grades, compulsory=False):
     subject = Subject(
         name=name,
         code=code,
         category="Languages",
         is_examinable=True,
-        is_compulsory=False,
+        is_compulsory=compulsory,
     )
     db.session.add(subject)
     db.session.flush()
@@ -48,6 +65,19 @@ def _make_subject(db, name, code, grades):
         )
     db.session.flush()
     return subject
+
+
+def _make_lesson(db, branch, cls, subject, teacher, stream="A"):
+    lesson = Lesson(
+        branch_id=branch.id,
+        class_id=cls.id,
+        stream=stream,
+        subject_id=subject.id,
+        teacher_id=teacher.id,
+    )
+    db.session.add(lesson)
+    db.session.flush()
+    return lesson
 
 
 def _make_student(db, branch, cls, admission_number=1):
@@ -71,18 +101,61 @@ def _allocated_names(student):
     )
 
 
-def test_non_form34_student_gets_all_class_subjects(db):
+def test_non_form34_student_gets_subjects_taught_in_that_class(db):
     branch = _make_branch(db)
     grade4 = _make_class(db, branch, "Grade 4")
-    _make_subject(db, "English", "ENG", ["Grade 4"])
-    _make_subject(db, "Mathematics", "MAT", ["Grade 4"])
-    _make_subject(db, "Science", "SCI", ["Grade 4"])
+    teacher = _make_teacher(db, branch)
+    english = _make_subject(db, "English", "ENG", ["Grade 4"])
+    maths = _make_subject(db, "Mathematics", "MAT", ["Grade 4"])
+    science = _make_subject(db, "Science", "SCI", ["Grade 4"])
+    _make_lesson(db, branch, grade4, english, teacher)
+    _make_lesson(db, branch, grade4, maths, teacher)
+    _make_lesson(db, branch, grade4, science, teacher)
 
     student = _make_student(db, branch, grade4)
     auto_allocate_subjects(student)
     db.session.commit()
 
     assert _allocated_names(student) == ["English", "Mathematics", "Science"]
+
+
+def test_grade4_agriculture_is_not_copied_to_another_school(db):
+    school_a = _make_branch(db, "School A", "SA01")
+    school_b = _make_branch(db, "School B", "SB01")
+    grade4_a = _make_class(db, school_a, "Grade 4")
+    grade4_b = _make_class(db, school_b, "Grade 4")
+    teacher_a = _make_teacher(db, school_a, "0700000002")
+    teacher_b = _make_teacher(db, school_b, "0700000003")
+
+    english = _make_subject(db, "English", "ENG", ["Grade 4"], compulsory=True)
+    agriculture = _make_subject(db, "Agriculture", "AGR", ["Grade 4"])
+
+    _make_lesson(db, school_a, grade4_a, english, teacher_a)
+    _make_lesson(db, school_a, grade4_a, agriculture, teacher_a)
+    _make_lesson(db, school_b, grade4_b, english, teacher_b)
+
+    student_a = _make_student(db, school_a, grade4_a, 1)
+    student_b = _make_student(db, school_b, grade4_b, 1)
+
+    auto_allocate_subjects(student_a)
+    auto_allocate_subjects(student_b)
+    db.session.commit()
+
+    assert _allocated_names(student_a) == ["Agriculture", "English"]
+    assert _allocated_names(student_b) == ["English"]
+
+
+def test_empty_class_falls_back_to_compulsory_subjects_only(db):
+    branch = _make_branch(db)
+    grade4 = _make_class(db, branch, "Grade 4")
+    _make_subject(db, "English", "ENG", ["Grade 4"], compulsory=True)
+    _make_subject(db, "Agriculture", "AGR", ["Grade 4"], compulsory=False)
+
+    student = _make_student(db, branch, grade4)
+    auto_allocate_subjects(student)
+    db.session.commit()
+
+    assert _allocated_names(student) == ["English"]
 
 
 def test_form3_student_gets_only_default_subjects(db):
@@ -111,6 +184,7 @@ def test_move_to_unmatched_class_replaces_subjects_but_keeps_exam_marks(db):
     branch = _make_branch(db)
     grade4 = _make_class(db, branch, "Grade 4")
     form3 = _make_class(db, branch, "Form 3")
+    teacher = _make_teacher(db, branch)
 
     english = _make_subject(db, "English", "101", ["Grade 4", "Form 3"])
     science = _make_subject(db, "Science", "SCI", ["Grade 4"])
@@ -118,6 +192,8 @@ def test_move_to_unmatched_class_replaces_subjects_but_keeps_exam_marks(db):
     _make_subject(db, "Mathematics", "121", ["Grade 4", "Form 3"])
     _make_subject(db, "Chemistry", "233", ["Form 3"])
     _make_subject(db, "Physics", "232", ["Form 3"])
+    _make_lesson(db, branch, grade4, english, teacher)
+    _make_lesson(db, branch, grade4, science, teacher)
 
     student = _make_student(db, branch, grade4)
     auto_allocate_subjects(student)
@@ -146,12 +222,12 @@ def test_move_to_unmatched_class_replaces_subjects_but_keeps_exam_marks(db):
     db.session.add(mark)
     db.session.flush()
 
-    previous_grade = student.class_info.grade_form
+    previous_class_id = student.class_id
     student.class_id = form3.id
     db.session.flush()
     db.session.expire(student, ["class_info"])
 
-    auto_allocate_subjects(student, previous_grade_form=previous_grade)
+    auto_allocate_subjects(student, previous_class_id=previous_class_id)
     db.session.commit()
 
     assert _allocated_names(student) == [
@@ -194,12 +270,12 @@ def test_move_to_matching_class_keeps_existing_allocations(db):
     )
     db.session.flush()
 
-    previous_grade = student.class_info.grade_form
+    previous_class_id = student.class_id
     student.class_id = form4.id
     db.session.flush()
     db.session.expire(student, ["class_info"])
 
-    auto_allocate_subjects(student, previous_grade_form=previous_grade)
+    auto_allocate_subjects(student, previous_class_id=previous_class_id)
     db.session.commit()
 
     names = _allocated_names(student)
