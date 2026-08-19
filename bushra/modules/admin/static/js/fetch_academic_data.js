@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (!branchId) {
-      container.innerHTML = `<div class="text-danger fw-bold">Select a branch to view academic data.</div>`;
+      container.innerHTML = `<div class="grade-board-empty">Select a school to view class data.</div>`;
       return;
     }
 
@@ -104,21 +104,53 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   });
 
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function gradeActionButtons(kind, data, extraAttrs) {
+    const attrs = extraAttrs || "";
+    return `
+      <div class="grade-card-actions">
+        <button class="grade-card-btn rename-${kind}-btn"
+                type="button"
+                title="Rename"
+                ${attrs}
+                data-grade="${data.classId}"
+                data-grade-name="${data.gradeName}"
+                data-branch="${data.branchId}">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="grade-card-btn is-danger delete-${kind}-btn"
+                type="button"
+                title="Delete"
+                ${attrs}
+                data-grade="${data.classId}"
+                data-grade-name="${data.gradeName}"
+                data-branch="${data.branchId}">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    `;
+  }
+
   // ---------------------- RENDER ACADEMIC DATA ----------------------
   function renderAcademicData(data) {
-    // Branch header
+    const branchName = escapeHtml(data.branch_name);
     let html = `
-            <div class="mb-3">
-                <h6 class="fw-bold text-secondary">
-                    <i class="bi bi-building me-2"></i>${data.branch_name}
-                </h6>
+            <div class="grade-board-title">
+                ${branchName}
             </div>
         `;
 
     if (!data.grades || !data.grades.length) {
       container.innerHTML = `
-                <div class="text-danger fw-bold">
-                    <i class="bi bi-x-circle-fill me-2"></i>No academic records found for this branch.
+                <div class="grade-board-empty">
+                    No classes found for this school.
                 </div>
             `;
       branchClassesDiv.innerHTML = `
@@ -130,91 +162,91 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    html += `<div class="row g-3 fix-top-customized">`;
+    html += `<div class="row g-3">`;
 
-    // Render grades and streams
     data.grades.forEach((g) => {
+      const gradeName = escapeHtml(g.grade_form);
+      const actionData = {
+        classId: g.class_id,
+        gradeName,
+        branchId: data.branch_id,
+      };
+      const boys = g.totals?.boys ?? 0;
+      const girls = g.totals?.girls ?? 0;
+      const total = g.totals?.total ?? 0;
+      const unsigned = g.totals?.unsigned ?? Math.max(0, total - boys - girls);
+
       html += `
                 <div class="col-md-6 col-lg-4">
-                    <div class="p-3 border rounded-3 shadow-sm h-100 bg-white">
-                        <div class="container orange-line mb-2"></div>
-                        <!-- Grade Header -->
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <h5 class="fw-bold mb-0 text-orange text-uppercase">
-                                <i class="bi bi-journal-text me-2"></i>${g.grade_form}
-                            </h5>
-                            <span class="badge bg-info p-2">Total: ${g.totals.total}</span>
+                    <div class="grade-card">
+                        <div class="grade-card-head">
+                            <div class="grade-card-title">
+                                <div class="grade-card-name">${gradeName}</div>
+                            </div>
+                            ${gradeActionButtons("grade", actionData)}
                         </div>
-
-                        <!-- Totals -->
-                        <div class="d-flex justify-content-between small text-muted mb-3">
-                            <div><i class="bi bi-gender-male me-1 h5"></i>Boys: <strong class="text-primary">${g.totals.boys}</strong></div>
-                            <div><i class="bi bi-gender-female me-1 h5"></i>Girls: <strong class="text-success">${g.totals.girls}</strong></div>
+                        <div class="grade-card-stats">
+                            <div class="grade-stat">
+                                <span class="grade-stat-n">${total}</span>
+                                <span class="grade-stat-l">Students</span>
+                            </div>
+                            <div class="grade-stat">
+                                <span class="grade-stat-n is-boys">${boys}</span>
+                                <span class="grade-stat-l">Boys</span>
+                            </div>
+                            <div class="grade-stat">
+                                <span class="grade-stat-n is-girls">${girls}</span>
+                                <span class="grade-stat-l">Girls</span>
+                            </div>
+                            ${
+                              unsigned
+                                ? `<div class="grade-stat">
+                                <span class="grade-stat-n is-unsigned">${unsigned}</span>
+                                <span class="grade-stat-l">Unsigned</span>
+                            </div>`
+                                : ""
+                            }
                         </div>
-
-                        <!-- Streams -->
-                        <div>
-                            <div class="fw-semibold small text-secondary mb-1">Streams</div>
-                            <button class="btn btn-sm btn-outline-secondary mb-2 me-1 rename-grade-btn"
-                                    type="button"
-                                    data-grade="${g.class_id}"
-                                    data-grade-name="${g.grade_form}"
-                                    data-branch="${data.branch_id}">
-                                <i class="bi bi-pencil me-1"></i>Rename
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger mb-2 delete-grade-btn"
-                                    type="button"
-                                    data-grade="${g.class_id}"
-                                    data-grade-name="${g.grade_form}"
-                                    data-branch="${data.branch_id}">
-                                <i class="bi bi-trash me-1"></i>Delete Grade/Form
-                            </button>
-
+                        <div class="grade-card-body">
             `;
 
       if (g.streams && g.streams.length) {
         g.streams.forEach((s) => {
+          const streamName = escapeHtml(s.name);
+          const teacherAssigned = Boolean(s.teacher?.name);
+          const teacherName = escapeHtml(s.teacher?.name || "Unassigned");
+          const streamUnsigned =
+            s.unsigned ?? Math.max(0, (s.total || 0) - (s.boys || 0) - (s.girls || 0));
+          const streamSplit = streamUnsigned
+            ? `${s.boys}B · ${s.girls}G · ${streamUnsigned}U`
+            : `${s.boys}B · ${s.girls}G`;
           html += `
-                        <div class="border rounded-2 p-2 mb-1 bg-light">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <strong class="small text-dark">${s.name}</strong>
-                                <span class="badge bg-light text-dark border">${s.total}</span>
+                        <div class="grade-stream-row">
+                            <div class="grade-stream-main">
+                                <span class="grade-stream-name">${streamName}</span>
+                                <span class="grade-stream-teacher ${teacherAssigned ? "" : "is-empty"}" title="${teacherName}">${teacherName}</span>
                             </div>
-                            <div class="d-flex justify-content-between small text-muted mt-1">
-                                <span>B: ${s.boys}</span>
-                                <span>G: ${s.girls}</span>
+                            <div class="grade-stream-count">
+                                <span class="grade-stream-total">${s.total}</span>
+                                <span class="grade-stream-stats">${streamSplit}</span>
                             </div>
+                            ${gradeActionButtons(
+                              "stream",
+                              actionData,
+                              `data-stream="${streamName}"`
+                            )}
                         </div>
-                        <div>
-                            <h6 class="small text-center mt-2 text-success">Classteacher: <span class="text-muted text-uppercase">
-                             ${s.teacher?.name || "Not assigned"}</span>
-                        </div>
-                        <button class="btn btn-sm btn-outline-secondary mb-2 me-1 rename-stream-btn"
-                                type="button"
-                                data-grade="${g.class_id}"
-                                data-grade-name="${g.grade_form}"
-                                data-stream="${s.name}"
-                                data-branch="${data.branch_id}">
-                            <i class="bi bi-pencil me-1"></i>Rename
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger mb-2 delete-stream-btn"
-                                type="button"
-                                data-grade="${g.class_id}"
-                                data-grade-name="${g.grade_form}"
-                                data-stream="${s.name}"
-                                data-branch="${data.branch_id}">
-                            <i class="bi bi-trash me-1"></i>Delete Stream
-                        </button>
-
                     `;
         });
       } else {
+        const teacherAssigned = Boolean(g.teacher?.name);
+        const teacherName = escapeHtml(g.teacher?.name || "Unassigned");
         html += `
-                    <div class="text-muted small fst-italic">No streams available</div>
-                    <div>
-                        <h6 class="small text-center mt-2 text-success">Classteacher: <span class="text-muted text-uppercase">
-                       ${g.teacher?.name || "Not assigned"}</span>
-                        </h6>
+                    <div class="grade-stream-row is-plain">
+                        <div class="grade-stream-main">
+                            <span class="grade-stream-name">No streams</span>
+                            <span class="grade-stream-teacher ${teacherAssigned ? "" : "is-empty"}">${teacherName}</span>
+                        </div>
                     </div>
                     `;
       }

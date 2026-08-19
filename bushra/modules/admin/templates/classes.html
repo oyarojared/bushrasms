@@ -70,7 +70,8 @@ render_flash_messages() }}
   <span id="statusText" class="small">Loading...</span>
 </div>
 
-<div class="container bg-white pt-2 pb-2 shadow-sm rounded-6">
+<div class="container bg-white pb-2 shadow-sm rounded-6 classes-workbench">
+  <div class="classes-tabs-bar">
   <ul class="nav nav-tabs" id="myTab" role="tablist">
     <li class="nav-item" role="presentation">
       <button
@@ -124,12 +125,13 @@ render_flash_messages() }}
       </button>
     </li>
   </ul>
+  </div>
 
   <!-- Tabs Content -->
   <div class="tab-content p-3" id="myTabContent">
     <div class="tab-pane fade show active" id="tab-one" role="tabpanel">
-      <div id="academicDataContainer" class="small text-muted">
-        Select a branch to view academic data.
+      <div id="academicDataContainer">
+        <div class="grade-board-empty">Select a school to view class data.</div>
       </div>
     </div>
 
@@ -528,6 +530,177 @@ render_flash_messages() }}
     font-size: 0.78rem;
     color: #6c757d;
     text-align: center;
+  }
+  .classes-workbench {
+    overflow: visible;
+  }
+  .classes-workbench > .tab-content {
+    position: relative;
+    z-index: 1;
+  }
+  .classes-tabs-bar {
+    position: sticky;
+    top: -20px;
+    z-index: 40;
+    padding-top: 0;
+    background: #fff;
+    border-bottom: 1px solid #eceff2;
+    box-shadow: 0 8px 18px rgba(37, 42, 47, 0.08);
+  }
+  #academicDataContainer .grade-board-title {
+    margin: 0 0 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #6c757d;
+  }
+  #academicDataContainer .grade-board-empty {
+    padding: 0.4rem 0;
+    color: #8b939c;
+    font-size: 0.85rem;
+  }
+  #academicDataContainer .grade-card {
+    height: 100%;
+    padding: 0.85rem 0.95rem 0.45rem;
+    background: #fff;
+    border: 1px solid #eceff2;
+    border-left: 3px solid #e3745b;
+    border-radius: 10px;
+  }
+  #academicDataContainer .grade-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  #academicDataContainer .grade-card-title {
+    min-width: 0;
+    padding-right: 8px;
+  }
+  #academicDataContainer .grade-card-name {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #252a2f;
+    line-height: 1.3;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  #academicDataContainer .grade-card-stats {
+    display: flex;
+    margin: 0.7rem 0 0.75rem;
+    padding: 0.55rem 0.2rem;
+    border-radius: 8px;
+    background: #cfcfcf;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+  #academicDataContainer .grade-stat {
+    flex: 1;
+    text-align: center;
+    border-right: 1px solid rgba(0, 0, 0, 0.12);
+  }
+  #academicDataContainer .grade-stat:last-child {
+    border-right: 0;
+  }
+  #academicDataContainer .grade-stat-n {
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #252a2f;
+    line-height: 1.2;
+  }
+  #academicDataContainer .grade-stat-n.is-boys {
+    color: #0d6efd;
+  }
+  #academicDataContainer .grade-stat-n.is-girls {
+    color: #198754;
+  }
+  #academicDataContainer .grade-stat-n.is-unsigned {
+    color: #e3745b;
+  }
+  #academicDataContainer .grade-stat-l {
+    display: block;
+    margin-top: 0.08rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #5c636a;
+  }
+  #academicDataContainer .grade-card-actions {
+    display: flex;
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
+  #academicDataContainer .grade-card-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    margin-left: 4px;
+    border: 0;
+    border-radius: 7px;
+    background: #f4f6f8;
+    color: #6c757d;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #academicDataContainer .grade-card-btn:hover {
+    background: #e9ecef;
+    color: #252a2f;
+  }
+  #academicDataContainer .grade-card-btn.is-danger:hover {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+  }
+  #academicDataContainer .grade-stream-row {
+    display: flex;
+    align-items: center;
+    padding: 0.55rem 0;
+    border-top: 1px solid #f1f3f5;
+  }
+  #academicDataContainer .grade-stream-main {
+    min-width: 0;
+    flex: 1;
+  }
+  #academicDataContainer .grade-stream-name {
+    display: block;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #252a2f;
+  }
+  #academicDataContainer .grade-stream-teacher {
+    display: block;
+    margin-top: 0.08rem;
+    font-size: 0.72rem;
+    color: #6c757d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #academicDataContainer .grade-stream-teacher.is-empty {
+    color: #e3745b;
+    font-weight: 600;
+  }
+  #academicDataContainer .grade-stream-count {
+    flex-shrink: 0;
+    margin: 0 6px 0 8px;
+    text-align: right;
+  }
+  #academicDataContainer .grade-stream-total {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #252a2f;
+    line-height: 1.2;
+  }
+  #academicDataContainer .grade-stream-stats {
+    display: block;
+    margin-top: 0.04rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #8b939c;
+  }
+  #academicDataContainer .grade-stream-row.is-plain .grade-stream-name {
+    font-weight: 500;
+    color: #8b939c;
   }
 </style>
 

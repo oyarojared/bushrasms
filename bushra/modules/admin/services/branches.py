@@ -210,14 +210,22 @@ def get_branch_academic_population(branch_id: int):
     for s in students:
         students_by_class[s.class_id].append(s)
 
+    def gender_counts(group):
+        boys = sum(1 for s in group if s.gender and str(s.gender).lower().startswith("m"))
+        girls = sum(1 for s in group if s.gender and str(s.gender).lower().startswith("f"))
+        total = len(group)
+        return {
+            "total": total,
+            "boys": boys,
+            "girls": girls,
+            "unsigned": total - boys - girls,
+        }
+
     grades_data = []
 
     for cls in classes:
         cls_students = students_by_class.get(cls.id, [])
-
-        # Grade-level gender counts
-        boys = sum(1 for s in cls_students if s.gender and s.gender.lower().startswith("m"))
-        girls = sum(1 for s in cls_students if s.gender and s.gender.lower().startswith("f"))
+        totals = gender_counts(cls_students)
 
         # Class-level teacher (for stream=None)
         class_teacher = class_teacher_map.get((cls.id, None))
@@ -231,11 +239,7 @@ def get_branch_academic_population(branch_id: int):
             "grade_form": cls.grade_form,
             "class_year": cls.class_year,
             "teacher": class_teacher_info,  # Class-level teacher
-            "totals": {
-                "total": len(cls_students),
-                "boys": boys,
-                "girls": girls,
-            },
+            "totals": totals,
             "streams": []
         }
 
@@ -247,8 +251,7 @@ def get_branch_academic_population(branch_id: int):
                 stream_map[stream_name].append(s)
 
             for stream_name, stream_students in stream_map.items():
-                stream_boys = sum(1 for s in stream_students if s.gender and s.gender.lower().startswith("m"))
-                stream_girls = sum(1 for s in stream_students if s.gender and s.gender.lower().startswith("f"))
+                stream_totals = gender_counts(stream_students)
 
                 # Stream-level teacher, fallback to class teacher if none
                 teacher = class_teacher_map.get((cls.id, stream_name)) or class_teacher
@@ -259,9 +262,10 @@ def get_branch_academic_population(branch_id: int):
 
                 grade_entry["streams"].append({
                     "name": stream_name,
-                    "total": len(stream_students),
-                    "boys": stream_boys,
-                    "girls": stream_girls,
+                    "total": stream_totals["total"],
+                    "boys": stream_totals["boys"],
+                    "girls": stream_totals["girls"],
+                    "unsigned": stream_totals["unsigned"],
                     "teacher": teacher_info
                 })
 
