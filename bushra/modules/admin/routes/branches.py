@@ -15,6 +15,7 @@ from ..services.subs import get_subjects_by_grade
 from flask_login import login_required
 from ..utils.file_utils import preprocess_image
 
+from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.attributes import flag_modified
 from ....modals.students_db import Student
@@ -399,3 +400,158 @@ def force_delete_stream():
         db.session.rollback()
         current_app.logger.exception("Failed to delete empty stream")
         return jsonify({"error": "Failed to delete stream"}), 500
+
+
+def _clean_label(value):
+    return " ".join(str(value or "").split())
+
+
+def _load_managed_class(posted):
+    branch_id = posted.get("branch_id")
+    grade_id = posted.get("grade_id")
+
+    if not branch_id or not grade_id:
+        return None, (jsonify({
+            "error": "branch_id and grade_id are required"
+        }), 400)
+
+    if not _user_can_manage_branch(branch_id):
+        return None, (jsonify({
+            "error": "Only an admin of this school can edit a class."
+        }), 403)
+
+    grade = BranchClasses.query.filter_by(
+        id=grade_id,
+        branch_id=branch_id,
+    ).first()
+    if not grade:
+        return None, (jsonify({"error": "Grade not found"}), 404)
+
+    return grade, None
+
+
+@admin_bp.route("/grades/rename", methods=["POST"])
+@login_required
+def rename_grade():
+    posted = request.get_json(silent=True) or {}
+    grade, error = _load_managed_class(posted)
+    if error:
+        return error
+
+    new_name = _clean_label(posted.get("new_name"))
+    if not new_name:
+        return jsonify({"error": "Enter a new class name."}), 400
+
+    if new_name.lower() == (grade.grade_form or "").strip().lower():
+        return jsonify({
+            "error": f"{grade.grade_form} already has that name.",
+            "target": grade.grade_form,
+        }), 409
+
+    duplicate = (
+        BranchClasses.query
+        .filter(
+            BranchClasses.branch_id == grade.branch_id,
+            BranchClasses.class_year == grade.class_year,
+            BranchClasses.id != grade.id,
+            func.lower(BranchClasses.grade_form) == new_name.lower(),
+        )
+        .first()
+    )
+    if duplicate:
+        return jsonify({
+            "error": (
+                f"{new_name} already exists in this school for "
+                f"{grade.class_year}."
+            ),
+            "target": grade.grade_form,
+        }), 409
+
+    old_name = grade.grade_form
+    try:
+        grade.grade_form = new_name
+        db.session.commit()
+        return jsonify({
+            "message": f"{old_name} is now {new_name}.",
+            "target": new_name,
+            "old_name": old_name,
+        }), 200
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception("Failed to rename grade")
+        return jsonify({"error": "Failed to rename class."}), 500
+
+
+@admin_bp.route("/streams/rename", methods=["POST"])
+@login_required
+def rename_stream():
+    posted = request.get_json(silent=True) or {}
+    grade, error = _load_managed_class(posted)
+    if error:
+        return error
+
+    old_name = _clean_label(posted.get("old_name"))
+    new_name = _clean_label(posted.get("new_name"))
+
+    if not old_name or not new_name:
+        return jsonify({"error": "Current and new stream names are required."}), 400
+
+    streams = list(grade.streams or [])
+    has_stream_label = old_name in streams
+    has_stream_students = _class_student_count(grade.id, stream=old_name) > 0
+    if not has_stream_label and not has_stream_students:
+        return jsonify({
+            "error": f"{grade.grade_form} has no stream named {old_name}.",
+            "target": f"{grade.grade_form} · {old_name}",
+        }), 404
+
+    if new_name == old_name:
+        return jsonify({
+            "error": f"{grade.grade_form} · {old_name} already has that name.",
+            "target": f"{grade.grade_form} · {old_name}",
+        }), 409
+
+    for stream in streams:
+        if stream == old_name:
+            continue
+        if stream.strip().lower() == new_name.lower():
+            return jsonify({
+                "error": f"{grade.grade_form} already has a stream named {stream}.",
+                "target": f"{grade.grade_form} · {old_name}",
+            }), 409
+
+    try:
+        if old_name in streams:
+            streams[streams.index(old_name)] = new_name
+        else:
+            streams.append(new_name)
+        grade.streams = streams
+        flag_modified(grade, "streams")
+
+        Student.query.filter_by(class_id=grade.id, stream=old_name).update(
+            {Student.stream: new_name},
+            synchronize_session=False,
+        )
+        ExamPaper.query.filter_by(class_id=grade.id, stream=old_name).update(
+            {ExamPaper.stream: new_name},
+            synchronize_session=False,
+        )
+        Lesson.query.filter_by(class_id=grade.id, stream=old_name).update(
+            {Lesson.stream: new_name},
+            synchronize_session=False,
+        )
+        ClassTeacher.query.filter_by(class_id=grade.id, stream=old_name).update(
+            {ClassTeacher.stream: new_name},
+            synchronize_session=False,
+        )
+
+        db.session.commit()
+        return jsonify({
+            "message": f"{grade.grade_form} · {old_name} is now {new_name}.",
+            "target": f"{grade.grade_form} · {new_name}",
+            "old_name": f"{grade.grade_form} · {old_name}",
+        }), 200
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception("Failed to rename stream")
+        return jsonify({"error": "Failed to rename stream."}), 500

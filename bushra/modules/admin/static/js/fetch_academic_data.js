@@ -155,6 +155,13 @@ document.addEventListener("DOMContentLoaded", function () {
                         <!-- Streams -->
                         <div>
                             <div class="fw-semibold small text-secondary mb-1">Streams</div>
+                            <button class="btn btn-sm btn-outline-secondary mb-2 me-1 rename-grade-btn"
+                                    type="button"
+                                    data-grade="${g.class_id}"
+                                    data-grade-name="${g.grade_form}"
+                                    data-branch="${data.branch_id}">
+                                <i class="bi bi-pencil me-1"></i>Rename
+                            </button>
                             <button class="btn btn-sm btn-outline-danger mb-2 delete-grade-btn"
                                     type="button"
                                     data-grade="${g.class_id}"
@@ -182,6 +189,14 @@ document.addEventListener("DOMContentLoaded", function () {
                             <h6 class="small text-center mt-2 text-success">Classteacher: <span class="text-muted text-uppercase">
                              ${s.teacher?.name || "Not assigned"}</span>
                         </div>
+                        <button class="btn btn-sm btn-outline-secondary mb-2 me-1 rename-stream-btn"
+                                type="button"
+                                data-grade="${g.class_id}"
+                                data-grade-name="${g.grade_form}"
+                                data-stream="${s.name}"
+                                data-branch="${data.branch_id}">
+                            <i class="bi bi-pencil me-1"></i>Rename
+                        </button>
                         <button class="btn btn-sm btn-outline-danger mb-2 delete-stream-btn"
                                 type="button"
                                 data-grade="${g.class_id}"
@@ -403,6 +418,231 @@ document.addEventListener("DOMContentLoaded", function () {
       pendingClassDelete = null;
       if (classDeleteReloadOnClose) {
         classDeleteReloadOnClose = false;
+        refreshAcademicData();
+      }
+    });
+  }
+
+  const classRenameModalEl = document.getElementById("classRenameModal");
+  const classRenameModal = classRenameModalEl
+    ? bootstrap.Modal.getOrCreateInstance(classRenameModalEl)
+    : null;
+  const classRenameCard = document.getElementById("classRenameCard");
+  const classRenameIcon = document.getElementById("classRenameIcon");
+  const classRenameNoteIcon = document.getElementById("classRenameNoteIcon");
+  const classRenameTitle = document.getElementById("classRenameTitle");
+  const classRenameSubtitle = document.getElementById("classRenameSubtitle");
+  const classRenameLead = document.getElementById("classRenameLead");
+  const classRenameCurrent = document.getElementById("classRenameCurrent");
+  const classRenameInput = document.getElementById("classRenameInput");
+  const classRenameMessage = document.getElementById("classRenameMessage");
+  const classRenameHint = document.getElementById("classRenameHint");
+  const classRenameCancel = document.getElementById("classRenameCancel");
+  const classRenameSave = document.getElementById("classRenameSave");
+  const classRenameOk = document.getElementById("classRenameOk");
+  let pendingClassRename = null;
+  let classRenameReloadOnClose = false;
+
+  function setClassRenameMode(mode) {
+    if (!classRenameCard) return;
+
+    classRenameCard.classList.remove("is-warning", "is-success");
+    classRenameCancel.classList.add("d-none");
+    classRenameSave.classList.add("d-none");
+    classRenameOk.classList.add("d-none");
+    classRenameSave.disabled = false;
+    classRenameSave.innerHTML = '<i class="bi bi-check2 me-1"></i>Save';
+    if (classRenameInput) classRenameInput.disabled = mode !== "edit";
+
+    if (mode === "edit") {
+      classRenameIcon.innerHTML = '<i class="bi bi-pencil-square"></i>';
+      classRenameNoteIcon.innerHTML = '<i class="bi bi-info-circle"></i>';
+      classRenameCancel.classList.remove("d-none");
+      classRenameSave.classList.remove("d-none");
+    } else if (mode === "blocked") {
+      classRenameCard.classList.add("is-warning");
+      classRenameIcon.innerHTML = '<i class="bi bi-shield-exclamation"></i>';
+      classRenameNoteIcon.innerHTML = '<i class="bi bi-exclamation-circle"></i>';
+      classRenameOk.classList.remove("d-none");
+    } else {
+      classRenameCard.classList.add("is-success");
+      classRenameIcon.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
+      classRenameNoteIcon.innerHTML = '<i class="bi bi-check2-circle"></i>';
+      classRenameOk.classList.remove("d-none");
+    }
+  }
+
+  function openClassRenameModal({ mode, title, subtitle, lead, current, value, message, hint }) {
+    if (!classRenameModal) return;
+    setClassRenameMode(mode);
+    classRenameTitle.textContent = title;
+    classRenameSubtitle.textContent = subtitle || "";
+    classRenameLead.textContent = lead || "";
+    classRenameCurrent.textContent = current || "";
+    classRenameMessage.textContent = message || "";
+    classRenameHint.textContent = hint || "";
+    if (typeof value === "string") classRenameInput.value = value;
+    classRenameModal.show();
+    if (mode === "edit") {
+      setTimeout(() => {
+        classRenameInput.focus();
+        classRenameInput.select();
+      }, 200);
+    }
+  }
+
+  if (container && classRenameModal) {
+    container.addEventListener("click", function (e) {
+      const gradeBtn = e.target.closest(".rename-grade-btn");
+      const streamBtn = e.target.closest(".rename-stream-btn");
+
+      if (gradeBtn) {
+        const gradeName = gradeBtn.dataset.gradeName || "";
+        pendingClassRename = {
+          kind: "grade",
+          branchId: gradeBtn.dataset.branch,
+          gradeId: gradeBtn.dataset.grade,
+          gradeName,
+        };
+        openClassRenameModal({
+          mode: "edit",
+          title: "Rename this class?",
+          subtitle: "Students stay in the same class",
+          lead: "Currently named:",
+          current: gradeName,
+          value: gradeName,
+          message: "Only the class name changes.",
+          hint: "Marks and learners stay attached to this class.",
+        });
+        return;
+      }
+
+      if (streamBtn) {
+        const gradeName = streamBtn.dataset.gradeName || "this class";
+        const streamName = streamBtn.dataset.stream;
+        pendingClassRename = {
+          kind: "stream",
+          branchId: streamBtn.dataset.branch,
+          gradeId: streamBtn.dataset.grade,
+          gradeName,
+          stream: streamName,
+        };
+        openClassRenameModal({
+          mode: "edit",
+          title: "Rename this stream?",
+          subtitle: "Learners in this stream keep their records",
+          lead: "Currently named:",
+          current: classTargetLabel(gradeName, streamName),
+          value: streamName,
+          message: `This will rename ${streamName} inside ${gradeName}.`,
+          hint: "Students, lessons, and exam papers in this stream are updated to the new name.",
+        });
+      }
+    });
+
+    function submitClassRename() {
+      if (!pendingClassRename || classRenameSave.disabled) return;
+
+      const action = pendingClassRename;
+      const isGrade = action.kind === "grade";
+      const newName = (classRenameInput.value || "").trim();
+      const current = isGrade
+        ? action.gradeName
+        : classTargetLabel(action.gradeName, action.stream);
+
+      if (!newName) {
+        openClassRenameModal({
+          mode: "blocked",
+          title: "Name required",
+          subtitle: "Nothing was changed",
+          lead: "Currently named:",
+          current,
+          value: newName,
+          message: "Enter a new name before saving.",
+          hint: "",
+        });
+        return;
+      }
+
+      const url = isGrade ? "/admin/grades/rename" : "/admin/streams/rename";
+      const payload = isGrade
+        ? {
+            branch_id: action.branchId,
+            grade_id: action.gradeId,
+            new_name: newName,
+          }
+        : {
+            branch_id: action.branchId,
+            grade_id: action.gradeId,
+            old_name: action.stream,
+            new_name: newName,
+          };
+
+      classRenameSave.disabled = true;
+      classRenameSave.innerHTML =
+        '<span class="spinner-border spinner-border-sm me-1"></span>Saving';
+
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+        .then(({ ok, data }) => {
+          if (!ok) {
+            classRenameReloadOnClose = false;
+            openClassRenameModal({
+              mode: "blocked",
+              title: isGrade ? "Class was not renamed" : "Stream was not renamed",
+              subtitle: "Nothing was changed",
+              lead: "Still named:",
+              current: data.target || current,
+              value: newName,
+              message: data.error || "Could not rename.",
+              hint: "Choose a name that is not already in use.",
+            });
+            return;
+          }
+
+          classRenameReloadOnClose = true;
+          openClassRenameModal({
+            mode: "success",
+            title: isGrade ? "Class renamed" : "Stream renamed",
+            subtitle: "The school structure was updated",
+            lead: "Now named:",
+            current: data.target || newName,
+            value: newName,
+            message: data.message,
+            hint: "Open students, marks, or report cards to confirm they still match.",
+          });
+        })
+        .catch(() => {
+          classRenameReloadOnClose = false;
+          openClassRenameModal({
+            mode: "blocked",
+            title: "Could not complete rename",
+            subtitle: "Please try again",
+            lead: "Currently named:",
+            current,
+            value: newName,
+            message: "The request failed. Nothing was changed.",
+            hint: "",
+          });
+        });
+    }
+
+    classRenameSave.addEventListener("click", submitClassRename);
+    classRenameInput.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        submitClassRename();
+      }
+    });
+
+    classRenameModalEl.addEventListener("hidden.bs.modal", function () {
+      pendingClassRename = null;
+      if (classRenameReloadOnClose) {
+        classRenameReloadOnClose = false;
         refreshAcademicData();
       }
     });

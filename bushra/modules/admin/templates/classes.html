@@ -494,7 +494,121 @@ render_flash_messages() }}
   .class-delete-modal.is-warning .class-delete-btn-ok {
     background: #b8860b;
   }
+  .class-rename-icon {
+    background: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+  }
+  .class-rename-btn-save {
+    background: #0d6efd;
+    border: 0;
+    color: #fff;
+    font-size: 0.82rem;
+    padding: 0.4rem 0.85rem;
+  }
+  .class-rename-input {
+    width: 100%;
+    border: 1px solid #edf0f3;
+    border-radius: 10px;
+    padding: 0.65rem 0.8rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #252a2f;
+    text-align: center;
+  }
+  .class-rename-input:focus {
+    outline: 0;
+    border-color: #0d6efd;
+  }
+  .class-rename-field {
+    margin: 0 0 0.95rem;
+  }
+  .class-rename-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 0.78rem;
+    color: #6c757d;
+    text-align: center;
+  }
 </style>
+
+<!-- =========================
+     Class / Stream rename
+========================= -->
+<div
+  class="modal fade"
+  id="classRenameModal"
+  tabindex="-1"
+  aria-labelledby="classRenameTitle"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered class-delete-dialog">
+    <div class="modal-content class-delete-modal" id="classRenameCard">
+      <div class="class-delete-header">
+        <div class="class-delete-title-group">
+          <div class="class-delete-icon class-rename-icon" id="classRenameIcon" aria-hidden="true">
+            <i class="bi bi-pencil-square"></i>
+          </div>
+          <div>
+            <h6 class="class-delete-title" id="classRenameTitle">Rename</h6>
+            <p class="class-delete-subtitle" id="classRenameSubtitle"></p>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn-close class-delete-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div class="class-delete-body">
+        <p class="class-delete-lead" id="classRenameLead">Currently named:</p>
+        <div class="class-delete-target" id="classRenameCurrent"></div>
+        <label class="class-rename-label" for="classRenameInput">New name</label>
+        <div class="class-rename-field">
+          <input
+            type="text"
+            id="classRenameInput"
+            class="class-rename-input"
+            maxlength="50"
+            autocomplete="off"
+          />
+        </div>
+        <div class="class-delete-note" id="classRenameNote">
+          <div class="class-delete-note-icon" id="classRenameNoteIcon" aria-hidden="true">
+            <i class="bi bi-info-circle"></i>
+          </div>
+          <div>
+            <strong id="classRenameMessage"></strong>
+            <p id="classRenameHint"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="class-delete-footer">
+        <button
+          type="button"
+          class="btn class-delete-btn-cancel"
+          id="classRenameCancel"
+          data-bs-dismiss="modal"
+        >
+          Cancel
+        </button>
+        <button type="button" class="btn class-rename-btn-save" id="classRenameSave">
+          <i class="bi bi-check2 me-1"></i>Save
+        </button>
+        <button
+          type="button"
+          class="btn class-delete-btn-ok d-none"
+          id="classRenameOk"
+          data-bs-dismiss="modal"
+        >
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- =========================
     Manage Class Modal
