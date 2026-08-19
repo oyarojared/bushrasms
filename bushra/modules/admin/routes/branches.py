@@ -16,9 +16,11 @@ from flask_login import login_required
 from ..utils.file_utils import preprocess_image
 
 from sqlalchemy.exc import SQLAlchemyError
-from ....modals.students_db import Student, StudentSubjectAllocation 
-from ....modals.assessment_db import ExamPaper, StudentExamMark, GradeGradingScheme
+from sqlalchemy.orm.attributes import flag_modified
+from ....modals.students_db import Student
+from ....modals.assessment_db import ExamPaper, GradeGradingScheme
 from ....modals.subjects_db import Lesson
+from ....modals.staff_db import ClassTeacher
 from flask_login import current_user
 
 
@@ -239,140 +241,161 @@ def branch_academic_data(branch_id):
 
 
 
-@admin_bp.route("/grades/force-delete", methods=["POST"]) 
+def _user_can_manage_branch(branch_id):
+    if not getattr(current_user, "is_admin", False):
+        return False
+    if current_user.is_super_admin:
+        return True
+    return current_user.branch_id == int(branch_id)
+
+
+def _class_student_count(class_id, stream=None):
+    query = Student.query.filter_by(class_id=class_id)
+    if stream:
+        query = query.filter_by(stream=stream)
+    return query.count()
+
+
+def _class_paper_count(class_id, stream=None):
+    query = ExamPaper.query.filter_by(class_id=class_id)
+    if stream:
+        query = query.filter_by(stream=stream)
+    return query.count()
+
+
+def _delete_blocked_payload(grade_name, stream_name=None, student_count=0, paper_count=0):
+    if not student_count and not paper_count:
+        return None
+
+    target = f"{grade_name} · {stream_name}" if stream_name else grade_name
+    unit = "stream" if stream_name else "class"
+
+    if student_count:
+        return {
+            "error": f"{student_count} student(s) are still in {target}.",
+            "detail": (
+                f"Move those learners first. This {unit} will not be removed, "
+                "and students are not deleted."
+            ),
+            "target": target,
+            "grade_form": grade_name,
+            "stream": stream_name,
+            "reason": "students",
+            "student_count": student_count,
+            "paper_count": paper_count,
+        }
+
+    return {
+        "error": f"{paper_count} exam paper(s) still belong to {target}.",
+        "detail": (
+            f"Results for this {unit} must be kept, so it cannot be removed yet."
+        ),
+        "target": target,
+        "grade_form": grade_name,
+        "stream": stream_name,
+        "reason": "papers",
+        "student_count": student_count,
+        "paper_count": paper_count,
+    }
+
+
+@admin_bp.route("/grades/force-delete", methods=["POST"])
 @login_required
 def force_delete_grade():
-    data = request.get_json(silent=True)
+    data = request.get_json(silent=True) or {}
     branch_id = data.get("branch_id")
     grade_id = data.get("grade_id")
-
-    if not getattr(current_user, "is_admin", False):
-        return jsonify({"message": "Only Admin can delete Grade!"}), 200
 
     if not branch_id or not grade_id:
         return jsonify({"error": "branch_id and grade_id are required"}), 400
 
+    if not _user_can_manage_branch(branch_id):
+        return jsonify({
+            "error": "Only an admin of this school can delete a class."
+        }), 403
+
+    grade = BranchClasses.query.filter_by(id=grade_id, branch_id=branch_id).first()
+    if not grade:
+        return jsonify({"error": "Grade not found"}), 404
+
+    student_count = _class_student_count(grade_id)
+    paper_count = _class_paper_count(grade_id)
+
+    blocked = _delete_blocked_payload(
+        grade.grade_form,
+        student_count=student_count,
+        paper_count=paper_count,
+    )
+    if blocked:
+        return jsonify(blocked), 409
+
     try:
-        grade = BranchClasses.query.filter_by(id=grade_id, branch_id=branch_id).first()
-        if not grade:
-            return jsonify({"error": "Grade not found"}), 404
-
-        # -----------------------------
-        #  Delete related grading schemes
-        # ----------------------------- 
         GradeGradingScheme.query.filter_by(grade_id=grade_id).delete()
-        db.session.flush()
-
-        # -----------------------------
-        # 1️ Delete dependent exam marks
-        # -----------------------------
-        exam_papers = ExamPaper.query.filter_by(class_id=grade_id).all()
-        for paper in exam_papers:
-            StudentExamMark.query.filter_by(exam_paper_id=paper.id).delete()
-        db.session.flush()
-
-        # -----------------------------
-        # 2️ Delete exam papers
-        # -----------------------------
-        ExamPaper.query.filter_by(class_id=grade_id).delete()
-        db.session.flush()
-
-        # -----------------------------
-        # 3️ Delete lessons
-        # -----------------------------
         Lesson.query.filter_by(class_id=grade_id).delete()
-        db.session.flush()
-
-        # -----------------------------
-        # 4️ Delete student subject allocations
-        # -----------------------------
-        students = Student.query.filter_by(class_id=grade_id).all()
-        for student in students:
-            StudentSubjectAllocation.query.filter_by(student_id=student.id).delete()
-        db.session.flush()
-
-        # -----------------------------
-        # 5️ Delete students
-        # -----------------------------
-        Student.query.filter_by(class_id=grade_id).delete()
-        db.session.flush()
-
-        # -----------------------------
-        # 6 Delete the grade itself
-        # -----------------------------
+        ClassTeacher.query.filter_by(class_id=grade_id).delete()
         db.session.delete(grade)
         db.session.commit()
-
-        return jsonify({"message": f"Grade '{grade.grade_form}' and all related data deleted successfully"}), 200
-
-    except SQLAlchemyError as e:
+        return jsonify({
+            "message": f"{grade.grade_form} was deleted.",
+            "target": grade.grade_form,
+        }), 200
+    except SQLAlchemyError:
         db.session.rollback()
-        current_app.logger.error(str(e))
-        return jsonify({"error": "Failed to force delete grade"}), 500
+        current_app.logger.exception("Failed to delete empty grade")
+        return jsonify({"error": "Failed to delete grade"}), 500
 
 
 @admin_bp.route("/streams/force-delete", methods=["POST"])
 @login_required
 def force_delete_stream():
-    data = request.get_json(silent=True)
+    data = request.get_json(silent=True) or {}
     if not data:
         return jsonify({"error": "Invalid JSON payload"}), 400
-    
-    if not getattr(current_user, "is_admin", False):
-        return jsonify({"message": "Only Admin can delete Grade!"}), 200
 
     branch_id = data.get("branch_id")
     grade_id = data.get("grade_id")
     stream_name = data.get("stream_name")
 
     if not all([branch_id, grade_id, stream_name]):
-        return jsonify({"error": "branch_id, grade_id, and stream_name are required"}), 400
+        return jsonify({
+            "error": "branch_id, grade_id, and stream_name are required"
+        }), 400
+
+    if not _user_can_manage_branch(branch_id):
+        return jsonify({
+            "error": "Only an admin of this school can delete a stream."
+        }), 403
+
+    grade = BranchClasses.query.filter_by(id=grade_id, branch_id=branch_id).first()
+    if not grade:
+        return jsonify({"error": "Grade not found"}), 404
+
+    student_count = _class_student_count(grade_id, stream=stream_name)
+    paper_count = _class_paper_count(grade_id, stream=stream_name)
+
+    blocked = _delete_blocked_payload(
+        grade.grade_form,
+        stream_name=stream_name,
+        student_count=student_count,
+        paper_count=paper_count,
+    )
+    if blocked:
+        return jsonify(blocked), 409
 
     try:
-        grade = BranchClasses.query.filter_by(id=grade_id, branch_id=branch_id).first()
-        if not grade:
-            return jsonify({"error": "Grade not found"}), 404
-
-        # -----------------------------
-        # 1️⃣ Delete dependent exam marks
-        # -----------------------------
-        exam_papers = ExamPaper.query.filter_by(class_id=grade_id, stream=stream_name).all()
-        for paper in exam_papers:
-            StudentExamMark.query.filter_by(exam_paper_id=paper.id).delete()
-        db.session.flush()
-
-        # -----------------------------
-        # 2️⃣ Delete exam papers
-        # -----------------------------
-        ExamPaper.query.filter_by(class_id=grade_id, stream=stream_name).delete()
-        db.session.flush()
-
-        # -----------------------------
-        # 3️⃣ Delete lessons
-        # -----------------------------
         Lesson.query.filter_by(class_id=grade_id, stream=stream_name).delete()
-        db.session.flush()
+        ClassTeacher.query.filter_by(class_id=grade_id, stream=stream_name).delete()
 
-        # -----------------------------
-        # 4️⃣ Delete students in stream
-        # -----------------------------
-        students = Student.query.filter_by(class_id=grade_id, stream=stream_name).all()
-        for student in students:
-            StudentSubjectAllocation.query.filter_by(student_id=student.id).delete()
-        Student.query.filter_by(class_id=grade_id, stream=stream_name).delete()
-        db.session.flush()
-
-        # -----------------------------
-        # 5️⃣ Remove stream from grade JSON
-        # -----------------------------
         if grade.streams and stream_name in grade.streams:
             grade.streams.remove(stream_name)
+            flag_modified(grade, "streams")
 
         db.session.commit()
-
-        return jsonify({"message": f"Stream '{stream_name}' and all related data deleted successfully"}), 200
-
-    except SQLAlchemyError as e:
+        return jsonify({
+            "message": f"{grade.grade_form} · {stream_name} was removed.",
+            "target": f"{grade.grade_form} · {stream_name}",
+        }), 200
+    except SQLAlchemyError:
         db.session.rollback()
-        current_app.logger.error(str(e))
-        return jsonify({"error": "Failed to force delete stream"}), 500
+        current_app.logger.exception("Failed to delete empty stream")
+        return jsonify({"error": "Failed to delete stream"}), 500

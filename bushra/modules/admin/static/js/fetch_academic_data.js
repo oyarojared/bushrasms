@@ -158,6 +158,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             <button class="btn btn-sm btn-outline-danger mb-2 delete-grade-btn"
                                     type="button"
                                     data-grade="${g.class_id}"
+                                    data-grade-name="${g.grade_form}"
                                     data-branch="${data.branch_id}">
                                 <i class="bi bi-trash me-1"></i>Delete Grade/Form
                             </button>
@@ -184,6 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         <button class="btn btn-sm btn-outline-danger mb-2 delete-stream-btn"
                                 type="button"
                                 data-grade="${g.class_id}"
+                                data-grade-name="${g.grade_form}"
                                 data-stream="${s.name}"
                                 data-branch="${data.branch_id}">
                             <i class="bi bi-trash me-1"></i>Delete Stream
@@ -211,70 +213,197 @@ document.addEventListener("DOMContentLoaded", function () {
     // ---------------------- BUILD GRADE SELECT ----------------------
     buildGradeSelect(data);
 
+  }
+
+  const classDeleteModalEl = document.getElementById("classDeleteModal");
+  const classDeleteModal = classDeleteModalEl
+    ? bootstrap.Modal.getOrCreateInstance(classDeleteModalEl)
+    : null;
+  const classDeleteCard = document.getElementById("classDeleteCard");
+  const classDeleteIcon = document.getElementById("classDeleteIcon");
+  const classDeleteNoteIcon = document.getElementById("classDeleteNoteIcon");
+  const classDeleteTitle = document.getElementById("classDeleteTitle");
+  const classDeleteSubtitle = document.getElementById("classDeleteSubtitle");
+  const classDeleteLead = document.getElementById("classDeleteLead");
+  const classDeleteTarget = document.getElementById("classDeleteTarget");
+  const classDeleteMessage = document.getElementById("classDeleteMessage");
+  const classDeleteHint = document.getElementById("classDeleteHint");
+  const classDeleteCancel = document.getElementById("classDeleteCancel");
+  const classDeleteConfirm = document.getElementById("classDeleteConfirm");
+  const classDeleteOk = document.getElementById("classDeleteOk");
+  let pendingClassDelete = null;
+  let classDeleteReloadOnClose = false;
+
+  function classTargetLabel(gradeName, streamName) {
+    if (gradeName && streamName) return `${gradeName} · ${streamName}`;
+    return gradeName || streamName || "this class";
+  }
+
+  function refreshAcademicData() {
+    if (branchSelect) {
+      branchSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
+
+  function setClassDeleteMode(mode) {
+    if (!classDeleteCard) return;
+
+    classDeleteCard.classList.remove("is-warning", "is-success");
+    classDeleteCancel.classList.add("d-none");
+    classDeleteConfirm.classList.add("d-none");
+    classDeleteOk.classList.add("d-none");
+    classDeleteConfirm.disabled = false;
+    classDeleteConfirm.innerHTML = '<i class="bi bi-trash-fill me-1"></i>Delete';
+
+    if (mode === "confirm") {
+      classDeleteIcon.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i>';
+      classDeleteNoteIcon.innerHTML = '<i class="bi bi-info-circle"></i>';
+      classDeleteCancel.classList.remove("d-none");
+      classDeleteConfirm.classList.remove("d-none");
+    } else if (mode === "blocked") {
+      classDeleteCard.classList.add("is-warning");
+      classDeleteIcon.innerHTML = '<i class="bi bi-shield-exclamation"></i>';
+      classDeleteNoteIcon.innerHTML = '<i class="bi bi-exclamation-circle"></i>';
+      classDeleteOk.classList.remove("d-none");
+    } else {
+      classDeleteCard.classList.add("is-success");
+      classDeleteIcon.innerHTML = '<i class="bi bi-check-circle-fill"></i>';
+      classDeleteNoteIcon.innerHTML = '<i class="bi bi-check2-circle"></i>';
+      classDeleteOk.classList.remove("d-none");
+    }
+  }
+
+  function openClassDeleteModal({ mode, title, subtitle, lead, target, message, hint }) {
+    if (!classDeleteModal) return;
+    setClassDeleteMode(mode);
+    classDeleteTitle.textContent = title;
+    classDeleteSubtitle.textContent = subtitle || "";
+    classDeleteLead.textContent = lead || "";
+    classDeleteTarget.textContent = target || "";
+    classDeleteMessage.textContent = message || "";
+    classDeleteHint.textContent = hint || "";
+    classDeleteModal.show();
+  }
+
+  if (container && classDeleteModal) {
     container.addEventListener("click", function (e) {
-      // ---------------------- DELETE GRADE ----------------------
-      function deleteGrade(branchId, gradeId) {
-        fetch(`/admin/grades/force-delete`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            branch_id: branchId,
-            grade_id: gradeId,
-          }),
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            alert(data.message);
-            // loadAcademicData(branchId); // refresh UI
-            window.location.reload();
+      const gradeBtn = e.target.closest(".delete-grade-btn");
+      const streamBtn = e.target.closest(".delete-stream-btn");
+
+      if (gradeBtn) {
+        const gradeName = gradeBtn.dataset.gradeName || "this class";
+        pendingClassDelete = {
+          kind: "grade",
+          branchId: gradeBtn.dataset.branch,
+          gradeId: gradeBtn.dataset.grade,
+          gradeName,
+        };
+        openClassDeleteModal({
+          mode: "confirm",
+          title: "Delete this class?",
+          subtitle: "Students and exam results are kept",
+          lead: "You are about to remove:",
+          target: gradeName,
+          message: "Only the empty class structure is removed.",
+          hint: "If learners or exam papers still use this class, deletion will be stopped.",
+        });
+        return;
+      }
+
+      if (streamBtn) {
+        const gradeName = streamBtn.dataset.gradeName || "this class";
+        const streamName = streamBtn.dataset.stream;
+        pendingClassDelete = {
+          kind: "stream",
+          branchId: streamBtn.dataset.branch,
+          gradeId: streamBtn.dataset.grade,
+          gradeName,
+          stream: streamName,
+        };
+        openClassDeleteModal({
+          mode: "confirm",
+          title: "Remove this stream?",
+          subtitle: "Students and exam results are kept",
+          lead: "You are about to remove:",
+          target: classTargetLabel(gradeName, streamName),
+          message: `Only stream ${streamName} will be removed from ${gradeName}.`,
+          hint: `Learners currently in ${classTargetLabel(gradeName, streamName)} are not deleted.`,
+        });
+      }
+    });
+
+    classDeleteConfirm.addEventListener("click", function () {
+      if (!pendingClassDelete) return;
+
+      const action = pendingClassDelete;
+      const isGrade = action.kind === "grade";
+      const target = classTargetLabel(action.gradeName, action.stream);
+      const url = isGrade
+        ? "/admin/grades/force-delete"
+        : "/admin/streams/force-delete";
+      const payload = isGrade
+        ? { branch_id: action.branchId, grade_id: action.gradeId }
+        : {
+            branch_id: action.branchId,
+            grade_id: action.gradeId,
+            stream_name: action.stream,
+          };
+
+      classDeleteConfirm.disabled = true;
+      classDeleteConfirm.innerHTML =
+        '<span class="spinner-border spinner-border-sm me-1"></span>Deleting';
+
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+        .then(({ ok, data }) => {
+          if (!ok) {
+            classDeleteReloadOnClose = false;
+            openClassDeleteModal({
+              mode: "blocked",
+              title: isGrade ? "Class was not deleted" : "Stream was not removed",
+              subtitle: "Nothing was changed",
+              lead: "Still in use:",
+              target: data.target || target,
+              message: data.error || `${target} is still in use.`,
+              hint: data.detail || "Move the students first, then try again.",
+            });
+            return;
+          }
+
+          classDeleteReloadOnClose = true;
+          openClassDeleteModal({
+            mode: "success",
+            title: isGrade ? "Class deleted" : "Stream removed",
+            subtitle: "The school structure was updated",
+            lead: "Removed:",
+            target: data.target || target,
+            message: data.message || `${target} was removed.`,
+            hint: "Students and exam results were not deleted.",
           });
-      }
-
-      // DELETE GRADE
-      if (e.target.closest(".delete-grade-btn")) {
-        const btn = e.target.closest(".delete-grade-btn");
-
-        const branchId = btn.dataset.branch;
-        const gradeId = btn.dataset.grade;
-
-        if (!confirm("Delete this grade and all its streams?")) return;
-
-        deleteGrade(branchId, gradeId);
-      }
-
-      // ---------------------- DELETE STREAM ----------------------
-      function deleteStream(branchId, gradeId, streamName) {
-        fetch(`/admin/streams/force-delete`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            branch_id: branchId,
-            grade_id: gradeId,
-            stream_name: streamName,
-          }),
         })
-          .then((res) => res.json())
-          .then((data) => {
-            alert(data.message);
-            loadAcademicData(branchId);
+        .catch(() => {
+          classDeleteReloadOnClose = false;
+          openClassDeleteModal({
+            mode: "blocked",
+            title: "Could not complete delete",
+            subtitle: "Please try again",
+            lead: "Target:",
+            target,
+            message: "The request failed. Nothing was deleted.",
+            hint: "",
           });
-      }
+        });
+    });
 
-      // DELETE STREAM
-      if (e.target.closest(".delete-stream-btn")) {
-        const btn = e.target.closest(".delete-stream-btn");
-
-        const branchId = btn.dataset.branch;
-        const gradeId = btn.dataset.grade;
-        const stream = btn.dataset.stream;
-
-        if (!confirm(`Delete stream "${stream}"?`)) return;
-
-        deleteStream(branchId, gradeId, stream);
+    classDeleteModalEl.addEventListener("hidden.bs.modal", function () {
+      pendingClassDelete = null;
+      if (classDeleteReloadOnClose) {
+        classDeleteReloadOnClose = false;
+        refreshAcademicData();
       }
     });
   }

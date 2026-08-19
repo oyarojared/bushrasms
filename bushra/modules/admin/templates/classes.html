@@ -262,6 +262,241 @@ render_flash_messages() }}
 </div>
 
 <!-- =========================
+     Class / Stream delete notice
+========================= -->
+<div
+  class="modal fade"
+  id="classDeleteModal"
+  tabindex="-1"
+  aria-labelledby="classDeleteTitle"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered class-delete-dialog">
+    <div class="modal-content class-delete-modal" id="classDeleteCard">
+      <div class="class-delete-header">
+        <div class="class-delete-title-group">
+          <div class="class-delete-icon" id="classDeleteIcon" aria-hidden="true">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+          <div>
+            <h6 class="class-delete-title" id="classDeleteTitle">Delete class</h6>
+            <p class="class-delete-subtitle" id="classDeleteSubtitle"></p>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn-close class-delete-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div class="class-delete-body">
+        <p class="class-delete-lead" id="classDeleteLead">You are about to remove:</p>
+        <div class="class-delete-target" id="classDeleteTarget"></div>
+        <div class="class-delete-note" id="classDeleteNote" role="alert">
+          <div class="class-delete-note-icon" id="classDeleteNoteIcon" aria-hidden="true">
+            <i class="bi bi-info-circle"></i>
+          </div>
+          <div>
+            <strong id="classDeleteMessage"></strong>
+            <p id="classDeleteHint"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="class-delete-footer">
+        <button
+          type="button"
+          class="btn class-delete-btn-cancel"
+          id="classDeleteCancel"
+          data-bs-dismiss="modal"
+        >
+          Cancel
+        </button>
+        <button type="button" class="btn class-delete-btn-confirm" id="classDeleteConfirm">
+          <i class="bi bi-trash-fill me-1"></i>Delete
+        </button>
+        <button
+          type="button"
+          class="btn class-delete-btn-ok d-none"
+          id="classDeleteOk"
+          data-bs-dismiss="modal"
+        >
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .class-delete-dialog {
+    max-width: 420px;
+    margin: 1rem auto;
+  }
+  .class-delete-modal {
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .class-delete-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 1.1rem 1.2rem 0.95rem;
+    border-bottom: 1px solid #f0f1f3;
+  }
+  .class-delete-title-group {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+  .class-delete-icon {
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    font-size: 1.05rem;
+  }
+  .class-delete-modal.is-warning .class-delete-icon {
+    background: rgba(201, 162, 39, 0.14);
+    color: #b8860b;
+  }
+  .class-delete-modal.is-success .class-delete-icon {
+    background: rgba(25, 135, 84, 0.12);
+    color: #198754;
+  }
+  .class-delete-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #252a2f;
+    line-height: 1.3;
+  }
+  .class-delete-subtitle {
+    margin: 0.2rem 0 0;
+    font-size: 0.78rem;
+    color: #8b939c;
+    line-height: 1.35;
+  }
+  .class-delete-close {
+    margin-top: 2px;
+    opacity: 0.5;
+  }
+  .class-delete-body {
+    padding: 1.1rem 1.2rem 0.9rem;
+  }
+  .class-delete-lead {
+    margin: 0 0 0.55rem;
+    font-size: 0.82rem;
+    color: #6c757d;
+    text-align: center;
+  }
+  .class-delete-target {
+    margin: 0 auto 0.95rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: 10px;
+    background: #fafbfc;
+    border: 1px solid #edf0f3;
+    color: #252a2f;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .class-delete-note {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.85rem 0.95rem;
+    border-radius: 10px;
+    background: rgba(220, 53, 69, 0.06);
+    border: 1px solid rgba(220, 53, 69, 0.18);
+  }
+  .class-delete-modal.is-warning .class-delete-note {
+    background: rgba(201, 162, 39, 0.1);
+    border-color: rgba(201, 162, 39, 0.28);
+  }
+  .class-delete-modal.is-success .class-delete-note {
+    background: rgba(25, 135, 84, 0.08);
+    border-color: rgba(25, 135, 84, 0.2);
+  }
+  .class-delete-note-icon {
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: rgba(220, 53, 69, 0.12);
+    color: #dc3545;
+    font-size: 1rem;
+  }
+  .class-delete-modal.is-warning .class-delete-note-icon {
+    background: rgba(201, 162, 39, 0.16);
+    color: #b8860b;
+  }
+  .class-delete-modal.is-success .class-delete-note-icon {
+    background: rgba(25, 135, 84, 0.14);
+    color: #198754;
+  }
+  .class-delete-note strong {
+    display: block;
+    margin-bottom: 0.2rem;
+    font-size: 0.84rem;
+    color: #252a2f;
+    line-height: 1.4;
+  }
+  .class-delete-note p {
+    margin: 0;
+    font-size: 0.76rem;
+    color: #697382;
+    line-height: 1.5;
+  }
+  .class-delete-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.8rem 1.2rem 1.05rem;
+    border-top: 1px solid #f0f1f3;
+    background: #fafbfc;
+  }
+  .class-delete-btn-cancel,
+  .class-delete-btn-confirm,
+  .class-delete-btn-ok {
+    font-size: 0.82rem;
+    padding: 0.4rem 0.85rem;
+  }
+  .class-delete-btn-cancel {
+    margin-right: 0.5rem;
+    border: 1px solid #dee2e6;
+    background: #fff;
+    color: #495057;
+  }
+  .class-delete-btn-confirm,
+  .class-delete-btn-ok {
+    background: #dc3545;
+    border: 0;
+    color: #fff;
+  }
+  .class-delete-modal.is-success .class-delete-btn-ok {
+    background: #198754;
+  }
+  .class-delete-modal.is-warning .class-delete-btn-ok {
+    background: #b8860b;
+  }
+</style>
+
+<!-- =========================
     Manage Class Modal
 ========================= -->
 <div
