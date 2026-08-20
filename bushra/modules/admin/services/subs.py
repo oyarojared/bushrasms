@@ -10,6 +10,7 @@ from ....modals.branches_db import BranchClasses
 from ....modals.assessment_db import ExamPaper, StudentExamMark
 
 
+from .grades import live_class_name
 from sqlalchemy import func
 
 
@@ -263,7 +264,7 @@ def _normalize_subject_name(name):
 def _is_form_3_or_4(grade_form):
     if not grade_form:
         return False
-    name = str(grade_form).strip().lower()
+    name = live_class_name(grade_form).strip().lower()
     if "form" not in name:
         return False
     number = "".join(ch for ch in name if ch.isdigit())
@@ -342,7 +343,7 @@ def get_subjects_offered_in_class(class_obj):
             .all()
         )
 
-    return _compulsory_subjects_for_grade(class_obj.grade_form)
+    return _compulsory_subjects_for_grade(live_class_name(class_obj.grade_form))
 
 
 def default_subjects_for_class(class_obj):
@@ -355,9 +356,10 @@ def default_subjects_for_class(class_obj):
     if not class_obj:
         return []
 
-    if _is_form_3_or_4(class_obj.grade_form):
+    live_name = live_class_name(class_obj.grade_form)
+    if _is_form_3_or_4(live_name):
         return _form34_default_subjects(
-            get_subjects_by_grade(class_obj.grade_form)
+            get_subjects_by_grade(live_name)
         )
 
     return get_subjects_offered_in_class(class_obj)

@@ -422,14 +422,27 @@ document.addEventListener("DOMContentLoaded", function () {
           }
 
           classDeleteReloadOnClose = true;
+          const archived = Boolean(data.archived);
           openClassDeleteModal({
             mode: "success",
-            title: isGrade ? "Class deleted" : "Stream removed",
-            subtitle: "The school structure was updated",
-            lead: "Removed:",
+            title: archived
+              ? "Class hidden"
+              : isGrade
+                ? "Class deleted"
+                : "Stream removed",
+            subtitle: archived
+              ? "Exam records were kept"
+              : "The school structure was updated",
+            lead: archived ? "Hidden:" : "Removed:",
             target: data.target || target,
-            message: data.message || `${target} was removed.`,
-            hint: "Students and exam results were not deleted.",
+            message:
+              data.message ||
+              (archived
+                ? `${target} was hidden. The original name can be used again.`
+                : `${target} was removed.`),
+            hint: archived
+              ? "It no longer appears in class lists or dropdowns."
+              : "Students and exam results were not deleted.",
           });
         })
         .catch(() => {

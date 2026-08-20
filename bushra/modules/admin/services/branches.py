@@ -11,6 +11,7 @@ from sqlalchemy import func
 
 from collections import defaultdict
 from ..utils.file_utils import preprocess_image
+from ..services.grades import filter_active_classes, is_archived_class_name
 
 
 def get_first_branch_id():   
@@ -83,6 +84,8 @@ def get_branch_classes():
     for r in records: 
         # Skip if branch is None (orphaned)
         if not r.branch:
+            continue
+        if is_archived_class_name(r.grade_form):
             continue
 
         branch_name = r.branch.branch_name
@@ -184,7 +187,9 @@ def get_branch_academic_population(branch_id: int):
         return None, "Branch does not exist."
 
     # Fetch all classes for the branch
-    classes = BranchClasses.query.filter_by(branch_id=branch_id).all()
+    classes = filter_active_classes(
+        BranchClasses.query.filter_by(branch_id=branch_id).all()
+    )
     if not classes:
         return {
             "branch_id": branch_id,

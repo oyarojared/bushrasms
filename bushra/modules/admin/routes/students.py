@@ -24,6 +24,7 @@ from ..utils.route_protect import admin_required
 from flask_login import login_required 
 
 from ..services.subs import auto_allocate_subjects 
+from ..services.grades import filter_active_classes 
 
 from ..services.studs import (
     get_next_adm_no,
@@ -72,7 +73,9 @@ def student_dash():
 
         # Populate grade choices based on selected branch
         if branch_id:
-            classes = BranchClasses.query.filter_by(branch_id=branch_id).all()
+            classes = filter_active_classes(
+                BranchClasses.query.filter_by(branch_id=branch_id).all()
+            )
             form.grade_form.choices = [("", "--- Select Grade/Form ---")] + [
                 (str(c.id), c.grade_form) for c in classes
             ]

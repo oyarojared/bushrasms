@@ -10,7 +10,12 @@ from ....modals.students_db import Student, StudentSubjectAllocation
 from ....modals.subjects_db import Subject, SubjectEligibility, Lesson
 from ....modals.staff_db import Teacher, ClassTeacher
 from ..services.report import build_broadsheet_data, compute_full_analysis
-from ..services.grades import sort_grade_records
+from ..services.grades import (
+    filter_active_classes,
+    is_archived_class_name,
+    live_class_name,
+    sort_grade_records,
+)
 from ....modals.assessment_db import (StudentExamMark,ExamPaper, GradeGradingScheme, 
                                     GradingBoundary, GradingScheme, GradingSystem)
 
@@ -72,7 +77,7 @@ def api_grades(branch_id):
     try:
         # ADMIN → all classes in branch
         if current_user.is_admin:
-            classes = (
+            classes = filter_active_classes(
                 BranchClasses.query
                 .filter_by(branch_id=branch_id)
                 .all()
@@ -105,6 +110,8 @@ def api_grades(branch_id):
 
         for lesson in lessons:
             cls = lesson.class_
+            if not cls or is_archived_class_name(cls.grade_form):
+                continue
 
             if cls.id not in class_map:
                 class_map[cls.id] = {
@@ -166,7 +173,7 @@ def api_class_context():
             .join(SubjectEligibility)
             .filter(
                 func.lower(SubjectEligibility.grade_form)
-                == func.lower(class_obj.grade_form)
+                == func.lower(live_class_name(class_obj.grade_form))
             )
             .all()
         )
@@ -239,7 +246,7 @@ def api_class_context():
         response = {
             "branch_id": branch_id,
             "class_id": class_obj.id,
-            "class_name": class_obj.grade_form,
+            "class_name": live_class_name(class_obj.grade_form),
             "stream": stream,
             "subjects": subjects_data,
             "teachers": [
@@ -659,7 +666,9 @@ def api_exam_students_with_grades_all_subjects():
         branch_name = branch.branch_name if branch else ""
 
         class_obj = BranchClasses.query.get(class_id)
-        normalized_form = normalize_form_name(class_obj.grade_form if class_obj else "")
+        normalized_form = normalize_form_name(
+            live_class_name(class_obj.grade_form) if class_obj else ""
+        )
         grading_type = "844" if is_844_form(normalized_form) else "cbc"
         is_844 = grading_type == "844"
 
@@ -679,7 +688,7 @@ def api_exam_students_with_grades_all_subjects():
                 "students": [],
                 "branch_name": branch_name,
                 "grading_type": grading_type,
-                "class_name": class_obj.grade_form if class_obj else "",
+                "class_name": live_class_name(class_obj.grade_form) if class_obj else "",
             })
 
         # -------------------- Subject Allocations --------------------
@@ -842,7 +851,7 @@ def api_exam_students_with_grades_all_subjects():
             "students": students_data,
             "branch_name": branch_name,
             "grading_type": grading_type,
-            "class_name": class_obj.grade_form if class_obj else "",
+            "class_name": live_class_name(class_obj.grade_form) if class_obj else "",
         })
     except Exception as e:
         current_app.logger.exception("Error fetching students with all subjects")
@@ -905,7 +914,8 @@ def api_students_by_subject():
 
         lesson = lesson_query.first()
         subject_name = Subject.query.get(subject_id).name if Subject.query.get(subject_id) else "N/A"
-        class_name = BranchClasses.query.get(class_id).grade_form if BranchClasses.query.get(class_id) else "N/A"
+        class_row = BranchClasses.query.get(class_id)
+        class_name = live_class_name(class_row.grade_form) if class_row else "N/A"
         branch_name = Branch.query.get(branch_id).branch_name if Branch.query.get(branch_id) else "N/A"
     
         teacher_name = None 
@@ -1029,7 +1039,7 @@ def api_students_by_class():
         class_obj = db.session.get(BranchClasses, class_id)
         branch_obj = db.session.get(Branch, branch_id)
 
-        class_name = class_obj.grade_form if class_obj else "N/A"
+        class_name = live_class_name(class_obj.grade_form) if class_obj else "N/A"
         branch_name = branch_obj.branch_name if branch_obj else "N/A"
 
         # -------------------- 4. Build response --------------------

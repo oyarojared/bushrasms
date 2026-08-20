@@ -13,6 +13,7 @@ import io
 import os
 from flask import current_app
 from ..services.grading import get_max_points_for_class
+from .grades import live_class_name
 from PIL import Image
 
 _pdf_image_cache = {}
@@ -418,7 +419,7 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
     if not class_:
         raise ValueError("Class not found")
 
-    class_name = class_.grade_form
+    class_name = live_class_name(class_.grade_form)
 
     # ------------------------------------------------------------------
     # Exam
@@ -669,7 +670,7 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
             "term": exam_data.term
         },
         "class": {
-            "grade_form": class_.grade_form,
+            "grade_form": live_class_name(class_.grade_form),
             "class_year": class_.class_year,
             "streams": class_.streams
         },
@@ -707,7 +708,7 @@ def build_broadsheet_data(branch_id, class_id, exam_id, stream=None):
 
         # -------------------- 1. Class & Exam --------------------
         class_obj = db.session.get(BranchClasses, class_id)
-        class_name = class_obj.grade_form if class_obj else "N/A"
+        class_name = live_class_name(class_obj.grade_form) if class_obj else "N/A"
         normalized_form = normalize_form_name(class_name)
         is_844 = is_844_form(normalized_form)
 

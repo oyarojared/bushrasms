@@ -7,6 +7,7 @@ from sqlalchemy import func
 from collections import defaultdict
 
 from ..utils.general_utils import resolve_grade
+from ..services.grades import live_class_name
 from ..services.grading_844 import (
     normalize_form_name,
     is_844_form,
@@ -165,7 +166,7 @@ def get_student_academic_history(student_id):
                 "year": exam.year,
                 "term": exam.term,
                 "title": f"{exam.name} · Term {exam.term} · {exam.year}",
-                "grade_form": class_.grade_form,
+                "grade_form": live_class_name(class_.grade_form),
                 "stream": paper.stream or "",
                 "is_844": is_844_form(normalized_form),
                 "subjects": [],

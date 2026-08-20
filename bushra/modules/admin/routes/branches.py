@@ -6,7 +6,12 @@ from ....modals.branches_db import BranchClasses, Branch
 from .. import admin_bp
 from ..forms.branches_forms import (AddBranchForm, BranchesList,
                                     ExtendedBranchForm)
-from ..services.grades import create_class
+from ..services.grades import (
+    create_class,
+    is_archived_class_name,
+    live_class_name,
+    make_archived_class_name,
+)
 from ..services.branches import (get_branch_classes, 
                                 get_branch_data, delete_branch_service,
                                 get_first_branch_id, update_branch_service, get_branch_academic_population)
@@ -322,13 +327,38 @@ def force_delete_grade():
     student_count = _class_student_count(grade_id)
     paper_count = _class_paper_count(grade_id)
 
-    blocked = _delete_blocked_payload(
-        grade.grade_form,
-        student_count=student_count,
-        paper_count=paper_count,
-    )
-    if blocked:
+    if student_count:
+        blocked = _delete_blocked_payload(
+            grade.grade_form,
+            student_count=student_count,
+            paper_count=paper_count,
+        )
         return jsonify(blocked), 409
+
+    original_name = live_class_name(grade.grade_form) or grade.grade_form
+
+    if paper_count:
+        if is_archived_class_name(grade.grade_form):
+            return jsonify({
+                "archived": True,
+                "message": f"{original_name} is already hidden.",
+                "target": original_name,
+            }), 200
+        try:
+            grade.grade_form = make_archived_class_name(original_name, grade.id)
+            db.session.commit()
+            return jsonify({
+                "archived": True,
+                "message": (
+                    f"{original_name} was hidden. Exam papers were kept, "
+                    f"and {original_name} can be used again."
+                ),
+                "target": original_name,
+            }), 200
+        except SQLAlchemyError:
+            db.session.rollback()
+            current_app.logger.exception("Failed to archive empty grade")
+            return jsonify({"error": "Failed to hide class"}), 500
 
     try:
         GradeGradingScheme.query.filter_by(grade_id=grade_id).delete()
@@ -337,8 +367,8 @@ def force_delete_grade():
         db.session.delete(grade)
         db.session.commit()
         return jsonify({
-            "message": f"{grade.grade_form} was deleted.",
-            "target": grade.grade_form,
+            "message": f"{original_name} was deleted.",
+            "target": original_name,
         }), 200
     except SQLAlchemyError:
         db.session.rollback()
@@ -442,21 +472,35 @@ def rename_grade():
     if not new_name:
         return jsonify({"error": "Enter a new class name."}), 400
 
+    if is_archived_class_name(new_name):
+        return jsonify({
+            "error": "That name is reserved for hidden classes.",
+            "target": grade.grade_form,
+        }), 400
+
+    if is_archived_class_name(grade.grade_form):
+        return jsonify({
+            "error": "Hidden classes cannot be renamed.",
+            "target": live_class_name(grade.grade_form),
+        }), 409
+
     if new_name.lower() == (grade.grade_form or "").strip().lower():
         return jsonify({
             "error": f"{grade.grade_form} already has that name.",
             "target": grade.grade_form,
         }), 409
 
-    duplicate = (
-        BranchClasses.query
-        .filter(
-            BranchClasses.branch_id == grade.branch_id,
-            BranchClasses.class_year == grade.class_year,
-            BranchClasses.id != grade.id,
-            func.lower(BranchClasses.grade_form) == new_name.lower(),
-        )
-        .first()
+    duplicate = next(
+        (
+            row for row in BranchClasses.query.filter(
+                BranchClasses.branch_id == grade.branch_id,
+                BranchClasses.class_year == grade.class_year,
+                BranchClasses.id != grade.id,
+            ).all()
+            if not is_archived_class_name(row.grade_form)
+            and (row.grade_form or "").strip().lower() == new_name.lower()
+        ),
+        None,
     )
     if duplicate:
         return jsonify({

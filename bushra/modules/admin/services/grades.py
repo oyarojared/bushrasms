@@ -6,10 +6,36 @@ from ....modals.branches_db import BranchClasses, db
 import re
 
 
+ARCHIVED_CLASS_MARK = " · archived"
+ARCHIVED_CLASS_RE = re.compile(r" · archived(?: \d+)?$", re.I)
+
+
 def format_grade_form(name):
     if not name:
         return ""
     return re.sub(r"\s+", " ", str(name).strip()).upper()
+
+
+def is_archived_class_name(name):
+    """True when the class was hidden to keep exam papers."""
+    return bool(name and ARCHIVED_CLASS_RE.search(str(name).strip()))
+
+
+def live_class_name(name):
+    """Public class name with the archive suffix removed."""
+    if not name:
+        return ""
+    return ARCHIVED_CLASS_RE.sub("", str(name).strip()).strip()
+
+
+def make_archived_class_name(original, class_id):
+    """Keep papers on this row, free the original name for a new class."""
+    base = live_class_name(original) or "Class"
+    return f"{base}{ARCHIVED_CLASS_MARK} {int(class_id)}"
+
+
+def filter_active_classes(classes):
+    return [c for c in classes if not is_archived_class_name(getattr(c, "grade_form", ""))]
 
 
 def sort_grade_list(rows, reverse=False, dedupe=True):
@@ -94,6 +120,7 @@ def load_grades(reverse=False):
             BranchClasses.id,
             BranchClasses.grade_form
         ).order_by(BranchClasses.created_at.desc()).all()
+        rows = [(row_id, name) for row_id, name in rows if not is_archived_class_name(name)]
         sorted_rows = sort_grade_list(rows, reverse=reverse)
         return [("", "--- Select a Grade / Form ---")] + [
             (r[1], r[1]) for r in sorted_rows
@@ -106,13 +133,22 @@ def load_grades(reverse=False):
 def create_class(form):
     # Create a new class + (streams) for a specific branch.
     try:
-        # Prevent duplicates
-        existing = BranchClasses.query.filter_by(
-            branch_id=form.branches.data,
-            class_year=form.class_year.data,
-            grade_form=form.grade_form.data.strip(),
-        ).first()
-        
+        grade_name = (form.grade_form.data or "").strip()
+        if is_archived_class_name(grade_name):
+            return (
+                None,
+                "That name is reserved for hidden classes that still have exam papers.",
+            )
+
+        existing = [
+            c for c in BranchClasses.query.filter_by(
+                branch_id=form.branches.data,
+                class_year=form.class_year.data,
+            ).all()
+            if not is_archived_class_name(c.grade_form)
+            and (c.grade_form or "").strip().lower() == grade_name.lower()
+        ]
+
         if existing:
             return (
                 None, 
@@ -129,7 +165,7 @@ def create_class(form):
         new_class = BranchClasses(
             branch_id=form.branches.data,
             class_year=form.class_year.data,
-            grade_form=form.grade_form.data.strip(),
+            grade_form=grade_name,
             streams=streams_list,
         )
 

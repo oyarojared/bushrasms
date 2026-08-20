@@ -14,6 +14,7 @@ from weasyprint import HTML
 from flask_login import login_required, current_user
 from ...admin.utils.route_protect import admin_required
 
+from ..services.grades import filter_active_classes, live_class_name
 from ..services.grading_844 import generate_class_reports, normalize_form_name
 from ..services.pdf_render import render_bulk_report_pdf
 
@@ -106,11 +107,13 @@ def assessment_dash():
     # Display grades based on the current user's branch
     if current_user.is_admin:
         if current_user.id == DEVELOPER_ID:
-            grades = BranchClasses.query.all()
+            grades = filter_active_classes(BranchClasses.query.all())
         else:
-            grades = BranchClasses.query.filter_by(
-                branch_id=current_user.branch_id
-            ).all()
+            grades = filter_active_classes(
+                BranchClasses.query.filter_by(
+                    branch_id=current_user.branch_id
+                ).all()
+            )
     else:
         grades = []
                 
@@ -272,7 +275,7 @@ def generate_reportcards_pdf():
         class_obj = BranchClasses.query.get_or_404(class_id)
 
         # ✅ SAFE normalization (handles Form 3, FORM3, Form 3 North, etc.)
-        normalized_form = normalize_form_name(class_obj.grade_form)
+        normalized_form = normalize_form_name(live_class_name(class_obj.grade_form))
         is_844 = normalized_form in ("Form 3", "Form 4", "IGCSE")
 
         # 🔹 1️⃣ Fetch data (CBC or 8-4-4)

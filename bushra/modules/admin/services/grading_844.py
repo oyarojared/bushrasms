@@ -10,13 +10,16 @@ from ....modals.branches_db import Branch, BranchClasses
 from .report import build_passport_path, build_static_image_path, build_pdf_image_data_uri
 
 
+from .grades import live_class_name
+
+
 # =========================================================
 # Utilities
 # =========================================================
 def normalize_form_name(form_name: str) -> str:
     if not form_name:
         return ""
-    form_name = form_name.strip().lower()
+    form_name = live_class_name(form_name).strip().lower()
     if "form" in form_name:
         num = "".join(filter(str.isdigit, form_name))
         return f"Form {num}"
