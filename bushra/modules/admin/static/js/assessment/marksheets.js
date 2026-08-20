@@ -3,10 +3,16 @@ const marksheetGradeSelect = document.getElementById("marksheet-grade");
 const marksheetStreamSelect = document.getElementById("marksheet-stream");
 const marksheetStreamWrapper = document.getElementById("marksheet-stream-wrapper");
 const marksheetSubjectSelect = document.getElementById("marksheet-subject");
+const marksheetSubjectWrapper = document.getElementById("marksheet-subject-wrapper");
+const marksheetFilterHint = document.getElementById("marksheet-filter-hint");
 const loadMarksBtn = document.getElementById("load-marksheet-students");
+const loadMarkIcon = document.getElementById("load-marksheet-icon");
+const loadMarkLabel = document.getElementById("load-marksheet-label");
 const marksContainer = document.getElementById("marksheetStudentsContainer");
+const modeButtons = document.querySelectorAll(".marksheet-mode-btn");
 
 marksheetSubjectSelect.disabled = true;
+let marksheetMode = "classlist";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -190,7 +196,7 @@ function buildMarksheetDocument(students, sheetOptions = {}) {
 
 function buildClasslistDocument(students, sheetOptions = {}) {
   const options = { type: "classlist", ...sheetOptions };
-  return buildSheetContent(students, options, false);
+  return buildSheetContent(students, options, false, "marksheetDocument");
 }
 
 function buildSheetContent(students, options, includeMarks, docId = null) {
@@ -215,30 +221,47 @@ function buildSheetContent(students, options, includeMarks, docId = null) {
   `;
 }
 
-function buildMarksheetMarkup(students) {
+function buildDocumentMarkup(students, type) {
   const sheetOptions = getSheetOptions(students.length);
+  const isMarksheet = type === "marksheet";
+  const sheet = isMarksheet
+    ? buildMarksheetDocument(students, sheetOptions)
+    : buildClasslistDocument(students, sheetOptions);
+  const pdfSuffix = isMarksheet ? "Marksheet" : "Classlist";
 
   return `
     <section class="marksheet-document">
       <div class="marksheet-action-bar marksheet-no-print">
         <span class="marksheet-action-label">
-          <i class="bi bi-file-earmark-text me-1"></i> Document
+          <i class="bi bi-file-earmark-text me-1"></i> ${
+            isMarksheet ? "Marksheet" : "Class list"
+          }
         </span>
         <div class="marksheet-action-group">
           <button type="button" class="marksheet-btn marksheet-btn-outline" id="printMarksheetBtn">
             <i class="bi bi-printer"></i> Print
           </button>
-          <button type="button" class="marksheet-btn marksheet-btn-primary" id="downloadBtn">
+          <button
+            type="button"
+            class="marksheet-btn marksheet-btn-primary"
+            id="downloadBtn"
+            data-pdf-suffix="${pdfSuffix}"
+          >
             <i class="bi bi-download"></i> PDF
-          </button>
-          <button type="button" class="marksheet-btn marksheet-btn-outline" id="downloadClasslistBtn">
-            <i class="bi bi-people"></i> Classlist
           </button>
         </div>
       </div>
-      ${buildMarksheetDocument(students, sheetOptions)}
+      ${sheet}
     </section>
   `;
+}
+
+function buildMarksheetMarkup(students) {
+  return buildDocumentMarkup(students, "marksheet");
+}
+
+function buildClasslistMarkup(students) {
+  return buildDocumentMarkup(students, "classlist");
 }
 
 function getMarksheetFileName(suffix) {
@@ -389,67 +412,17 @@ function bindMarksheetActions() {
   document.getElementById("downloadBtn")?.addEventListener("click", () => {
     const element = document.getElementById("marksheetDocument");
     if (!element) return;
+    const suffix =
+      document.getElementById("downloadBtn")?.dataset.pdfSuffix || "Marksheet";
 
     if (typeof blockUI === "function") {
-      blockUI("Generating PDF", "Preparing marksheet download…");
+      blockUI("Generating PDF", "Preparing download…");
     }
 
-    downloadPdfFromElement(element, getMarksheetFileName("Marksheet"))
+    downloadPdfFromElement(element, getMarksheetFileName(suffix))
       .catch((err) => {
         console.error(err);
         alert("Failed to generate PDF.");
-      })
-      .finally(() => {
-        if (typeof unblockUI === "function") unblockUI();
-      });
-  });
-
-  document.getElementById("downloadClasslistBtn")?.addEventListener("click", () => {
-    const branchId = marksheetBranchSelect.value;
-    const classId = marksheetGradeSelect.value;
-    const stream = marksheetStreamSelect.value || "";
-
-    if (!branchId || !classId) {
-      alert("Please select school and grade.");
-      return;
-    }
-
-    if (typeof blockUI === "function") {
-      blockUI("Preparing classlist", "Generating classlist PDF…");
-    }
-
-    fetch(
-      `/admin/api/students-by-class?branch_id=${branchId}&class_id=${classId}&stream=${stream}`,
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        if (!data.students?.length) {
-          alert("No students found for this class.");
-          return;
-        }
-
-        const temp = document.createElement("div");
-        const sheetOptions = getSheetOptions(data.students.length);
-        temp.innerHTML = buildClasslistDocument(data.students, sheetOptions);
-        temp.style.position = "absolute";
-        temp.style.left = "-9999px";
-        document.body.appendChild(temp);
-
-        const sheet = temp.querySelector(".marksheet-sheet");
-        return downloadPdfFromElement(
-          sheet,
-          getMarksheetFileName("Classlist"),
-        ).then(
-          () => temp.remove(),
-          (err) => {
-            temp.remove();
-            throw err;
-          },
-        );
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("Failed to generate classlist.");
       })
       .finally(() => {
         if (typeof unblockUI === "function") unblockUI();
@@ -470,14 +443,16 @@ marksheetBranchSelect.addEventListener("change", function () {
   marksheetSubjectSelect.disabled = true;
   marksheetStreamWrapper.classList.add("d-none");
   marksContainer.innerHTML = "";
+  updateLoadButton();
 
   if (!branchId) return;
 
   fetch(`/admin/api/grades/${branchId}`)
     .then((res) => res.json())
-    .then((data) =>
-      populateSelect(marksheetGradeSelect, data, "Select Grade", "grade_form"),
-    );
+    .then((data) => {
+      populateSelect(marksheetGradeSelect, data, "Select Grade", "grade_form");
+      updateLoadButton();
+    });
 });
 
 marksheetGradeSelect.addEventListener("change", function () {
@@ -489,6 +464,7 @@ marksheetGradeSelect.addEventListener("change", function () {
   marksheetSubjectSelect.disabled = true;
   marksheetStreamWrapper.classList.add("d-none");
   marksContainer.innerHTML = "";
+  updateLoadButton();
 
   if (!branchId || !classId) return;
 
@@ -506,6 +482,7 @@ marksheetGradeSelect.addEventListener("change", function () {
         marksheetSubjectSelect.disabled = false;
         loadSubjects(branchId, classId, "");
       }
+      updateLoadButton();
     });
 });
 
@@ -517,19 +494,116 @@ marksheetStreamSelect.addEventListener("change", function () {
   marksContainer.innerHTML = "";
   marksheetSubjectSelect.disabled = false;
   loadSubjects(branchId, classId, stream);
+  updateLoadButton();
 });
 
 function loadSubjects(branchId, classId, stream) {
   marksheetSubjectSelect.innerHTML = '<option value="">--Select Subject--</option>';
+  if (marksheetMode !== "marksheet") {
+    updateLoadButton();
+    return;
+  }
 
   fetch(
     `/admin/api/subjects?branch_id=${branchId}&class_id=${classId}&stream=${stream}`,
   )
     .then((res) => res.json())
-    .then((data) => populateSelect(marksheetSubjectSelect, data, "--Select Subject--"));
+    .then((data) => populateSelect(marksheetSubjectSelect, data, "--Select Subject--"))
+    .finally(() => updateLoadButton());
 }
 
-loadMarksBtn.addEventListener("click", function () {
+function canLoadCurrentView() {
+  const hasSchool = Boolean(marksheetBranchSelect.value);
+  const hasClass = Boolean(marksheetGradeSelect.value);
+  if (marksheetMode === "marksheet") {
+    return hasSchool && hasClass && Boolean(marksheetSubjectSelect.value);
+  }
+  return hasSchool && hasClass;
+}
+
+function updateLoadButton() {
+  const isMarksheet = marksheetMode === "marksheet";
+  if (loadMarkIcon) {
+    loadMarkIcon.className = isMarksheet ? "bi bi-table" : "bi bi-people";
+  }
+  if (loadMarkLabel) {
+    loadMarkLabel.textContent = isMarksheet ? "Load marksheet" : "View class list";
+  }
+  if (!loadMarksBtn) return;
+  loadMarksBtn.disabled = !canLoadCurrentView();
+  loadMarksBtn.title = isMarksheet
+    ? canLoadCurrentView()
+      ? "Load this subject's marksheet"
+      : "Select school, class, and subject first"
+    : canLoadCurrentView()
+      ? "View the class list"
+      : "Select school and class first";
+}
+
+function setMarksheetMode(mode) {
+  marksheetMode = mode === "marksheet" ? "marksheet" : "classlist";
+  modeButtons.forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.mode === marksheetMode);
+  });
+
+  if (marksheetSubjectWrapper) {
+    marksheetSubjectWrapper.classList.toggle("d-none", marksheetMode !== "marksheet");
+  }
+
+  if (marksheetFilterHint) {
+    marksheetFilterHint.textContent =
+      marksheetMode === "marksheet"
+        ? "Select school, class, stream, and subject to load a marksheet"
+        : "Select school, class, and stream to view the class list";
+  }
+
+  marksContainer.innerHTML = "";
+
+  if (marksheetMode === "marksheet") {
+    const branchId = marksheetBranchSelect.value;
+    const classId = marksheetGradeSelect.value;
+    if (branchId && classId) {
+      marksheetSubjectSelect.disabled = false;
+      loadSubjects(branchId, classId, marksheetStreamSelect.value || "");
+    }
+  }
+
+  updateLoadButton();
+}
+
+function loadClasslist() {
+  const branchId = marksheetBranchSelect.value;
+  const classId = marksheetGradeSelect.value;
+  const stream = marksheetStreamSelect.value || "";
+
+  if (!branchId || !classId) {
+    alert("Please select school and grade.");
+    return;
+  }
+
+  renderLoadingState("Loading class list…");
+
+  fetch(
+    `/admin/api/students-by-class?branch_id=${branchId}&class_id=${classId}&stream=${stream}`,
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      if (!data.students?.length) {
+        renderEmptyState("No students found for this class.");
+        return;
+      }
+
+      marksContainer.innerHTML = buildClasslistMarkup(data.students);
+      bindMarksheetActions();
+      scrollToMarksheetView();
+    })
+    .catch((err) => {
+      console.error(err);
+      renderErrorState("Failed to load class list.");
+    });
+}
+
+function loadMarksheet() {
   const branchId = marksheetBranchSelect.value;
   const classId = marksheetGradeSelect.value;
   const stream = marksheetStreamSelect.value || "";
@@ -560,4 +634,20 @@ loadMarksBtn.addEventListener("click", function () {
       console.error(err);
       renderErrorState("Failed to load students.");
     });
+}
+
+modeButtons.forEach((btn) => {
+  btn.addEventListener("click", () => setMarksheetMode(btn.dataset.mode));
 });
+
+loadMarksBtn.addEventListener("click", function () {
+  if (!canLoadCurrentView()) return;
+  if (marksheetMode === "classlist") {
+    loadClasslist();
+    return;
+  }
+  loadMarksheet();
+});
+
+marksheetSubjectSelect.addEventListener("change", updateLoadButton);
+updateLoadButton();

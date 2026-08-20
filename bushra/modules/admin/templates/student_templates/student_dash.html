@@ -24,7 +24,12 @@
     </div>
   </div>
 
-  <form method="POST" action="" id="branchForm" class="stu-filter-form">
+  <form
+    method="POST"
+    action="{{ url_for('admin.student_dash') }}"
+    id="branchForm"
+    class="stu-filter-form"
+  >
     {{ select_branch_form.hidden_tag() }}
 
     <div class="row g-3 align-items-end">
@@ -107,7 +112,12 @@
 
 <!-- DISPLAY STUDENT OF THE SELECTED CLASS (& STREAM) -->
 {% if students %}
-<div class="stu-results-card" id="stu-results-card">
+<div
+  class="stu-results-card"
+  id="stu-results-card"
+  data-branch-id="{{ selected_branch.id }}"
+  data-grades-url="{{ url_for('admin.api_grades', branch_id=0)[:-1] }}"
+>
   <div class="stu-results-header">
     <div>
       <h6 class="stu-results-title">
@@ -117,10 +127,21 @@
       </h6>
       <p class="stu-results-subtitle">{{ selected_branch.branch_name }}</p>
     </div>
-    <span class="stu-count-badge"
-      >{{ students | length }} student{{ "s" if students | length != 1 else ""
-      }}</span
-    >
+    <div class="stu-results-tools">
+      <span class="stu-count-badge"
+        >{{ students | length }} student{{ "s" if students | length != 1 else ""
+        }}</span
+      >
+      <button
+        type="button"
+        class="stu-btn stu-btn-outline"
+        id="bulk-move-open"
+        disabled
+      >
+        <i class="bi bi-arrow-left-right"></i>
+        <span>Move selected</span>
+      </button>
+    </div>
   </div>
 
   <form
@@ -148,6 +169,13 @@
     <table class="stu-table">
       <thead>
         <tr class="sticky-header">
+          <th class="stu-col-select">
+            <input
+              type="checkbox"
+              id="bulk-move-select-all"
+              aria-label="Select all students"
+            />
+          </th>
           <th class="stu-col-index">#</th>
           <th>Adm No</th>
           <th class="stu-col-name">Student Name</th>
@@ -164,6 +192,14 @@
       <tbody>
         {% for student in students %}
         <tr>
+          <td class="stu-col-select">
+            <input
+              type="checkbox"
+              class="bulk-move-check"
+              value="{{ student.id }}"
+              aria-label="Select {{ student.fullname }}"
+            />
+          </td>
           <td class="stu-col-index">{{ loop.index }}</td>
           <td><span class="stu-adm">{{ student.admission_number }}</span></td>
           <td class="stu-col-name stu-name">{{ student.fullname | upper }}</td>
@@ -221,6 +257,120 @@
     </table>
   </div>
 </div>
+
+<!-- Bulk move within this school -->
+<div
+  class="modal fade"
+  id="bulkMoveModal"
+  tabindex="-1"
+  aria-labelledby="bulkMoveModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content stu-modal">
+      <div class="modal-header stu-modal-header">
+        <h6 class="stu-modal-title" id="bulkMoveModalLabel">
+          <i class="bi bi-arrow-left-right"></i> Move selected students
+        </h6>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body stu-modal-body">
+        <p class="stu-filter-subtitle mb-2">
+          Moving <strong id="bulk-move-count">0</strong> student(s) from
+          <strong id="bulk-move-from-label"
+            >{% if selected_stream %} {{ selected_grade.grade_form }} · {{
+            selected_stream }} {% else %} {{ selected_grade.grade_form }} {%
+            endif %}</strong
+          >
+          in {{ selected_branch.branch_name }}.
+        </p>
+        <form
+          method="POST"
+          action="{{ url_for('admin.bulk_move_students') }}"
+          id="bulk-move-form"
+        >
+          {{ select_branch_form.hidden_tag() }}
+          <input
+            type="hidden"
+            name="source_branch_id"
+            value="{{ selected_branch.id }}"
+          />
+          <input
+            type="hidden"
+            name="source_class_id"
+            value="{{ selected_grade.id }}"
+          />
+          <input
+            type="hidden"
+            name="source_stream"
+            value="{{ selected_stream if selected_stream else '' }}"
+          />
+          <div id="bulk-move-ids"></div>
+          <div id="bulk-move-step-select">
+            <div class="row g-2">
+              <div class="col-md-6" id="bulk-move-grade-container"></div>
+              <div class="col-md-6" id="bulk-move-stream-container"></div>
+            </div>
+          </div>
+          <div id="bulk-move-step-confirm" class="d-none">
+            <div class="bulk-move-warn">
+              <div class="bulk-move-warn-icon" aria-hidden="true">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+              </div>
+              <h6 class="bulk-move-warn-title">This will move the selected students</h6>
+              <p class="bulk-move-warn-copy">
+                <strong id="bulk-move-warn-count">0</strong> student(s) will leave
+                <strong id="bulk-move-warn-from"></strong> and join
+                <strong id="bulk-move-warn-to"></strong>.
+              </p>
+              <ul class="bulk-move-warn-list">
+                <li>Admission numbers will not change.</li>
+                <li>They will no longer appear in the current class list.</li>
+                <li>This cannot be undone from this screen.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="stu-modal-footer">
+            <button
+              type="button"
+              class="stu-btn stu-btn-outline"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="stu-btn stu-btn-outline d-none"
+              id="bulk-move-back"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              class="stu-btn stu-btn-primary"
+              id="bulk-move-continue"
+            >
+              Continue
+            </button>
+            <button
+              type="submit"
+              class="stu-btn stu-btn-danger d-none"
+              id="bulk-move-submit"
+            >
+              <i class="bi bi-arrow-left-right"></i> Yes, move students
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% else %}
 <div
   id="warning-section"
@@ -754,6 +904,26 @@
     color: #6b7280;
   }
 
+  .stu-results-tools {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .stu-col-select {
+    width: 36px;
+    text-align: center;
+  }
+
+  .stu-col-select input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    vertical-align: middle;
+    cursor: pointer;
+  }
+
   .stu-count-badge {
     display: inline-flex;
     align-items: center;
@@ -764,6 +934,49 @@
     font-size: 0.72rem;
     font-weight: 700;
     white-space: nowrap;
+  }
+
+  .bulk-move-warn {
+    margin-top: 0.35rem;
+    padding: 0.9rem 0.95rem;
+    border-radius: 10px;
+    background: rgba(220, 53, 69, 0.07);
+    border: 1px solid rgba(220, 53, 69, 0.28);
+  }
+
+  .bulk-move-warn-icon {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 0.55rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: rgba(220, 53, 69, 0.12);
+    color: #dc3545;
+    font-size: 1.05rem;
+  }
+
+  .bulk-move-warn-title {
+    margin: 0 0 0.4rem;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #252a2f;
+  }
+
+  .bulk-move-warn-copy {
+    margin: 0 0 0.55rem;
+    font-size: 0.82rem;
+    color: #495057;
+    line-height: 1.45;
+  }
+
+  .bulk-move-warn-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: 0.76rem;
+    color: #6c757d;
+    line-height: 1.55;
   }
 
   .stu-table-wrap {
@@ -1358,7 +1571,10 @@
   @media print {
     .stu-toolbar,
     .stu-filter-card,
-    .app-page-title {
+    .app-page-title,
+    .stu-col-select,
+    .stu-col-action,
+    #bulk-move-open {
       display: none !important;
     }
 
@@ -1449,5 +1665,6 @@
 <script src="{{ url_for('admin.static', filename='js/load_grade_streams.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/make_table_header_sticky.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/submit_excel_form.js')}}"></script>
+<script src="{{ url_for('admin.static', filename='js/bulk_move_students.js') }}"></script>
 
 {% endblock %}

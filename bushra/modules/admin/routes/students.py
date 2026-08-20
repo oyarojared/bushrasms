@@ -24,7 +24,7 @@ from ..utils.route_protect import admin_required
 from flask_login import login_required 
 
 from ..services.subs import auto_allocate_subjects 
-from ..services.grades import filter_active_classes 
+from ..services.grades import filter_active_classes, is_archived_class_name 
 
 from ..services.studs import (
     get_next_adm_no,
@@ -109,11 +109,29 @@ def student_dash():
         students = query.order_by(Student.fullname.asc()).all()
        
     
-    # Default loaded data 
+    # Default / return-to-roster after a bulk move
     if request.method == "GET":
-        students = Student.query.filter_by(branch_id=1, class_id=1).all()
-        selected_branch = Branch.query.get(1)
-        selected_grade = BranchClasses.query.get(1)
+        branch_id = request.args.get("branch", type=int)
+        grade_id = request.args.get("grade_form", type=int)
+        stream = (request.args.get("stream") or "").strip() or None
+
+        if branch_id and grade_id and _can_access_branch(branch_id):
+            selected_branch = Branch.query.get(branch_id)
+            selected_grade = BranchClasses.query.get(grade_id)
+            if (
+                selected_branch
+                and selected_grade
+                and selected_grade.branch_id == branch_id
+            ):
+                selected_stream = stream
+                students = _class_students(branch_id, grade_id, stream)
+            else:
+                selected_branch = selected_grade = selected_stream = None
+                students = []
+        else:
+            students = Student.query.filter_by(branch_id=1, class_id=1).all()
+            selected_branch = Branch.query.get(1)
+            selected_grade = BranchClasses.query.get(1)
 
     return render_template(
         "student_templates/student_dash.html",
@@ -716,6 +734,44 @@ def fetch_searched_student():
     })
 
 
+def _can_access_branch(branch_id):
+    try:
+        branch_id = int(branch_id)
+    except (TypeError, ValueError):
+        return False
+    return (
+        get_accessible_branches_query()
+        .filter(Branch.id == branch_id)
+        .first()
+        is not None
+    )
+
+
+def _class_students(branch_id, class_id, stream=None):
+    query = Student.query.filter_by(branch_id=branch_id, class_id=class_id)
+    if stream:
+        query = query.filter_by(stream=stream)
+    return query.order_by(Student.fullname.asc()).all()
+
+
+def _move_student_within_school(student, dest_class, dest_stream):
+    dest_stream = dest_stream or None
+    current_stream = student.stream or None
+    if student.branch_id != dest_class.branch_id:
+        return "wrong_school"
+    if student.class_id == dest_class.id and current_stream == dest_stream:
+        return "already_there"
+
+    previous_class_id = student.class_id
+    student.class_id = dest_class.id
+    student.stream = dest_stream
+    db.session.flush()
+    if dest_class.id != previous_class_id:
+        db.session.expire(student, ["class_info"])
+        auto_allocate_subjects(student, previous_class_id=previous_class_id)
+    return "moved"
+
+
 @admin_bp.route("/move_student/<int:student_id>", methods=["POST", "GET"])
 @login_required
 @admin_required
@@ -803,6 +859,103 @@ def move_student(student_id):
         current_app.logger.error(e)
         flash("An unexpected error occurred while moving the student.", "danger")
         return redirect(url_for("admin.student_dash"))
+
+
+@admin_bp.route("/students/bulk-move", methods=["POST"])
+@login_required
+@admin_required
+def bulk_move_students():
+    source_branch_id = request.form.get("source_branch_id", type=int)
+    source_class_id = request.form.get("source_class_id", type=int)
+    source_stream = (request.form.get("source_stream") or "").strip() or None
+    dest_class_id = request.form.get("grade_form", type=int)
+    dest_stream = (request.form.get("stream") or "").strip() or None
+    student_ids = []
+    for raw_id in request.form.getlist("student_ids"):
+        try:
+            student_ids.append(int(raw_id))
+        except (TypeError, ValueError):
+            continue
+
+    def back_to_roster():
+        if source_branch_id and source_class_id:
+            return redirect(url_for(
+                "admin.student_dash",
+                branch=source_branch_id,
+                grade_form=source_class_id,
+                stream=source_stream or "",
+            ))
+        return redirect(url_for("admin.student_dash"))
+
+    if not source_branch_id or not source_class_id or not dest_class_id:
+        flash("Select a destination class for the students.", "warning")
+        return back_to_roster()
+
+    if not _can_access_branch(source_branch_id):
+        flash("You cannot move students for this school.", "warning")
+        return redirect(url_for("admin.student_dash"))
+
+    if not student_ids:
+        flash("Select at least one student to move.", "warning")
+        return back_to_roster()
+
+    dest_class = BranchClasses.query.filter_by(
+        id=dest_class_id,
+        branch_id=source_branch_id,
+    ).first()
+    if not dest_class or is_archived_class_name(dest_class.grade_form):
+        flash("Choose a class in the same school.", "warning")
+        return back_to_roster()
+
+    if dest_class.streams:
+        if not dest_stream or dest_stream not in dest_class.streams:
+            flash("Select a stream in the destination class.", "warning")
+            return back_to_roster()
+    else:
+        dest_stream = None
+
+    students = (
+        Student.query.filter(
+            Student.id.in_(student_ids),
+            Student.branch_id == source_branch_id,
+        ).all()
+    )
+    if not students:
+        flash("No matching students were found in this school.", "warning")
+        return back_to_roster()
+
+    dest_label = dest_class.grade_form
+    if dest_stream:
+        dest_label = f"{dest_label} · {dest_stream}"
+
+    try:
+        moved = 0
+        skipped = 0
+        for student in students:
+            result = _move_student_within_school(student, dest_class, dest_stream)
+            if result == "moved":
+                moved += 1
+            else:
+                skipped += 1
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception("Failed bulk student move")
+        flash("Could not move the selected students. Nothing was changed.", "danger")
+        return back_to_roster()
+
+    if moved and skipped:
+        flash(
+            f"{moved} student(s) moved to {dest_label}. "
+            f"{skipped} already in that class were left unchanged.",
+            "success",
+        )
+    elif moved:
+        flash(f"{moved} student(s) moved to {dest_label}.", "success")
+    else:
+        flash("No students were moved. They may already be in that class.", "warning")
+
+    return back_to_roster()
 
 
 @admin_bp.route("/students/by-class-subject", methods=["POST"])

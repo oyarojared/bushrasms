@@ -660,10 +660,28 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
           <div class="marksheet-filter-header">
             <div class="marksheet-filter-title">
               <div>
-                <h6 class="mb-0">Marksheets &amp; Classlist</h6>
-                <small
-                  >Select school, class, and subject to load students</small
+                <h6 class="mb-0">Marksheets &amp; Class lists</h6>
+                <small id="marksheet-filter-hint"
+                  >Select school, class, and stream to view the class list</small
                 >
+              </div>
+              <div class="marksheet-mode-switch" role="tablist">
+                <button
+                  type="button"
+                  class="marksheet-mode-btn is-active"
+                  id="marksheet-mode-classlist"
+                  data-mode="classlist"
+                >
+                  Class list
+                </button>
+                <button
+                  type="button"
+                  class="marksheet-mode-btn"
+                  id="marksheet-mode-marksheet"
+                  data-mode="marksheet"
+                >
+                  Marksheet
+                </button>
               </div>
             </div>
           </div>
@@ -705,7 +723,7 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
                 </select>
               </div>
 
-              <div class="col-md-6 col-lg-3">
+              <div class="col-md-6 col-lg-3 d-none" id="marksheet-subject-wrapper">
                 <label
                   class="form-label marksheet-label"
                   for="marksheet-subject"
@@ -721,8 +739,10 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
                   id="load-marksheet-students"
                   type="button"
                   class="marksheet-btn marksheet-btn-primary w-100"
+                  disabled
                 >
-                  <i class="bi bi-search"></i> Load
+                  <i class="bi bi-people" id="load-marksheet-icon"></i>
+                  <span id="load-marksheet-label">View class list</span>
                 </button>
               </div>
             </div>
@@ -2818,6 +2838,14 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     padding: 1rem 1.1rem 0.35rem;
   }
 
+  .marksheet-filter-title {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
   .marksheet-filter-title h6 {
     font-size: 0.95rem;
     font-weight: 700;
@@ -2827,6 +2855,29 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
   .marksheet-filter-title small {
     color: #6c757d;
     font-size: 0.76rem;
+  }
+
+  .marksheet-mode-switch {
+    display: inline-flex;
+    padding: 0.18rem;
+    border-radius: 8px;
+    background: rgba(255, 121, 121, 0.12);
+  }
+
+  .marksheet-mode-btn {
+    border: 0;
+    background: transparent;
+    color: #c24141;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 0.32rem 0.7rem;
+    border-radius: 6px;
+  }
+
+  .marksheet-mode-btn.is-active {
+    background: #ff7979;
+    color: #fff;
+    box-shadow: none;
   }
 
   .marksheet-label {
@@ -2873,6 +2924,16 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     background: #f56868;
     border-color: #f56868;
     color: #fff;
+  }
+
+  .marksheet-btn-primary:disabled,
+  .marksheet-btn-primary:disabled:hover,
+  .marksheet-btn-primary:disabled:focus {
+    border-color: #f0c7c7;
+    background: #f7dede;
+    color: #fff;
+    cursor: not-allowed;
+    opacity: 1;
   }
 
   .marksheet-btn-outline {
