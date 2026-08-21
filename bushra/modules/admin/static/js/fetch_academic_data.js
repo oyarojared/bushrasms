@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             <div class="grade-card-stats">
                                 <div class="grade-stat">
                                     <span class="grade-stat-n">${total}</span>
-                                    <span class="grade-stat-l">Students</span>
+                                    <span class="grade-stat-l">Total</span>
                                 </div>
                                 <div class="grade-stat">
                                     <span class="grade-stat-n is-boys">${boys}</span>
@@ -210,6 +210,7 @@ document.addEventListener("DOMContentLoaded", function () {
             `;
 
       if (g.streams && g.streams.length) {
+        html += `<div class="grade-streams-title">Streams</div>`;
         g.streams.forEach((s) => {
           const streamName = escapeHtml(s.name);
           const teacherAssigned = Boolean(s.teacher?.name);
@@ -228,7 +229,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             <div class="grade-stream-stats-strip">
                                 <div class="grade-stat">
                                     <span class="grade-stat-n">${s.total || 0}</span>
-                                    <span class="grade-stat-l">Students</span>
+                                    <span class="grade-stat-l">Total</span>
                                 </div>
                                 <div class="grade-stat">
                                     <span class="grade-stat-n is-boys">${s.boys || 0}</span>
