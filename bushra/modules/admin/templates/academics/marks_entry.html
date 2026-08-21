@@ -760,6 +760,26 @@ render_flash_messages, sidebar %} {% block side_nav %}
       scrollTarget?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
 
+    function scrollStudentsIntoView() {
+      const target = marksSearchBar;
+      const scroller = document.querySelector(".main-content");
+      if (!target || !scroller || target.classList.contains("d-none")) return;
+
+      requestAnimationFrame(() => {
+        const offset = 12;
+        const nextTop =
+          scroller.scrollTop +
+          (target.getBoundingClientRect().top -
+            scroller.getBoundingClientRect().top) -
+          offset;
+
+        scroller.scrollTo({
+          top: Math.max(0, nextTop),
+          behavior: "smooth",
+        });
+      });
+    }
+
     function setSetupHint(message) {
       marksSetupHint.textContent = message || "";
     }
@@ -934,6 +954,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
           marksOutOf.disabled = false;
           renderStudents(subjectText, { preserveTypedMarks: false });
           setSetupHint("Enter marks, then tap Save Marks.");
+          scrollStudentsIntoView();
         })
         .catch(() => {
           resetStudents("Could not load students. Please try again.");
