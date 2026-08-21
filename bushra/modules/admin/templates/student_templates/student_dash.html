@@ -19,7 +19,11 @@
     <div>
       <h6 class="stu-filter-title">Filter Students</h6>
       <p class="stu-filter-subtitle">
+        {% if can_select_branch %}
         Select school, grade, and stream to load records
+        {% else %}
+        Select grade and stream to load records
+        {% endif %}
       </p>
     </div>
   </div>
@@ -33,7 +37,7 @@
     {{ select_branch_form.hidden_tag() }}
 
     <div class="row g-3 align-items-end">
-      <div class="col-md-6 col-lg-4">
+      <div class="col-md-6 col-lg-4{% if not can_select_branch %} d-none{% endif %}" data-school-picker>
         <label class="stu-label" for="branch">School</label>
         {{ select_branch_form.branch(class="form-select form-select-sm
         stu-control", id="branch") }}
@@ -430,7 +434,7 @@
 
           <section class="stu-form-section">
             <div class="row g-2 stu-add-grid">
-              <div class="col-lg-4">
+              <div class="col-lg-4{% if not can_select_branch %} d-none{% endif %}" data-school-picker>
                 <label class="stu-label" for="selected-branch">School</label>
                 {{ student_data_form.branches(class="form-select form-select-sm
                 stu-control", id="selected-branch") }}
@@ -621,7 +625,7 @@
           <section class="stu-form-section">
             <h6 class="stu-form-section-title">Class Placement</h6>
             <div class="row g-2">
-              <div class="col-md-4">
+              <div class="col-md-4{% if not can_select_branch %} d-none{% endif %}" data-school-picker>
                 <label
                   class="stu-label stu-label-required"
                   for="select-branch-element"

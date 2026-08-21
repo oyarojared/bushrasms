@@ -15,7 +15,7 @@ from ..services.grades import (
 from ..services.branches import (get_branch_classes, 
                                 get_branch_data, delete_branch_service,
                                 get_first_branch_id, update_branch_service, get_branch_academic_population)
-from ..utils import load_branch_choices, load_teacher_choices
+from ..utils import load_branch_choices, load_teacher_choices, apply_locked_branch, locked_branch_id
 from ..services.subs import get_subjects_by_grade
 from flask_login import login_required
 from ..utils.file_utils import preprocess_image
@@ -127,10 +127,12 @@ def branch_profile(branch_id):
 def grades_forms():
     form = ExtendedBranchForm()
     
-    form.branches.choices = load_branch_choices() 
+    form.branches.choices = load_branch_choices()
+    form.branches.label.text = "School"
+    apply_locked_branch(form.branches)
 
-    # check availability of any branch 
-    has_branch = get_first_branch_id()
+    # School-scoped users auto-load their own school; others keep previous first-branch fallback
+    has_branch = locked_branch_id() or get_first_branch_id()
    
     if form.validate_on_submit():
         cls, sms = create_class(form)

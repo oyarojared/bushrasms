@@ -19,7 +19,8 @@ from ..forms.students_forms import (MuiltapleStudentsUploadForm,
                                     PassportUploadForm)
 from ..utils import (load_branch_choices, preprocess_image, 
                      safe_date, validate_fullname, 
-                     get_accessible_branches_query)
+                     get_accessible_branches_query, apply_locked_branch,
+                     locked_branch_id)
 from ..utils.route_protect import admin_required
 from flask_login import login_required 
 
@@ -46,11 +47,16 @@ def student_dash():
     muiltable_students_upload_form = MuiltapleStudentsUploadForm()
     
     add_student_form.branches.choices = load_branch_choices()
+    muiltable_students_upload_form.branches.choices = load_branch_choices()
+    form.branch.choices = load_branch_choices()
+    apply_locked_branch(
+        form.branch,
+        add_student_form.branches,
+        muiltable_students_upload_form.branches,
+    )
 
     if not current_user.is_super_admin:
         add_student_form.admission_number.data = get_next_adm_no(current_user.branch_id)
-
-    muiltable_students_upload_form.branches.choices = load_branch_choices()
 
     students = []
     selected_branch = selected_grade = selected_stream = None
@@ -63,12 +69,10 @@ def student_dash():
 
     # On POST, populate form choices for validation
     if request.method == "POST":
-        # Populate branch choices for WTForms validation
-        form.branch.choices = [("", "--- Select Branch ---")] + [
-            (str(b.id), b.branch_name) for b in branches
-        ]
+        form.branch.choices = load_branch_choices()
+        apply_locked_branch(form.branch)
 
-        branch_id = request.form.get("branch")
+        branch_id = request.form.get("branch") or (str(locked_branch_id()) if locked_branch_id() else None)
         grade_id = request.form.get("grade_form")
 
         # Populate grade choices based on selected branch
@@ -128,6 +132,9 @@ def student_dash():
             else:
                 selected_branch = selected_grade = selected_stream = None
                 students = []
+        elif locked_branch_id():
+            students = []
+            selected_branch = selected_grade = selected_stream = None
         else:
             students = Student.query.filter_by(branch_id=1, class_id=1).all()
             selected_branch = Branch.query.get(1)
@@ -174,6 +181,7 @@ def get_next_admission_no(branch_id):
 def muiltaple_students_upload():
     form = MuiltapleStudentsUploadForm()
     form.branches.choices = load_branch_choices()
+    apply_locked_branch(form.branches)
 
     if form.validate_on_submit():
         file = form.excel_file.data
@@ -370,6 +378,8 @@ def muiltaple_students_upload():
 @admin_required
 def add_student():
     form = AddStudentForm(request.form)
+    form.branches.choices = load_branch_choices()
+    apply_locked_branch(form.branches)
 
     if not current_user.is_super_admin:
         target_branch_id = current_user.branch_id
@@ -402,7 +412,7 @@ def add_student():
 
 
     if not class_id:
-        flash("Please select a branch and a grade for the student.", "danger")
+        flash("Please select a grade for the student.", "danger")
         return redirect(url_for("admin.student_dash"))
 
     branch_id = form.branches.data
@@ -475,6 +485,7 @@ def student_profile(student_id):
 
     transfer_form = BranchesList()
     transfer_form.branches.choices = load_branch_choices()
+    apply_locked_branch(transfer_form.branches)
     
 
     # Initialize WTForm for passport upload
@@ -778,6 +789,7 @@ def _move_student_within_school(student, dest_class, dest_stream):
 def move_student(student_id):
     transfer_form = BranchesList()
     transfer_form.branches.choices = load_branch_choices()
+    apply_locked_branch(transfer_form.branches)
 
     try:
         student = Student.query.get(student_id)
@@ -958,28 +970,44 @@ def bulk_move_students():
     return back_to_roster()
 
 
+def _assignment_class(branch_id, class_id=None, grade_form=None):
+    if not branch_id:
+        return None
+
+    query = BranchClasses.query.filter_by(branch_id=int(branch_id))
+    if class_id not in (None, ""):
+        try:
+            return query.filter_by(id=int(class_id)).first()
+        except (TypeError, ValueError):
+            return None
+
+    if grade_form:
+        return query.filter(
+            func.lower(BranchClasses.grade_form) == func.lower(str(grade_form).strip())
+        ).first()
+
+    return None
+
+
 @admin_bp.route("/students/by-class-subject", methods=["POST"])
 @login_required
 def students_by_class_subject():
-    data = request.get_json()
+    data = request.get_json() or {}
 
     branch_id = data.get("branch_id")
+    class_id = data.get("class_id")
     grade_form = data.get("grade_form")
     subject_id = data.get("subject_id")
 
-    if not branch_id or not grade_form or not subject_id:
+    if not branch_id or not subject_id or (not class_id and not grade_form):
         return jsonify({"error": "Missing required data"}), 400
 
-    class_obj = BranchClasses.query.filter_by(
-        branch_id=branch_id,
-        grade_form=grade_form
-    ).first()
-
+    class_obj = _assignment_class(branch_id, class_id, grade_form)
     if not class_obj:
-        return jsonify([])
+        return jsonify({"students": [], "allocated_count": 0})
 
     students = Student.query.filter_by(
-        branch_id=branch_id,
+        branch_id=int(branch_id),
         class_id=class_obj.id
     ).order_by(Student.fullname.asc()).all()
 
@@ -992,7 +1020,7 @@ def students_by_class_subject():
         }
         for s in students
     ]
-    
+
     allocated_count = sum(1 for s in students_data if s["allocated"])
 
     return jsonify(
@@ -1016,22 +1044,29 @@ def allocate_subjects():
         "students": [1, 2, 3]  # students currently checked
     }
     """
-    data = request.get_json()
+    data = request.get_json() or {}
 
     branch_id = data.get("branch_id")
+    class_id = data.get("class_id")
     grade_form = data.get("grade_form")
     subject_id = data.get("subject_id")
-    student_ids_checked = set(data.get("students", []))  # currently checked students
 
-    # Basic validation
-    if not branch_id or not grade_form or not subject_id:
+    if not branch_id or not subject_id or (not class_id and not grade_form):
         return jsonify({"error": "Missing required data"}), 400
 
-    # Fetch all students of this class and branch that have this subject allocated
+    subject_id = int(subject_id)
+    student_ids_checked = {
+        int(sid) for sid in data.get("students", []) if sid not in (None, "")
+    }
+
+    class_obj = _assignment_class(branch_id, class_id, grade_form)
+    if not class_obj:
+        return jsonify({"error": "Class not found"}), 400
+
     existing_allocations = StudentSubjectAllocation.query\
         .join(Student)\
-        .filter(Student.branch_id == branch_id)\
-        .filter(Student.class_info.has(grade_form=grade_form))\
+        .filter(Student.branch_id == int(branch_id))\
+        .filter(Student.class_id == class_obj.id)\
         .filter(StudentSubjectAllocation.subject_id == subject_id)\
         .all()
 

@@ -25,11 +25,6 @@ function populateSelect(
   });
 }
 
-// Fetch branches
-fetch("/admin/api/branches")
-  .then((res) => res.json())
-  .then((data) => populateSelect(branchSelect, data, "Select School"));
-
 // Fetch grades when branch changes
 branchSelect.addEventListener("change", function () {
   hideDownloadButton();
@@ -98,3 +93,14 @@ examSelect.addEventListener("change", function () {
     .then((res) => res.json())
     .then((data) => populateSelect(subjectSelect, data, "--Select Subject--"));
 });
+
+fetch("/admin/api/branches")
+  .then((res) => res.json())
+  .then((data) => {
+    if (!branchSelect) return;
+    if (window.BushraSchoolSelect) {
+      window.BushraSchoolSelect.fill(branchSelect, data, "Select School");
+    } else {
+      populateSelect(branchSelect, data, "Select School");
+    }
+  });

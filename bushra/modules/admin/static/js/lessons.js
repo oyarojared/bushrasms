@@ -13,13 +13,14 @@ document.addEventListener("DOMContentLoaded", function () {
         if (branchId) {
             branchNameSpan.classList.remove("text-danger", "fw-bold");
             branchNameSpan.textContent =
-                `Allocate / View ${this.options[this.selectedIndex]?.text || "—"} teachers' lessons`;
+                `Choose a class, then assign ${this.options[this.selectedIndex]?.text || "this school"} teachers to each subject.`;
         } else {
-            branchNameSpan.classList.add("text-danger", "fw-bold");
-            branchNameSpan.textContent = "";
+            branchNameSpan.classList.remove("text-danger", "fw-bold");
+            branchNameSpan.textContent =
+                "Choose a class, then assign a teacher to each subject.";
 
             document.getElementById("grade-container").innerHTML =
-                `<small class="fw-bold text-danger">Please select branch</small>`;
+                `<div class="sa-empty">Select a school to load classes.</div>`;
             document.getElementById("stream-container").innerHTML = "";
             document.getElementById("proceed-btn-container").innerHTML = "";
             document.getElementById("grade-container-2").innerHTML = "";
@@ -35,6 +36,7 @@ document.addEventListener("DOMContentLoaded", function () {
             gradeContainerId: "grade-container",
             streamContainerId: "stream-container",
             proceedContainerId: "proceed-btn-container",
+            theme: "lessons",
             onProceed: ({ class_id, stream }) => {
                 fetchClassSubjectsTeachers({
                     branch_id: Number(branchId),
@@ -60,10 +62,12 @@ document.addEventListener("DOMContentLoaded", function () {
    UTILITIES
 ============================================================ */
 
-function showSpinner(container) {
+function showSpinner(container, theme) {
+    const loadingClass = theme === "lessons" ? "sa-loading" : "text-center py-3";
     container.innerHTML = `
-        <div class="text-center py-3">
-            <div class="spinner-border spinner-border-sm text-primary"></div>
+        <div class="${loadingClass}">
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            ${theme === "lessons" ? "<span>Loading classes…</span>" : ""}
         </div>
     `;
 }
@@ -82,7 +86,8 @@ function initGradeStreamSelector({
     gradeContainerId,
     streamContainerId,
     proceedContainerId = null,
-    onProceed = null
+    onProceed = null,
+    theme = ""
 }) {
     if (!branchId) return;
 
@@ -92,7 +97,7 @@ function initGradeStreamSelector({
         ? document.getElementById(proceedContainerId)
         : null;
 
-    showSpinner(gradeContainer);
+    showSpinner(gradeContainer, theme);
     clearContainer(streamContainer);
     if (proceedContainer) clearContainer(proceedContainer);
 
@@ -107,12 +112,15 @@ function initGradeStreamSelector({
                 gradeContainer,
                 streamContainer,
                 proceedContainer,
-                onProceed
+                onProceed,
+                theme
             );
         })
         .catch(() => {
             gradeContainer.innerHTML =
-                `<small class="text-danger fw-bold">Failed to load classes.</small>`;
+                theme === "lessons"
+                    ? `<div class="sa-empty">Failed to load classes.</div>`
+                    : `<small class="text-danger fw-bold">Failed to load classes.</small>`;
         });
 }
 
@@ -122,23 +130,32 @@ function renderGradesAndStreamsReusable(
     gradeContainer,
     streamContainer,
     proceedContainer,
-    onProceed
+    onProceed,
+    theme = ""
 ) {
+    const isLessons = theme === "lessons";
     gradeContainer.innerHTML = "";
     streamContainer.innerHTML = "";
     if (proceedContainer) proceedContainer.innerHTML = "";
 
     if (!Array.isArray(data) || data.length === 0) {
-        gradeContainer.innerHTML =
-            `<small class="text-danger fw-bold">No classes available.</small>`;
+        gradeContainer.innerHTML = isLessons
+            ? `<div class="sa-empty">No classes available.</div>`
+            : `<small class="text-danger fw-bold">No classes available.</small>`;
         return;
     }
 
     const gradeSelect = document.createElement("select");
-    gradeSelect.className = "form-select form-select-sm mb-2";
-    gradeSelect.innerHTML = `<option value="">--- Select class/grade ---</option>`;
+    gradeSelect.className = isLessons
+        ? "form-select form-select-sm sa-control"
+        : "form-select form-select-sm mb-2";
+    gradeSelect.innerHTML = `<option value="">Select class</option>`;
 
-    data.forEach(cls => {
+    const grades = typeof sortSchoolGrades === "function"
+        ? sortSchoolGrades(data)
+        : data;
+
+    grades.forEach(cls => {
         const opt = document.createElement("option");
         opt.value = cls.id;
         opt.textContent = cls.grade_form;
@@ -146,14 +163,27 @@ function renderGradesAndStreamsReusable(
         gradeSelect.appendChild(opt);
     });
 
+    if (isLessons) {
+        const gradeLabel = document.createElement("label");
+        gradeLabel.className = "sa-label";
+        gradeLabel.setAttribute("for", "lesson-grade-select");
+        gradeLabel.textContent = "Grade / Form";
+        gradeSelect.id = "lesson-grade-select";
+        gradeContainer.appendChild(gradeLabel);
+    }
     gradeContainer.appendChild(gradeSelect);
 
     let actionBtn = null;
 
     if (proceedContainer && onProceed) {
         actionBtn = document.createElement("button");
-        actionBtn.className = "btn btn-sm btn-secondary d-none";
-        actionBtn.innerHTML = `<i class="bi bi-arrow-right me-2"></i>Proceed`;
+        actionBtn.type = "button";
+        actionBtn.className = isLessons
+            ? "sa-btn sa-btn-primary d-none"
+            : "btn btn-sm btn-secondary d-none";
+        actionBtn.innerHTML = isLessons
+            ? `Assign teachers`
+            : `<i class="bi bi-arrow-right me-2"></i>Proceed`;
         proceedContainer.appendChild(actionBtn);
     }
 
@@ -172,8 +202,10 @@ function renderGradesAndStreamsReusable(
         }
 
         const streamSelect = document.createElement("select");
-        streamSelect.className = "form-select form-select-sm";
-        streamSelect.innerHTML = `<option value="">--- Select stream ---</option>`;
+        streamSelect.className = isLessons
+            ? "form-select form-select-sm sa-control"
+            : "form-select form-select-sm";
+        streamSelect.innerHTML = `<option value="">Select stream</option>`;
 
         streams.forEach(s => {
             const o = document.createElement("option");
@@ -182,6 +214,14 @@ function renderGradesAndStreamsReusable(
             streamSelect.appendChild(o);
         });
 
+        if (isLessons) {
+            const streamLabel = document.createElement("label");
+            streamLabel.className = "sa-label";
+            streamLabel.setAttribute("for", "lesson-stream-select");
+            streamLabel.textContent = "Stream";
+            streamSelect.id = "lesson-stream-select";
+            streamContainer.appendChild(streamLabel);
+        }
         streamContainer.appendChild(streamSelect);
 
         streamSelect.addEventListener("change", () => {
@@ -236,20 +276,44 @@ function renderAssignTeachersModal(data) {
     modal.setAttribute("data-bs-backdrop", "static");
     modal.setAttribute("data-bs-keyboard", "false");
 
+    const classLabel = [data.class_name, data.stream].filter(Boolean).join(" · ");
+    const teachers = [...(data.teachers || [])].sort((a, b) => {
+        const left = String(a.fullname || "").trim().toLocaleLowerCase();
+        const right = String(b.fullname || "").trim().toLocaleLowerCase();
+        return left.localeCompare(right);
+    });
+    const teacherOptions = (selectedId) =>
+        teachers
+            .map(
+                (t) => `
+                    <option value="${t.id}" ${t.id === selectedId ? "selected" : ""}>
+                        ${t.title ? `${t.title} ` : ""}${t.fullname}
+                    </option>
+                `
+            )
+            .join("");
+
     if (!data.subjects.length) {
         modal.innerHTML = `
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-danger text-white pt-1 pb-1 px-3">
-                    <h6 class="modal-title">ASSIGN TEACHERS</h6>
-                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content at-modal">
+                <div class="modal-header at-modal-header">
+                    <div>
+                        <h6 class="at-modal-title">Assign teachers</h6>
+                        <p class="at-modal-copy">${classLabel}</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body text-center border m-3">
-                    <i class="bi bi-exclamation-triangle fs-4 text-danger"></i>
-                    <p class="mt-2 fw-bold text-danger">No subjects found for this class!</p>
-                    <p class="fw-light text-center">Assign this class students and subjects first.</p>
+                <div class="modal-body at-modal-body">
+                    <div class="at-empty">
+                        No subjects found for this class. Assign students and subjects first.
+                    </div>
                 </div>
-                <hr>
+                <div class="at-modal-footer">
+                    <div class="at-modal-actions">
+                        <button type="button" class="sa-btn sa-btn-outline" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
             </div>
         </div>`;
         document.body.appendChild(modal);
@@ -259,40 +323,36 @@ function renderAssignTeachersModal(data) {
 
     modal.innerHTML = `
     <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white pt-2 pb-2 px-3">
-                <h6 class="modal-title">
-                    ASSIGN TEACHERS - ${data.class_name} ${data.stream || ""}
-                </h6>
-                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-content at-modal">
+            <div class="modal-header at-modal-header">
+                <div>
+                    <h6 class="at-modal-title">Assign teachers</h6>
+                    <p class="at-modal-copy">${classLabel || "Choose a teacher for each subject."}</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <h6 class="bg-light p-2 text-center mt-1 border-bottom">Assign teachers lessons</h4>
-            <div class="modal-body border m-2">
+            <div class="modal-body at-modal-body">
                 <form id="assignTeachersForm">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm small">
-                            <thead class="bg-secondary text-white">
+                    <div class="at-table-wrap">
+                        <table class="at-table">
+                            <thead>
                                 <tr>
                                     <th>Code</th>
                                     <th>Subject</th>
-                                    <th class="text-center">Students</th>
+                                    <th class="at-col-count">Students</th>
                                     <th>Teacher</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${data.subjects.map(s => `
                                     <tr>
-                                        <td>${s.code}</td>
-                                        <td class="text-uppercase">${s.name}</td>
-                                        <td class="text-center">${s.student_count}</td>
+                                        <td class="at-col-code">${s.code || ""}</td>
+                                        <td class="at-subject">${s.name}</td>
+                                        <td class="at-col-count">${s.student_count}</td>
                                         <td>
-                                            <select class="form-select form-select-sm" name="subject_${s.id}">
-                                                <option value="">-- Select Teacher --</option>
-                                                ${data.teachers.map(t => `
-                                                    <option value="${t.id}" ${t.id === s.assigned_teacher_id ? "selected" : ""}>
-                                                        ${t.title} ${t.fullname} (${t.employer})
-                                                    </option>
-                                                `).join("")}
+                                            <select class="form-select form-select-sm at-teacher-select" name="subject_${s.id}">
+                                                <option value="">Select teacher</option>
+                                                ${teacherOptions(s.assigned_teacher_id)}
                                             </select>
                                         </td>
                                     </tr>
@@ -302,10 +362,11 @@ function renderAssignTeachersModal(data) {
                     </div>
                 </form>
             </div>
-            <div id="status-message"></div>
-            <div class="modal-footer justify-content-center">
-                <button id="saveAssignmentsBtn" class="btn btn-sm btn-secondary">
-                    <i class="bi bi-send me-2"></i>Assign?</button>
+            <div class="at-modal-footer">
+                <div class="at-modal-actions">
+                    <button type="button" class="sa-btn sa-btn-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="saveAssignmentsBtn" class="sa-btn sa-btn-primary">Save</button>
+                </div>
             </div>
         </div>
     </div>`;
@@ -324,6 +385,7 @@ function renderAssignTeachersModal(data) {
 
 function saveTeacherAssignments(branch_id, class_id, stream) {
     const form = document.getElementById("assignTeachersForm");
+    const saveBtn = document.getElementById("saveAssignmentsBtn");
     const payload = {
         branch_id,
         class_id,
@@ -334,19 +396,82 @@ function saveTeacherAssignments(branch_id, class_id, stream) {
         }))
     };
 
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving…";
+    }
+
     fetch("/admin/api/save-teacher-assignments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
     })
-        .then(res => res.json())
-        .then(() => displaySaveStatus("Teacher assignments saved successfully"))
-        .catch(() => displaySaveStatus("An error occurred"));
+        .then(async (res) => {
+            let data = {};
+            try {
+                data = await res.json();
+            } catch (err) {
+                data = {};
+            }
+            if (!res.ok || data.success === false) {
+                throw new Error(data.error || "Could not save teacher assignments.");
+            }
+            showAssignmentNotice({
+                success: true,
+                title: "Assignments saved",
+                message: "Teachers for this class have been updated.",
+                closeForm: true,
+            });
+        })
+        .catch((err) => {
+            showAssignmentNotice({
+                success: false,
+                title: "Could not save",
+                message: "The teacher list could not be updated. Please try again.",
+                closeForm: false,
+            });
+        })
+        .finally(() => {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = "Save";
+            }
+        });
 }
 
-function displaySaveStatus(msg) {
-    document.getElementById("status-message").innerHTML =
-        `<h6 class="text-center text-orange small">${msg}</h6>`;
+function showAssignmentNotice({ success, title, message, closeForm }) {
+    const noticeEl = document.getElementById("assignTeachersNoticeModal");
+    const card = document.getElementById("assignTeachersNoticeCard");
+    const icon = document.getElementById("assignTeachersNoticeIcon");
+    const titleEl = document.getElementById("assignTeachersNoticeTitle");
+    const messageEl = document.getElementById("assignTeachersNoticeMessage");
+    if (!noticeEl || !card) return;
+
+    card.classList.toggle("is-success", success);
+    card.classList.toggle("is-error", !success);
+    if (icon) {
+        icon.innerHTML = success
+            ? '<i class="bi bi-check-circle-fill"></i>'
+            : '<i class="bi bi-exclamation-triangle-fill"></i>';
+    }
+    if (titleEl) titleEl.textContent = title;
+    if (messageEl) messageEl.textContent = message;
+
+    const noticeModal = bootstrap.Modal.getOrCreateInstance(noticeEl);
+    const assignEl = document.getElementById("assignTeachersModal");
+    const assignModal = assignEl ? bootstrap.Modal.getInstance(assignEl) : null;
+
+    if (closeForm && assignModal) {
+        assignEl.addEventListener(
+            "hidden.bs.modal",
+            () => noticeModal.show(),
+            { once: true }
+        );
+        assignModal.hide();
+        return;
+    }
+
+    noticeModal.show();
 }
 
 

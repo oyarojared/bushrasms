@@ -440,7 +440,7 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
               <div>
                 <h6 class="mb-0">Filter Results</h6>
                 <small
-                  >Select school, class, and exam to load student reports</small
+                  >{% if can_select_branch %}Select school, class, and exam to load student reports{% else %}Select class and exam to load student reports{% endif %}</small
                 >
               </div>
             </div>
@@ -449,7 +449,7 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
           <div class="card-body pt-0">
             <div class="row g-3">
               <!-- School -->
-              <div class="col-md-6 col-lg-3">
+              <div class="col-md-6 col-lg-3" data-school-picker>
                 <label for="results-branch" class="form-label results-label">
                   <i class="bi bi-house-door me-1"></i>School
                 </label>
@@ -662,7 +662,7 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
               <div>
                 <h6 class="mb-0">Marksheets &amp; Class lists</h6>
                 <small id="marksheet-filter-hint"
-                  >Select school, class, and stream to view the class list</small
+                  >{% if can_select_branch %}Select school, class, and stream to view the class list{% else %}Select class and stream to view the class list{% endif %}</small
                 >
               </div>
               <div class="marksheet-mode-switch" role="tablist">
@@ -688,7 +688,7 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
 
           <div class="card-body pt-0">
             <div class="row g-3">
-              <div class="col-md-6 col-lg-3">
+              <div class="col-md-6 col-lg-3" data-school-picker>
                 <label class="form-label marksheet-label" for="marksheet-branch"
                   >School</label
                 >
@@ -765,7 +765,7 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
               <div>
                 <h6 class="mb-0">Broadsheets &amp; Analytics</h6>
                 <small
-                  >Select school, class, and exam to generate analysis</small
+                  >{% if can_select_branch %}Select school, class, and exam to generate analysis{% else %}Select class and exam to generate analysis{% endif %}</small
                 >
               </div>
             </div>
@@ -773,7 +773,7 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
 
           <div class="card-body pt-0">
             <div class="row g-3 align-items-end">
-              <div class="col-md-6 col-lg-3">
+              <div class="col-md-6 col-lg-3" data-school-picker>
                 <label class="form-label bs-label" for="bs-branch"
                   >School</label
                 >
@@ -1200,109 +1200,7 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
 <script src="{{ url_for('admin.static', filename='js/assessment/broadsheet.js') }}"></script>
 
 <style>
-  /* =========================================================
-   EXAM TABS — brand navigation
-   ========================================================= */
-
-  .exam-tabs {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 121, 121, 0.35) transparent;
-    gap: 0.15rem;
-    padding-bottom: 0;
-    border-bottom: 1px solid #edf0f3;
-  }
-
-  .exam-tabs::-webkit-scrollbar {
-    height: 4px;
-  }
-
-  .exam-tabs::-webkit-scrollbar-thumb {
-    background: rgba(255, 121, 121, 0.35);
-    border-radius: 4px;
-  }
-
-  .exam-tabs .nav-item {
-    flex-shrink: 0;
-  }
-
-  .exam-tabs .nav-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.65rem 0.95rem;
-    border: none !important;
-    border-bottom: 3px solid transparent !important;
-    border-radius: 8px 8px 0 0;
-    background: transparent;
-    color: #6c757d;
-    font-size: 0.9rem;
-    font-weight: 600;
-    line-height: 1.3;
-    white-space: nowrap;
-    transition:
-      color 0.2s ease,
-      background-color 0.2s ease,
-      border-color 0.2s ease;
-  }
-
-  .exam-tabs .nav-link i {
-    font-size: 0.88rem;
-    opacity: 0.85;
-    transition: opacity 0.2s ease;
-  }
-
-  .exam-tabs .nav-link:hover {
-    color: #ff7979;
-    background-color: rgba(255, 121, 121, 0.06);
-    border-bottom-color: rgba(255, 121, 121, 0.25) !important;
-  }
-
-  .exam-tabs .nav-link:hover i {
-    opacity: 1;
-  }
-
-  .exam-tabs .nav-link.active {
-    color: #ff7979 !important;
-    background-color: rgba(255, 121, 121, 0.08) !important;
-    border-bottom-color: #ff7979 !important;
-    font-weight: 700;
-  }
-
-  .exam-tabs .nav-link.active i {
-    opacity: 1;
-  }
-
-  .exam-tabs .nav-link:focus-visible {
-    outline: 2px solid rgba(255, 121, 121, 0.35);
-    outline-offset: 2px;
-  }
-
-  @media (max-width: 767.98px) {
-    .exam-tabs .nav-link {
-      padding: 0.58rem 0.75rem;
-      font-size: 0.9rem;
-    }
-  }
-
-  @media (max-width: 575.98px) {
-    .exam-tabs {
-      margin-left: -0.25rem;
-      margin-right: -0.25rem;
-    }
-
-    .exam-tabs .nav-link {
-      padding: 0.55rem 0.65rem;
-      font-size: 0.9rem;
-    }
-
-    .exam-tabs .nav-link i {
-      font-size: 0.84rem;
-    }
-  }
+  /* Exam tab chrome lives in fineadjust.css (.exam-tabs) so Classes and Exams stay in sync. */
 
   /* =========================================================
    EXAM SETUP — CREATE BUTTON

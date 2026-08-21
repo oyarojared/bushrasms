@@ -40,17 +40,33 @@ def create_app():
     migrate.init_app(app, db)
 
     @app.context_processor
+    def inject_branch_scope():
+        from .modules.admin.utils.branch_utils import (
+            locked_branch_id,
+            user_can_select_branch,
+        )
+
+        return {
+            "can_select_branch": user_can_select_branch(),
+            "locked_branch_id": locked_branch_id(),
+        }
+
+    @app.context_processor
     def inject_branch_data():
+        from .modules.admin.utils.subscription import subscription_for_branch
+
         if not current_user.is_authenticated:
             return {}
 
         if current_user.is_super_admin:
-            return {"target_branch_info": None}
+            return {"target_branch_info": None, "subscription": None}
 
         branch = Branch.query.get(current_user.branch_id)
+        show_sub = bool(branch and getattr(current_user, "is_admin", False))
 
         return {
-            "target_branch_info": branch
+            "target_branch_info": branch,
+            "subscription": subscription_for_branch(branch) if show_sub else None,
         }
 
     if not os.path.exists("logs"):

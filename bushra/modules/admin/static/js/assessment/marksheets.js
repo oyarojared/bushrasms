@@ -430,10 +430,6 @@ function bindMarksheetActions() {
   });
 }
 
-fetch("/admin/api/branches")
-  .then((res) => res.json())
-  .then((data) => populateSelect(marksheetBranchSelect, data, "Select School"));
-
 marksheetBranchSelect.addEventListener("change", function () {
   const branchId = this.value;
 
@@ -651,3 +647,13 @@ loadMarksBtn.addEventListener("click", function () {
 
 marksheetSubjectSelect.addEventListener("change", updateLoadButton);
 updateLoadButton();
+
+fetch("/admin/api/branches")
+  .then((res) => res.json())
+  .then((data) => {
+    if (window.BushraSchoolSelect) {
+      window.BushraSchoolSelect.fill(marksheetBranchSelect, data, "Select School");
+    } else {
+      populateSelect(marksheetBranchSelect, data, "Select School");
+    }
+  });

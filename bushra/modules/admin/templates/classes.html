@@ -3,125 +3,94 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %} {{
 sidebar("Classes", current_user) }} {% endblock %} {% block main_content %} {{
 render_flash_messages() }}
 
-<div class="app-page-title">
+<div class="app-page-title cls-page-title">
   <div class="app-page-title-icon">
     <i class="bi bi-diagram-3-fill"></i>
   </div>
 
-  <div class="app-page-title-content mb-2">
-    <h6 class="app-page-title-heading">Classes &amp; Groups</h6>
-
+  <div class="app-page-title-content">
+    <h6 class="app-page-title-heading">Classes</h6>
     <span class="app-page-title-subtitle">
-      Manage classes, grades &amp; subjects/learning areas assignments
+      Set up classes, subjects, and teachers
     </span>
   </div>
 </div>
 
-<!-- School Selector -->
-<div class="container bg-white pt-0 pb-3 px-0 mb-2 shadow-sm rounded-6">
-  <div class="container orange-line"></div>
-  <div class="px-3">
-    <form action="" method="post">
-      {{ load_branches_form.hidden_tag() }}
-      <div class="row">
-        {{ form_input(load_branches_form.branches, icon_class="bi bi-house",
-        input_class="form-select branch-select") }}
-      </div>
-    </form>
-  </div>
-</div>
-
-<div class="container-fluid mb-2">
-  <div class="row text-white rounded-2 px-2">
-    <div class="col-sm-9"></div>
-    <div class="col-sm-3 d-flex">
-      <!-- Add Class & Stream Modal Trigger -->
-      <button
-        class="btn btn-sm btn-danger small"
-        data-bs-toggle="modal"
-        data-bs-target="#addClassModal"
-      >
-        <span><i class="bi bi-plus-circle-dotted"></i></span>
-        <span>Add</span>
-      </button>
-
-      <!-- Export Excel -->
-      <a href="">
-        <div class="btn btn-sm btn-danger small mx-2 border-end">
-          <span><i class="bi bi-file-earmark-excel"></i></span>
-          <span>Excel</span>
+<div class="container bg-white pb-2 shadow-sm rounded-6 classes-workbench">
+  <div class="cls-workbench-head">
+    <button
+      type="button"
+      class="sa-btn sa-btn-primary"
+      data-bs-toggle="modal"
+      data-bs-target="#addClassModal"
+    >
+      <i class="bi bi-plus-lg"></i>
+      <span>Add grade / form</span>
+    </button>
+    <div class="cls-workbench-school{% if not can_select_branch %} d-none{% endif %}" data-school-picker>
+      <form action="" method="post">
+        {{ load_branches_form.hidden_tag() }}
+        <label class="cls-school-label" for="class-school-select">Select school to view and manage</label>
+        <div class="cls-school-field">
+          <span class="cls-school-icon" aria-hidden="true">
+            <i class="bi bi-building"></i>
+          </span>
+          {{ load_branches_form.branches(class="form-select form-select-sm branch-select", id="class-school-select") }}
         </div>
-      </a>
-
-      <!-- Print -->
-      <a href="">
-        <div class="btn btn-sm btn-danger small">
-          <span><i class="bi bi-printer"></i></span>
-          <span>Print</span>
-        </div>
-      </a>
+      </form>
     </div>
   </div>
-</div>
-
-<!-- spinner & alert message -->
-<div id="statusBox" class="alert d-none align-items-center" role="alert">
-  <span id="statusSpinner" class="spinner-border spinner-border-sm me-2"></span>
-  <span id="statusText" class="small">Loading...</span>
-</div>
-
-<div class="container bg-white pb-2 shadow-sm rounded-6 classes-workbench">
   <div class="classes-tabs-bar">
-  <ul class="nav nav-tabs" id="myTab" role="tablist">
+  <ul class="nav nav-tabs exam-tabs" id="myTab" role="tablist">
     <li class="nav-item" role="presentation">
       <button
-        class="nav-link active tab-small"
+        class="nav-link active"
         id="tab-one-tab"
         data-bs-toggle="tab"
         data-bs-target="#tab-one"
         type="button"
         role="tab"
       >
-        <i class="bi bi-database me-2"></i>STUDENTS DATA
+        <i class="bi bi-grid-3x2-gap"></i>Overview
       </button>
     </li>
 
     <li class="nav-item" role="presentation">
       <button
-        class="nav-link tab-small"
+        class="nav-link"
         id="tab-two-tab"
         data-bs-toggle="tab"
         data-bs-target="#tab-two"
         type="button"
         role="tab"
       >
-        <i class="bi bi-book me-2"></i>SUBJECT ASSIGNMENT
+        <i class="bi bi-journal-check"></i>Student subjects
       </button>
     </li>
 
     <li class="nav-item" role="presentation">
       <button
-        class="nav-link tab-small"
+        class="nav-link"
         id="tab-three-tab"
         data-bs-toggle="tab"
         data-bs-target="#tab-three"
         type="button"
         role="tab"
       >
-        <i class="bi bi-book me-2"></i>LESSONS ASSIGNMENT
+        <i class="bi bi-person-badge"></i>Assign teachers
       </button>
     </li>
 
     <li class="nav-item" role="presentation">
       <button
-        class="nav-link tab-small"
+        class="nav-link"
         id="tab-four-tab"
         data-bs-toggle="tab"
         data-bs-target="#tab-four"
         type="button"
         role="tab"
       >
-        <i class="bi bi-gear me-2"></i>CLASS MANAGEMENT
+        <i class="bi bi-gear"></i>Manage class
       </button>
     </li>
   </ul>
@@ -136,39 +105,36 @@ render_flash_messages() }}
     </div>
 
     <div class="tab-pane fade" id="tab-two" role="tabpanel">
-      <!-- Handle student subject allocation -->
       <input type="text" id="selected-branch-id" hidden />
-      <div class="row border p-2">
-        <div class="container orange-line"></div>
-        <div class="col-md-3">
-          <div class="form-select-div"></div>
+      <div class="sa-card">
+        <div class="sa-card-head">
+          <h6 class="sa-card-title">Student subjects</h6>
+          <p class="sa-card-copy">
+            Choose a class and subject, then tick the students who take it.
+          </p>
         </div>
-        <div class="col-md-3">
+        <div class="sa-filters">
+          <div class="form-select-div"></div>
           <div class="subject-select-div"></div>
         </div>
       </div>
-      <div class="students-allocation-div mt-3"></div>
+      <div class="students-allocation-div"></div>
     </div>
 
     <div class="tab-pane fade" id="tab-three" role="tabpanel">
-      <h6 class="text-center fw-light">
-        <span id="selected-branch-name"></span>
-      </h6>
       <input type="text" id="target-branch" hidden />
-
-      <div id="x" class="border p-3">
-        <div class="container orange-line mb-2"></div>
-        <div class="row">
-          <div class="col-md-6">
-            <div id="grade-container"></div>
-          </div>
-          <div class="col-md-6">
-            <div id="stream-container"></div>
-          </div>
+      <div class="sa-card">
+        <div class="sa-card-head">
+          <h6 class="sa-card-title">Assign teachers</h6>
+          <p class="sa-card-copy" id="selected-branch-name">
+            Choose a class, then assign a teacher to each subject.
+          </p>
         </div>
-        <div class="row d-flex justify-content-end">
-          <div id="proceed-btn-container" class="col-auto"></div>
+        <div class="sa-filters">
+          <div id="grade-container"></div>
+          <div id="stream-container"></div>
         </div>
+        <div class="sa-proceed" id="proceed-btn-container"></div>
       </div>
     </div>
 
@@ -238,9 +204,14 @@ render_flash_messages() }}
             {{ form_input(load_branches_form.class_year,
             input_class="form-select", icon_class="bi bi-calendar-date") }}
 
-            <!-- Branch -->
-            {{ form_input(load_branches_form.branches,
-            input_class="form-select", icon_class="bi bi-building") }}
+            <!-- School -->
+            <div class="mb-3{% if not can_select_branch %} d-none{% endif %}" data-school-picker>
+              <label class="form-label" for="{{ load_branches_form.branches.id }}">School</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-building"></i></span>
+                {{ load_branches_form.branches(class="form-select") }}
+              </div>
+            </div>
 
             <!-- Grade/Form -->
             {{ form_input(load_branches_form.grade_form, icon_class="bi
@@ -543,9 +514,7 @@ render_flash_messages() }}
     top: -20px;
     z-index: 40;
     padding-top: 0;
-    background: #fff;
-    border-bottom: 1px solid #eceff2;
-    box-shadow: 0 8px 18px rgba(37, 42, 47, 0.08);
+    background: #f3f4f6;
   }
   #academicDataContainer .grade-board-title {
     margin: 0 0 0.85rem;
@@ -558,52 +527,84 @@ render_flash_messages() }}
     color: #8b939c;
     font-size: 0.85rem;
   }
+  #academicDataContainer .grade-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
   #academicDataContainer .grade-card {
-    height: 100%;
-    padding: 0.85rem 0.95rem 0.45rem;
+    width: 100%;
     background: #fff;
-    border: 1px solid #eceff2;
-    border-left: 3px solid #e3745b;
-    border-radius: 10px;
+    border: 1px solid #e8ecef;
+    border-radius: 12px;
+    overflow: hidden;
   }
   #academicDataContainer .grade-card-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title actions"
+      "stats stats";
+    gap: 0.7rem 1rem;
+    align-items: center;
+    padding: 0.85rem 1rem;
+    background: #fafbfc;
+    border-bottom: 1px solid #f0f2f4;
+  }
+  @media (min-width: 768px) {
+    #academicDataContainer .grade-card-head {
+      grid-template-columns: minmax(140px, 0.85fr) minmax(220px, 0.9fr) auto;
+      grid-template-areas: "title stats actions";
+    }
+  }
+  @media (max-width: 767.98px) {
+    #academicDataContainer .grade-card-stats {
+      max-width: none;
+    }
   }
   #academicDataContainer .grade-card-title {
+    grid-area: title;
     min-width: 0;
-    padding-right: 8px;
   }
   #academicDataContainer .grade-card-name {
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     font-weight: 700;
-    color: #252a2f;
+    color: #1f2937;
     line-height: 1.3;
     text-transform: uppercase;
     letter-spacing: 0.02em;
   }
+  #academicDataContainer .grade-card-meta {
+    margin-top: 0.12rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #6b7280;
+  }
   #academicDataContainer .grade-card-stats {
+    grid-area: stats;
     display: flex;
-    margin: 0.7rem 0 0.75rem;
-    padding: 0.55rem 0.2rem;
-    border-radius: 8px;
-    background: #cfcfcf;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    width: 100%;
+    max-width: 340px;
+    margin: 0;
+    padding: 0;
+    border-radius: 7px;
+    background: #f3f4f6;
+    overflow: hidden;
   }
   #academicDataContainer .grade-stat {
     flex: 1;
     text-align: center;
-    border-right: 1px solid rgba(0, 0, 0, 0.12);
+    padding: 0.28rem 0.3rem;
+    border-right: 1px solid rgba(15, 23, 42, 0.07);
   }
   #academicDataContainer .grade-stat:last-child {
     border-right: 0;
   }
   #academicDataContainer .grade-stat-n {
     display: block;
-    font-size: 1.05rem;
+    font-size: 0.86rem;
     font-weight: 700;
-    color: #252a2f;
+    color: #1f2937;
     line-height: 1.2;
   }
   #academicDataContainer .grade-stat-n.is-boys {
@@ -617,44 +618,65 @@ render_flash_messages() }}
   }
   #academicDataContainer .grade-stat-l {
     display: block;
-    margin-top: 0.08rem;
-    font-size: 0.68rem;
+    margin-top: 0.04rem;
+    font-size: 0.6rem;
     font-weight: 600;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    color: #5c636a;
+    color: #6b7280;
   }
   #academicDataContainer .grade-card-actions {
+    grid-area: actions;
     display: flex;
     flex-shrink: 0;
-    margin-left: 8px;
+    gap: 0.35rem;
   }
   #academicDataContainer .grade-card-btn {
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    margin-left: 4px;
-    border: 0;
-    border-radius: 7px;
-    background: #f4f6f8;
-    color: #6c757d;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 0.3rem;
+    min-height: 30px;
+    width: auto;
+    padding: 0.25rem 0.6rem;
+    margin: 0;
+    border-radius: 7px;
+    border: 1px solid rgba(255, 121, 121, 0.35);
+    background: #fff5f5;
+    color: #e85d5d;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+  #academicDataContainer .grade-card-btn i {
+    font-size: 0.78rem;
   }
   #academicDataContainer .grade-card-btn:hover {
-    background: #e9ecef;
-    color: #252a2f;
+    background: #ffecec;
+    border-color: #ff7979;
+    color: #dc4a4a;
+  }
+  #academicDataContainer .grade-card-btn.is-danger {
+    background: #fff;
+    border-color: #f0d4d6;
+    color: #dc3545;
   }
   #academicDataContainer .grade-card-btn.is-danger:hover {
-    background: rgba(220, 53, 69, 0.1);
+    background: rgba(220, 53, 69, 0.08);
+    border-color: rgba(220, 53, 69, 0.28);
     color: #dc3545;
+  }
+  #academicDataContainer .grade-card-body {
+    padding: 0.1rem 0.65rem 0.15rem 1.85rem;
   }
   #academicDataContainer .grade-stream-row {
     display: flex;
     align-items: center;
-    padding: 0.55rem 0;
+    padding: 0.55rem 0.35rem 0.55rem 0.15rem;
     border-top: 1px solid #f1f3f5;
+  }
+  #academicDataContainer .grade-stream-row:first-child {
+    border-top: 0;
   }
   #academicDataContainer .grade-stream-main {
     min-width: 0;
@@ -662,45 +684,66 @@ render_flash_messages() }}
   }
   #academicDataContainer .grade-stream-name {
     display: block;
-    font-size: 0.84rem;
-    font-weight: 700;
-    color: #252a2f;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #4b5563;
+    letter-spacing: 0.01em;
+    text-transform: none;
   }
   #academicDataContainer .grade-stream-teacher {
     display: block;
     margin-top: 0.08rem;
-    font-size: 0.72rem;
-    color: #6c757d;
+    font-size: 0.74rem;
+    color: #6b7280;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  #academicDataContainer .grade-stream-teacher.is-empty {
+  #academicDataContainer .grade-stream-teacher.is-empty,
+  #academicDataContainer .grade-stream-teacher .is-empty {
     color: #e3745b;
     font-weight: 600;
   }
-  #academicDataContainer .grade-stream-count {
-    flex-shrink: 0;
-    margin: 0 6px 0 8px;
-    text-align: right;
-  }
-  #academicDataContainer .grade-stream-total {
-    display: block;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #252a2f;
-    line-height: 1.2;
-  }
-  #academicDataContainer .grade-stream-stats {
-    display: block;
-    margin-top: 0.04rem;
-    font-size: 0.68rem;
+  #academicDataContainer .grade-teacher-label {
     font-weight: 600;
-    color: #8b939c;
+    color: #6b7280;
   }
-  #academicDataContainer .grade-stream-row.is-plain .grade-stream-name {
-    font-weight: 500;
-    color: #8b939c;
+  #academicDataContainer .grade-stream-row.is-plain .grade-stream-teacher {
+    font-size: 0.8rem;
+  }
+  #academicDataContainer .grade-stream-stats-strip {
+    display: flex;
+    flex-shrink: 0;
+    width: 220px;
+    max-width: 42%;
+    margin: 0 10px 0 12px;
+    border-radius: 7px;
+    background: #f3f4f6;
+    overflow: hidden;
+  }
+  #academicDataContainer .grade-stream-stats-strip .grade-stat {
+    padding: 0.22rem 0.2rem;
+  }
+  #academicDataContainer .grade-stream-stats-strip .grade-stat-n {
+    font-size: 0.78rem;
+  }
+  #academicDataContainer .grade-stream-stats-strip .grade-stat-l {
+    font-size: 0.55rem;
+  }
+  @media (max-width: 767.98px) {
+    #academicDataContainer .grade-stream-row {
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+    #academicDataContainer .grade-stream-stats-strip {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      order: 3;
+    }
+    #academicDataContainer .grade-stream-row .grade-card-actions {
+      margin-left: auto;
+    }
   }
 </style>
 
@@ -819,6 +862,38 @@ render_flash_messages() }}
   </div>
 </div>
 
+<!-- =========================
+     Teacher assignment notice
+========================= -->
+<div
+  class="modal fade"
+  id="assignTeachersNoticeModal"
+  tabindex="-1"
+  aria-labelledby="assignTeachersNoticeTitle"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered at-notice-dialog">
+    <div class="modal-content at-notice" id="assignTeachersNoticeCard">
+      <div class="at-notice-icon" id="assignTeachersNoticeIcon" aria-hidden="true">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <h6 class="at-notice-title" id="assignTeachersNoticeTitle">Assignments saved</h6>
+      <p class="at-notice-copy" id="assignTeachersNoticeMessage">
+        Teachers for this class have been updated.
+      </p>
+      <div class="at-notice-actions">
+        <button
+          type="button"
+          class="sa-btn sa-btn-primary at-notice-btn"
+          data-bs-dismiss="modal"
+        >
+          OK
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% if load_branches_form.errors %}
 <script>
   // Wait for the page to load, then show the modal if there are errors
@@ -830,6 +905,7 @@ render_flash_messages() }}
   });
 </script>
 {% endif %}
+<script src="{{ url_for('admin.static', filename='js/grade_sort.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/fetch_academic_data.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/lessons.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/manage_class.js') }}"></script>

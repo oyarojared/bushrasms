@@ -12,6 +12,10 @@
   rel="stylesheet"
   href="{{ url_for('admin.static', filename='admin_master.css') }}"
 />
+<script>
+  window.BUSHRA_LOCKED_BRANCH_ID = {{ locked_branch_id | tojson }};
+</script>
+<script src="{{ url_for('admin.static', filename='js/lock_school_select.js') }}"></script>
 {% endblock %} {% block template_body %}
 <!-- ======== FIXED TOP HEADER ======== -->
 <div class="container-fluid shadow-sm bg-white fixed-top-bar px-0">
@@ -309,21 +313,14 @@
           {% endif %}
         </div>
 
-        <!-- Subscription -->
-        {% if current_user.is_admin %}
-
-        <div class="subscription-status">
-          <div class="subscription-icon">
-            <i class="bi bi-calendar2-check"></i>
-          </div>
-
-          <div class="subscription-info">
-            <span class="subscription-label"> Next Subscription </span>
-
-            <span class="subscription-date"> 05/09/2026 </span>
-          </div>
+        {% if subscription %}
+        <div
+          class="subscription-status is-{{ subscription.state }}"
+          title="Due {{ subscription.renewal_date }}"
+        >
+          <span class="subscription-status-label">{{ subscription.status_label }}</span>
+          <span class="subscription-status-detail">{{ subscription.detail }}</span>
         </div>
-
         {% endif %}
       </div>
 

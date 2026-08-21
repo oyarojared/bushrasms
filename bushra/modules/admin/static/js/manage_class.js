@@ -4,7 +4,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const gradeContainer2 = document.getElementById("grade-container-2")
     const streamContainer2 = document.getElementById("stream-container-2")
 
-    const branchSelect = document.querySelector(".branch-select"); 
+    const branchSelect = document.querySelector(".branch-select");
+    if (!branchSelect) return; 
 
 
     function showSpinner(container) {
@@ -38,6 +39,10 @@ document.addEventListener("DOMContentLoaded", function () {
         }
             
     });
+
+    if (branchSelect.value) {
+        branchSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    }
 
 
     // AJAX FETCH FUNCTION

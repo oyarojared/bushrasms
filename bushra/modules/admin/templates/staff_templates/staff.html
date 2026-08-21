@@ -424,7 +424,7 @@ sidebar("School Staff", current_user) }} {% endblock %} {% block main_content %}
               </div>
             </div>
 
-            <div class="col-sm-6">
+            <div class="col-sm-6{% if not can_select_branch %} d-none{% endif %}" data-school-picker>
               <label>Teaching School</label>
               <div class="input-group">
                 <div class="input-group-text bg-secondary text-white">

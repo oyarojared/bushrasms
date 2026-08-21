@@ -11,7 +11,7 @@ from sqlalchemy import func
 
 from collections import defaultdict
 from ..utils.file_utils import preprocess_image
-from ..services.grades import filter_active_classes, is_archived_class_name
+from ..services.grades import filter_active_classes, is_archived_class_name, sort_grade_list
 
 
 def get_first_branch_id():   
@@ -276,8 +276,20 @@ def get_branch_academic_population(branch_id: int):
 
         grades_data.append(grade_entry)
 
+    order_ids = [
+        class_id
+        for class_id, _ in sort_grade_list(
+            [(grade["class_id"], grade["grade_form"]) for grade in grades_data],
+            dedupe=False,
+        )
+    ]
+    grades_by_id = {grade["class_id"]: grade for grade in grades_data}
+    sorted_grades = [
+        grades_by_id[class_id] for class_id in order_ids if class_id in grades_by_id
+    ]
+
     return {
         "branch_id": branch.id,
         "branch_name": branch.branch_name,
-        "grades": grades_data
+        "grades": sorted_grades
     }, None

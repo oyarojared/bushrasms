@@ -16,7 +16,7 @@ from ..forms.staff_forms import AddTeacherForm, TeacherPassportUploadForm
 from ..utils import (check_unique_teacher_fields, generate_excel_file,
                      generate_initial_password, generate_username,
                      is_phone_correct_format, load_branch_choices,
-                     preprocess_image)
+                     preprocess_image, apply_locked_branch)
 
 from flask_login import login_required, current_user
 
@@ -29,6 +29,7 @@ def school_staff():
 
     add_teacher_form.branches.choices = load_branch_choices()
     filter_branches_form.branches.choices = load_branch_choices()
+    apply_locked_branch(add_teacher_form.branches, filter_branches_form.branches)
 
     # -------------------------------------------------
     # PROCESS POST → Add Teacher
@@ -179,6 +180,7 @@ def school_staff():
 def teacher_profile(teacher_id):
     move_form = BranchesList()
     move_form.branches.choices = load_branch_choices()
+    apply_locked_branch(move_form.branches)
 
     try:
         teacher = Teacher.query.get(teacher_id)
@@ -268,6 +270,7 @@ def delete_teacher(teacher_id):
 def move_teacher(teacher_id):
     move_form = BranchesList()
     move_form.branches.choices = load_branch_choices()
+    apply_locked_branch(move_form.branches)
 
     prev_url = request.headers.get("Referer") or url_for("admin.school_staff")
 
@@ -317,6 +320,7 @@ def move_teacher(teacher_id):
 def update_teacher(teacher_id):
     update_form = AddTeacherForm()
     update_form.branches.choices = load_branch_choices()
+    apply_locked_branch(update_form.branches)
 
     if not update_form.validate_on_submit():
         flash("Invalid data submitted.", "danger")

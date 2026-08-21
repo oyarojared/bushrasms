@@ -524,10 +524,6 @@ function openBroadsheetPdf(path) {
   }, 1500);
 }
 
-fetch("/admin/api/branches")
-  .then((res) => res.json())
-  .then((data) => populateSelect(bsBranch, data, "Select School"));
-
 bsBranch.addEventListener("change", function () {
   const branchId = this.value;
 
@@ -618,3 +614,13 @@ bsBtn.addEventListener("click", function () {
       if (typeof unblockUI === "function") unblockUI();
     });
 });
+
+fetch("/admin/api/branches")
+  .then((res) => res.json())
+  .then((data) => {
+    if (window.BushraSchoolSelect) {
+      window.BushraSchoolSelect.fill(bsBranch, data, "Select School");
+    } else {
+      populateSelect(bsBranch, data, "Select School");
+    }
+  });

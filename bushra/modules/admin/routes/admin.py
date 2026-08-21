@@ -172,7 +172,7 @@ def admin_dash():
         "admin_templates/admin_dash.html",
         branches=branches_list if current_user.is_super_admin else single_branch,
         tot_students=total_students,
-        total_teachers=total_teachers,
+        total_teachers=total_teachers, 
     )
 
 
@@ -283,5 +283,5 @@ def teacher_dash():
         "staff_templates/teacher.html",
         lessons=classes_info,
         branch=branch,
-        teacher=current_user
+        teacher=current_user,
     )

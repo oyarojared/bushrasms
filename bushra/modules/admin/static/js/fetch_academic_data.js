@@ -5,10 +5,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const branchClassesDiv = document.querySelector(".form-select-div");
   const subjectContainer = document.querySelector(".subject-select-div");
 
-  const statusBox = document.getElementById("statusBox");
-  const statusText = document.getElementById("statusText");
-  const spinner = document.getElementById("statusSpinner");
-
   function clearStudentsList() {
     const studentContainer = document.querySelector(".students-allocation-div");
     if (studentContainer) {
@@ -16,44 +12,45 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function scrollPageUp() {
-    statusBox.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
+  function scrollAssignmentIntoView() {
+    const target = document.querySelector("#tab-two > .sa-card");
+    const scroller = document.querySelector(".main-content");
+    if (!target || !scroller) return;
+
+    requestAnimationFrame(() => {
+      const offset = 12;
+      const nextTop =
+        scroller.scrollTop +
+        (target.getBoundingClientRect().top -
+          scroller.getBoundingClientRect().top) -
+        offset;
+
+      scroller.scrollTo({
+        top: Math.max(0, nextTop),
+        behavior: "smooth",
+      });
     });
   }
 
-  // SHOW STATUS FUNCTIONS
-  function showloading(message = "Loading...") {
-    statusBox.className = "alert alert-info d-flex";
-    statusText.textContent = message;
-    spinner.classList.remove("d-none");
-    scrollPageUp();
-  }
+  function showAssignmentNotice({ success, title, message }) {
+    const noticeEl = document.getElementById("assignTeachersNoticeModal");
+    const card = document.getElementById("assignTeachersNoticeCard");
+    const icon = document.getElementById("assignTeachersNoticeIcon");
+    const titleEl = document.getElementById("assignTeachersNoticeTitle");
+    const messageEl = document.getElementById("assignTeachersNoticeMessage");
+    if (!noticeEl || !card) return;
 
-  function showsuccess(
-    message = "Operation was successfully.",
-    category = "success",
-  ) {
-    statusBox.className = `alert alert-${category} d-flex`;
-    statusText.textContent = message;
-    spinner.classList.add("d-none");
-    scrollPageUp();
+    card.classList.toggle("is-success", success);
+    card.classList.toggle("is-error", !success);
+    if (icon) {
+      icon.innerHTML = success
+        ? '<i class="bi bi-check-circle-fill"></i>'
+        : '<i class="bi bi-exclamation-triangle-fill"></i>';
+    }
+    if (titleEl) titleEl.textContent = title;
+    if (messageEl) messageEl.textContent = message;
 
-    setTimeout(() => {
-      statusBox.classList.add("d-none");
-    }, 3000);
-  }
-
-  function showserror(message = "Something went wrong") {
-    statusBox.className = "alert alert-danger d-danger";
-    statusText.textContent = message;
-    spinner.classList.add("d-none");
-    scrollPageUp();
-
-    setTimeout(() => {
-      statusBox.classList.add("d-none");
-    }, 4000);
+    bootstrap.Modal.getOrCreateInstance(noticeEl).show();
   }
 
   if (!branchSelect || !container) return;
@@ -79,7 +76,7 @@ document.addEventListener("DOMContentLoaded", function () {
     container.innerHTML = `
             <div class="d-flex justify-content-center align-items-center py-4 text-success">
                 <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                <span class="h6">Loading branch data…</span>
+                <span class="h6">Loading school data…</span>
             </div>
         `;
 
@@ -98,7 +95,7 @@ document.addEventListener("DOMContentLoaded", function () {
         container.innerHTML = `
                     <div class="text-danger">
                        <i class="bi bi-x-circle-fill me-2"></i>
-                        Failed to load branch data! Something went wrong.
+                        Failed to load school data! Something went wrong.
                     </div>
                 `;
       });
@@ -118,12 +115,13 @@ document.addEventListener("DOMContentLoaded", function () {
       <div class="grade-card-actions">
         <button class="grade-card-btn rename-${kind}-btn"
                 type="button"
-                title="Rename"
+                title="Edit"
                 ${attrs}
                 data-grade="${data.classId}"
                 data-grade-name="${data.gradeName}"
                 data-branch="${data.branchId}">
           <i class="bi bi-pencil"></i>
+          <span>Edit</span>
         </button>
         <button class="grade-card-btn is-danger delete-${kind}-btn"
                 type="button"
@@ -133,6 +131,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 data-grade-name="${data.gradeName}"
                 data-branch="${data.branchId}">
           <i class="bi bi-trash"></i>
+          <span>Delete</span>
         </button>
       </div>
     `;
@@ -142,9 +141,8 @@ document.addEventListener("DOMContentLoaded", function () {
   function renderAcademicData(data) {
     const branchName = escapeHtml(data.branch_name);
     let html = `
-            <div class="grade-board-title">
-                ${branchName}
-            </div>
+            <div class="grade-board-title">${branchName}</div>
+            <div class="grade-list">
         `;
 
     if (!data.grades || !data.grades.length) {
@@ -154,15 +152,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 </div>
             `;
       branchClassesDiv.innerHTML = `
-                <small class='text-danger fw-bold'>
-                    <i class="bi bi-x-circle-fill me-2"></i>No classes found!
-                </small>
+                <div class="sa-empty">No classes found for this school.</div>
             `;
       subjectContainer.innerHTML = "";
       return;
     }
-
-    html += `<div class="row g-3">`;
 
     data.grades.forEach((g) => {
       const gradeName = escapeHtml(g.grade_form);
@@ -176,36 +170,41 @@ document.addEventListener("DOMContentLoaded", function () {
       const total = g.totals?.total ?? 0;
       const unsigned = g.totals?.unsigned ?? Math.max(0, total - boys - girls);
 
+      const streamCount = g.streams?.length || 0;
+      const streamMeta = streamCount
+        ? `${streamCount} stream${streamCount === 1 ? "" : "s"}`
+        : "No streams";
+
       html += `
-                <div class="col-md-6 col-lg-4">
-                    <div class="grade-card">
+                    <article class="grade-card">
                         <div class="grade-card-head">
                             <div class="grade-card-title">
                                 <div class="grade-card-name">${gradeName}</div>
+                                <div class="grade-card-meta">${streamMeta}</div>
+                            </div>
+                            <div class="grade-card-stats">
+                                <div class="grade-stat">
+                                    <span class="grade-stat-n">${total}</span>
+                                    <span class="grade-stat-l">Students</span>
+                                </div>
+                                <div class="grade-stat">
+                                    <span class="grade-stat-n is-boys">${boys}</span>
+                                    <span class="grade-stat-l">Boys</span>
+                                </div>
+                                <div class="grade-stat">
+                                    <span class="grade-stat-n is-girls">${girls}</span>
+                                    <span class="grade-stat-l">Girls</span>
+                                </div>
+                                ${
+                                  unsigned
+                                    ? `<div class="grade-stat">
+                                    <span class="grade-stat-n is-unsigned">${unsigned}</span>
+                                    <span class="grade-stat-l">Unsigned</span>
+                                </div>`
+                                    : ""
+                                }
                             </div>
                             ${gradeActionButtons("grade", actionData)}
-                        </div>
-                        <div class="grade-card-stats">
-                            <div class="grade-stat">
-                                <span class="grade-stat-n">${total}</span>
-                                <span class="grade-stat-l">Students</span>
-                            </div>
-                            <div class="grade-stat">
-                                <span class="grade-stat-n is-boys">${boys}</span>
-                                <span class="grade-stat-l">Boys</span>
-                            </div>
-                            <div class="grade-stat">
-                                <span class="grade-stat-n is-girls">${girls}</span>
-                                <span class="grade-stat-l">Girls</span>
-                            </div>
-                            ${
-                              unsigned
-                                ? `<div class="grade-stat">
-                                <span class="grade-stat-n is-unsigned">${unsigned}</span>
-                                <span class="grade-stat-l">Unsigned</span>
-                            </div>`
-                                : ""
-                            }
                         </div>
                         <div class="grade-card-body">
             `;
@@ -217,18 +216,36 @@ document.addEventListener("DOMContentLoaded", function () {
           const teacherName = escapeHtml(s.teacher?.name || "Unassigned");
           const streamUnsigned =
             s.unsigned ?? Math.max(0, (s.total || 0) - (s.boys || 0) - (s.girls || 0));
-          const streamSplit = streamUnsigned
-            ? `${s.boys}B · ${s.girls}G · ${streamUnsigned}U`
-            : `${s.boys}B · ${s.girls}G`;
           html += `
                         <div class="grade-stream-row">
                             <div class="grade-stream-main">
                                 <span class="grade-stream-name">${streamName}</span>
-                                <span class="grade-stream-teacher ${teacherAssigned ? "" : "is-empty"}" title="${teacherName}">${teacherName}</span>
+                                <span class="grade-stream-teacher">
+                                  <span class="grade-teacher-label">Class Teacher:</span>
+                                  <span class="${teacherAssigned ? "" : "is-empty"}" title="${teacherName}">${teacherName}</span>
+                                </span>
                             </div>
-                            <div class="grade-stream-count">
-                                <span class="grade-stream-total">${s.total}</span>
-                                <span class="grade-stream-stats">${streamSplit}</span>
+                            <div class="grade-stream-stats-strip">
+                                <div class="grade-stat">
+                                    <span class="grade-stat-n">${s.total || 0}</span>
+                                    <span class="grade-stat-l">Students</span>
+                                </div>
+                                <div class="grade-stat">
+                                    <span class="grade-stat-n is-boys">${s.boys || 0}</span>
+                                    <span class="grade-stat-l">Boys</span>
+                                </div>
+                                <div class="grade-stat">
+                                    <span class="grade-stat-n is-girls">${s.girls || 0}</span>
+                                    <span class="grade-stat-l">Girls</span>
+                                </div>
+                                ${
+                                  streamUnsigned
+                                    ? `<div class="grade-stat">
+                                    <span class="grade-stat-n is-unsigned">${streamUnsigned}</span>
+                                    <span class="grade-stat-l">Unsigned</span>
+                                </div>`
+                                    : ""
+                                }
                             </div>
                             ${gradeActionButtons(
                               "stream",
@@ -244,14 +261,16 @@ document.addEventListener("DOMContentLoaded", function () {
         html += `
                     <div class="grade-stream-row is-plain">
                         <div class="grade-stream-main">
-                            <span class="grade-stream-name">No streams</span>
-                            <span class="grade-stream-teacher ${teacherAssigned ? "" : "is-empty"}">${teacherName}</span>
+                            <span class="grade-stream-teacher">
+                              <span class="grade-teacher-label">Class Teacher:</span>
+                              <span class="${teacherAssigned ? "" : "is-empty"}">${teacherName}</span>
+                            </span>
                         </div>
                     </div>
                     `;
       }
 
-      html += `</div></div></div>`;
+      html += `</div></article>`;
     });
 
     html += `</div>`;
@@ -696,41 +715,37 @@ document.addEventListener("DOMContentLoaded", function () {
   // ---------------------- BUILD GRADE SELECT ----------------------
   function buildGradeSelect(data) {
     branchClassesDiv.innerHTML = "";
-    const inputGroup = document.createElement("div");
-    inputGroup.classList.add("input-group", "mb-3");
-
-    const iconSpan = document.createElement("span");
-    iconSpan.classList.add("input-group-text");
-    iconSpan.innerHTML = '<i class="bi bi-mortarboard"></i>';
 
     const label = document.createElement("label");
     label.setAttribute("for", "classSelect");
-    label.classList.add("form-label", "me-2", "small");
-    label.textContent = "Grade / Form:";
+    label.className = "sa-label";
+    label.textContent = "Grade / Form";
 
     const select = document.createElement("select");
-    select.classList.add("form-select");
+    select.className = "form-select form-select-sm sa-control";
     select.name = "class_id";
     select.id = "classSelect";
 
     const placeholder = document.createElement("option");
     placeholder.value = "";
-    placeholder.textContent = "-- Select Class --";
+    placeholder.textContent = "Select class";
     placeholder.disabled = true;
     placeholder.selected = true;
     select.appendChild(placeholder);
 
-    data.grades.forEach((grade) => {
+    (typeof sortSchoolGrades === "function"
+      ? sortSchoolGrades(data.grades)
+      : data.grades
+    ).forEach((grade) => {
       const option = document.createElement("option");
-      option.value = grade.grade_form;
+      option.value = grade.class_id;
       option.textContent = grade.grade_form;
+      option.dataset.gradeForm = grade.grade_form;
       select.appendChild(option);
     });
 
-    inputGroup.appendChild(iconSpan);
-    inputGroup.appendChild(select);
     branchClassesDiv.appendChild(label);
-    branchClassesDiv.appendChild(inputGroup);
+    branchClassesDiv.appendChild(select);
 
     // Save hidden branch id
     const hiddenBranchIdInput = document.getElementById("selected-branch-id");
@@ -740,13 +755,13 @@ document.addEventListener("DOMContentLoaded", function () {
     select.addEventListener("change", function () {
       clearStudentsList();
 
-      const gradeForm = this.value;
+      const gradeForm = this.options[this.selectedIndex]?.dataset.gradeForm;
       if (!gradeForm) return;
 
       subjectContainer.innerHTML = `
-                <div class="d-flex justify-content-center align-items-center py-4 text-success">
-                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                    <span class="h6">Loading subjects…</span>
+                <div class="sa-loading">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span>Loading subjects…</span>
                 </div>
             `;
 
@@ -766,9 +781,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!subjects || subjects.length === 0) {
       subjectContainer.innerHTML = `
-                <div class="text-danger mt-5 small fw-bold">
-                    <i class="bi bi-x-circle-fill me-2"></i>No subjects found
-                    .<span class="fw-light">(Go to subjects and assign some subjects/L. Areas to this class.)</span>
+                <div class="sa-empty">
+                    No subjects for this class. Add them under Subjects first.
                 </div>
             `;
       return;
@@ -776,24 +790,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const label = document.createElement("label");
     label.setAttribute("for", "subjectSelect");
-    label.classList.add("form-label", "fw-semibold", "mb-1", "small");
-    label.textContent = "Select Subject";
-
-    const inputGroup = document.createElement("div");
-    inputGroup.classList.add("input-group", "mb-3");
-
-    const iconSpan = document.createElement("span");
-    iconSpan.classList.add("input-group-text");
-    iconSpan.innerHTML = '<i class="bi bi-book"></i>';
+    label.className = "sa-label";
+    label.textContent = "Subject";
 
     const select = document.createElement("select");
-    select.classList.add("form-select");
+    select.className = "form-select form-select-sm sa-control";
     select.id = "subjectSelect";
     select.name = "subject_id";
 
     const placeholder = document.createElement("option");
     placeholder.value = "";
-    placeholder.textContent = "-- Select Subject --";
+    placeholder.textContent = "Select subject";
     placeholder.disabled = true;
     placeholder.selected = true;
     select.appendChild(placeholder);
@@ -805,10 +812,8 @@ document.addEventListener("DOMContentLoaded", function () {
       select.appendChild(option);
     });
 
-    inputGroup.appendChild(iconSpan);
-    inputGroup.appendChild(select);
     subjectContainer.appendChild(label);
-    subjectContainer.appendChild(inputGroup);
+    subjectContainer.appendChild(select);
 
     // Add subject change listener
     select.addEventListener("change", function () {
@@ -817,21 +822,25 @@ document.addEventListener("DOMContentLoaded", function () {
         ".students-allocation-div",
       );
       studentContainer.innerHTML = `
-                <div class="text-center py-3">
-                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                <div class="sa-loading">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span>Loading students…</span>
                 </div>
             `;
       const subjectId = this.value;
       if (!subjectId) return;
 
+      const classSelect = document.getElementById("classSelect");
       const branchId = document.getElementById("selected-branch-id").value;
-      const gradeForm = document.getElementById("classSelect").value;
+      const classId = classSelect?.value;
+      const gradeForm = classSelect?.selectedOptions[0]?.dataset.gradeForm;
 
       fetch("/admin/students/by-class-subject", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           branch_id: branchId,
+          class_id: classId,
           grade_form: gradeForm,
           subject_id: subjectId,
         }),
@@ -839,11 +848,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .then((res) => res.json())
         .then((students) => {
           renderStudentsTable(students);
-          // Scroll page up
-          document.getElementById("student-table").scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
+          scrollAssignmentIntoView();
         })
         .catch((err) => console.error(err));
     });
@@ -859,154 +864,196 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!students["students"] || students["students"].length === 0) {
       container.innerHTML = `
-            <div class="text-danger small">
-                <i class="bi bi-x-circle-fill me-2"></i>No students found for this class.
-            </div>
+            <div class="sa-empty">No students found for this class.</div>
         `;
       return;
     }
 
-    // Table header + buttons
     let html = `
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <div class="row w-75">
-                <div class="col-md-6 small text-secondary">
-                    Total: 
-                    <span class="badge bg-primary small fw-bold mx-2">
-                        ${students["students"].length} students
-                    </span>
+        <div class="sa-results">
+            <div class="sa-results-head">
+                <div class="sa-counts">
+                    <span>Total students <strong>${students["students"].length}</strong></span>
+                    <span>Done by <strong id="doneByStudentsCount">${students["allocated_count"]}</strong></span>
                 </div>
-                <div class="col-md-6 small text-secondary">
-                    Done by:<span id="doneByStudentsCount" class="badge bg-success small fw-bold mx-2">
-                        ${students["allocated_count"]} students
-                    </span>
+                <div class="sa-results-actions">
+                    <button type="button" class="sa-btn sa-btn-outline" id="allocateAllBtn">
+                      <i class="bi bi-check2-square"></i>Check all
+                    </button>
+                    <button type="button" class="sa-btn sa-btn-outline" id="clearAllBtn">
+                      <i class="bi bi-square"></i>Uncheck all
+                    </button>
+                    <button type="button" class="sa-btn sa-btn-primary sa-save-btn" id="applyAllocationBtn">
+                      <i class="bi bi-save"></i>Save
+                    </button>
                 </div>
             </div>
-           
-            <div class="btn-group btn-group-sm">
-                <button type="button" class="btn btn-outline-danger mx-2" id="allocateAllBtn">Allocate to ALL</button>
-                <button type="button" class="btn btn-danger" id="applyAllocationBtn">Apply Allocation</button>
-            </div>
-        </div>
-        <div id="student-table" class="fix-top-customized-lg">
-            <table class="table table-sm table-bordered align-middle small">
-                <thead class="bg-secondary text-white">
-                    <tr>
-                        <th style="width:80px;" class="text-center">ADM NO</th>
-                        <th>STUDENT FULL NAME</th>
-                        <th style="width:40px;" class="text-center">ASSIGN</th>
-                    </tr>
-                </thead>
-                <tbody style="background: #f3f3f3 !important">
+            <div id="student-table" class="sa-table-wrap">
+                <table class="sa-table">
+                    <thead>
+                        <tr>
+                            <th class="sa-col-adm">Adm</th>
+                            <th>Student</th>
+                            <th class="sa-col-assign">Assign</th>
+                        </tr>
+                    </thead>
+                    <tbody>
     `;
 
-    // Add rows for each student
     students["students"].forEach((student) => {
       html += `
-            <tr>
-                <td class="text-center">${student.admission_number}</td>
-                <td class="text-uppercase">${student.fullname}</td>
-                <td class="text-center">
-                <input
+            <tr class="${student.allocated ? "is-assigned" : ""}">
+                <td class="sa-col-adm">${student.admission_number}</td>
+                <td class="sa-name">${student.fullname}</td>
+                <td class="sa-col-assign">
+                  <input
                     type="checkbox"
                     class="form-check-input student-checkbox"
                     data-student-id="${student.id}"
                     ${student.allocated ? "checked" : ""}
-                    style="transform: scale(1.5);"
-                >
+                  >
                 </td>
             </tr>
         `;
     });
 
-    html += `</tbody></table></div>`;
+    html += `
+                    </tbody>
+                </table>
+            </div>
+            <div class="sa-results-foot">
+                <button type="button" class="sa-btn sa-btn-primary sa-save-btn">
+                  <i class="bi bi-save"></i>Save
+                </button>
+            </div>
+        </div>`;
     container.innerHTML = html;
 
-    // ---------------------- ALLOCATE ALL BUTTON ----------------------
+    function setRowAssigned(checkbox) {
+      const row = checkbox.closest("tr");
+      if (!row) return;
+      row.classList.toggle("is-assigned", checkbox.checked);
+    }
+
+    function setAllAssigned(checked) {
+      document.querySelectorAll(".student-checkbox").forEach((cb) => {
+        cb.checked = checked;
+        setRowAssigned(cb);
+      });
+    }
+
+    container.querySelectorAll(".student-checkbox").forEach((cb) => {
+      cb.addEventListener("change", () => setRowAssigned(cb));
+    });
+
+    container.querySelectorAll(".sa-table tbody tr").forEach((row) => {
+      row.addEventListener("click", (event) => {
+        if (event.target.closest("input")) return;
+        const checkbox = row.querySelector(".student-checkbox");
+        if (!checkbox) return;
+        checkbox.checked = !checkbox.checked;
+        setRowAssigned(checkbox);
+      });
+    });
+
     const allocateAllBtn = document.getElementById("allocateAllBtn");
     if (allocateAllBtn) {
-      allocateAllBtn.addEventListener("click", () => {
-        document
-          .querySelectorAll(".student-checkbox")
-          .forEach((cb) => (cb.checked = true));
-      });
+      allocateAllBtn.addEventListener("click", () => setAllAssigned(true));
     }
 
-    // ---------------------- APPLY ALLOCATION BUTTON ----------------------
-    const applyBtn = document.getElementById("applyAllocationBtn");
-    if (applyBtn) {
-      applyBtn.addEventListener("click", () => {
-        const branchId = document.getElementById("selected-branch-id")?.value;
-        const gradeForm = document.getElementById("classSelect")?.value;
-        const subjectId = document.getElementById("subjectSelect")?.value;
+    const clearAllBtn = document.getElementById("clearAllBtn");
+    if (clearAllBtn) {
+      clearAllBtn.addEventListener("click", () => setAllAssigned(false));
+    }
 
-        if (!branchId || !gradeForm || !subjectId) {
-          alert(
-            "One of the following is not selectd: Branch, Class or Subject",
-          );
-          return;
-        }
+    function applySubjectAllocation() {
+      const classSelect = document.getElementById("classSelect");
+      const branchId = document.getElementById("selected-branch-id")?.value;
+      const classId = classSelect?.value;
+      const gradeForm = classSelect?.selectedOptions[0]?.dataset.gradeForm;
+      const subjectId = document.getElementById("subjectSelect")?.value;
+      const saveButtons = container.querySelectorAll(".sa-save-btn");
 
-        // Collect selected students
-        const selectedStudents = Array.from(
-          document.querySelectorAll(".student-checkbox:checked"),
-        ).map((cb) => parseInt(cb.dataset.studentId));
+      if (!branchId || !classId || !subjectId) {
+        showAssignmentNotice({
+          success: false,
+          title: "Could not save",
+          message: "Choose a class and subject first.",
+        });
+        return;
+      }
 
-        const payload = {
-          branch_id: branchId,
-          grade_form: gradeForm,
-          subject_id: parseInt(subjectId),
-          students: selectedStudents,
-        };
+      const selectedStudents = Array.from(
+        document.querySelectorAll(".student-checkbox:checked"),
+      ).map((cb) => parseInt(cb.dataset.studentId));
 
-        console.log("Allocation payload:", payload);
+      const payload = {
+        branch_id: branchId,
+        class_id: classId,
+        grade_form: gradeForm,
+        subject_id: parseInt(subjectId),
+        students: selectedStudents,
+      };
 
-        showloading((message = "Applying allocations..."));
+      saveButtons.forEach((btn) => {
+        btn.disabled = true;
+        btn.innerHTML =
+          '<span class="spinner-border spinner-border-sm" role="status"></span>Saving…';
+      });
 
-        fetch("/admin/subjects/allocate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.status === "success") {
-              if (data["added_count"]) {
-                showsuccess(
-                  (message = `${data["added_count"]} students allocated successfully! (${data.already_allocated_count} were already allocated)`),
-                );
-              } else {
-                showsuccess(
-                  (message = `No new student(s) allocation! (${data.already_allocated_count} were already allocated)`),
-                  (category = "warning"),
-                );
-              }
-
-              // Ensure allocated students are checked
-              selectedStudents.forEach((sid) => {
-                const checkbox = document.querySelector(
-                  `.student-checkbox[data-student-id='${sid}']`,
-                );
-                if (checkbox) checkbox.checked = true;
-              });
-
-              document.getElementById("doneByStudentsCount").textContent = `
-                        ${Number(data["added_count"]) + Number(data.already_allocated_count)}
-                    students.
-                    `;
-            } else {
-              showserror(
-                (message = "Failed to allocate subjects. Please try again."),
+      fetch("/admin/subjects/allocate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status === "success") {
+            selectedStudents.forEach((sid) => {
+              const checkbox = document.querySelector(
+                `.student-checkbox[data-student-id='${sid}']`,
               );
-            }
-          })
-          .catch((err) => {
-            console.error(err);
-            showserror(
-              "Error while allocating subjects. Please check your internet connection.",
-            );
+              if (checkbox) checkbox.checked = true;
+            });
+
+            const added = Number(data["added_count"] || 0);
+            const already = Number(data.already_allocated_count || 0);
+            document.getElementById("doneByStudentsCount").textContent =
+              added + already;
+
+            showAssignmentNotice({
+              success: true,
+              title: "Assignments saved",
+              message: added
+                ? `${added} student${added === 1 ? " was" : "s were"} assigned. ${already} already had this subject.`
+                : `No new students were assigned. ${already} already had this subject.`,
+            });
+          } else {
+            showAssignmentNotice({
+              success: false,
+              title: "Could not save",
+              message: "Subject assignments could not be updated. Please try again.",
+            });
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          showAssignmentNotice({
+            success: false,
+            title: "Could not save",
+            message: "Please check your connection and try again.",
           });
-      });
+        })
+        .finally(() => {
+          saveButtons.forEach((btn) => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-save"></i>Save';
+          });
+        });
     }
+
+    container.querySelectorAll(".sa-save-btn").forEach((btn) => {
+      btn.addEventListener("click", applySubjectAllocation);
+    });
   }
 });
