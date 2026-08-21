@@ -760,10 +760,22 @@ render_flash_messages, sidebar %} {% block side_nav %}
       scrollTarget?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
 
+    function focusFirstMarksInput() {
+      const firstInput = getMarkEntryItems()
+        .map((row) => row.querySelector(".marks-input"))
+        .find(Boolean);
+      if (!firstInput) return;
+      firstInput.focus({ preventScroll: true });
+      firstInput.select?.();
+    }
+
     function scrollStudentsIntoView() {
       const target = marksSearchBar;
       const scroller = document.querySelector(".main-content");
-      if (!target || !scroller || target.classList.contains("d-none")) return;
+      if (!target || !scroller || target.classList.contains("d-none")) {
+        focusFirstMarksInput();
+        return;
+      }
 
       requestAnimationFrame(() => {
         const offset = 12;
@@ -777,6 +789,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
           top: Math.max(0, nextTop),
           behavior: "smooth",
         });
+        focusFirstMarksInput();
       });
     }
 
