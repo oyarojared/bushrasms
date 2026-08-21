@@ -2344,21 +2344,15 @@
 
 .cls-workbench-head {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 0.85rem 1.25rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.85rem;
   padding: 1rem 1rem 0;
   margin-bottom: 1.1rem;
 }
 
-.cls-workbench-head > .sa-btn {
-  margin-bottom: 2px;
-}
-
 .cls-workbench-school {
-  flex: 1 1 280px;
-  max-width: 520px;
-  min-width: min(100%, 240px);
+  width: 100%;
 }
 
 .cls-workbench-school form {
