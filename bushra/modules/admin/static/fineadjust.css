@@ -2404,8 +2404,100 @@
   border-color: #ff7979;
 }
 
-.cls-school-field .form-select:focus {
+.cls-add-dialog {
+  max-width: 440px;
+}
+
+.cls-add-modal {
+  border: 1px solid #e8ecef;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.cls-add-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: #ff7979;
+  color: #fff;
+}
+
+.cls-add-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.cls-add-title i {
+  font-size: 0.95rem;
+}
+
+.cls-add-body {
+  padding: 1rem 1.1rem 0.35rem;
+}
+
+.cls-add-field {
+  margin-bottom: 0.85rem;
+}
+
+.cls-add-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.cls-add-field .input-group-text {
+  background: #fff5f5;
+  border-color: #e5e7eb;
+  color: #ff7979;
+}
+
+.cls-add-field .form-control,
+.cls-add-field .form-select {
+  border-color: #e5e7eb;
+  font-size: 0.86rem;
+}
+
+.cls-add-field .form-control:focus,
+.cls-add-field .form-select:focus {
+  border-color: #ff7979;
   box-shadow: 0 0 0 0.15rem rgba(255, 121, 121, 0.15);
+}
+
+.cls-add-hint {
+  margin: 0.3rem 0 0;
+  font-size: 0.72rem;
+  color: #6b7280;
+}
+
+.ct-current {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.ct-current.is-empty {
+  color: #e3745b;
+}
+
+#class-teacher-select.is-unassigned {
+  border-color: #ffc4c4;
+  background: #fff1f1;
+}
+
+.cls-add-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  padding: 0.75rem 1.1rem 1rem;
 }
 
 .sa-table-wrap {
@@ -2497,6 +2589,10 @@
    ASSIGN TEACHERS MODAL
    ========================================================= */
 
+.at-dialog {
+  max-width: 760px;
+}
+
 .at-modal {
   border: 1px solid #e8ecef;
   border-radius: 12px;
@@ -2505,52 +2601,64 @@
 
 .at-modal-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 1rem 1.1rem 0.85rem;
-  border-bottom: 1px solid #f0f2f4;
-  background: #fff;
+  padding: 0.48rem 1.25rem;
+  background: #ff7979;
+  color: #fff;
+  border-bottom: 0;
 }
 
 .at-modal-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: #1f2937;
+  line-height: 1.2;
+  color: #fff;
+}
+
+.at-modal-title i {
+  font-size: 0.92rem;
 }
 
 .at-modal-copy {
-  margin: 0.15rem 0 0;
-  font-size: 0.74rem;
-  color: #6b7280;
+  margin: 0.06rem 0 0;
+  font-size: 0.76rem;
+  line-height: 1.25;
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .at-modal-body {
-  padding: 0;
+  padding: 1rem 1.35rem 0.5rem;
 }
 
 .at-empty {
-  padding: 1.25rem 1.1rem;
-  font-size: 0.86rem;
+  padding: 0.85rem 0 1rem;
+  font-size: 0.88rem;
   color: #6b7280;
 }
 
 .at-table-wrap {
   max-height: min(58vh, 480px);
   overflow: auto;
+  border: 1px solid #e8ecef;
+  border-radius: 8px;
 }
 
 .at-table {
   width: 100%;
   margin: 0;
   border-collapse: collapse;
-  font-size: 0.74rem;
+  font-size: 0.82rem;
 }
 
 .at-table th,
 .at-table td {
-  padding: 0.48rem 0.75rem;
+  padding: 0.58rem 0.9rem;
   border: none;
   border-bottom: 1px solid #eef1f4;
   vertical-align: middle;
@@ -2561,11 +2669,20 @@
   top: 0;
   z-index: 1;
   background: #f8fafc;
-  font-size: 0.64rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+.at-table tbody tr.is-unassigned td {
+  background: #fff1f1;
+}
+
+.at-table tbody tr.is-unassigned .at-teacher-select {
+  border-color: #ffc4c4;
+  background: #fff;
 }
 
 .at-table tbody tr:last-child td {
@@ -2583,34 +2700,34 @@
 }
 
 .at-col-count {
-  width: 78px;
+  width: 86px;
   text-align: center;
   color: #4b5563;
   font-variant-numeric: tabular-nums;
 }
 
 .at-teacher-select {
-  min-width: 168px;
-  min-height: 30px;
-  padding: 0.15rem 0.45rem;
-  border-color: #dde3ea;
+  min-width: 180px;
+  min-height: 34px;
+  padding: 0.25rem 0.55rem;
+  border-color: #e5e7eb;
   border-radius: 7px;
-  font-size: 0.74rem;
-  line-height: 1.2;
+  font-size: 0.82rem;
+  line-height: 1.25;
   color: #1f2937;
 }
 
 .at-teacher-select:focus {
   border-color: #ff7979;
-  box-shadow: 0 0 0 0.12rem rgba(255, 121, 121, 0.15);
+  box-shadow: 0 0 0 0.15rem rgba(255, 121, 121, 0.15);
 }
 
 .at-modal-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.75rem;
-  padding: 0.85rem 1.1rem;
+  padding: 0.85rem 1.35rem 1.1rem;
   border-top: 1px solid #f0f2f4;
   background: #fff;
 }

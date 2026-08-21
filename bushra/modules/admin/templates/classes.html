@@ -90,7 +90,7 @@ render_flash_messages() }}
         type="button"
         role="tab"
       >
-        <i class="bi bi-gear"></i>Manage class
+        <i class="bi bi-person-video3"></i>Manage class teachers
       </button>
     </li>
   </ul>
@@ -138,28 +138,24 @@ render_flash_messages() }}
       </div>
     </div>
 
-    <!-- Class Management Tab -->
     <div
       class="tab-pane fade"
       id="tab-four"
       role="tabpanel"
       aria-labelledby="tab-four-tab"
     >
-      <h5 class="text-center fw-light">
-        <i class="bi bi-filter me-2"></i>Filter class to Manage
-      </h5>
-
-      <div class="row border p-2">
-        <div class="container orange-line mb-2"></div>
-        <div class="col-md-6">
-          <div id="grade-container-2"></div>
+      <div class="sa-card">
+        <div class="sa-card-head">
+          <h6 class="sa-card-title">Manage class teachers</h6>
+          <p class="sa-card-copy">
+            Choose a class, then assign the class teacher.
+          </p>
         </div>
-        <div class="col-md-6">
+        <div class="sa-filters">
+          <div id="grade-container-2"></div>
           <div id="stream-container-2"></div>
         </div>
-      </div>
-      <div class="row d-flex justify-content-end mt-2">
-        <div id="class-manage-btn-container" class="col-auto"></div>
+        <div class="sa-proceed" id="class-manage-btn-container"></div>
       </div>
     </div>
   </div>
@@ -177,59 +173,69 @@ render_flash_messages() }}
   data-bs-backdrop="static"
   data-bs-keyboard="false"
 >
-  <div class="modal-dialog modal-dialog-centered modal-md">
-    <div class="modal-content">
-      <!-- Modal Header -->
-      <div class="modal-header bg-danger pt-2 pb-2 px-3 text-white">
-        <h6 class="modal-title fw-bold" id="addClassModalLabel">
-          <i class="bi bi-plus-circle me-2"></i>ADD GRADE / FORM & (STREAMS)
+  <div class="modal-dialog modal-dialog-centered cls-add-dialog">
+    <div class="modal-content cls-add-modal">
+      <div class="cls-add-header">
+        <h6 class="cls-add-title" id="addClassModalLabel">
+          <i class="bi bi-plus-lg"></i>
+          Add grade / form
         </h6>
         <button
           type="button"
           class="btn-close btn-close-white"
           data-bs-dismiss="modal"
+          aria-label="Close"
         ></button>
       </div>
 
-      <!-- Modal Body -->
-      <div class="px-4 pt-2 pb-2">
-        <h6 class="text-center border-bottom bg-light p-2 fw-light">
-          Class Details Entry
-        </h6>
-        <div class="border p-3">
-          <form action="{{ url_for('admin.grades_forms') }}" method="POST">
-            {{ load_branches_form.hidden_tag() }}
+      <form action="{{ url_for('admin.grades_forms') }}" method="POST">
+        {{ load_branches_form.hidden_tag() }}
+        <div class="cls-add-body">
+          {{ form_input(
+            load_branches_form.class_year,
+            wrapper_class="cls-add-field",
+            label_class="cls-add-label",
+            input_class="form-select form-select-sm",
+            icon_class="bi bi-calendar-date"
+          ) }}
 
-            <!-- Year -->
-            {{ form_input(load_branches_form.class_year,
-            input_class="form-select", icon_class="bi bi-calendar-date") }}
-
-            <!-- School -->
-            <div class="mb-3{% if not can_select_branch %} d-none{% endif %}" data-school-picker>
-              <label class="form-label" for="{{ load_branches_form.branches.id }}">School</label>
-              <div class="input-group">
-                <span class="input-group-text"><i class="bi bi-building"></i></span>
-                {{ load_branches_form.branches(class="form-select") }}
-              </div>
+          <div class="cls-add-field{% if not can_select_branch %} d-none{% endif %}" data-school-picker>
+            <label class="cls-add-label" for="add-class-school">School</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text"><i class="bi bi-building"></i></span>
+              {{ load_branches_form.branches(class="form-select form-select-sm", id="add-class-school") }}
             </div>
+          </div>
 
-            <!-- Grade/Form -->
-            {{ form_input(load_branches_form.grade_form, icon_class="bi
-            bi-journal-text", placeholder="Grade 9") }}
+          {{ form_input(
+            load_branches_form.grade_form,
+            wrapper_class="cls-add-field",
+            label_class="cls-add-label",
+            input_class="form-control form-control-sm",
+            icon_class="bi bi-journal-text",
+            placeholder="Grade 9"
+          ) }}
 
-            <!-- Streams -->
-            {{ form_input(load_branches_form.streams, icon_class="bi bi-house",
-            placeholder="North, South, East") }}
-
-            <div class="d-flex justify-content-end mt-2">
-              <button class="btn btn-secondary" type="submit">
-                <i class="bi bi-send-plus me-2"></i> Submit
-              </button>
+          <div class="cls-add-field">
+            <label class="cls-add-label" for="{{ load_branches_form.streams.id }}">Streams</label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text"><i class="bi bi-layers"></i></span>
+              {{ load_branches_form.streams(class="form-control form-control-sm", placeholder="North, South, East") }}
             </div>
-          </form>
+            <p class="cls-add-hint">Optional. Separate names with a comma.</p>
+          </div>
         </div>
-        <hr />
-      </div>
+
+        <div class="cls-add-footer">
+          <button type="button" class="sa-btn sa-btn-outline" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="submit" class="sa-btn sa-btn-primary">
+            <i class="bi bi-plus-lg"></i>
+            Add class
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -827,42 +833,6 @@ render_flash_messages() }}
 </div>
 
 <!-- =========================
-    Manage Class Modal
-========================= -->
-<div
-  class="modal fade"
-  id="manageClassModal"
-  tabindex="-1"
-  aria-labelledby="manageClassModalLabel"
-  aria-hidden="true"
-  data-bs-backdrop="static"
-  data-bs-keyboard="false"
->
-  <div class="modal-dialog modal-dialog-centered modal-md">
-    <div class="modal-content">
-      <!-- Modal Header -->
-      <div class="modal-header bg-danger pt-2 pb-2 px-3 text-white">
-        <h6 class="modal-title fw-bold" id="addClassModalLabel">
-          <i class="bi bi-gear me-2"></i>MANAGE CLASS
-        </h6>
-        <button
-          type="button"
-          class="btn-close btn-close-white"
-          data-bs-dismiss="modal"
-        ></button>
-      </div>
-
-      <!-- Modal Body -->
-      <div class="px-4 pt-2 pb-2">
-        <h6 class="text-center border-bottom bg-light p-2 fw-light">
-          Manage class
-        </h6>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- =========================
      Teacher assignment notice
 ========================= -->
 <div
@@ -908,7 +878,6 @@ render_flash_messages() }}
 <script src="{{ url_for('admin.static', filename='js/grade_sort.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/fetch_academic_data.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/lessons.js') }}"></script>
-<script src="{{ url_for('admin.static', filename='js/manage_class.js') }}"></script>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {

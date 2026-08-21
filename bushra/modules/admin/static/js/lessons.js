@@ -50,7 +50,18 @@ document.addEventListener("DOMContentLoaded", function () {
         initGradeStreamSelector({
             branchId,
             gradeContainerId: "grade-container-2",
-            streamContainerId: "stream-container-2"
+            streamContainerId: "stream-container-2",
+            proceedContainerId: "class-manage-btn-container",
+            theme: "classteachers",
+            proceedLabel: "Assign class teacher",
+            onProceed: ({ class_id, class_name, stream }) => {
+                openClassTeacherModal({
+                    branch_id: Number(branchId),
+                    class_id,
+                    class_name,
+                    stream
+                });
+            }
         });
     });
 
@@ -63,13 +74,44 @@ document.addEventListener("DOMContentLoaded", function () {
 ============================================================ */
 
 function showSpinner(container, theme) {
-    const loadingClass = theme === "lessons" ? "sa-loading" : "text-center py-3";
+    const isCardTheme = theme === "lessons" || theme === "classteachers";
+    const loadingClass = isCardTheme ? "sa-loading" : "text-center py-3";
     container.innerHTML = `
         <div class="${loadingClass}">
             <div class="spinner-border spinner-border-sm" role="status"></div>
-            ${theme === "lessons" ? "<span>Loading classes…</span>" : ""}
+            ${isCardTheme ? "<span>Loading classes…</span>" : ""}
         </div>
     `;
+}
+
+function scrollActionIntoView(el) {
+    const scroller = document.querySelector(".main-content");
+    if (!el || !scroller) return;
+
+    requestAnimationFrame(() => {
+        const elRect = el.getBoundingClientRect();
+        const scrollerRect = scroller.getBoundingClientRect();
+        const pad = 28;
+        if (
+            elRect.bottom <= scrollerRect.bottom - pad &&
+            elRect.top >= scrollerRect.top + pad
+        ) {
+            return;
+        }
+
+        const nextTop =
+            scroller.scrollTop + (elRect.bottom - scrollerRect.bottom) + pad;
+        scroller.scrollTo({
+            top: Math.max(0, nextTop),
+            behavior: "smooth",
+        });
+    });
+}
+
+function revealActionButton(actionBtn) {
+    if (!actionBtn) return;
+    actionBtn.classList.remove("d-none");
+    requestAnimationFrame(() => scrollActionIntoView(actionBtn));
 }
 
 function clearContainer(container) {
@@ -87,7 +129,8 @@ function initGradeStreamSelector({
     streamContainerId,
     proceedContainerId = null,
     onProceed = null,
-    theme = ""
+    theme = "",
+    proceedLabel = ""
 }) {
     if (!branchId) return;
 
@@ -113,14 +156,15 @@ function initGradeStreamSelector({
                 streamContainer,
                 proceedContainer,
                 onProceed,
-                theme
+                theme,
+                proceedLabel
             );
         })
         .catch(() => {
-            gradeContainer.innerHTML =
-                theme === "lessons"
-                    ? `<div class="sa-empty">Failed to load classes.</div>`
-                    : `<small class="text-danger fw-bold">Failed to load classes.</small>`;
+            const isCardTheme = theme === "lessons" || theme === "classteachers";
+            gradeContainer.innerHTML = isCardTheme
+                ? `<div class="sa-empty">Failed to load classes.</div>`
+                : `<small class="text-danger fw-bold">Failed to load classes.</small>`;
         });
 }
 
@@ -131,22 +175,25 @@ function renderGradesAndStreamsReusable(
     streamContainer,
     proceedContainer,
     onProceed,
-    theme = ""
+    theme = "",
+    proceedLabel = ""
 ) {
-    const isLessons = theme === "lessons";
+    const isCardTheme = theme === "lessons" || theme === "classteachers";
+    const gradeSelectId = theme === "classteachers" ? "ct-grade-select" : "lesson-grade-select";
+    const streamSelectId = theme === "classteachers" ? "ct-stream-select" : "lesson-stream-select";
     gradeContainer.innerHTML = "";
     streamContainer.innerHTML = "";
     if (proceedContainer) proceedContainer.innerHTML = "";
 
     if (!Array.isArray(data) || data.length === 0) {
-        gradeContainer.innerHTML = isLessons
+        gradeContainer.innerHTML = isCardTheme
             ? `<div class="sa-empty">No classes available.</div>`
             : `<small class="text-danger fw-bold">No classes available.</small>`;
         return;
     }
 
     const gradeSelect = document.createElement("select");
-    gradeSelect.className = isLessons
+    gradeSelect.className = isCardTheme
         ? "form-select form-select-sm sa-control"
         : "form-select form-select-sm mb-2";
     gradeSelect.innerHTML = `<option value="">Select class</option>`;
@@ -163,12 +210,12 @@ function renderGradesAndStreamsReusable(
         gradeSelect.appendChild(opt);
     });
 
-    if (isLessons) {
+    if (isCardTheme) {
         const gradeLabel = document.createElement("label");
         gradeLabel.className = "sa-label";
-        gradeLabel.setAttribute("for", "lesson-grade-select");
+        gradeLabel.setAttribute("for", gradeSelectId);
         gradeLabel.textContent = "Grade / Form";
-        gradeSelect.id = "lesson-grade-select";
+        gradeSelect.id = gradeSelectId;
         gradeContainer.appendChild(gradeLabel);
     }
     gradeContainer.appendChild(gradeSelect);
@@ -178,12 +225,12 @@ function renderGradesAndStreamsReusable(
     if (proceedContainer && onProceed) {
         actionBtn = document.createElement("button");
         actionBtn.type = "button";
-        actionBtn.className = isLessons
+        actionBtn.className = isCardTheme
             ? "sa-btn sa-btn-primary d-none"
             : "btn btn-sm btn-secondary d-none";
-        actionBtn.innerHTML = isLessons
+        actionBtn.innerHTML = proceedLabel || (isCardTheme
             ? `Assign teachers`
-            : `<i class="bi bi-arrow-right me-2"></i>Proceed`;
+            : `<i class="bi bi-arrow-right me-2"></i>Proceed`);
         proceedContainer.appendChild(actionBtn);
     }
 
@@ -197,12 +244,12 @@ function renderGradesAndStreamsReusable(
         const streams = JSON.parse(opt.dataset.streams || "[]");
 
         if (!streams.length) {
-            if (actionBtn) actionBtn.classList.remove("d-none");
+            revealActionButton(actionBtn);
             return;
         }
 
         const streamSelect = document.createElement("select");
-        streamSelect.className = isLessons
+        streamSelect.className = isCardTheme
             ? "form-select form-select-sm sa-control"
             : "form-select form-select-sm";
         streamSelect.innerHTML = `<option value="">Select stream</option>`;
@@ -214,19 +261,22 @@ function renderGradesAndStreamsReusable(
             streamSelect.appendChild(o);
         });
 
-        if (isLessons) {
+        if (isCardTheme) {
             const streamLabel = document.createElement("label");
             streamLabel.className = "sa-label";
-            streamLabel.setAttribute("for", "lesson-stream-select");
+            streamLabel.setAttribute("for", streamSelectId);
             streamLabel.textContent = "Stream";
-            streamSelect.id = "lesson-stream-select";
+            streamSelect.id = streamSelectId;
             streamContainer.appendChild(streamLabel);
         }
         streamContainer.appendChild(streamSelect);
 
         streamSelect.addEventListener("change", () => {
-            if (actionBtn) {
-                actionBtn.classList.toggle("d-none", !streamSelect.value);
+            if (!actionBtn) return;
+            if (streamSelect.value) {
+                revealActionButton(actionBtn);
+            } else {
+                actionBtn.classList.add("d-none");
             }
         });
     });
@@ -234,8 +284,10 @@ function renderGradesAndStreamsReusable(
     if (actionBtn) {
         actionBtn.addEventListener("click", () => {
             const streamSelect = streamContainer.querySelector("select");
+            const classOpt = gradeSelect.options[gradeSelect.selectedIndex];
             onProceed({
                 class_id: Number(gradeSelect.value),
+                class_name: classOpt ? classOpt.textContent : "",
                 stream: streamSelect ? streamSelect.value : null
             });
         });
@@ -295,16 +347,19 @@ function renderAssignTeachersModal(data) {
 
     if (!data.subjects.length) {
         modal.innerHTML = `
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered at-dialog">
             <div class="modal-content at-modal">
-                <div class="modal-header at-modal-header">
+                <div class="at-modal-header">
                     <div>
-                        <h6 class="at-modal-title">Assign teachers</h6>
-                        <p class="at-modal-copy">${classLabel}</p>
+                        <h6 class="at-modal-title">
+                          <i class="bi bi-person-badge"></i>
+                          Assign teachers
+                        </h6>
+                        <p class="at-modal-copy">${classLabel || "Choose a teacher for each subject."}</p>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body at-modal-body">
+                <div class="at-modal-body">
                     <div class="at-empty">
                         No subjects found for this class. Assign students and subjects first.
                     </div>
@@ -322,16 +377,19 @@ function renderAssignTeachersModal(data) {
     }
 
     modal.innerHTML = `
-    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable at-dialog">
         <div class="modal-content at-modal">
-            <div class="modal-header at-modal-header">
+            <div class="at-modal-header">
                 <div>
-                    <h6 class="at-modal-title">Assign teachers</h6>
+                    <h6 class="at-modal-title">
+                      <i class="bi bi-person-badge"></i>
+                      Assign teachers
+                    </h6>
                     <p class="at-modal-copy">${classLabel || "Choose a teacher for each subject."}</p>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body at-modal-body">
+            <div class="at-modal-body">
                 <form id="assignTeachersForm">
                     <div class="at-table-wrap">
                         <table class="at-table">
@@ -345,7 +403,7 @@ function renderAssignTeachersModal(data) {
                             </thead>
                             <tbody>
                                 ${data.subjects.map(s => `
-                                    <tr>
+                                    <tr class="${s.assigned_teacher_id ? "" : "is-unassigned"}">
                                         <td class="at-col-code">${s.code || ""}</td>
                                         <td class="at-subject">${s.name}</td>
                                         <td class="at-col-count">${s.student_count}</td>
@@ -365,7 +423,9 @@ function renderAssignTeachersModal(data) {
             <div class="at-modal-footer">
                 <div class="at-modal-actions">
                     <button type="button" class="sa-btn sa-btn-outline" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" id="saveAssignmentsBtn" class="sa-btn sa-btn-primary">Save</button>
+                    <button type="button" id="saveAssignmentsBtn" class="sa-btn sa-btn-primary">
+                      <i class="bi bi-save"></i>Save
+                    </button>
                 </div>
             </div>
         </div>
@@ -373,6 +433,13 @@ function renderAssignTeachersModal(data) {
 
     document.body.appendChild(modal);
     new bootstrap.Modal(modal).show();
+
+    modal.querySelectorAll(".at-teacher-select").forEach((select) => {
+        select.addEventListener("change", () => {
+            const row = select.closest("tr");
+            if (row) row.classList.toggle("is-unassigned", !select.value);
+        });
+    });
 
     document.getElementById("saveAssignmentsBtn").onclick = () =>
         saveTeacherAssignments(data.branch_id, data.class_id, data.stream);
@@ -434,7 +501,7 @@ function saveTeacherAssignments(branch_id, class_id, stream) {
         .finally(() => {
             if (saveBtn) {
                 saveBtn.disabled = false;
-                saveBtn.textContent = "Save";
+                saveBtn.innerHTML = '<i class="bi bi-save"></i>Save';
             }
         });
 }
@@ -488,164 +555,113 @@ document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
             gradeContainerId: "grade-container-2",
             streamContainerId: "stream-container-2",
             proceedContainerId: "class-manage-btn-container",
-            onProceed: ({ class_id, stream }) => {
-                openClassManagementModal({
+            theme: "classteachers",
+            proceedLabel: "Assign class teacher",
+            onProceed: ({ class_id, class_name, stream }) => {
+                openClassTeacherModal({
                     branch_id: Number(branchId),
                     class_id,
+                    class_name,
                     stream
                 });
             }
         });
-        
     });
 });
 
 
-function openClassManagementModal({ branch_id, class_id, stream }) {
-
-    window.currentClassContext = {
-        branch_id,
-        class_id,
-        stream
-    };
-
-
-
-    const existing = document.getElementById("classManagementModal");
+function openClassTeacherModal({ branch_id, class_id, class_name, stream }) {
+    const existing = document.getElementById("classTeacherModal");
     if (existing) existing.remove();
 
+    const classLabel = [class_name, stream].filter(Boolean).join(" · ");
     const modal = document.createElement("div");
     modal.className = "modal fade";
-    modal.id = "classManagementModal";
-    modal.tabIndex = -1;
+    modal.id = "classTeacherModal";
+    modal.setAttribute("data-bs-backdrop", "static");
+    modal.setAttribute("data-bs-keyboard", "false");
 
     modal.innerHTML = `
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white px-3 pt-1 pb-1">
-                <h6 class="modal-title">
-                    <i class="bi bi-gear me-2"></i>Manage Class
-                </h6>
-                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-           <div class="modal-body border m-3">
-                <!-- Context (always visible) --> 
-                <div class="alert alert-light small mb-2">
-                    <strong>Branch:</strong> <span id="ctx-branch"></span> |
-                    <strong>Class:</strong> <span id="ctx-class"></span> |
-                    <strong>Stream:</strong> <span id="ctx-stream"></span>
+    <div class="modal-dialog modal-dialog-centered cls-add-dialog">
+        <div class="modal-content cls-add-modal">
+            <div class="cls-add-header">
+                <div>
+                    <h6 class="cls-add-title">
+                        <i class="bi bi-person-video3"></i>
+                        Assign class teacher
+                    </h6>
+                    <p class="at-modal-copy">${classLabel || "Choose the class teacher."}</p>
                 </div>
-
-                <!-- Tabs -->
-                <ul class="nav nav-tabs mb-3" role="tablist">
-                    <li class="nav-item">
-                         
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-teacher">
-                            <i class="bi bi-person me-2"></i>Class Teacher
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-streams">
-                            <i class="bi bi-house me-2"></i>Streams
-                        </button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-move-students">
-                            <i class="bi bi-arrow-left-right me-2"></i>Move Students
-                        </button>
-                    </li>
-                </ul>
-
-                <div class="tab-content"> 
-                    <div class="tab-pane fade" id="tab-teacher">
-                            <div class="mb-2 small text-muted">
-                                Assign or change the class teacher for this class.
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Current Class Teacher</label>
-                                <div id="current-class-teacher" class="small text-primary">
-                                    Loading...
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Select Teacher</label>
-                                <select id="class-teacher-select" class="form-select form-select-sm">
-                                    <option value="">-- Select Teacher --</option>
-                                </select>
-                            </div>
-
-                            <div class="text-end">
-                                <button id="save-class-teacher-btn"
-                                        class="btn btn-primary btn-sm"
-                                        disabled>
-                                    Save Class Teacher
-                                </button>
-                            </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="cls-add-body">
+                <div id="class-teacher-status" class="sa-loading">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span>Loading teachers…</span>
+                </div>
+                <div id="class-teacher-form" class="d-none">
+                    <div class="cls-add-field">
+                        <label class="cls-add-label">Current class teacher</label>
+                        <div id="current-class-teacher" class="ct-current"></div>
                     </div>
-
-                    <div class="tab-pane fade" id="tab-streams"></div>
-                    <div class="tab-pane fade" id="tab-move-students"></div>
+                    <div class="cls-add-field">
+                        <label class="cls-add-label" for="class-teacher-select">Class teacher</label>
+                        <select id="class-teacher-select" class="form-select form-select-sm">
+                            <option value="">Select teacher</option>
+                        </select>
+                    </div>
                 </div>
             </div>
-
-            <hr class="mx-4">
-
+            <div class="cls-add-footer">
+                <button type="button" class="sa-btn sa-btn-outline" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="save-class-teacher-btn" class="sa-btn sa-btn-primary" disabled>
+                    <i class="bi bi-save"></i>Save
+                </button>
+            </div>
         </div>
-      
-    </div>
-    `;
+    </div>`;
 
     document.body.appendChild(modal);
-    new bootstrap.Modal(modal).show();
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
 
-    document.getElementById("ctx-branch").textContent = branch_id;
-    document.getElementById("ctx-class").textContent = class_id;
-    document.getElementById("ctx-stream").textContent = stream || "N/A";
-
+    loadClassTeacherForm({ branch_id, class_id, stream });
 }
 
 
-document.addEventListener("shown.bs.tab", function (e) {
-    if (!e.target.matches('[data-bs-target="#tab-teacher"]')) return;
-    loadClassTeacherTab();
-});
- 
-function loadClassTeacherTab() {
-    const ctx = window.currentClassContext;
-    if (!ctx) return;
-
+function loadClassTeacherForm({ branch_id, class_id, stream }) {
+    const statusEl = document.getElementById("class-teacher-status");
+    const formEl = document.getElementById("class-teacher-form");
     const currentDiv = document.getElementById("current-class-teacher");
     const select = document.getElementById("class-teacher-select");
     const saveBtn = document.getElementById("save-class-teacher-btn");
-
-    // Reset UI
-    currentDiv.textContent = "Loading...";
-    select.innerHTML = `<option value="">-- Select Teacher --</option>`;
-    saveBtn.disabled = true;
+    if (!select || !saveBtn) return;
 
     const params = new URLSearchParams({
-        branch_id: ctx.branch_id,
-        class_id: ctx.class_id,
-        stream: ctx.stream || ""
+        branch_id,
+        class_id
     });
+    if (stream) params.set("stream", stream);
 
     fetch(`/admin/api/class-teacher-context?${params}`)
-        .then(res => {
+        .then((res) => {
             if (!res.ok) throw new Error("Failed to fetch class teacher data");
             return res.json();
         })
-        .then(data => {
-            // Show current teacher
+        .then((data) => {
+            const teachers = [...(data.teachers || [])].sort((a, b) =>
+                String(a.name || "").localeCompare(String(b.name || ""), undefined, {
+                    sensitivity: "base"
+                })
+            );
+
             currentDiv.textContent = data.current_teacher
                 ? data.current_teacher.name
                 : "Not assigned";
+            currentDiv.classList.toggle("is-empty", !data.current_teacher);
 
-            // Populate dropdown
-            data.teachers.forEach(t => {
+            select.innerHTML = `<option value="">Select teacher</option>`;
+            teachers.forEach((t) => {
                 const opt = document.createElement("option");
                 opt.value = t.id;
                 opt.textContent = t.name;
@@ -655,49 +671,86 @@ function loadClassTeacherTab() {
                 select.appendChild(opt);
             });
 
+            const markSelect = () => {
+                select.classList.toggle("is-unassigned", !select.value);
+            };
+            markSelect();
+            select.addEventListener("change", markSelect);
+
+            statusEl.classList.add("d-none");
+            formEl.classList.remove("d-none");
             saveBtn.disabled = false;
 
-            // Attach click handler **after elements exist**
             saveBtn.onclick = () => {
                 const teacherId = select.value;
                 if (!teacherId) {
                     currentDiv.textContent = "Please select a teacher";
+                    currentDiv.classList.add("is-empty");
                     return;
                 }
 
                 saveBtn.disabled = true;
-                saveBtn.textContent = "Saving...";
+                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>Saving…';
 
                 fetch("/admin/api/save-class-teacher", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        branch_id: ctx.branch_id,
-                        class_id: ctx.class_id,
-                        stream: ctx.stream || "",
+                        branch_id,
+                        class_id,
+                        stream: stream || null,
                         teacher_id: Number(teacherId)
                     })
                 })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        currentDiv.textContent = data.teacher_name;
-                    } else {
-                        currentDiv.textContent = data.message || "Failed to save";
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    currentDiv.textContent = "An unexpected error occurred";
-                })
-                .finally(() => {
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = "Save Class Teacher";
-                });
+                    .then((res) => res.json())
+                    .then((result) => {
+                        if (!result.success) {
+                            showAssignmentNotice({
+                                success: false,
+                                title: "Could not save",
+                                message: result.message || "The class teacher could not be updated.",
+                                closeForm: false
+                            });
+                            return;
+                        }
+
+                        const modalEl = document.getElementById("classTeacherModal");
+                        const modalInstance = modalEl
+                            ? bootstrap.Modal.getInstance(modalEl)
+                            : null;
+                        const notice = {
+                            success: true,
+                            title: "Class teacher saved",
+                            message: `${result.teacher_name} is now the class teacher.`,
+                            closeForm: false
+                        };
+                        if (modalInstance && modalEl) {
+                            modalEl.addEventListener(
+                                "hidden.bs.modal",
+                                () => showAssignmentNotice(notice),
+                                { once: true }
+                            );
+                            modalInstance.hide();
+                        } else {
+                            showAssignmentNotice(notice);
+                        }
+                    })
+                    .catch(() => {
+                        showAssignmentNotice({
+                            success: false,
+                            title: "Could not save",
+                            message: "Please check your connection and try again.",
+                            closeForm: false
+                        });
+                    })
+                    .finally(() => {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = '<i class="bi bi-save"></i>Save';
+                    });
             };
         })
-        .catch(err => {
-            console.error(err);
-            currentDiv.textContent = "Failed to load data";
+        .catch(() => {
+            statusEl.className = "sa-empty";
+            statusEl.textContent = "Failed to load teachers.";
         });
 }
