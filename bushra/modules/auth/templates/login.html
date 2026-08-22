@@ -18,10 +18,6 @@
     />
     <link
       rel="stylesheet"
-      href="{{ url_for('auth.static', filename='auth_style.css') }}"
-    />
-    <link
-      rel="stylesheet"
       href="{{ url_for('auth.static', filename='login.css') }}"
     />
     <link
@@ -42,7 +38,7 @@
           <a href="/" class="company-brand">
             <img
               src="{{ url_for('static', filename='logos/shuleka_logo_lg.png') }}"
-              alt="Acadex Tech Logo"
+              alt="Shuleka Tech Logo"
               class="company-logo"
             />
 
@@ -74,7 +70,7 @@
             <div class="visual-image-wrapper">
               <img
                 src="{{ url_for('static', filename='system_screenshots/acadex-login-laptop.png') }}"
-                alt="Acadex school management system being used on a laptop"
+                alt="Shuleka school management system being used on a laptop"
                 class="login-visual-image"
               />
 
@@ -224,12 +220,17 @@
                   </div>
                 </div>
 
-                <!-- LOGIN BUTTON -->
+                <div class="login-extras">
+                  <label class="remember-me" for="remember_me">
+                    {{ form.remember_me(id="remember_me") }}
+                    <span>Remember me</span>
+                  </label>
+                  <a href="#login-help" class="forgot-link">Forgot password?</a>
+                </div>
 
                 <button type="submit" class="btn btn-login w-100">
                   <i class="bi bi-box-arrow-in-right"></i>
-
-                  <span>Sign in to Acadex</span>
+                  <span>Sign in</span>
                 </button>
               </form>
 
@@ -250,52 +251,26 @@
            FOOTER
       ==================================================== -->
 
-      <footer class="login-footer">
+      <footer class="login-footer" id="login-help">
         <div class="footer-inner">
-          <!-- DEVELOPMENT -->
-
-          <div class="footer-item">
-            <div class="footer-icon">
-              <i class="bi bi-code-slash"></i>
-            </div>
-
-            <div class="footer-content">
-              <span>Developed by</span>
-
-              <strong>
-                Shuleka Tech
-                <span class="copyright">&copy; 2026</span>
-              </strong>
-            </div>
-          </div>
-
-          <!-- PHONE -->
-
-          <div class="footer-item">
-            <div class="footer-icon">
+          <p class="footer-help">
+            Forgot your password? Call or email Shuleka Tech to reset it.
+          </p>
+          <div class="footer-contacts">
+            <a class="footer-item" href="tel:+254701948287">
               <i class="bi bi-telephone-fill"></i>
-            </div>
-
-            <div class="footer-content">
-              <span>Call</span>
-
-              <strong> 0701948287 / 0782811403 </strong>
-            </div>
-          </div>
-
-          <!-- EMAIL -->
-
-          <div class="footer-item">
-            <div class="footer-icon">
+              0701 948 287
+            </a>
+            <a class="footer-item" href="tel:+254782811403">
+              <i class="bi bi-phone"></i>
+              0782 811 403
+            </a>
+            <a class="footer-item" href="mailto:shulekatech@gmail.com">
               <i class="bi bi-envelope-fill"></i>
-            </div>
-
-            <div class="footer-content">
-              <span>Email</span>
-
-              <strong> shulekatech@gmail.com </strong>
-            </div>
+              shulekatech@gmail.com
+            </a>
           </div>
+          <p class="footer-copy">Shuleka Tech &copy; 2026</p>
         </div>
       </footer>
     </div>
