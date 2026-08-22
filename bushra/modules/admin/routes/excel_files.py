@@ -8,7 +8,7 @@ from ....modals.branches_db import Branch
 from ....modals.staff_db import Teacher
 from ....modals.students_db import Student
 from .. import admin_bp
-from ..utils import generate_excel_file
+from ..utils import generate_excel_file, user_can_access_branch
 from ..utils.route_protect import admin_required
 
 student_fields = [
@@ -88,8 +88,8 @@ def download_students_excel():
         return redirect(url_for("admin.student_dash"))
 
     branch = Branch.query.get(branch_id)
-    if not branch:
-        flash("Selected branch not found.", "danger")
+    if not branch or not user_can_access_branch(branch_id):
+        flash("You cannot export students for this school.", "warning")
         return redirect(url_for("admin.student_dash"))
 
     students = get_students(branch_id, grade_id, stream=stream)

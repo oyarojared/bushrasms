@@ -19,7 +19,7 @@ from ..services.grades import (
 from ....modals.assessment_db import (StudentExamMark,ExamPaper, GradeGradingScheme, 
                                     GradingBoundary, GradingScheme, GradingSystem)
 
-from ..utils import resolve_grade
+from ..utils import resolve_grade, user_can_access_branch
 from ..services.grading_844 import (
     normalize_form_name,
     is_844_form,
@@ -74,6 +74,9 @@ def api_branches():
 @admin_bp.route("/api/grades/<int:branch_id>")
 @login_required
 def api_grades(branch_id):
+    if not user_can_access_branch(branch_id):
+        return jsonify({"error": "forbidden"}), 403
+
     try:
         # ADMIN → all classes in branch
         if current_user.is_admin:

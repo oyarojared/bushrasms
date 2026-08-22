@@ -20,7 +20,7 @@ from ..forms.students_forms import (MuiltapleStudentsUploadForm,
 from ..utils import (load_branch_choices, preprocess_image, 
                      safe_date, validate_fullname, 
                      get_accessible_branches_query, apply_locked_branch,
-                     locked_branch_id)
+                     locked_branch_id, user_can_access_branch)
 from ..utils.route_protect import admin_required
 from flask_login import login_required 
 
@@ -160,11 +160,12 @@ def get_next_admission_no(branch_id):
     Returns next admission number for a branch.
     """
 
-    # super admin can query any branch
     if current_user.is_super_admin:
+        if not user_can_access_branch(branch_id):
+            return jsonify({"error": "forbidden"}), 403
         target_branch_id = branch_id
 
-    # normal admin locked to own branch
+    # School admin: ignore the URL and always use their own school
     elif current_user.is_admin:
         target_branch_id = current_user.branch_id
 
@@ -479,7 +480,9 @@ def add_student():
 @login_required
 @admin_required
 def student_profile(student_id):
-    student = Student.query.get_or_404(student_id)
+    student = _get_accessible_student(student_id)
+    if not student:
+        return _deny_student_access()
     student_branch = Branch.query.get(student.branch_id)
     student_class = student.class_info
 
@@ -550,7 +553,9 @@ def student_profile(student_id):
 @login_required
 @admin_required
 def update_student(student_id):
-    student = Student.query.get_or_404(student_id)
+    student = _get_accessible_student(student_id)
+    if not student:
+        return _deny_student_access()
 
     name = request.form.get("fullname")
     # Validate fullname
@@ -612,10 +617,9 @@ def update_student(student_id):
 @admin_required
 def delete_student(student_id):
     try:
-        student = Student.query.get(student_id)
+        student = _get_accessible_student(student_id)
         if not student:
-            flash("Student not found.", "warning")
-            return redirect(url_for("admin.student_dash"))
+            return _deny_student_access()
 
         db.session.delete(student)
         db.session.commit()
@@ -746,16 +750,24 @@ def fetch_searched_student():
 
 
 def _can_access_branch(branch_id):
-    try:
-        branch_id = int(branch_id)
-    except (TypeError, ValueError):
-        return False
-    return (
-        get_accessible_branches_query()
-        .filter(Branch.id == branch_id)
-        .first()
-        is not None
-    )
+    return user_can_access_branch(branch_id)
+
+
+def _get_accessible_student(student_id):
+    """Load a student the current user is allowed to see.
+
+    A missing student and a student in another school both return None.
+    That way a school admin cannot tell whether an ID exists elsewhere.
+    """
+    student = Student.query.get(student_id)
+    if not student or not user_can_access_branch(student.branch_id):
+        return None
+    return student
+
+
+def _deny_student_access():
+    flash("Student not found.", "warning")
+    return redirect(url_for("admin.student_dash"))
 
 
 def _class_students(branch_id, class_id, stream=None):
@@ -792,10 +804,9 @@ def move_student(student_id):
     apply_locked_branch(transfer_form.branches)
 
     try:
-        student = Student.query.get(student_id)
+        student = _get_accessible_student(student_id)
         if not student:
-            flash("Student not found.", "warning")
-            return redirect(url_for("admin.student_dash"))
+            return _deny_student_access()
 
         # Values from form
         new_branch_id = request.form.get("branches", type=int)
@@ -807,6 +818,10 @@ def move_student(student_id):
             flash(
                 "Invalid movement request. Missing branch or class details.", "warning"
             )
+            return redirect(url_for("admin.student_profile", student_id=student.id))
+
+        if not _can_access_branch(new_branch_id):
+            flash("You cannot move students to that school.", "warning")
             return redirect(url_for("admin.student_profile", student_id=student.id))
 
         # Current student data

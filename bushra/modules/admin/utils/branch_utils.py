@@ -77,6 +77,20 @@ def get_accessible_branches_query():
     return query
 
 
+def user_can_access_branch(branch_id):
+    """True when the logged-in user may see this school's data."""
+    try:
+        branch_id = int(branch_id)
+    except (TypeError, ValueError):
+        return False
+    return (
+        get_accessible_branches_query()
+        .filter(Branch.id == branch_id)
+        .first()
+        is not None
+    )
+
+
 # from flask import current_app
 # from sqlalchemy.exc import SQLAlchemyError
 

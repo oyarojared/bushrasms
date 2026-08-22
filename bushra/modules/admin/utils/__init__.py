@@ -3,6 +3,7 @@ from .branch_utils import (
     get_accessible_branches_query,
     load_branch_choices,
     locked_branch_id,
+    user_can_access_branch,
     user_can_select_branch,
 )
 from .file_utils import generate_excel_file, preprocess_image
