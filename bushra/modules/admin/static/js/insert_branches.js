@@ -2,23 +2,34 @@ const selectedBranch = document.getElementById("selected-branch");
 const gradeContainer = document.getElementById("grade-container");
 const streamContainer = document.getElementById("stream-container-2");
 
-function buildLabeledSelect(id, name, labelText, required = false) {
+function buildLabeledSelect(id, name, labelText, required = false, iconClass = "bi bi-list") {
   const wrapper = document.createDocumentFragment();
   const label = document.createElement("label");
-  label.className = "stu-label";
+  label.className = "cls-add-label";
   label.setAttribute("for", id);
   label.textContent = labelText;
+
+  const group = document.createElement("div");
+  group.className = "input-group input-group-sm";
+
+  const iconWrap = document.createElement("span");
+  iconWrap.className = "input-group-text";
+  const icon = document.createElement("i");
+  icon.className = iconClass;
+  iconWrap.appendChild(icon);
 
   const select = document.createElement("select");
   select.id = id;
   select.name = name;
-  select.className = "form-select form-select-sm stu-control";
+  select.className = "form-select form-select-sm";
   if (required) {
     select.required = true;
   }
 
+  group.appendChild(iconWrap);
+  group.appendChild(select);
   wrapper.appendChild(label);
-  wrapper.appendChild(select);
+  wrapper.appendChild(group);
   return { wrapper, select };
 }
 
@@ -38,6 +49,7 @@ if (selectedBranch && gradeContainer && streamContainer) {
           "grade_form",
           "Grade / Form",
           true,
+          "bi bi-journal-text",
         );
 
         gradeSelect.innerHTML = '<option value="">Select grade / form</option>';
@@ -63,6 +75,7 @@ if (selectedBranch && gradeContainer && streamContainer) {
             "stream",
             "Stream",
             true,
+            "bi bi-layers",
           );
           const streamSelect = streamField.select;
           streamSelect.innerHTML = '<option value="">Select stream</option>';

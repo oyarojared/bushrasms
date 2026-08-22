@@ -1,13 +1,15 @@
 import re
+from types import SimpleNamespace
 
 from flask import current_app, flash, redirect, request, send_file, url_for
+from flask_login import login_required
 
 from ....modals.branches_db import Branch
 from ....modals.staff_db import Teacher
 from ....modals.students_db import Student
 from .. import admin_bp
 from ..utils import generate_excel_file
-from flask_login import login_required
+from ..utils.route_protect import admin_required
 
 student_fields = [
     "admission_number",
@@ -108,12 +110,41 @@ def download_students_excel():
         headers=student_headers, 
         data=students
     )
+    payload = excel_file.getvalue()
+    excel_file.seek(0)
 
-    return send_file(
+    response = send_file(
         excel_file,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True,
         download_name=f"{downloaded_file_name}.xlsx",
+    )
+    response.headers["Content-Length"] = str(len(payload))
+    return response
+
+
+@admin_bp.route("/download_student_upload_sample", methods=["GET"])
+@login_required
+@admin_required
+def download_student_upload_sample():
+    start = request.args.get("start", default=1001, type=int)
+    if not start or start < 1:
+        start = 1001
+
+    sample_rows = [
+        SimpleNamespace(admission_number=start, fullname="Jane Wanjiku"),
+        SimpleNamespace(admission_number=start + 1, fullname="John Otieno"),
+    ]
+    excel_file = generate_excel_file(
+        headers=["Adm No", "Fullname"],
+        fields=["admission_number", "fullname"],
+        data=sample_rows,
+    )
+    return send_file(
+        excel_file,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name="student_upload_sample.xlsx",
     )
 
 

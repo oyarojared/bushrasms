@@ -2,6 +2,10 @@
   const resultsCard = document.getElementById("stu-results-card");
   const selectAll = document.getElementById("bulk-move-select-all");
   const openBtn = document.getElementById("bulk-move-open");
+  const clearBtn = document.getElementById("bulk-move-clear");
+  const selectBar = document.getElementById("stu-select-bar");
+  const selectCountEl = document.getElementById("stu-select-bar-count");
+  const selectNounEl = document.getElementById("stu-select-bar-noun");
   const modalEl = document.getElementById("bulkMoveModal");
   const form = document.getElementById("bulk-move-form");
   const idsBox = document.getElementById("bulk-move-ids");
@@ -17,10 +21,14 @@
   const warnCount = document.getElementById("bulk-move-warn-count");
   const warnFrom = document.getElementById("bulk-move-warn-from");
   const warnTo = document.getElementById("bulk-move-warn-to");
-  const gradesUrlBase =
-    resultsCard.dataset.gradesUrl || "/admin/api/grades/";
+  const subtitleEl = document.getElementById("bulk-move-subtitle");
+  const selectSubtitle = "Choose the class these students should join.";
+  const confirmSubtitle = "Confirm this class change.";
 
   if (!resultsCard || !openBtn || !modalEl || !form) return;
+
+  const gradesUrlBase =
+    resultsCard.dataset.gradesUrl || "/admin/api/grades/";
 
   function selectedChecks() {
     return Array.from(document.querySelectorAll(".bulk-move-check:checked"));
@@ -30,15 +38,39 @@
     return Array.from(document.querySelectorAll(".bulk-move-check"));
   }
 
+  function visibleChecks() {
+    return allChecks().filter((input) => {
+      const row = input.closest("tr");
+      return row && !row.classList.contains("stu-row-hidden");
+    });
+  }
+
   function refreshSelection() {
     const selected = selectedChecks();
-    const total = allChecks().length;
-    openBtn.disabled = selected.length === 0;
+    const total = visibleChecks().length;
     if (selectAll) {
       selectAll.checked = total > 0 && selected.length === total;
       selectAll.indeterminate = selected.length > 0 && selected.length < total;
     }
     if (countEl) countEl.textContent = String(selected.length);
+    if (selectCountEl) {
+      selectCountEl.textContent = String(selected.length);
+    }
+    if (selectNounEl) {
+      selectNounEl.textContent =
+        selected.length === 1 ? "student selected" : "students selected";
+    }
+    if (selectBar) {
+      selectBar.classList.toggle("is-open", selected.length > 0);
+    }
+    document.dispatchEvent(new Event("stu-selection-changed"));
+  }
+
+  function openMoveModal() {
+    if (selectedChecks().length === 0) return;
+    refreshSelection();
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
   }
 
   function syncHiddenIds() {
@@ -67,20 +99,15 @@
     streamContainer.innerHTML = "";
     if (!streams.length) return;
 
-    const label = document.createElement("label");
-    label.className = "stu-label stu-label-required";
-    label.setAttribute("for", "bulk-move-stream");
-    label.textContent = "Stream";
-
-    const select = document.createElement("select");
-    select.id = "bulk-move-stream";
-    select.name = "stream";
-    select.className = "form-select form-select-sm stu-control";
-    select.required = true;
-    fillStreamSelect(select, streams);
-
-    streamContainer.appendChild(label);
-    streamContainer.appendChild(select);
+    const streamField = buildUploadSelect(
+      "bulk-move-stream",
+      "stream",
+      "Stream",
+      true,
+      { iconClass: "bi bi-layers", addStyle: true },
+    );
+    fillStreamSelect(streamField.select, streams);
+    streamContainer.appendChild(streamField.fragment);
   }
 
   function destinationLabel() {
@@ -98,6 +125,7 @@
     continueBtn.classList.remove("d-none");
     backBtn.classList.add("d-none");
     submitBtn.classList.add("d-none");
+    if (subtitleEl) subtitleEl.textContent = selectSubtitle;
   }
 
   function showConfirmStep() {
@@ -112,6 +140,7 @@
     continueBtn.classList.add("d-none");
     backBtn.classList.remove("d-none");
     submitBtn.classList.remove("d-none");
+    if (subtitleEl) subtitleEl.textContent = confirmSubtitle;
   }
 
   function destinationIsValid() {
@@ -139,16 +168,14 @@
       const classes = await response.json();
       if (!Array.isArray(classes) || !classes.length) return;
 
-      const label = document.createElement("label");
-      label.className = "stu-label stu-label-required";
-      label.setAttribute("for", "bulk-move-grade");
-      label.textContent = "Grade / Form";
-
-      const select = document.createElement("select");
-      select.id = "bulk-move-grade";
-      select.name = "grade_form";
-      select.className = "form-select form-select-sm stu-control";
-      select.required = true;
+      const gradeField = buildUploadSelect(
+        "bulk-move-grade",
+        "grade_form",
+        "Grade / Form",
+        true,
+        { iconClass: "bi bi-journal-text", addStyle: true },
+      );
+      const select = gradeField.select;
       select.innerHTML = '<option value="">Select grade / form</option>';
 
       classes.forEach((item) => {
@@ -165,8 +192,7 @@
         renderStreamField(streams);
       });
 
-      gradeContainer.appendChild(label);
-      gradeContainer.appendChild(select);
+      gradeContainer.appendChild(gradeField.fragment);
     } catch (error) {
       console.error("Error loading destination classes:", error);
     }
@@ -178,18 +204,33 @@
 
   if (selectAll) {
     selectAll.addEventListener("change", () => {
-      allChecks().forEach((input) => {
+      visibleChecks().forEach((input) => {
         input.checked = selectAll.checked;
       });
       refreshSelection();
     });
   }
 
-  openBtn.addEventListener("click", () => {
-    if (selectedChecks().length === 0) return;
-    refreshSelection();
-    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-    modal.show();
+  openBtn.addEventListener("click", openMoveModal);
+
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      allChecks().forEach((input) => {
+        input.checked = false;
+      });
+      refreshSelection();
+    });
+  }
+
+  document.querySelectorAll(".js-move-student").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const studentId = btn.dataset.studentId;
+      allChecks().forEach((input) => {
+        input.checked = input.value === studentId;
+      });
+      refreshSelection();
+      openMoveModal();
+    });
   });
 
   modalEl.addEventListener("show.bs.modal", () => {
@@ -221,4 +262,5 @@
   });
 
   refreshSelection();
+  document.addEventListener("stu-class-list-filtered", refreshSelection);
 })();

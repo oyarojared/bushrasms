@@ -5,87 +5,24 @@
     <i class="bi bi-people-fill"></i>
   </div>
 
-  <div class="app-page-title-content mb-2">
+  <div class="app-page-title-content">
     <h6 class="app-page-title-heading">Students</h6>
 
     <span class="app-page-title-subtitle">
       Manage student records and information
     </span>
   </div>
-</div>
-<!-- Filter -->
-<div class="stu-filter-card">
-  <div class="stu-filter-header">
-    <div>
-      <h6 class="stu-filter-title">Filter Students</h6>
-      <p class="stu-filter-subtitle">
-        {% if can_select_branch %}
-        Select school, grade, and stream to load records
-        {% else %}
-        Select grade and stream to load records
-        {% endif %}
-      </p>
-    </div>
-  </div>
 
-  <form
-    method="POST"
-    action="{{ url_for('admin.student_dash') }}"
-    id="branchForm"
-    class="stu-filter-form"
-  >
-    {{ select_branch_form.hidden_tag() }}
-
-    <div class="row g-3 align-items-end">
-      <div class="col-md-6 col-lg-4{% if not can_select_branch %} d-none{% endif %}" data-school-picker>
-        <label class="stu-label" for="branch">School</label>
-        {{ select_branch_form.branch(class="form-select form-select-sm
-        stu-control", id="branch") }}
-      </div>
-
-      <div class="col-md-6 col-lg-3">
-        <label class="stu-label" for="grade_form">Grade / Form</label>
-        {{ select_branch_form.grade_form(class="form-select form-select-sm
-        stu-control", id="grade_form") }}
-      </div>
-
-      <div
-        class="col-md-6 col-lg-3"
-        id="stream-container"
-        style="display: none"
-      >
-        <label class="stu-label" for="stream">Stream</label>
-        {{ select_branch_form.stream(class="form-select form-select-sm
-        stu-control", id="stream") }}
-      </div>
-
-      <div class="col-12 col-lg-auto ms-lg-auto d-flex justify-content-end">
-        <button type="submit" class="stu-btn stu-btn-primary">
-          <i class="bi bi-funnel"></i> Fetch Data
-        </button>
-      </div>
-    </div>
-  </form>
-</div>
-
-<!-- Toolbar -->
-<div class="stu-toolbar">
-  <div class="stu-toolbar-copy">
-    <span class="stu-toolbar-label">Quick actions</span>
-    <span class="stu-toolbar-hint"
-      >Add, import, export, or print student records</span
-    >
-  </div>
-
-  <div class="stu-toolbar-actions">
+  <div class="stu-page-actions">
     <button
       type="button"
       class="stu-btn stu-btn-primary"
       data-bs-toggle="modal"
       data-bs-target="#addStudentModal"
+      title="Register one student"
     >
       <i class="bi bi-person-plus"></i>
-      <span>Add</span>
+      <span>Add student</span>
     </button>
 
     <button
@@ -93,25 +30,82 @@
       class="stu-btn stu-btn-outline"
       data-bs-toggle="modal"
       data-bs-target="#uploadModal"
+      title="Upload several students from an Excel file"
     >
       <i class="bi bi-upload"></i>
-      <span>Upload</span>
-    </button>
-
-    <button type="button" id="excel-btn" class="stu-btn stu-btn-outline">
-      <i class="bi bi-file-earmark-excel"></i>
-      <span>Excel</span>
+      <span>Import list</span>
     </button>
 
     <button
       type="button"
+      id="excel-btn"
       class="stu-btn stu-btn-outline"
-      onclick="window.print()"
+      title="Download the loaded class as Excel"
     >
-      <i class="bi bi-printer"></i>
-      <span>Print</span>
+      <i class="bi bi-download"></i>
+      <span>Export list</span>
     </button>
   </div>
+</div>
+<!-- Filter -->
+<div class="stu-filter-card">
+  <form
+    method="POST"
+    action="{{ url_for('admin.student_dash') }}"
+    id="branchForm"
+    class="stu-filter-bar"
+  >
+    {{ select_branch_form.hidden_tag() }}
+
+    <div class="stu-filter-intro">
+      <span class="stu-filter-intro-icon" aria-hidden="true">
+        <i class="bi bi-funnel"></i>
+      </span>
+      <div>
+        <h6 class="stu-filter-title">Load class list</h6>
+        <p class="stu-filter-subtitle">
+          {% if can_select_branch %}
+          Choose school, grade, and stream
+          {% else %}
+          Choose grade and stream
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="stu-filter-fields">
+      <div class="stu-filter-field{% if not can_select_branch %} d-none{% endif %}" data-school-picker>
+        <label class="stu-filter-label" for="branch">School</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="bi bi-building"></i></span>
+          {{ select_branch_form.branch(class="form-select form-select-sm stu-control", id="branch") }}
+        </div>
+      </div>
+
+      <div class="stu-filter-field">
+        <label class="stu-filter-label" for="grade_form">Grade / Form</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="bi bi-journal-text"></i></span>
+          {{ select_branch_form.grade_form(class="form-select form-select-sm stu-control", id="grade_form") }}
+        </div>
+      </div>
+
+      <div class="stu-filter-field" id="stream-container" style="display: none">
+        <label class="stu-filter-label" for="stream">Stream</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="bi bi-layers"></i></span>
+          {{ select_branch_form.stream(class="form-select form-select-sm stu-control", id="stream") }}
+        </div>
+      </div>
+
+      <div class="stu-filter-action">
+        <button type="submit" class="stu-btn stu-btn-primary">
+          <i class="bi bi-people"></i>
+          Load students
+        </button>
+      </div>
+    </div>
+  </form>
 </div>
 
 <!-- DISPLAY STUDENT OF THE SELECTED CLASS (& STREAM) -->
@@ -132,19 +126,10 @@
       <p class="stu-results-subtitle">{{ selected_branch.branch_name }}</p>
     </div>
     <div class="stu-results-tools">
-      <span class="stu-count-badge"
-        >{{ students | length }} student{{ "s" if students | length != 1 else ""
-        }}</span
-      >
-      <button
-        type="button"
-        class="stu-btn stu-btn-outline"
-        id="bulk-move-open"
-        disabled
-      >
-        <i class="bi bi-arrow-left-right"></i>
-        <span>Move selected</span>
-      </button>
+      <span class="stu-count-badge" id="stu-count-badge">
+        <span id="stu-count-label">Total students:</span>
+        <strong id="stu-count-value">{{ students | length }}</strong>
+      </span>
     </div>
   </div>
 
@@ -169,7 +154,38 @@
     />
   </form>
 
-  <div class="stu-table-wrap scroll-table-wrapper">
+  <div class="stu-table-sticky" id="stu-table-sticky">
+    <div class="stu-table-search">
+      <label class="visually-hidden" for="stu-row-search">Search this class</label>
+      <div class="input-group input-group-sm">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input
+          type="search"
+          id="stu-row-search"
+          class="form-control"
+          placeholder="Search name, adm no, assessment no, or phone"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+    <div class="stu-select-bar" id="stu-select-bar">
+      <p class="stu-select-bar-copy">
+        <strong id="stu-select-bar-count">0</strong>
+        <span id="stu-select-bar-noun">students selected</span>
+      </p>
+      <div class="stu-select-bar-actions">
+        <button type="button" class="stu-btn stu-btn-outline" id="bulk-move-clear">
+          Clear
+        </button>
+        <button type="button" class="stu-btn stu-btn-primary" id="bulk-move-open">
+          <i class="bi bi-arrow-left-right"></i>
+          <span>Move to another class</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stu-table-wrap">
     <table class="stu-table">
       <thead>
         <tr class="sticky-header">
@@ -182,7 +198,10 @@
           </th>
           <th class="stu-col-index">#</th>
           <th>Adm No</th>
-          <th class="stu-col-name">Student Name</th>
+          <th class="stu-col-name">
+            <span class="stu-col-name-desktop">Student Name</span>
+            <span class="stu-col-name-mobile">Select all</span>
+          </th>
           <th>Gender</th>
           <th>Ass. No</th>
           {% if selected_grade.grade_form | lower == "grade 10" %}
@@ -195,7 +214,14 @@
       </thead>
       <tbody>
         {% for student in students %}
-        <tr>
+        <tr
+          data-search="{{ (
+            (student.fullname or '') ~ ' ' ~
+            (student.admission_number or '') ~ ' ' ~
+            (student.knec_assessment_no or '') ~ ' ' ~
+            (student.parent_phone or '')
+          ) | lower }}"
+        >
           <td class="stu-col-select">
             <input
               type="checkbox"
@@ -205,15 +231,27 @@
             />
           </td>
           <td class="stu-col-index">{{ loop.index }}</td>
-          <td><span class="stu-adm">{{ student.admission_number }}</span></td>
-          <td class="stu-col-name stu-name">{{ student.fullname | upper }}</td>
-          <td>{{ student.gender or "—" }}</td>
-          <td>{{ student.knec_assessment_no or "—" }}</td>
+          <td class="stu-col-detail" data-label="Adm No">
+            <span class="stu-adm">{{ student.admission_number }}</span>
+          </td>
+          <td class="stu-col-name">
+            <span class="stu-name">{{ student.fullname | upper }}</span>
+          </td>
+          <td class="stu-col-detail" data-label="Gender">
+            {{ student.gender or "—" }}
+          </td>
+          <td class="stu-col-detail" data-label="Ass. No">
+            {{ student.knec_assessment_no or "—" }}
+          </td>
           {% if selected_grade.grade_form | lower == "grade 10" %}
-          <td>{{ student.pathway or "—" }}</td>
+          <td class="stu-col-detail" data-label="Pathway">
+            {{ student.pathway or "—" }}
+          </td>
           {% endif %}
-          <td>{{ student.dob or "—" }}</td>
-          <td>{{ student.parent_phone or "—" }}</td>
+          <td class="stu-col-detail" data-label="DOB">{{ student.dob or "—" }}</td>
+          <td class="stu-col-detail" data-label="Phone">
+            {{ student.parent_phone or "—" }}
+          </td>
           <td class="stu-col-action">
             <div class="dropdown">
               <button
@@ -230,16 +268,17 @@
                     class="dropdown-item"
                     href="{{ url_for('admin.student_profile', student_id=student.id) }}"
                   >
-                    <i class="bi bi-pencil-square"></i> Edit
+                    <i class="bi bi-person-badge"></i> Profile
                   </a>
                 </li>
                 <li>
-                  <a
-                    class="dropdown-item"
-                    href="{{ url_for('admin.student_profile', student_id=student.id) }}"
+                  <button
+                    type="button"
+                    class="dropdown-item js-move-student"
+                    data-student-id="{{ student.id }}"
                   >
-                    <i class="bi bi-person-badge"></i> Profile
-                  </a>
+                    <i class="bi bi-arrow-left-right"></i> Move
+                  </button>
                 </li>
                 <li><hr class="dropdown-divider" /></li>
                 <li>
@@ -259,6 +298,9 @@
         {% endfor %}
       </tbody>
     </table>
+    <p class="stu-table-empty d-none" id="stu-row-empty">
+      No students match that search.
+    </p>
   </div>
 </div>
 
@@ -269,58 +311,71 @@
   tabindex="-1"
   aria-labelledby="bulkMoveModalLabel"
   aria-hidden="true"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
 >
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content stu-modal">
-      <div class="modal-header stu-modal-header">
-        <h6 class="stu-modal-title" id="bulkMoveModalLabel">
-          <i class="bi bi-arrow-left-right"></i> Move selected students
-        </h6>
+  <div class="modal-dialog modal-dialog-centered cls-add-dialog stu-add-dialog">
+    <div class="modal-content cls-add-modal">
+      <div class="cls-add-header">
+        <div>
+          <h6 class="cls-add-title" id="bulkMoveModalLabel">
+            <i class="bi bi-arrow-left-right"></i>
+            Move students
+          </h6>
+          <p class="at-modal-copy" id="bulk-move-subtitle">
+            Choose the class these students should join.
+          </p>
+        </div>
         <button
           type="button"
-          class="btn-close"
+          class="btn-close btn-close-white"
           data-bs-dismiss="modal"
           aria-label="Close"
         ></button>
       </div>
-      <div class="modal-body stu-modal-body">
-        <p class="stu-filter-subtitle mb-2">
-          Moving <strong id="bulk-move-count">0</strong> student(s) from
-          <strong id="bulk-move-from-label"
-            >{% if selected_stream %} {{ selected_grade.grade_form }} · {{
-            selected_stream }} {% else %} {{ selected_grade.grade_form }} {%
-            endif %}</strong
-          >
-          in {{ selected_branch.branch_name }}.
-        </p>
-        <form
-          method="POST"
-          action="{{ url_for('admin.bulk_move_students') }}"
-          id="bulk-move-form"
-        >
-          {{ select_branch_form.hidden_tag() }}
-          <input
-            type="hidden"
-            name="source_branch_id"
-            value="{{ selected_branch.id }}"
-          />
-          <input
-            type="hidden"
-            name="source_class_id"
-            value="{{ selected_grade.id }}"
-          />
-          <input
-            type="hidden"
-            name="source_stream"
-            value="{{ selected_stream if selected_stream else '' }}"
-          />
-          <div id="bulk-move-ids"></div>
-          <div id="bulk-move-step-select">
-            <div class="row g-2">
-              <div class="col-md-6" id="bulk-move-grade-container"></div>
-              <div class="col-md-6" id="bulk-move-stream-container"></div>
-            </div>
+
+      <form
+        method="POST"
+        action="{{ url_for('admin.bulk_move_students') }}"
+        id="bulk-move-form"
+      >
+        {{ select_branch_form.hidden_tag() }}
+        <input
+          type="hidden"
+          name="source_branch_id"
+          value="{{ selected_branch.id }}"
+        />
+        <input
+          type="hidden"
+          name="source_class_id"
+          value="{{ selected_grade.id }}"
+        />
+        <input
+          type="hidden"
+          name="source_stream"
+          value="{{ selected_stream if selected_stream else '' }}"
+        />
+        <div id="bulk-move-ids"></div>
+
+        <div class="cls-add-body">
+          <div class="stu-upload-note" role="note">
+            <i class="bi bi-people" aria-hidden="true"></i>
+            <p>
+              Moving <strong id="bulk-move-count">0</strong> student(s) from
+              <strong id="bulk-move-from-label"
+                >{% if selected_stream %} {{ selected_grade.grade_form }} · {{
+                selected_stream }} {% else %} {{ selected_grade.grade_form }} {%
+                endif %}</strong
+              >
+              in {{ selected_branch.branch_name }}.
+            </p>
           </div>
+
+          <div id="bulk-move-step-select" class="stu-add-grid">
+            <div id="bulk-move-grade-container" class="cls-add-field"></div>
+            <div id="bulk-move-stream-container" class="cls-add-field"></div>
+          </div>
+
           <div id="bulk-move-step-confirm" class="d-none">
             <div class="bulk-move-warn">
               <div class="bulk-move-warn-icon" aria-hidden="true">
@@ -339,38 +394,40 @@
               </ul>
             </div>
           </div>
-          <div class="stu-modal-footer">
-            <button
-              type="button"
-              class="stu-btn stu-btn-outline"
-              data-bs-dismiss="modal"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              class="stu-btn stu-btn-outline d-none"
-              id="bulk-move-back"
-            >
-              Back
-            </button>
-            <button
-              type="button"
-              class="stu-btn stu-btn-primary"
-              id="bulk-move-continue"
-            >
-              Continue
-            </button>
-            <button
-              type="submit"
-              class="stu-btn stu-btn-danger d-none"
-              id="bulk-move-submit"
-            >
-              <i class="bi bi-arrow-left-right"></i> Yes, move students
-            </button>
-          </div>
-        </form>
-      </div>
+        </div>
+
+        <div class="cls-add-footer">
+          <button
+            type="button"
+            class="sa-btn sa-btn-outline"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="sa-btn sa-btn-outline d-none"
+            id="bulk-move-back"
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            class="sa-btn sa-btn-primary"
+            id="bulk-move-continue"
+          >
+            Continue
+          </button>
+          <button
+            type="submit"
+            class="sa-btn sa-btn-primary d-none"
+            id="bulk-move-submit"
+          >
+            <i class="bi bi-arrow-left-right"></i>
+            Yes, move students
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -392,8 +449,12 @@
   </div>
   <h6>No students loaded</h6>
   <p>
-    Use the filters above and click <strong>Fetch Data</strong> to display
-    student records.
+    {% if can_select_branch %}
+    Choose school, grade, and stream above, then click
+    {% else %}
+    Choose grade and stream above, then click
+    {% endif %}
+    <strong>Load students</strong>.
   </p>
 </div>
 {% endif %}
@@ -410,162 +471,173 @@
   data-bs-backdrop="static"
   data-bs-keyboard="false"
 >
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content stu-modal stu-modal-compact stu-add-modal">
-      <div class="modal-header stu-modal-header">
-        <h6 class="stu-modal-title" id="addStudentModalLabel">
-          <i class="bi bi-person-plus"></i> Register New Student
+  <div class="modal-dialog modal-dialog-centered cls-add-dialog stu-add-dialog">
+    <div class="modal-content cls-add-modal">
+      <div class="cls-add-header">
+        <h6 class="cls-add-title" id="addStudentModalLabel">
+          <i class="bi bi-person-plus"></i>
+          Add student
         </h6>
         <button
           type="button"
-          class="btn-close"
+          class="btn-close btn-close-white"
           data-bs-dismiss="modal"
           aria-label="Close"
         ></button>
       </div>
 
-      <div class="modal-body stu-modal-body">
-        <form
-          method="POST"
-          action="{{ url_for('admin.add_student') }}"
-          class="stu-modal-form"
-        >
-          {{ student_data_form.hidden_tag() }}
-
-          <section class="stu-form-section">
-            <div class="row g-2 stu-add-grid">
-              <div class="col-lg-4{% if not can_select_branch %} d-none{% endif %}" data-school-picker>
-                <label class="stu-label" for="selected-branch">School</label>
-                {{ student_data_form.branches(class="form-select form-select-sm
-                stu-control", id="selected-branch") }}
-              </div>
-
-              <div id="grade-container" class="col-lg-4"></div>
-              <div id="stream-container-2" class="col-lg-4"></div>
-            </div>
-          </section>
-
-          <section class="stu-form-section">
-            <div class="row g-2 stu-add-grid">
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label stu-label-required" for="adm-input"
-                  >Admission No.</label
-                >
-                {{ student_data_form.admission_number(class="form-control
-                form-control-sm stu-control stu-adm-input", id="adm-input") }}
-                {% if current_user.is_super_admin %}
-                <p class="stu-field-hint" id="adm-no-text-warning">
-                  Select school for adm no.
-                </p>
-                {% endif %}
-              </div>
-
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label" for="student-fullname"
-                  >Full Name</label
-                >
-                {{ student_data_form.fullname(class="form-control
-                form-control-sm stu-control", id="student-fullname") }}
-              </div>
-
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label">Gender</label>
-                {{ student_data_form.gender(class="form-select form-select-sm
-                stu-control") }}
-              </div>
-
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label">Date of Birth</label>
-                {{ student_data_form.dob(class="form-control form-control-sm
-                stu-control") }}
-              </div>
-
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label">Birth Cert No.</label>
-                {{ student_data_form.birth_cert_no(class="form-control
-                form-control-sm stu-control") }}
-              </div>
-
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label">Boarding</label>
-                {{ student_data_form.boarding_status(class="form-select
-                form-select-sm stu-control") }}
+      <form method="POST" action="{{ url_for('admin.add_student') }}">
+        {{ student_data_form.hidden_tag() }}
+        <div class="cls-add-body">
+          <div class="stu-add-grid">
+            <div class="cls-add-field{% if not can_select_branch %} d-none{% endif %}" data-school-picker>
+              <label class="cls-add-label" for="selected-branch">School</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-building"></i></span>
+                {{ student_data_form.branches(class="form-select form-select-sm", id="selected-branch") }}
               </div>
             </div>
-          </section>
 
-          <section class="stu-form-section">
-            <div class="row g-2 stu-add-grid">
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label">KNEC No.</label>
-                {{ student_data_form.knec_assessment_no(class="form-control
-                form-control-sm stu-control") }}
+            <div id="grade-container" class="cls-add-field"></div>
+            <div id="stream-container-2" class="cls-add-field"></div>
+
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="adm-input">Admission No.</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-hash"></i></span>
+                {{ student_data_form.admission_number(class="form-control form-control-sm stu-adm-input", id="adm-input") }}
               </div>
+              {% if current_user.is_super_admin %}
+              <p class="cls-add-hint" id="adm-no-text-warning">
+                Select school for adm no.
+              </p>
+              {% endif %}
+            </div>
 
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label">NEMIS No.</label>
-                {{ student_data_form.nemis_number(class="form-control
-                form-control-sm stu-control") }}
-              </div>
-
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label">Pathway</label>
-                {{ student_data_form.pathway(class="form-select form-select-sm
-                stu-control") }}
-              </div>
-
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label">KCPE Marks</label>
-                {{ student_data_form.kcpe_marks(class="form-control
-                form-control-sm stu-control") }}
-              </div>
-
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label">KCPE Index</label>
-                {{ student_data_form.kcpe_index_no(class="form-control
-                form-control-sm stu-control") }}
-              </div>
-
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label">KCPE Year</label>
-                {{ student_data_form.kcpe_year(class="form-control
-                form-control-sm stu-control") }}
-              </div>
-
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label">Admission Date</label>
-                {{ student_data_form.date_of_admission(class="form-control
-                form-control-sm stu-control") }}
-              </div>
-
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label">Parent Name</label>
-                {{ student_data_form.parent_fullname(class="form-control
-                form-control-sm stu-control") }}
-              </div>
-
-              <div class="col-lg-3 col-md-4">
-                <label class="stu-label">Parent Phone</label>
-                {{ student_data_form.parent_phone(class="form-control
-                form-control-sm stu-control") }}
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="student-fullname">Full Name</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                {{ student_data_form.fullname(class="form-control form-control-sm", id="student-fullname") }}
               </div>
             </div>
-          </section>
 
-          <div class="stu-modal-footer">
-            <button
-              type="button"
-              class="stu-btn stu-btn-outline"
-              data-bs-dismiss="modal"
-            >
-              Cancel
-            </button>
-            <button type="submit" class="stu-btn stu-btn-primary">
-              <i class="bi bi-check2-circle"></i> Save
-            </button>
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="{{ student_data_form.gender.id }}">Gender</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-gender-ambiguous"></i></span>
+                {{ student_data_form.gender(class="form-select form-select-sm") }}
+              </div>
+            </div>
+
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="{{ student_data_form.dob.id }}">Date of Birth</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-calendar-heart"></i></span>
+                {{ student_data_form.dob(class="form-control form-control-sm") }}
+              </div>
+            </div>
+
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="{{ student_data_form.birth_cert_no.id }}">Birth Cert No.</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-card-heading"></i></span>
+                {{ student_data_form.birth_cert_no(class="form-control form-control-sm") }}
+              </div>
+            </div>
+
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="{{ student_data_form.boarding_status.id }}">Boarding</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-house"></i></span>
+                {{ student_data_form.boarding_status(class="form-select form-select-sm") }}
+              </div>
+            </div>
+
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="{{ student_data_form.knec_assessment_no.id }}">KNEC No.</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-award"></i></span>
+                {{ student_data_form.knec_assessment_no(class="form-control form-control-sm") }}
+              </div>
+            </div>
+
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="{{ student_data_form.nemis_number.id }}">NEMIS No.</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-postcard"></i></span>
+                {{ student_data_form.nemis_number(class="form-control form-control-sm") }}
+              </div>
+            </div>
+
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="{{ student_data_form.pathway.id }}">Pathway</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-signpost-split"></i></span>
+                {{ student_data_form.pathway(class="form-select form-select-sm") }}
+              </div>
+            </div>
+
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="{{ student_data_form.kcpe_marks.id }}">KCPE Marks</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-123"></i></span>
+                {{ student_data_form.kcpe_marks(class="form-control form-control-sm") }}
+              </div>
+            </div>
+
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="{{ student_data_form.kcpe_index_no.id }}">KCPE Index</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+                {{ student_data_form.kcpe_index_no(class="form-control form-control-sm") }}
+              </div>
+            </div>
+
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="{{ student_data_form.kcpe_year.id }}">KCPE Year</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                {{ student_data_form.kcpe_year(class="form-control form-control-sm") }}
+              </div>
+            </div>
+
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="{{ student_data_form.date_of_admission.id }}">Admission Date</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
+                {{ student_data_form.date_of_admission(class="form-control form-control-sm") }}
+              </div>
+            </div>
+
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="{{ student_data_form.parent_fullname.id }}">Parent Name</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-people"></i></span>
+                {{ student_data_form.parent_fullname(class="form-control form-control-sm") }}
+              </div>
+            </div>
+
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="{{ student_data_form.parent_phone.id }}">Parent Phone</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                {{ student_data_form.parent_phone(class="form-control form-control-sm") }}
+              </div>
+            </div>
           </div>
-        </form>
-      </div>
+        </div>
+
+        <div class="cls-add-footer">
+          <button type="button" class="sa-btn sa-btn-outline" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="submit" class="sa-btn sa-btn-primary">
+            <i class="bi bi-plus-lg"></i>
+            Add student
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -582,102 +654,103 @@
   data-bs-backdrop="static"
   data-bs-keyboard="false"
 >
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content stu-modal stu-modal-compact">
-      <div class="modal-header stu-modal-header">
+  <div class="modal-dialog modal-dialog-centered cls-add-dialog stu-add-dialog">
+    <div class="modal-content cls-add-modal">
+      <div class="cls-add-header">
         <div>
-          <h6 class="stu-modal-title" id="uploadModalLabel">
-            <i class="bi bi-upload"></i> Upload Multiple Students
+          <h6 class="cls-add-title" id="uploadModalLabel">
+            <i class="bi bi-upload"></i>
+            Upload multiple students
           </h6>
-          <p class="stu-modal-subtitle">
-            Import student records from an Excel spreadsheet
-          </p>
+          <p class="at-modal-copy">Import a class list from one Excel file.</p>
         </div>
         <button
           type="button"
-          class="btn-close"
+          class="btn-close btn-close-white"
           data-bs-dismiss="modal"
           aria-label="Close"
         ></button>
       </div>
 
-      <div class="modal-body stu-modal-body">
-        <div class="stu-upload-hint">
-          <i class="bi bi-info-circle" aria-hidden="true"></i>
-          <div>
-            <strong>Excel format</strong>
-            <p>
-              Column A: admission number. Column B: student name. Extra columns
-              are mapped automatically.
-            </p>
+      <form
+        method="POST"
+        id="excel-upload-form"
+        action="{{ url_for('admin.muiltaple_students_upload') }}"
+        enctype="multipart/form-data"
+      >
+        {{ muiltable_students_upload_form.hidden_tag() }}
+        <div class="cls-add-body">
+          <div class="stu-add-grid stu-upload-grid">
+            <div class="stu-upload-note" role="note">
+              <i class="bi bi-people" aria-hidden="true"></i>
+              <div>
+                <p>
+                  This adds <strong>several students at once</strong>. Column A
+                  header must be <strong>Adm No</strong>, column B
+                  <strong>Fullname</strong>.
+                </p>
+                <a
+                  class="stu-sample-link"
+                  id="upload-sample-link"
+                  href="{{ url_for('admin.download_student_upload_sample') }}"
+                >
+                  <i class="bi bi-download" aria-hidden="true"></i>
+                  Download sample spreadsheet
+                </a>
+              </div>
+            </div>
+
+            <div class="stu-adm-start" id="upload-adm-start" role="status">
+              <div class="stu-adm-start-icon" aria-hidden="true">
+                <i class="bi bi-hash"></i>
+              </div>
+              <div>
+                <p class="stu-adm-start-label">Next admission number</p>
+                <p class="stu-adm-start-value" id="upload-adm-start-value">—</p>
+                <p class="stu-adm-start-copy" id="upload-adm-start-copy">
+                  Select a school to see which Adm No to start with.
+                </p>
+              </div>
+            </div>
+
+            <div class="cls-add-field{% if not can_select_branch %} d-none{% endif %}" data-school-picker>
+              <label class="cls-add-label" for="select-branch-element">School</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-building"></i></span>
+                {{ muiltable_students_upload_form.branches(class="form-select form-select-sm", id="select-branch-element") }}
+              </div>
+              {% for error in muiltable_students_upload_form.branches.errors %}
+              <div class="text-danger small">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div id="grade-forms-container" class="cls-add-field"></div>
+            <div id="stream-select-container" class="cls-add-field"></div>
+
+            <div class="cls-add-field">
+              <label class="cls-add-label" for="excel-file-input">Spreadsheet</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-file-earmark-excel"></i></span>
+                {{ muiltable_students_upload_form.excel_file(class="form-control form-control-sm stu-file-input", id="excel-file-input", accept=".xls,.xlsx") }}
+              </div>
+              <p class="cls-add-hint">Accepted files: .xls, .xlsx.</p>
+              {% for error in muiltable_students_upload_form.excel_file.errors %}
+              <div class="text-danger small">{{ error }}</div>
+              {% endfor %}
+            </div>
           </div>
         </div>
 
-        <form
-          method="POST"
-          id="excel-upload-form"
-          action="{{ url_for('admin.muiltaple_students_upload') }}"
-          enctype="multipart/form-data"
-          class="stu-modal-form"
-        >
-          {{ muiltable_students_upload_form.hidden_tag() }}
-
-          <section class="stu-form-section">
-            <h6 class="stu-form-section-title">Class Placement</h6>
-            <div class="row g-2">
-              <div class="col-md-4{% if not can_select_branch %} d-none{% endif %}" data-school-picker>
-                <label
-                  class="stu-label stu-label-required"
-                  for="select-branch-element"
-                  >School</label
-                >
-                {{ muiltable_students_upload_form.branches( class="form-select
-                form-select-sm stu-control", id="select-branch-element" ) }} {%
-                for error in muiltable_students_upload_form.branches.errors %}
-                <div class="text-danger small">{{ error }}</div>
-                {% endfor %}
-              </div>
-
-              <div id="grade-forms-container" class="col-md-4"></div>
-              <div id="stream-select-container" class="col-md-4"></div>
-            </div>
-          </section>
-
-          <section class="stu-form-section">
-            <h6 class="stu-form-section-title">Excel File</h6>
-            <div class="row g-2">
-              <div class="col-12">
-                <label
-                  class="stu-label stu-label-required"
-                  for="excel-file-input"
-                  >Spreadsheet</label
-                >
-                {{ muiltable_students_upload_form.excel_file(
-                class="form-control form-control-sm stu-control stu-file-input",
-                id="excel-file-input", accept=".xls,.xlsx" ) }}
-                <p class="stu-field-hint">Accepted formats: .xls, .xlsx</p>
-                {% for error in muiltable_students_upload_form.excel_file.errors
-                %}
-                <div class="text-danger small">{{ error }}</div>
-                {% endfor %}
-              </div>
-            </div>
-          </section>
-
-          <div class="stu-modal-footer">
-            <button
-              type="button"
-              class="stu-btn stu-btn-outline"
-              data-bs-dismiss="modal"
-            >
-              Cancel
-            </button>
-            <button type="submit" class="stu-btn stu-btn-primary">
-              <i class="bi bi-cloud-upload"></i> Import Data
-            </button>
-          </div>
-        </form>
-      </div>
+        <div class="cls-add-footer">
+          <button type="button" class="sa-btn sa-btn-outline" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button type="submit" class="sa-btn sa-btn-primary">
+            <i class="bi bi-upload"></i>
+            Upload students
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -735,7 +808,6 @@
 <style>
   .stu-page,
   .stu-filter-card,
-  .stu-toolbar,
   .stu-results-card {
     font-family:
       "Segoe UI",
@@ -747,33 +819,148 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  .main-content {
+    padding-top: 0;
+  }
+
+  .dashboard-context-bar {
+    margin-top: 20px;
+  }
+
+  .stu-page {
+    width: 100%;
+    margin-bottom: 0.85rem;
+    padding-top: 0.45rem;
+  }
+
+  .stu-page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: auto;
+    padding: 0.32rem;
+    background: none;
+    border: 0;
+    border-radius: 10px;
+    box-shadow: none;
+  }
+
+  .stu-page-actions .stu-btn {
+    min-height: 36px;
+    padding: 0.48rem 1rem;
+  }
+
+  .stu-page-actions .stu-btn-outline {
+    background: transparent;
+    border-color: #ff7979;
+    color: #ff7979;
+  }
+
+  .stu-page-actions .stu-btn-outline:hover {
+    background: rgba(255, 121, 121, 0.12);
+    border-color: #f56868;
+    color: #e85d5d;
+  }
+
   .stu-filter-card {
     background: #fff;
     border: 1px solid #e8ecef;
-    border-radius: 14px;
-    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
-    padding: 1rem 1.1rem 1.1rem;
+    border-top: 3px solid #ff7979;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
     margin-bottom: 1rem;
+    overflow: hidden;
   }
 
-  .stu-filter-header {
-    margin-bottom: 0.85rem;
-    padding-bottom: 0.65rem;
-    border-bottom: 1px solid #f0f2f4;
+  .stu-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.85rem 1rem;
+    margin: 0;
+    padding: 0.85rem 1rem;
+  }
+
+  .stu-filter-intro {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 168px;
+    padding-bottom: 0.1rem;
+  }
+
+  .stu-filter-intro-icon {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(255, 121, 121, 0.12);
+    color: #ff7979;
+    font-size: 0.95rem;
   }
 
   .stu-filter-title {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 0.86rem;
     font-weight: 700;
     color: #1f2937;
     letter-spacing: -0.01em;
   }
 
   .stu-filter-subtitle {
-    margin: 0.2rem 0 0;
-    font-size: 0.78rem;
+    margin: 0.1rem 0 0;
+    font-size: 0.72rem;
     color: #6b7280;
+  }
+
+  .stu-filter-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.7rem 0.8rem;
+    flex: 1 1 420px;
+  }
+
+  .stu-filter-field {
+    flex: 1 1 160px;
+    min-width: 150px;
+    max-width: 240px;
+  }
+
+  .stu-filter-label {
+    display: block;
+    margin-bottom: 0.28rem;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #4b5563;
+  }
+
+  .stu-filter-field .input-group-text {
+    background: #fff5f5;
+    border-color: #e5e7eb;
+    color: #ff7979;
+  }
+
+  .stu-filter-field .form-select {
+    border-color: #e5e7eb;
+  }
+
+  .stu-filter-field .input-group:focus-within .input-group-text,
+  .stu-filter-field .input-group:focus-within .form-select {
+    border-color: #ff7979;
+  }
+
+  .stu-filter-action {
+    flex: 0 0 auto;
+    padding-bottom: 0;
+  }
+
+  .stu-filter-action .stu-btn {
+    min-height: 31px;
   }
 
   .stu-label {
@@ -842,46 +1029,13 @@
     color: #c24141;
   }
 
-  .stu-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.85rem;
-    margin-bottom: 1rem;
-    padding: 0.85rem 1rem;
-    background: #fff;
-    border: 1px solid #e8ecef;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
-  }
-
-  .stu-toolbar-label {
-    display: block;
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: #1f2937;
-  }
-
-  .stu-toolbar-hint {
-    display: block;
-    margin-top: 0.15rem;
-    font-size: 0.74rem;
-    color: #6b7280;
-  }
-
-  .stu-toolbar-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-  }
-
   .stu-results-card {
+    --stu-sticky-height: 3.05rem;
     background: #fff;
     border: 1px solid #e8ecef;
     border-radius: 14px;
     box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
-    overflow: hidden;
+    overflow: visible;
   }
 
   .stu-results-header {
@@ -916,28 +1070,71 @@
   }
 
   .stu-col-select {
-    width: 36px;
+    width: 52px;
     text-align: center;
   }
 
-  .stu-col-select input {
+  .stu-col-select input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
     width: 16px;
     height: 16px;
     margin: 0;
     vertical-align: middle;
     cursor: pointer;
+    border: 1.5px solid #cfd4dc;
+    border-radius: 4px;
+    background-color: #fff;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 11px 11px;
+    accent-color: #ff7979;
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .stu-col-select input[type="checkbox"]:hover {
+    border-color: #ff7979;
+  }
+
+  .stu-col-select input[type="checkbox"]:checked {
+    background-color: #ff7979;
+    border-color: #ff7979;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+  }
+
+  .stu-col-select input[type="checkbox"]:indeterminate {
+    background-color: #ff7979;
+    border-color: #ff7979;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10h8'/%3e%3c/svg%3e");
+  }
+
+  .stu-col-select input[type="checkbox"]:focus {
+    outline: none;
+  }
+
+  .stu-col-select input[type="checkbox"]:focus-visible {
+    box-shadow: 0 0 0 3px rgba(255, 121, 121, 0.28);
   }
 
   .stu-count-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.28rem 0.65rem;
+    gap: 0.28rem;
+    padding: 0.28rem 0.7rem;
     border-radius: 999px;
     background: rgba(255, 121, 121, 0.1);
-    color: #c24141;
+    color: #6b7280;
     font-size: 0.72rem;
-    font-weight: 700;
+    font-weight: 600;
     white-space: nowrap;
+  }
+
+  .stu-count-badge strong {
+    color: #c24141;
+    font-weight: 700;
   }
 
   .bulk-move-warn {
@@ -983,54 +1180,161 @@
     line-height: 1.55;
   }
 
-  .stu-table-wrap {
-    padding: 0.35rem 0.65rem 0.85rem;
+  .stu-table-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 23;
+    background: #fff;
   }
 
-  .stu-table-wrap.scroll-table-wrapper {
-    max-height: min(62vh, 680px);
-    overflow: auto;
+  .stu-table-search {
+    padding: 0.55rem 1.1rem;
+    background: #fff;
+    border-bottom: 1px solid #edf0f3;
+  }
+
+  .stu-table-search .input-group-text {
+    background: #fff5f5;
+    border-color: #e5e7eb;
+    color: #ff7979;
+  }
+
+  .stu-table-search .form-control {
+    border-color: #e5e7eb;
+    font-size: 0.8rem;
+  }
+
+  .stu-table-search .input-group:focus-within .input-group-text,
+  .stu-table-search .input-group:focus-within .form-control {
+    border-color: #ff7979;
+  }
+
+  .stu-select-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.55rem 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.45rem 1.1rem;
+    background: #fff5f5;
+    border-bottom: 1px solid rgba(255, 121, 121, 0.22);
+  }
+
+  .stu-select-bar.is-open {
+    display: flex;
+  }
+
+  .stu-select-bar-copy {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #4b5563;
+  }
+
+  .stu-select-bar-copy strong {
+    color: #c24141;
+    font-weight: 700;
+  }
+
+  .stu-select-bar-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .stu-select-bar-actions .stu-btn {
+    min-height: 32px;
+    padding: 0.32rem 0.75rem;
+  }
+
+  .stu-table-empty {
+    margin: 0;
+    padding: 1.15rem 1.1rem;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+
+  .stu-row-hidden {
+    display: none !important;
+  }
+
+  .stu-table-wrap {
+    padding: 0;
+    overflow: visible;
   }
 
   .stu-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    font-size: 0.82rem;
-    color: #1f2937;
+    font-family:
+      "Segoe UI",
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      sans-serif;
+    font-size: 0.74rem;
+    color: #374151;
   }
 
   .stu-table thead th {
     position: sticky;
-    top: 0;
-    z-index: 2;
-    padding: 0.62rem 0.7rem;
+    top: var(--stu-sticky-height, 3.05rem);
+    z-index: 21;
+    padding: 0.48rem 0.85rem;
     background: #2c3e50;
     color: #fff;
-    font-size: 0.72rem;
+    font-size: 0.66rem;
     font-weight: 600;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     border-bottom: 1px solid #243442;
     white-space: nowrap;
+    box-shadow: 0 1px 0 #243442;
+  }
+
+  .stu-table thead th:first-child,
+  .stu-table tbody td:first-child {
+    padding-left: 1.1rem;
+  }
+
+  .stu-table thead th:last-child,
+  .stu-table tbody td:last-child {
+    padding-right: 1.1rem;
   }
 
   .stu-table thead th:first-child {
-    border-top-left-radius: 8px;
+    border-top-left-radius: 0;
   }
 
   .stu-table thead th:last-child {
-    border-top-right-radius: 8px;
+    border-top-right-radius: 0;
   }
 
   .stu-table tbody td {
-    padding: 0.62rem 0.7rem;
+    padding: 0.42rem 0.85rem;
     border-bottom: 1px solid #edf0f3;
     vertical-align: middle;
+    line-height: 1.3;
+  }
+
+  .stu-table tbody tr:nth-child(even) {
+    background: #fafbfc;
   }
 
   .stu-table tbody tr:hover {
-    background: rgba(255, 121, 121, 0.04);
+    background: rgba(255, 121, 121, 0.05);
+  }
+
+  .stu-table tbody tr:has(.bulk-move-check:checked),
+  .stu-table tbody tr.bg-light-green,
+  .stu-table tbody tr.bg-light-green:hover,
+  .stu-table tbody tr:has(.bulk-move-check:checked):hover {
+    background: #d1d1d1 !important;
+    color: #374151 !important;
+    font-weight: inherit !important;
   }
 
   .stu-table tbody tr:last-child td {
@@ -1040,32 +1344,42 @@
   .stu-col-index {
     width: 42px;
     text-align: center;
-    color: #6b7280;
+    color: #9ca3af;
+    font-size: 0.7rem;
     font-weight: 600;
   }
 
   .stu-col-name {
-    min-width: 180px;
-    font-size: 0.84rem;
+    min-width: 170px;
+  }
+
+  .stu-col-name-mobile {
+    display: none;
   }
 
   .stu-name {
-    font-weight: 500;
+    display: inline-block;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     color: #1f2937;
+    text-transform: uppercase;
   }
 
   .stu-col-action {
-    width: 72px;
+    width: 80px;
     text-align: center;
   }
 
   .stu-adm {
     display: inline-block;
-    padding: 0.12rem 0.4rem;
-    border-radius: 6px;
+    padding: 0.08rem 0.35rem;
+    border-radius: 5px;
     background: #f3f4f6;
-    font-size: 0.76rem;
-    font-weight: 600;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
     color: #374151;
   }
 
@@ -1269,78 +1583,169 @@
     line-height: 1.35;
   }
 
-  #addStudentModal .stu-modal-header {
-    align-items: center;
-    padding: 0.7rem 1rem;
+  .stu-add-dialog.cls-add-dialog {
+    max-width: 620px;
   }
 
-  #addStudentModal .stu-modal-title {
-    font-size: 0.92rem;
+  .stu-add-dialog .cls-add-body {
+    max-height: min(68vh, 540px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 121, 121, 0.35) transparent;
   }
 
-  #addStudentModal .btn-close {
-    padding: 0.4rem;
-    margin: 0;
+  .stu-add-dialog .cls-add-body::-webkit-scrollbar {
+    width: 6px;
   }
 
-  #addStudentModal .stu-modal-body {
-    padding: 0.7rem 1rem 0.8rem;
+  .stu-add-dialog .cls-add-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 121, 121, 0.35);
+    border-radius: 6px;
   }
 
-  #addStudentModal .stu-form-section + .stu-form-section {
-    margin-top: 0.7rem;
-    padding-top: 0.7rem;
-    border-top: 1px solid #f0f2f4;
+  .stu-add-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 0.85rem;
   }
 
-  #addStudentModal .stu-form-section:first-child {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
+  .stu-add-dialog .cls-add-field {
+    margin-bottom: 0.75rem;
   }
 
-  #addStudentModal .stu-label {
-    display: block;
-    margin-bottom: 0.28rem;
-    font-size: 0.7rem;
-    line-height: 1.2;
+  #addStudentModal #grade-container:empty,
+  #addStudentModal #stream-container-2:empty,
+  #uploadModal #grade-forms-container:empty,
+  #uploadModal #stream-select-container:empty,
+  #bulkMoveModal #bulk-move-grade-container:empty,
+  #bulkMoveModal #bulk-move-stream-container:empty {
+    display: none;
   }
 
-  #addStudentModal .stu-add-grid {
-    --bs-gutter-x: 0.75rem;
-    --bs-gutter-y: 0.55rem;
-  }
-
-  #addStudentModal .form-control,
-  #addStudentModal .form-select {
-    min-height: 32px;
-    padding: 0.28rem 0.55rem;
-    font-size: 0.82rem;
-    border-radius: 7px;
-  }
-
-  #addStudentModal .stu-field-hint {
-    margin: 0.22rem 0 0;
-    font-size: 0.68rem;
-    line-height: 1.3;
-  }
-
-  #addStudentModal .stu-modal-footer {
-    margin-top: 0.8rem;
-    padding-top: 0.75rem;
-    gap: 0.55rem;
-  }
-
-  #addStudentModal .stu-btn {
-    min-height: 32px;
-    padding: 0.35rem 0.9rem;
-    font-size: 0.8rem;
-  }
-
-  @media (max-width: 991.98px) {
-    #addStudentModal .stu-add-grid {
-      --bs-gutter-y: 0.65rem;
+  @media (max-width: 575.98px) {
+    .stu-add-grid {
+      grid-template-columns: 1fr;
     }
+  }
+
+  .stu-upload-note {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    padding: 0.6rem 0.7rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 121, 121, 0.22);
+    background: rgba(255, 121, 121, 0.07);
+  }
+
+  .stu-upload-note > i {
+    flex-shrink: 0;
+    margin-top: 0.08rem;
+    color: #ff7979;
+    font-size: 1rem;
+  }
+
+  .stu-upload-note p {
+    margin: 0;
+    font-size: 0.76rem;
+    line-height: 1.4;
+    color: #4b5563;
+  }
+
+  .stu-upload-note strong {
+    font-weight: 700;
+    color: #1f2937;
+  }
+
+  .stu-sample-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.45rem;
+    padding: 0.28rem 0.6rem;
+    border: 1px solid #ff7979;
+    border-radius: 7px;
+    background: #ff7979;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #fff !important;
+    text-decoration: none;
+  }
+
+  .stu-sample-link:hover {
+    background: #f56868;
+    border-color: #f56868;
+    color: #fff !important;
+  }
+
+  .stu-sample-link i {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #fff !important;
+  }
+
+  #uploadModal .cls-add-body {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .stu-upload-grid .stu-upload-note,
+  .stu-upload-grid .stu-adm-start {
+    height: 100%;
+    margin-bottom: 0.75rem;
+  }
+
+  .stu-adm-start {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+    padding: 0.6rem 0.7rem;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+  }
+
+  .stu-adm-start-icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    background: rgba(255, 121, 121, 0.12);
+    color: #ff7979;
+    font-size: 0.95rem;
+  }
+
+  .stu-adm-start-label {
+    margin: 0 0 0.1rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #6b7280;
+  }
+
+  .stu-adm-start-value {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #c24141;
+  }
+
+  .stu-adm-start-copy {
+    margin: 0.2rem 0 0;
+    font-size: 0.74rem;
+    line-height: 1.4;
+    color: #4b5563;
+  }
+
+  .stu-adm-start.is-pending .stu-adm-start-value {
+    color: #9ca3af;
   }
 
   .stu-btn-danger {
@@ -1549,36 +1954,250 @@
   }
 
   .stu-table .sticky-header th {
+    top: var(--stu-sticky-height, 3.05rem);
     background: #2c3e50 !important;
     color: #fff !important;
+    z-index: 21;
   }
 
-  @media (max-width: 767.98px) {
-    .stu-toolbar {
-      align-items: stretch;
-    }
-
-    .stu-toolbar-actions {
-      width: 100%;
-    }
-
-    .stu-toolbar-actions .stu-btn {
-      flex: 1 1 calc(50% - 0.25rem);
+  @media (max-width: 991.98px) {
+    .stu-results-card {
+      min-width: 0;
+      max-width: 100%;
     }
 
     .stu-results-header {
       flex-direction: column;
-      align-items: flex-start;
+      align-items: stretch;
+    }
+
+    .stu-results-tools {
+      width: 100%;
+    }
+
+    .stu-table-search,
+    .stu-select-bar {
+      padding-left: 0.85rem;
+      padding-right: 0.85rem;
+    }
+
+    .stu-select-bar-actions {
+      width: 100%;
+    }
+
+    .stu-select-bar-actions .stu-btn {
+      flex: 1 1 auto;
+    }
+
+    .stu-table,
+    .stu-table thead,
+    .stu-table tbody,
+    .stu-table thead tr {
+      display: block;
+      width: 100%;
+    }
+
+    .stu-table thead {
+      position: sticky;
+      top: var(--stu-sticky-height, 3.05rem);
+      z-index: 21;
+      background: #2c3e50;
+    }
+
+    .stu-table thead tr {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.5rem 0.85rem;
+    }
+
+    .stu-table thead th {
+      display: none;
+      position: static;
+      top: auto;
+      width: auto;
+      padding: 0;
+      border: 0;
+      box-shadow: none;
+      background: transparent;
+    }
+
+    .stu-table thead th.stu-col-select,
+    .stu-table thead th.stu-col-name {
+      display: block;
+    }
+
+    .stu-table thead th.stu-col-name {
+      flex: 1;
+      min-width: 0;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 0.74rem;
+    }
+
+    .stu-col-name-desktop {
+      display: none;
+    }
+
+    .stu-col-name-mobile {
+      display: inline;
+    }
+
+    .stu-table tbody tr {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.15rem 0.55rem;
+      margin: 0.7rem 0.75rem;
+      padding: 0.75rem 0.8rem 0.45rem;
+      border: 1px solid #edf0f3;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+    }
+
+    .stu-table tbody tr:nth-child(even) {
+      background: #fff;
+    }
+
+    .stu-table tbody tr:hover {
+      background: #fff8f8;
+    }
+
+    .stu-table tbody tr:has(.bulk-move-check:checked),
+    .stu-table tbody tr.bg-light-green,
+    .stu-table tbody tr.bg-light-green:hover,
+    .stu-table tbody tr:has(.bulk-move-check:checked):hover {
+      background: #d1d1d1 !important;
+    }
+
+    .stu-table tbody td {
+      padding: 0.28rem 0;
+      border-bottom: 0;
+    }
+
+    .stu-table thead th:first-child,
+    .stu-table tbody td:first-child,
+    .stu-table thead th:last-child,
+    .stu-table tbody td:last-child {
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .stu-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .stu-col-select {
+      order: 1;
+      width: auto;
+      flex: 0 0 auto;
+    }
+
+    .stu-col-select input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+
+    .stu-col-name {
+      order: 2;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .stu-name {
+      font-size: 0.8rem;
+      line-height: 1.3;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .stu-col-action {
+      order: 3;
+      width: auto;
+      flex: 0 0 auto;
+    }
+
+    .stu-action-btn {
+      width: 34px;
+      height: 34px;
+    }
+
+    .stu-col-index {
+      display: none;
+    }
+
+    .stu-col-detail {
+      order: 4;
+      flex: 1 1 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin: 0;
+      padding: 0.42rem 0;
+      border-top: 1px solid #f3f4f6;
+      text-align: right;
+    }
+
+    .stu-col-detail::before {
+      content: attr(data-label);
+      flex: 0 0 auto;
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #6b7280;
+    }
+
+    .stu-table-empty {
+      padding: 1.15rem 0.85rem;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .stu-filter-bar {
+      align-items: stretch;
+    }
+
+    .stu-filter-fields {
+      flex: 1 1 100%;
+    }
+
+    .stu-filter-field {
+      max-width: none;
+      flex: 1 1 100%;
+    }
+
+    .stu-filter-action {
+      width: 100%;
+    }
+
+    .stu-filter-action .stu-btn {
+      width: 100%;
+    }
+
+    .stu-page-actions {
+      width: 100%;
+      margin-left: 0;
+    }
+
+    .stu-page-actions .stu-btn {
+      flex: 1 1 calc(33.33% - 0.3rem);
+    }
+
+    .stu-page-actions .stu-btn span {
+      font-size: 0.72rem;
     }
   }
 
   @media print {
-    .stu-toolbar,
+    .stu-table-sticky,
+    .stu-page-actions,
     .stu-filter-card,
     .app-page-title,
     .stu-col-select,
-    .stu-col-action,
-    #bulk-move-open {
+    .stu-col-action {
       display: none !important;
     }
 
@@ -1601,22 +2220,34 @@
   const admNoInput = document.getElementById("adm-input");
   const warningText = document.getElementById("adm-no-text-warning");
 
+  function syncStudentTableSticky() {
+    const card = document.getElementById("stu-results-card");
+    const sticky = document.querySelector(".stu-table-sticky");
+    if (!card || !sticky) return;
+    card.style.setProperty("--stu-sticky-height", `${sticky.offsetHeight}px`);
+  }
+
   function scrollToStudentsTable() {
     const target = document.getElementById("stu-results-card");
     const scrollContainer = document.querySelector(".main-content");
     if (!target || !scrollContainer) return;
 
-    requestAnimationFrame(() => {
-      const offset = 14;
-      const containerTop = scrollContainer.getBoundingClientRect().top;
-      const targetTop = target.getBoundingClientRect().top;
-      const nextScrollTop =
-        scrollContainer.scrollTop + (targetTop - containerTop) - offset;
+    syncStudentTableSticky();
 
+    const alignResultsToHeader = () => {
+      const nextScrollTop =
+        scrollContainer.scrollTop +
+        (target.getBoundingClientRect().top -
+          scrollContainer.getBoundingClientRect().top);
       scrollContainer.scrollTo({
         top: Math.max(0, nextScrollTop),
-        behavior: "smooth",
+        behavior: "auto",
       });
+    };
+
+    requestAnimationFrame(() => {
+      alignResultsToHeader();
+      requestAnimationFrame(alignResultsToHeader);
     });
   }
 
@@ -1633,8 +2264,58 @@
   });
 
   if (hasStudentResults) {
-    document.addEventListener("DOMContentLoaded", scrollToStudentsTable);
+    document.addEventListener("DOMContentLoaded", () => {
+      scrollToStudentsTable();
+      const sticky = document.querySelector(".stu-table-sticky");
+      if (sticky && typeof ResizeObserver !== "undefined") {
+        new ResizeObserver(syncStudentTableSticky).observe(sticky);
+      }
+      window.addEventListener("resize", syncStudentTableSticky);
+      document.addEventListener("stu-selection-changed", syncStudentTableSticky);
+    });
   }
+
+  (function initClassListSearch() {
+    const input = document.getElementById("stu-row-search");
+    const table = document.querySelector(".stu-table");
+    const emptyEl = document.getElementById("stu-row-empty");
+    const countLabel = document.getElementById("stu-count-label");
+    const countValue = document.getElementById("stu-count-value");
+    if (!input || !table) return;
+
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
+    const total = rows.length;
+
+    function applySearch() {
+      const query = input.value.trim().toLowerCase();
+      let visible = 0;
+
+      rows.forEach((row) => {
+        const haystack = row.dataset.search || "";
+        const match = !query || haystack.includes(query);
+        row.classList.toggle("stu-row-hidden", !match);
+        if (match) visible += 1;
+        if (!match) {
+          const box = row.querySelector(".bulk-move-check");
+          if (box) box.checked = false;
+        }
+      });
+
+      if (emptyEl) {
+        emptyEl.classList.toggle("d-none", visible > 0);
+      }
+      if (countValue) {
+        countValue.textContent = query ? `${visible} of ${total}` : String(total);
+      }
+      if (countLabel) {
+        countLabel.textContent = query ? "Showing" : "Total students:";
+      }
+
+      document.dispatchEvent(new Event("stu-class-list-filtered"));
+    }
+
+    input.addEventListener("input", applySearch);
+  })();
 
   function setAdmissionNumber(value) {
     if (admNoInput) {
@@ -1667,7 +2348,6 @@
 <script src="{{ url_for('admin.static', filename='js/insert_branches.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/highlight_selected_row.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/load_grade_streams.js') }}"></script>
-<script src="{{ url_for('admin.static', filename='js/make_table_header_sticky.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/submit_excel_form.js')}}"></script>
 <script src="{{ url_for('admin.static', filename='js/bulk_move_students.js') }}"></script>
 

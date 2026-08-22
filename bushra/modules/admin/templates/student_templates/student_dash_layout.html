@@ -12,15 +12,92 @@
  {% endblock %}
 
 <script>
-  function blockUI(message = "Please wait…", sub = "Processing your request") {
+  function blockUI(message = "Please wait…", sub = "Processing your request", options = {}) {
     const blocker = document.getElementById("uiBlocker");
     if (!blocker) return;
+
+    const { progress = false } = options;
+    const progressWrap = document.getElementById("uiBlockerProgressWrap");
+    const indeterminate = document.getElementById("uiBlockerIndeterminate");
+    const progressBar = document.getElementById("uiBlockerProgressBar");
+    const progressLabel = document.getElementById("uiBlockerProgressLabel");
+    const progressTrack = document.getElementById("uiBlockerProgress");
 
     blocker.querySelector(".ui-blocker-title").textContent = message;
     blocker.querySelector(".ui-blocker-message").textContent = sub;
     blocker.classList.remove("d-none");
     blocker.setAttribute("aria-busy", "true");
     document.body.classList.add("ui-blocker-active");
+
+    if (progress && progressWrap && progressBar && progressLabel && progressTrack) {
+      progressWrap.classList.remove("d-none");
+      indeterminate?.classList.add("d-none");
+      progressBar.classList.add("is-determinate");
+      progressBar.style.width = "0%";
+      progressBar.style.animation = "none";
+      progressLabel.textContent = "0%";
+      progressTrack.setAttribute("aria-valuenow", "0");
+      const status = document.getElementById("uiBlockerProgressStatus");
+      if (status) status.textContent = "Starting…";
+    } else {
+      progressWrap?.classList.add("d-none");
+      indeterminate?.classList.remove("d-none");
+      if (progressBar) {
+        progressBar.classList.remove("is-determinate");
+        progressBar.style.width = "";
+        progressBar.style.animation = "";
+      }
+    }
+  }
+
+  function setUIProgress(percent, statusText) {
+    const progressBar = document.getElementById("uiBlockerProgressBar");
+    const progressLabel = document.getElementById("uiBlockerProgressLabel");
+    const progressTrack = document.getElementById("uiBlockerProgress");
+    const progressStatus = document.getElementById("uiBlockerProgressStatus");
+    if (!progressBar || !progressLabel || !progressTrack) return;
+
+    const value = Math.min(100, Math.max(0, Math.round(percent)));
+    progressBar.style.width = `${value}%`;
+    progressLabel.textContent = `${value}%`;
+    progressTrack.setAttribute("aria-valuenow", String(value));
+    if (statusText && progressStatus) {
+      progressStatus.textContent = statusText;
+    }
+  }
+
+  async function readResponseBlobWithProgress(response, onProgress) {
+    const total = Number(response.headers.get("Content-Length")) || 0;
+    const reader = response.body?.getReader();
+
+    if (!reader) {
+      const blob = await response.blob();
+      onProgress?.(100);
+      return blob;
+    }
+
+    const chunks = [];
+    let received = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      chunks.push(value);
+      received += value.length;
+
+      if (total > 0) {
+        onProgress?.(Math.min(100, Math.round((received / total) * 100)));
+      }
+    }
+
+    if (total <= 0) {
+      onProgress?.(100);
+    }
+
+    return new Blob(chunks, {
+      type: response.headers.get("Content-Type") || "application/octet-stream",
+    });
   }
 
   function unblockUI() {
@@ -30,6 +107,18 @@
     blocker.classList.add("d-none");
     blocker.setAttribute("aria-busy", "false");
     document.body.classList.remove("ui-blocker-active");
+
+    const progressWrap = document.getElementById("uiBlockerProgressWrap");
+    const indeterminate = document.getElementById("uiBlockerIndeterminate");
+    const progressBar = document.getElementById("uiBlockerProgressBar");
+
+    progressWrap?.classList.add("d-none");
+    indeterminate?.classList.remove("d-none");
+    if (progressBar) {
+      progressBar.classList.remove("is-determinate");
+      progressBar.style.width = "";
+      progressBar.style.animation = "";
+    }
   }
 </script>
 
@@ -56,7 +145,24 @@
       Processing your request
     </p>
 
-    <div class="ui-blocker-progress" aria-hidden="true">
+    <div id="uiBlockerProgressWrap" class="ui-blocker-progress-wrap d-none">
+      <div class="ui-blocker-progress-meta">
+        <span id="uiBlockerProgressStatus">Downloading…</span>
+        <span id="uiBlockerProgressLabel">0%</span>
+      </div>
+      <div
+        id="uiBlockerProgress"
+        class="ui-blocker-progress"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+      >
+        <div id="uiBlockerProgressBar" class="ui-blocker-progress-bar is-determinate"></div>
+      </div>
+    </div>
+
+    <div id="uiBlockerIndeterminate" class="ui-blocker-progress" aria-hidden="true">
       <div class="ui-blocker-progress-bar"></div>
     </div>
   </div>
