@@ -1182,7 +1182,7 @@
 
   .stu-table-sticky {
     position: sticky;
-    top: 0;
+    top: var(--marks-deadline-banner-height, 0px);
     z-index: 23;
     background: #fff;
   }
@@ -1281,7 +1281,7 @@
 
   .stu-table thead th {
     position: sticky;
-    top: var(--stu-sticky-height, 3.05rem);
+    top: calc(var(--stu-sticky-height, 3.05rem) + var(--marks-deadline-banner-height, 0px));
     z-index: 21;
     padding: 0.48rem 0.85rem;
     background: #2c3e50;
@@ -1954,7 +1954,7 @@
   }
 
   .stu-table .sticky-header th {
-    top: var(--stu-sticky-height, 3.05rem);
+    top: calc(var(--stu-sticky-height, 3.05rem) + var(--marks-deadline-banner-height, 0px));
     background: #2c3e50 !important;
     color: #fff !important;
     z-index: 21;
@@ -1999,7 +1999,7 @@
 
     .stu-table thead {
       position: sticky;
-      top: var(--stu-sticky-height, 3.05rem);
+      top: calc(var(--stu-sticky-height, 3.05rem) + var(--marks-deadline-banner-height, 0px));
       z-index: 21;
       background: #2c3e50;
     }

@@ -24,3 +24,20 @@ def get_exams_for_user(user):
         )
 
     return query.order_by(Exam.year.desc(), Exam.term).distinct()
+
+
+def branch_has_locked_exams(user):
+    if not user or not getattr(user, "branch_id", None):
+        return False
+
+    return (
+        db.session.query(Exam.id)
+        .join(Exam.exam_branches)
+        .filter(
+            Exam.is_inactive == False,
+            Exam.is_locked == True,
+            ExamBranch.branch_id == user.branch_id,
+        )
+        .first()
+        is not None
+    )

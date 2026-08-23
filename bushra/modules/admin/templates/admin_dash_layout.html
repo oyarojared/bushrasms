@@ -248,7 +248,28 @@
 </nav>
 
 <!-- ======== MAIN CONTENT ======== -->
-<div class="main-content">
+<div class="main-content{% if marks_deadline_banner %} has-marks-deadline-banner{% endif %}">
+  {% if marks_deadline_banner %}
+  <div
+    class="marks-deadline-banner{% if marks_deadline_banner.is_closed %} is-closed{% endif %}"
+    data-marks-deadline-due="{{ marks_deadline_banner.due_iso }}"
+    role="status"
+  >
+    <i class="bi bi-clock-history" aria-hidden="true"></i>
+    <div class="marks-deadline-banner-copy">
+      <span data-deadline-open-copy{% if marks_deadline_banner.is_closed %} class="d-none"{% endif %}>
+        <strong>{{ marks_deadline_banner.exam_name }}</strong>
+        — teachers must enter marks by {{ marks_deadline_banner.due_label }}
+        · <span data-deadline-remaining>…</span>
+      </span>
+      <span data-deadline-closed-copy{% if not marks_deadline_banner.is_closed %} class="d-none"{% endif %}>
+        Teachers can no longer enter marks for <strong>{{ marks_deadline_banner.exam_name }}</strong>
+        (closed {{ marks_deadline_banner.due_label }})
+      </span>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- =========================================================
      DASHBOARD CONTEXT / SCHOOL INFORMATION BAR
      ========================================================= -->
@@ -351,6 +372,7 @@
       {% endif %}
     </div>
   </div>
+
   {% block main_content %} {% endblock %}
   <div class="container" style="height: 50px; width: 100%"></div>
 </div>
@@ -515,4 +537,5 @@
 <script src="{{ url_for('admin.static', filename='js/display_searched_student.js')}}"></script>
 <script src="{{ url_for('admin.static', filename='js/search_input_shortcut.js')}}"></script>
 <script src="{{ url_for('admin.static', filename='js/clock.js')}}"></script>
+<script src="{{ url_for('admin.static', filename='js/marks_deadline_banner.js') }}"></script>
 {% endblock %}

@@ -21,7 +21,9 @@
 <ul class="nav flex-column w-100">
   {{ sidebar_item("Dashboard", "admin.admin_dash", "bi-speedometer2",
   active_page) }} {{ sidebar_item("Exams", "admin.assessment_dash", "bi-book",
-  active_page) }} {% if current_user.is_admin %} {{ sidebar_item("Students",
+  active_page) }} {% if current_user.class_teacher_assignments %} {{
+  sidebar_item("My class", "admin.my_class", "bi-people-fill", active_page) }}
+  {% endif %} {% if current_user.is_admin %} {{ sidebar_item("Students",
   "admin.student_dash", "bi-people", active_page) }} {{ sidebar_item("School Staff", "admin.school_staff", "bi-person-square", active_page) }} {{
   sidebar_item("Subjects", "admin.subjects_dash", "bi-journal-arrow-down",
   active_page) }} {{ sidebar_item("Classes", "admin.grades_forms",
@@ -40,11 +42,14 @@
 </div>
 {% endmacro %} {% macro sidebar_item(label, endpoint, icon, active_page,
 branch_id=None) %}
+{% set is_active = active_page == label or (
+  label == "Dashboard" and request.endpoint in ["admin.admin_dash", "admin.teacher_dash"]
+) %}
 <li class="nav-item">
   {% if branch_id %}
   <a
     href="{{ endpoint if '#' in endpoint else url_for(endpoint, branch_id=branch_id) }}"
-    class="nav-link text-white d-flex align-items-center {% if active_page == label %}active{% endif %}"
+    class="nav-link d-flex align-items-center {% if is_active %}active{% else %}text-white{% endif %}"
   >
     <i class="bi {{ icon }} me-2"></i>
     <span class="nav-label">{{ label }}</span>
@@ -53,7 +58,7 @@ branch_id=None) %}
   {% else %}
   <a
     href="{{ endpoint if '#' in endpoint else url_for(endpoint) }}"
-    class="nav-link text-white d-flex align-items-center {% if active_page == label %}active{% endif %}"
+    class="nav-link d-flex align-items-center {% if is_active %}active{% else %}text-white{% endif %}"
   >
     <i class="bi {{ icon }} me-2"></i>
     <span class="nav-label">{{ label }}</span>

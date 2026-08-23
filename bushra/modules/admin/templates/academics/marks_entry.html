@@ -19,12 +19,27 @@ render_flash_messages, sidebar %} {% block side_nav %}
       <small class="text-muted">
         {{ exam.name }} · {{ exam.year }} · Term {{ exam.term }}
       </small>
+      {% if marks_deadline and marks_deadline.has_deadline %}
+      <div class="marks-deadline-note{% if marks_entry_closed %} is-closed{% endif %}">
+        {% if marks_entry_closed %}
+        Marks entry is closed for teachers (since {{ marks_deadline.due_label }}). You can view marks but cannot save.
+        {% else %}
+        Teachers must enter marks by {{ marks_deadline.due_label }} (Nairobi time).
+        {% endif %}
+      </div>
+      {% endif %}
       <input id="examId" type="hidden" value="{{ exam.id }}" />
     </div>
 
+    {% if marks_entry_closed %}
+    <span class="badge bg-secondary marks-entry-status-badge">
+      <i class="bi bi-clock-history me-1"></i>Entry closed
+    </span>
+    {% else %}
     <span class="badge bg-success marks-entry-status-badge">
       <i class="bi bi-unlock-fill me-1"></i>Open
     </span>
+    {% endif %}
   </div>
 
   <!-- Setup toolbar -->
@@ -112,7 +127,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       <small id="marksSaveHint" class="marks-save-hint text-muted d-none"></small>
     </div>
     <button type="button" class="btn btn-sm marks-save-btn" id="saveMarksBtn" disabled>
-      <i class="bi bi-save me-1"></i>Save Marks
+      <i class="bi bi-save me-1"></i>{% if marks_entry_closed %}Entry closed{% else %}Save Marks{% endif %}
     </button>
   </div>
 </div>
@@ -537,6 +552,16 @@ render_flash_messages, sidebar %} {% block side_nav %}
     color: #6c757d;
   }
 
+  .marks-deadline-note {
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    color: #9b2c2c;
+  }
+
+  .marks-deadline-note.is-closed {
+    color: #6c757d;
+  }
+
   .marks-save-bar {
     position: fixed;
     left: 0;
@@ -683,6 +708,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
     const marksEntryCount = document.getElementById("marksEntryCount");
     const saveMarksBtn = document.getElementById("saveMarksBtn");
     const saveMarksAlert = document.getElementById("saveMarksAlert");
+    const marksEntryClosed = {{ marks_entry_closed | default(false) | tojson }};
 
     let currentStudents = { students: [] };
     let sortBy = "admission_number";
@@ -870,7 +896,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       const entered = inputs.filter((input) => input.value !== "").length;
 
       marksEntryCount.textContent = `${entered} / ${total} entered`;
-      saveMarksBtn.disabled = isSaving || entered === 0;
+      saveMarksBtn.disabled = marksEntryClosed || isSaving || entered === 0;
 
       document.querySelectorAll(".marks-entry-card").forEach((card) => {
         const input = card.querySelector(".marks-input");
@@ -964,9 +990,13 @@ render_flash_messages, sidebar %} {% block side_nav %}
           if (data.paper && data.paper.marks_out_of) {
             marksOutOf.value = data.paper.marks_out_of;
           }
-          marksOutOf.disabled = false;
+          marksOutOf.disabled = marksEntryClosed;
           renderStudents(subjectText, { preserveTypedMarks: false });
-          setSetupHint("Enter marks, then tap Save Marks.");
+          setSetupHint(
+            marksEntryClosed
+              ? "Teachers can no longer save marks. You can view marks but cannot save."
+              : "Enter marks, then tap Save Marks."
+          );
           scrollStudentsIntoView();
         })
         .catch(() => {
@@ -1020,6 +1050,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
                 inputmode="numeric"
                 autocomplete="off"
                 value="${markValue}"
+                ${marksEntryClosed ? "disabled" : ""}
               >
             </td>
           </tr>
@@ -1040,6 +1071,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
               autocomplete="off"
               value="${markValue}"
               aria-label="Marks for ${safeName}"
+              ${marksEntryClosed ? "disabled" : ""}
             >
           </div>
         `;
@@ -1146,6 +1178,10 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
     function collectAndSaveMarks() {
       if (isSaving) return;
+      if (marksEntryClosed) {
+        showSaveAlert("warning", "Teachers can no longer save marks. The entry deadline has passed.");
+        return;
+      }
 
       const invalidInput = document.querySelector(".marks-input.is-invalid");
       if (invalidInput) {

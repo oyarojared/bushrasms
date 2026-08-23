@@ -6,6 +6,9 @@ __pycache__/
 # Environment variables (VERY important)
 .env
 
+# Local exam marks-entry deadlines (JSON store, not the database)
+instance/exam_deadlines.json
+
 # Database file (DO NOT push production DB)
 *.db
 

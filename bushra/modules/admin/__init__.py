@@ -27,4 +27,4 @@ def serve_passport(filename):
 # Import routes so they attach to admin_bp
 from . import utils
 from .routes import (admin, api, branches, excel_files,
-                     school_staff, students, subjects, assessments)
+                     school_staff, students, subjects, assessments, my_class)

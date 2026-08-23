@@ -1,0 +1,287 @@
+from flask import flash, make_response, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
+from urllib.parse import quote
+from weasyprint import HTML
+
+from ....modals.assessment_db import Exam
+from ....modals.branches_db import Branch, BranchClasses
+from ....modals.students_db import Student
+from .. import admin_bp
+from ..services import grading_844 as grading_844_service
+from ..services import report as report_service
+from ..services.grades import live_class_name
+from ..services.grading_844 import normalize_form_name
+from ..services import studs as studs_service
+from ..utils import safe_date
+from ..utils.class_teacher import (
+    assignment_covers_student,
+    assignment_has_exam,
+    assignment_label,
+    class_exam_overview,
+    exams_for_assignment,
+    get_assignment_for_teacher,
+    kenya_whatsapp_number,
+    learner_has_photo,
+    learner_initials,
+    list_class_teacher_assignments,
+    missing_learner_fields,
+    students_for_assignment,
+    teacher_owns_student,
+)
+
+
+def _assignment_payload(assignment):
+    school = assignment.branch.branch_name if assignment.branch else ""
+    return {
+        "id": assignment.id,
+        "label": assignment_label(assignment),
+        "school": school,
+        "stream": (assignment.stream or "").strip(),
+    }
+
+
+def _learner_row(student):
+    phone = (student.parent_phone or "").strip()
+    name = (student.fullname or "").strip()
+    return {
+        "id": student.id,
+        "fullname": name,
+        "initials": learner_initials(name),
+        "has_photo": learner_has_photo(student),
+        "admission_number": student.admission_number,
+        "gender": student.gender or "",
+        "stream": student.stream or "",
+        "boarding_status": student.boarding_status or "",
+        "parent_fullname": (student.parent_fullname or "").strip(),
+        "parent_phone": phone,
+        "whatsapp": kenya_whatsapp_number(phone),
+        "passport": student.passport or "default.jpg",
+        "pathway": student.pathway or "",
+        "missing": missing_learner_fields(student),
+    }
+
+
+def _selected_assignment(assignments):
+    selected_id = request.args.get("assignment", type=int)
+    selected = None
+    if selected_id:
+        selected = get_assignment_for_teacher(current_user, selected_id)
+    if not selected and assignments:
+        selected = assignments[0]
+    return selected
+
+
+def _render_student_report_pdf(student, exam_id):
+    branch_id = student.branch_id
+    class_id = student.class_id
+    stream = student.stream or None
+    school = Branch.query.get(branch_id)
+    class_obj = BranchClasses.query.get_or_404(class_id)
+    normalized_form = normalize_form_name(live_class_name(class_obj.grade_form))
+    is_844 = normalized_form in ("Form 3", "Form 4", "IGCSE")
+
+    make_844_reports = next(
+        (
+            getattr(grading_844_service, name)
+            for name in dir(grading_844_service)
+            if name.startswith("generate_") and "class" in name and "report" in name
+        ),
+        None,
+    )
+    fetch_report = next(
+        (
+            getattr(report_service, name)
+            for name in dir(report_service)
+            if name.startswith("get_") and "report" in name and name.endswith("_data")
+        ),
+        None,
+    )
+
+    if is_844:
+        class_reports = make_844_reports(
+            branch_id=branch_id,
+            class_id=class_id,
+            exam_id=exam_id,
+            stream=stream,
+        )
+        report_data = [
+            report for report in class_reports if report["student_id"] == student.id
+        ]
+        if not report_data:
+            raise ValueError("Student report not found in class rankings")
+        template = "academics/report_card_844.html"
+    else:
+        report_data = fetch_report(
+            branch_id=branch_id,
+            class_id=class_id,
+            exam_id=exam_id,
+            stream=stream,
+            student_id=student.id,
+        )
+        template = "academics/report_card.html"
+
+    if not report_data:
+        raise ValueError("No report data generated")
+
+    rendered_html = render_template(template, data=report_data, school=school)
+    return HTML(string=rendered_html).write_pdf()
+
+
+@admin_bp.route("/my-class")
+@login_required
+def my_class():
+    assignments = list_class_teacher_assignments(current_user)
+    assignment_views = [_assignment_payload(row) for row in assignments]
+    school_names = {item["school"] for item in assignment_views if item["school"]}
+    selected = _selected_assignment(assignments)
+
+    students = students_for_assignment(selected) if selected else []
+    learner_rows = [_learner_row(student) for student in students]
+    missing_phone = sum(1 for row in learner_rows if not row["parent_phone"])
+
+    exams = exams_for_assignment(selected) if selected else []
+    exam_id = request.args.get("exam", type=int)
+    selected_exam = next((exam for exam in exams if exam.id == exam_id), None)
+    if not selected_exam and exams:
+        selected_exam = exams[0]
+
+    overview = None
+    if selected and selected_exam:
+        try:
+            overview = class_exam_overview(selected, selected_exam.id)
+        except Exception:
+            overview = {
+                "exam_name": selected_exam.name,
+                "subjects": [],
+                "rows": [],
+                "error": "Could not load results for this exam yet.",
+            }
+
+    tab = (request.args.get("tab") or "learners").strip().lower()
+    if tab not in ("learners", "results"):
+        tab = "learners"
+
+    return render_template(
+        "class_teacher/my_class.html",
+        assignments=assignment_views,
+        selected_assignment=_assignment_payload(selected) if selected else None,
+        show_schools=len(school_names) > 1,
+        learners=learner_rows,
+        learner_count=len(learner_rows),
+        missing_phone_count=missing_phone,
+        exams=exams,
+        selected_exam=selected_exam,
+        exam_overview=overview,
+        active_tab=tab,
+    )
+
+
+@admin_bp.route("/my-class/students/<int:student_id>")
+@login_required
+def my_class_student(student_id):
+    student = Student.query.get(student_id)
+    if not student or not teacher_owns_student(current_user, student):
+        flash("That learner is not in your class.", "warning")
+        return redirect(url_for("admin.my_class"))
+
+    phone = (student.parent_phone or "").strip()
+    class_info = student.class_info
+    grade = live_class_name(class_info.grade_form) if class_info else ""
+    class_label = f"{grade} {student.stream or ''}".strip() or "—"
+
+    assignment_id = request.args.get("assignment", type=int)
+    selected = get_assignment_for_teacher(current_user, assignment_id)
+    if not selected or not assignment_covers_student(selected, student):
+        selected = next(
+            (
+                row
+                for row in list_class_teacher_assignments(current_user)
+                if assignment_covers_student(row, student)
+            ),
+            None,
+        )
+
+    academic_history = studs_service.get_student_academic_history(student.id)
+
+    return render_template(
+        "class_teacher/learner.html",
+        learner={
+            "id": student.id,
+            "assignment_id": selected.id if selected else None,
+            "fullname": (student.fullname or "").strip(),
+            "admission_number": student.admission_number,
+            "gender": student.gender or "—",
+            "stream": student.stream or "",
+            "class_label": class_label,
+            "school": student.branch.branch_name if student.branch else "—",
+            "boarding_status": student.boarding_status or "—",
+            "pathway": student.pathway or "—",
+            "dob": safe_date(student.dob),
+            "parent_fullname": student.parent_fullname or "—",
+            "parent_phone": phone,
+            "whatsapp": kenya_whatsapp_number(phone),
+            "nemis_number": student.nemis_number or "—",
+            "knec_assessment_no": student.knec_assessment_no or "—",
+            "birth_cert_no": student.birth_cert_no or "—",
+            "passport": student.passport or "default.jpg",
+            "subjects": student.subjects_taken,
+            "missing": missing_learner_fields(student),
+        },
+        academic_history=academic_history,
+    )
+
+
+@admin_bp.route("/my-class/students/<int:student_id>/report-pdf")
+@login_required
+def my_class_student_report_pdf(student_id):
+    student = Student.query.get(student_id)
+    if not student or not teacher_owns_student(current_user, student):
+        flash("That learner is not in your class.", "warning")
+        return redirect(url_for("admin.my_class"))
+
+    exam_id = request.args.get("exam", type=int)
+    assignment_id = request.args.get("assignment", type=int)
+    selected = get_assignment_for_teacher(current_user, assignment_id)
+    if not selected or not assignment_covers_student(selected, student):
+        selected = next(
+            (
+                row
+                for row in list_class_teacher_assignments(current_user)
+                if assignment_covers_student(row, student)
+            ),
+            None,
+        )
+
+    if not exam_id or not selected or not assignment_has_exam(selected, exam_id):
+        flash("Choose an exam for this learner's class.", "warning")
+        return redirect(
+            url_for(
+                "admin.my_class_student",
+                student_id=student.id,
+                assignment=selected.id if selected else None,
+            )
+        )
+
+    try:
+        pdf = _render_student_report_pdf(student, exam_id)
+    except Exception:
+        flash(
+            "Could not generate that report card. Marks or grading may still be incomplete.",
+            "warning",
+        )
+        return redirect(
+            url_for(
+                "admin.my_class_student",
+                student_id=student.id,
+                assignment=selected.id if selected else None,
+            )
+        )
+
+    exam = Exam.query.get(exam_id)
+    filename = f"{student.fullname}_{exam.name if exam else 'report'}.pdf"
+    response = make_response(pdf)
+    response.headers["Content-Type"] = "application/pdf"
+    response.headers["Content-Disposition"] = (
+        f'attachment; filename="{quote(filename)}"'
+    )
+    return response

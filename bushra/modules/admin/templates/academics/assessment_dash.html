@@ -12,15 +12,39 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     <h6 class="app-page-title-heading">Exams &amp; Assessments</h6>
 
     <span class="app-page-title-subtitle">
+      {% if current_user.is_admin %}
       Manage examinations, assessments &amp; student results
+      {% else %}
+      Enter marks for exams opened by your school admin
+      {% endif %}
     </span>
   </div>
 </div>
 
+{% if not current_user.is_admin and not exams_list %}
+<div class="exam-teacher-empty" role="status">
+  <div class="exam-teacher-empty-icon" aria-hidden="true">
+    <i class="bi bi-journal-x"></i>
+  </div>
+  <h6>No exam open for marks entry</h6>
+  {% if has_locked_exams|default(false) %}
+  <p>
+    Your school admin has not created a new exam yet. Previous exams have been
+    locked, so marks can no longer be entered.
+  </p>
+  {% else %}
+  <p>
+    Your school admin has not created an exam yet. It will appear here once one
+    is opened for marks entry.
+  </p>
+  {% endif %}
+</div>
+{% else %}
 <div class="card mt-3 shadow-sm">
   <div class="orange-line"></div>
   <div class="card-body">
     <!-- Tabs navigation -->
+    {% if current_user.is_admin or exams_list %}
     <ul class="nav nav-tabs exam-tabs" id="examTabs" role="tablist">
       <li class="nav-item" role="presentation">
         <button
@@ -93,9 +117,10 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
       </li>
       {% endif %}
     </ul>
+    {% endif %}
 
     <!-- TAB CONTENT -->
-    <div class="tab-content pt-3" id="examTabsContent">
+    <div class="tab-content{% if current_user.is_admin or exams_list %} pt-3{% endif %}" id="examTabsContent">
       <!-- ================= EXAM SETUP TAB ================= -->
       <div class="tab-pane fade show active" id="exam-setup" role="tabpanel">
         <div class="container-fluid px-0">
@@ -202,10 +227,21 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
                   </td>
 
                   <td>
+                    {% set dl = (exam_deadlines or {}).get(exam.id) %}
                     {% if exam.is_locked %}
                     <span class="badge exam-setup-status exam-setup-status-locked">
                       <i class="bi bi-lock-fill me-1"></i>Locked
                     </span>
+                    {% elif dl and dl.is_closed %}
+                    <span class="badge exam-setup-status exam-setup-status-closed">
+                      <i class="bi bi-clock-history me-1"></i>Entry closed
+                    </span>
+                    <div class="exam-setup-due-label">Teachers could enter until {{ dl.due_label }}</div>
+                    {% elif dl and dl.has_deadline %}
+                    <span class="badge exam-setup-status exam-setup-status-open">
+                      <i class="bi bi-unlock-fill me-1"></i>Open
+                    </span>
+                    <div class="exam-setup-due-label">Teachers enter marks by {{ dl.due_label }}</div>
                     {% else %}
                     <span class="badge exam-setup-status exam-setup-status-open">
                       <i class="bi bi-unlock-fill me-1"></i>Open
@@ -241,6 +277,19 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
                           <li>
                             <button class="dropdown-item" type="button" disabled>
                               <i class="bi bi-pencil me-2"></i>Edit
+                            </button>
+                          </li>
+                          <li>
+                            <button
+                              class="dropdown-item set-exam-deadline-btn"
+                              type="button"
+                              data-bs-toggle="modal"
+                              data-bs-target="#examDeadlineModal"
+                              data-exam-id="{{ exam.id }}"
+                              data-exam-name="{{ exam.name }}"
+                              data-due-local="{{ ((exam_deadlines or {}).get(exam.id) or {}).get('due_local', '') }}"
+                            >
+                              <i class="bi bi-clock me-2"></i>Set teachers' marks entry deadline
                             </button>
                           </li>
                           <li><hr class="dropdown-divider" /></li>
@@ -828,6 +877,7 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     </div>
   </div>
 </div>
+{% endif %}
 
 <!-- ================= CREATE EXAM MODAL ================= -->
 <div
@@ -904,6 +954,16 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
                 input_class="form-control form-control-sm",
                 icon_class="bi bi-pencil-square",
                 placeholder="e.g. Mid Term Exam"
+              ) }}
+            </div>
+
+            <div class="col-12">
+              {{ form_input(
+                exam_form.marks_due_at,
+                wrapper_class="mb-0",
+                input_class="form-control form-control-sm",
+                icon_class="bi bi-clock",
+                help_text="Optional. Last date and time teachers can save marks. Nairobi time."
               ) }}
             </div>
           </div>
@@ -1193,6 +1253,100 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
   });
 </script>
 {% endif %}
+
+<!-- ================= MARKS DEADLINE MODAL ================= -->
+{% if current_user.is_admin %}
+<div
+  class="modal fade"
+  id="examDeadlineModal"
+  tabindex="-1"
+  aria-labelledby="examDeadlineModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered create-exam-modal-dialog">
+    <div class="modal-content create-exam-modal">
+      <form
+        method="post"
+        id="examDeadlineForm"
+        action=""
+      >
+        {{ deadline_form.csrf_token }}
+        {{ deadline_form.exam_id(id="examDeadlineExamId") }}
+
+        <div class="modal-header create-exam-modal-header">
+          <h6 class="modal-title" id="examDeadlineModalLabel">
+            <i class="bi bi-clock me-2"></i>Teachers' marks entry deadline
+          </h6>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+
+        <div class="modal-body create-exam-modal-body">
+          <p class="text-muted small mb-3" id="examDeadlineExamName"></p>
+          {{ form_input(
+            deadline_form.marks_due_at,
+            wrapper_class="mb-0",
+            input_class="form-control form-control-sm",
+            icon_class="bi bi-clock",
+            help_text="Last date and time teachers can save marks. Nairobi time. Leave blank and save, or remove, to have no deadline."
+          ) }}
+        </div>
+
+        <div class="modal-footer create-exam-modal-footer">
+          {{ deadline_form.clear(class="btn btn-sm btn-light me-auto", **{"formnovalidate": True}) }}
+          <button
+            type="button"
+            class="btn btn-sm btn-light create-exam-cancel-btn"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          {{ deadline_form.submit(class="btn btn-sm create-exam-submit-btn") }}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const modalEl = document.getElementById("examDeadlineModal");
+    const formEl = document.getElementById("examDeadlineForm");
+    const examIdEl = document.getElementById("examDeadlineExamId");
+    const nameEl = document.getElementById("examDeadlineExamName");
+    const dueEl = document.getElementById("{{ deadline_form.marks_due_at.id }}");
+    if (!modalEl || !formEl) return;
+
+    modalEl.addEventListener("show.bs.modal", function (event) {
+      const button = event.relatedTarget;
+      if (!button || !button.classList.contains("set-exam-deadline-btn")) return;
+
+      const examId = button.getAttribute("data-exam-id") || "";
+      const examName = button.getAttribute("data-exam-name") || "";
+      const dueLocal = button.getAttribute("data-due-local") || "";
+
+      formEl.action = "/admin/exams/" + examId + "/deadline";
+      formEl.querySelectorAll('[name="exam_id"]').forEach(function (input) {
+        input.value = examId;
+      });
+      if (examIdEl) examIdEl.value = examId;
+      if (nameEl) nameEl.textContent = examName;
+      if (dueEl) dueEl.value = dueLocal;
+    });
+
+    modalEl.addEventListener("hidden.bs.modal", function () {
+      formEl.action = "";
+      if (examIdEl) examIdEl.value = "";
+      if (nameEl) nameEl.textContent = "";
+      if (dueEl) dueEl.value = "";
+    });
+  });
+</script>
+{% endif %}
 <script src="{{ url_for('admin.static', filename='js/assessment/result_display.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/assessment/grading_config.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/assessment/results_reports.js') }}"></script>
@@ -1238,6 +1392,47 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
       width: 100%;
       white-space: normal;
     }
+  }
+
+  /* =========================================================
+   TEACHER — NO OPEN EXAMS
+   ========================================================= */
+
+  .exam-teacher-empty {
+    max-width: 420px;
+    margin: 2.5rem auto 0;
+    text-align: center;
+    padding: 2.25rem 1.25rem;
+    background: #fff;
+    border: 1px dashed #dde3ea;
+    border-radius: 14px;
+    color: #6b7280;
+  }
+
+  .exam-teacher-empty-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(224, 168, 0, 0.12);
+    color: #c79200;
+    font-size: 1.35rem;
+  }
+
+  .exam-teacher-empty h6 {
+    margin: 0.65rem 0 0.35rem;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #374151;
+  }
+
+  .exam-teacher-empty p {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
   }
 
   /* =========================================================
@@ -1532,6 +1727,20 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
   .exam-setup-status-locked {
     background: rgba(220, 53, 69, 0.12);
     color: #dc3545;
+  }
+
+  .exam-setup-status-closed {
+    background: rgba(108, 117, 125, 0.14);
+    color: #495057;
+  }
+
+  .exam-setup-due-label {
+    margin-top: 0.2rem;
+    font-size: 0.7rem;
+    color: #6c757d;
+    white-space: normal;
+    line-height: 1.3;
+    max-width: 12rem;
   }
 
   .btn-exam-enter {

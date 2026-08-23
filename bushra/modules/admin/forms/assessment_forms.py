@@ -1,6 +1,20 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, SubmitField
-from wtforms.validators import DataRequired, Length
+from wtforms import StringField, SelectField, SubmitField, HiddenField
+from wtforms.fields import DateTimeLocalField
+from wtforms.validators import DataRequired, Length, Optional
+
+
+class OptionalDateTimeLocalField(DateTimeLocalField):
+    """Treat a blank datetime-local input as unset instead of invalid."""
+
+    def process_formdata(self, valuelist):
+        if not valuelist or not str(valuelist[0]).strip():
+            self.data = None
+            return
+        raw = str(valuelist[0]).strip().replace("Z", "")
+        if "." in raw:
+            raw = raw.split(".", 1)[0]
+        super().process_formdata([raw])
 
 
 class ExamCreateForm(FlaskForm):
@@ -34,4 +48,21 @@ class ExamCreateForm(FlaskForm):
         ]
     )
 
+    marks_due_at = OptionalDateTimeLocalField(
+        "Teachers' marks entry deadline",
+        format=["%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S"],
+        validators=[Optional()],
+    )
+
     submit = SubmitField("Create Exam")
+
+
+class ExamDeadlineForm(FlaskForm):
+    exam_id = HiddenField(validators=[DataRequired()])
+    marks_due_at = OptionalDateTimeLocalField(
+        "Teachers' marks entry deadline",
+        format=["%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S"],
+        validators=[Optional()],
+    )
+    submit = SubmitField("Save deadline")
+    clear = SubmitField("Remove deadline")

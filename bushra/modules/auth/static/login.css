@@ -154,8 +154,9 @@ body {
 }
 
 .company-name .brand-wordmark {
+  font-family: "Plus Jakarta Sans", Inter, sans-serif;
   font-weight: 800;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.06em;
   color: var(--acadex-dark);
 }
 
@@ -512,6 +513,9 @@ body {
 }
 
 .acadex-title span {
+  font-family: "Plus Jakarta Sans", Inter, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.06em;
   color: var(--acadex-red);
 }
 

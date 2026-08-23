@@ -1,6 +1,6 @@
 {% extends "super_admin_dash.html" %} {% from "_macros.html" import
-render_flash_messages, sidebar %} {% block side_nav %} {{ sidebar("School
-Staff", current_user) }} {% endblock %} {% block main_content %}
+render_flash_messages, sidebar %} {% block side_nav %} {{ sidebar("Dashboard",
+current_user) }} {% endblock %} {% block main_content %}
 <div class="teacher-portal-page">
   <div class="app-page-title">
     <div class="app-page-title-icon">
@@ -10,7 +10,7 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
     <div class="app-page-title-content">
       <h6 class="app-page-title-heading">Teacher Portal</h6>
       <span class="app-page-title-subtitle">
-        Your classes, school details &amp; quick actions
+        Your classes &amp; quick actions
       </span>
     </div>
   </div>
@@ -41,79 +41,53 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
         </div>
       </div>
 
-      <a
-        href="{{ url_for('admin.assessment_dash') }}"
-        class="btn teacher-cta-btn d-none d-md-inline-flex"
-      >
-        <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>
-        Enter Marks
-      </a>
+      <div class="teacher-hero-actions">
+        {% if current_user.class_teacher_assignments %}
+        <a
+          href="{{ url_for('admin.my_class') }}"
+          class="btn teacher-cta-btn teacher-cta-btn-secondary d-none d-md-inline-flex"
+        >
+          <i class="bi bi-people-fill me-1" aria-hidden="true"></i>
+          My class
+        </a>
+        {% endif %}
+        <a
+          href="{{ url_for('admin.assessment_dash') }}"
+          class="btn teacher-cta-btn d-none d-md-inline-flex"
+        >
+          <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>
+          Enter Marks
+        </a>
+      </div>
     </div>
   </div>
 
-  <!-- Account & school details -->
-  <div class="row g-3 teacher-info-grid">
-    <div class="col-12 col-lg-6">
-      <div class="branch-info-panel h-100">
-        <div class="branch-info-title">
-          <i class="bi bi-person-circle me-1 text-brand" aria-hidden="true"></i>
-          Personal Info
-        </div>
-
-        <div class="branch-info-list">
-          <div class="branch-info-row">
-            <span class="branch-info-label">Title</span>
-            <span class="branch-info-value">{{ teacher.title }}</span>
-          </div>
-
-          <div class="branch-info-row">
-            <span class="branch-info-label">Email</span>
-            <span class="branch-info-value">{{ teacher.email }}</span>
-          </div>
-
-          <div class="branch-info-row">
-            <span class="branch-info-label">Role</span>
-            <span class="branch-info-value">
-              {% if teacher.is_admin %}
-              <span class="teacher-role-pill teacher-role-pill--admin"
-                >Admin</span
-              >
-              {% else %}
-              <span class="teacher-role-pill">Teacher</span>
-              {% endif %}
-            </span>
-          </div>
-        </div>
+  <div class="teacher-info-grid">
+    <div class="branch-info-panel">
+      <div class="branch-info-title">
+        <i class="bi bi-building me-1 text-brand" aria-hidden="true"></i>
+        School Info
       </div>
-    </div>
 
-    <div class="col-12 col-lg-6">
-      <div class="branch-info-panel h-100">
-        <div class="branch-info-title">
-          <i class="bi bi-building me-1 text-brand" aria-hidden="true"></i>
-          School Info
+      <div class="branch-info-list">
+        <div class="branch-info-row">
+          <span class="branch-info-label">School</span>
+          <span class="branch-info-value">{{ branch.branch_name }}</span>
         </div>
 
-        <div class="branch-info-list">
-          <div class="branch-info-row">
-            <span class="branch-info-label">School</span>
-            <span class="branch-info-value">{{ branch.branch_name }}</span>
-          </div>
+        <div class="branch-info-row">
+          <span class="branch-info-label">Manager</span>
+          <span class="branch-info-value">{{ branch.branch_manager }}</span>
+        </div>
 
-          <div class="branch-info-row">
-            <span class="branch-info-label">Manager</span>
-            <span class="branch-info-value">{{ branch.branch_manager }}</span>
-          </div>
+        <div class="branch-info-row">
+          <span class="branch-info-label">School Type</span>
+          <span class="branch-info-value">{{ branch.school_type }}</span>
+        </div>
 
-          <div class="branch-info-row">
-            <span class="branch-info-label">School Type</span>
-            <span class="branch-info-value">{{ branch.school_type }}</span>
-          </div>
-
-          <div class="branch-info-row">
-            <span class="branch-info-label">Gender</span>
-            <span class="branch-info-value">{{ branch.school_gender }}</span>
-          </div>
+        <div class="branch-info-row">
+          <span class="branch-info-label">Gender</span>
+          <span class="branch-info-value">{{ branch.school_gender }}</span>
         </div>
       </div>
     </div>
@@ -144,8 +118,8 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
               <th class="text-center" width="56">#</th>
               <th>Class</th>
               <th>Streams</th>
-              <th>Subject</th>
-              <th class="text-end">Students</th>
+              <th>Subjects</th>
+              <th class="text-end teacher-col-students">Students</th>
             </tr>
           </thead>
           <tbody>
@@ -161,11 +135,13 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
                 {% endif %}
               </td>
               <td>
-                <span class="teacher-subject-badge"
-                  >{{ cls.subject_name }}</span
-                >
+                <div class="teacher-subject-badges">
+                  {% for subject in cls.subjects %}
+                  <span class="teacher-subject-badge">{{ subject }}</span>
+                  {% endfor %}
+                </div>
               </td>
-              <td class="text-end branch-stat-number">
+              <td class="text-end teacher-col-students branch-stat-number">
                 {{ cls.num_students }}
               </td>
             </tr>
@@ -188,8 +164,12 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
 
           <div class="teacher-lesson-bottom">
             <div class="teacher-lesson-field">
-              <span class="teacher-lesson-label">Subject</span>
-              <span class="teacher-subject-badge">{{ cls.subject_name }}</span>
+              <span class="teacher-lesson-label">Subjects</span>
+              <div class="teacher-subject-badges">
+                {% for subject in cls.subjects %}
+                <span class="teacher-subject-badge">{{ subject }}</span>
+                {% endfor %}
+              </div>
             </div>
 
             {% if cls.streams %}
@@ -215,15 +195,6 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
       {% endif %}
     </div>
   </section>
-
-  <!-- Secondary actions -->
-  <div class="teacher-secondary-actions">
-    <a href="{{ url_for('auth.logout') }}" class="teacher-logout-link">
-      <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
-      <span>Sign out</span>
-      <i class="bi bi-chevron-right ms-auto" aria-hidden="true"></i>
-    </a>
-  </div>
 
   <footer class="teacher-portal-footer">
     <div class="teacher-portal-footer-main">
@@ -256,19 +227,39 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
   </footer>
 </div>
 
-<!-- Mobile sticky primary action -->
-<a
-  href="{{ url_for('admin.assessment_dash') }}"
-  class="teacher-mobile-cta d-md-none"
-  aria-label="Enter marks"
->
-  <i class="bi bi-pencil-square" aria-hidden="true"></i>
-  Enter Marks
-</a>
+<!-- Mobile sticky primary actions -->
+<div class="teacher-mobile-actions d-md-none">
+  {% if current_user.class_teacher_assignments %}
+  <a
+    href="{{ url_for('admin.my_class') }}"
+    class="teacher-mobile-cta teacher-mobile-cta-secondary"
+    aria-label="My class"
+  >
+    <i class="bi bi-people-fill" aria-hidden="true"></i>
+    My class
+  </a>
+  {% endif %}
+  <a
+    href="{{ url_for('admin.assessment_dash') }}"
+    class="teacher-mobile-cta"
+    aria-label="Enter marks"
+  >
+    <i class="bi bi-pencil-square" aria-hidden="true"></i>
+    Enter Marks
+  </a>
+</div>
 
 <style>
   .teacher-portal-page {
+    max-width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
     padding-bottom: 4.75rem;
+  }
+
+  .main-content:has(.teacher-portal-page) {
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
   }
 
   .teacher-portal-page .text-brand {
@@ -302,6 +293,10 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
     font-size: clamp(1rem, 2.5vw, 1.25rem);
     font-weight: 800;
     line-height: 1.25;
+  }
+
+  .teacher-hero-title .welcome-name {
+    overflow-wrap: anywhere;
   }
 
   .teacher-hero-text {
@@ -355,6 +350,26 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
       transform 0.2s ease;
   }
 
+  .teacher-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .teacher-cta-btn-secondary {
+    background: #fff !important;
+    color: #c95f5f !important;
+    border: 1px solid #ffb3b3;
+    box-shadow: none;
+  }
+
+  .teacher-cta-btn-secondary:hover,
+  .teacher-cta-btn-secondary:focus {
+    background: #fff5f5;
+    color: #c95f5f;
+  }
+
   .teacher-cta-btn:hover,
   .teacher-cta-btn:focus {
     background: #f56868;
@@ -365,20 +380,10 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
     margin-bottom: 14px;
   }
 
-  .teacher-role-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.15rem 0.55rem;
-    border-radius: 999px;
-    background: rgba(255, 121, 121, 0.12);
-    color: #c95f5f;
-    font-size: 0.72rem;
-    font-weight: 700;
-  }
-
-  .teacher-role-pill--admin {
-    background: rgba(25, 135, 84, 0.12);
-    color: #198754;
+  .teacher-info-grid .branch-info-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1.25rem;
   }
 
   .teacher-section {
@@ -430,6 +435,11 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
     font-weight: 500;
   }
 
+  .teacher-lessons-table-wrap {
+    overflow-x: auto;
+    padding: 0.4rem 1rem 0.7rem;
+  }
+
   .teacher-lessons-table thead th {
     font-size: 0.74rem;
     font-weight: 700;
@@ -441,11 +451,28 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
     vertical-align: middle;
   }
 
+  .teacher-lessons-table th:first-child,
+  .teacher-lessons-table td:first-child {
+    padding-left: 0.85rem;
+  }
+
+  .teacher-lessons-table-wrap table th:last-child,
+  .teacher-lessons-table-wrap table td:last-child {
+    padding-right: 1.35rem !important;
+    padding-left: 1.15rem !important;
+    white-space: nowrap;
+  }
+
+  .teacher-subject-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
   .teacher-stream-badge,
   .teacher-subject-badge {
     display: inline-flex;
     align-items: center;
-    margin: 0 0.2rem 0.2rem 0;
     padding: 0.15rem 0.45rem;
     border-radius: 999px;
     font-size: 0.7rem;
@@ -479,6 +506,7 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
 
   .teacher-lesson-top {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 0.55rem;
@@ -491,13 +519,18 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
   }
 
   .teacher-lesson-class {
+    min-width: 0;
     color: #343a40;
     font-size: 0.86rem;
     font-weight: 800;
+    overflow-wrap: anywhere;
   }
 
   .teacher-lesson-students {
     margin-left: auto;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    background: #f8f9fa;
     color: #6c757d;
     font-size: 0.7rem;
     font-weight: 600;
@@ -553,34 +586,6 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
     font-size: 0.78rem;
   }
 
-  .teacher-secondary-actions {
-    margin-top: 14px;
-  }
-
-  .teacher-logout-link {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    padding: 0.8rem 0.95rem;
-    border: 1px solid #edf0f2;
-    border-radius: 10px;
-    background: #fff;
-    color: #495057;
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition:
-      border-color 0.2s ease,
-      background-color 0.2s ease;
-  }
-
-  .teacher-logout-link:hover,
-  .teacher-logout-link:focus {
-    border-color: rgba(220, 53, 69, 0.25);
-    background: rgba(220, 53, 69, 0.04);
-    color: #dc3545;
-  }
-
   .teacher-portal-footer {
     margin-top: 18px;
     padding-top: 14px;
@@ -621,12 +626,18 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
     font-size: 0.68rem;
   }
 
-  .teacher-mobile-cta {
+  .teacher-mobile-actions {
     position: fixed;
     left: 12px;
     right: 12px;
-    bottom: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
     z-index: 1035;
+    display: flex;
+    gap: 8px;
+  }
+
+  .teacher-mobile-cta {
+    flex: 1 1 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -641,10 +652,23 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
     box-shadow: 0 8px 24px rgba(255, 121, 121, 0.35);
   }
 
+  .teacher-mobile-cta-secondary {
+    background: #fff !important;
+    color: #c95f5f !important;
+    border: 1px solid #ffb3b3;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  }
+
   .teacher-mobile-cta:hover,
   .teacher-mobile-cta:focus {
     color: #fff;
     background: #f56868;
+  }
+
+  .teacher-mobile-cta-secondary:hover,
+  .teacher-mobile-cta-secondary:focus {
+    color: #c95f5f;
+    background: #fff5f5;
   }
 
   @media (max-width: 767.98px) {
@@ -653,7 +677,13 @@ Staff", current_user) }} {% endblock %} {% block main_content %}
     }
 
     .teacher-hero-body {
+      flex-direction: column;
+      align-items: flex-start;
       padding: 14px;
+    }
+
+    .teacher-info-grid .branch-info-list {
+      grid-template-columns: 1fr;
     }
 
     .teacher-portal-page .branch-info-row {

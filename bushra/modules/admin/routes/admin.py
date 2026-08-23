@@ -11,6 +11,7 @@ from flask_login import current_user, login_required
 from sqlalchemy.orm import aliased
 
 from ..utils.route_protect import admin_required
+from ..services.grades import live_class_name, sort_grade_list
 from ....modals.subjects_db import Lesson
 
 
@@ -254,28 +255,63 @@ def teacher_dash():
         .all()
     )
 
-    classes_info = []
+    grouped = {}
     for lesson in lessons:
-        # Count students only in the stream this teacher is teaching
-        if lesson.stream:
-            num_students = (
-                db.session.query(Student)
-                .filter(
-                    Student.class_id == lesson.class_id,
-                    Student.branch_id == lesson.branch_id,
-                    Student.stream == lesson.stream
-                )
-                .count()
-            )
-        else:
-            num_students = len(lesson.class_.students)
+        class_obj = lesson.class_
+        if not class_obj:
+            continue
+        entry = grouped.get(lesson.class_id)
+        if not entry:
+            entry = {
+                "class_id": lesson.class_id,
+                "branch_id": lesson.branch_id,
+                "grade_form": live_class_name(class_obj.grade_form)
+                or class_obj.grade_form,
+                "streams": [],
+                "subjects": [],
+                "covers_whole_class": False,
+            }
+            grouped[lesson.class_id] = entry
 
-        classes_info.append({
-            "grade_form": lesson.class_.grade_form,
-            "streams": [lesson.stream] if lesson.stream else lesson.class_.streams,
-            "subject_name": lesson.subject.name,
-            "num_students": num_students
-        })
+        stream = (lesson.stream or "").strip()
+        if stream:
+            if stream not in entry["streams"]:
+                entry["streams"].append(stream)
+        else:
+            entry["covers_whole_class"] = True
+            class_streams = class_obj.streams or []
+            if isinstance(class_streams, list):
+                for item in class_streams:
+                    name = (item or "").strip()
+                    if name and name not in entry["streams"]:
+                        entry["streams"].append(name)
+
+        subject_name = lesson.subject.name if lesson.subject else ""
+        if subject_name and subject_name not in entry["subjects"]:
+            entry["subjects"].append(subject_name)
+
+    classes_info = []
+    for entry in grouped.values():
+        query = Student.query.filter_by(
+            branch_id=entry["branch_id"],
+            class_id=entry["class_id"],
+        )
+        if entry["streams"] and not entry["covers_whole_class"]:
+            query = query.filter(Student.stream.in_(entry["streams"]))
+        classes_info.append(
+            {
+                "grade_form": entry["grade_form"],
+                "streams": entry["streams"],
+                "subjects": sorted(entry["subjects"], key=str.lower),
+                "num_students": query.count(),
+            }
+        )
+
+    sorted_keys = sort_grade_list(
+        [(index, row["grade_form"]) for index, row in enumerate(classes_info)],
+        dedupe=False,
+    )
+    classes_info = [classes_info[index] for index, _ in sorted_keys]
 
     branch = current_user.branch
 

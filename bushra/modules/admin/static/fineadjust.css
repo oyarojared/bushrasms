@@ -692,11 +692,11 @@
 .brand-wordmark {
   position: relative;
 
-  font-family: "Inter", "Open Sans", sans-serif;
+  font-family: "Plus Jakarta Sans", Inter, "Open Sans", sans-serif;
   font-size: 1em;
   font-weight: 800;
   font-style: normal;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.06em;
 
   color: #ffffff;
 
@@ -2805,4 +2805,50 @@
 
 #assignTeachersNoticeModal {
   z-index: 1065;
+}
+
+/* =========================================================
+   MARKS ENTRY DEADLINE BANNER
+   ========================================================= */
+
+.marks-deadline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0 -20px 0.75rem;
+  padding: 0.5rem 1.1rem;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 121, 121, 0.28);
+  border-radius: 0;
+  background: #fff5f5;
+  color: #9b2c2c;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.main-content.has-marks-deadline-banner {
+  padding-top: 0;
+}
+
+.marks-deadline-banner i {
+  flex: 0 0 auto;
+  font-size: 1rem;
+}
+
+.marks-deadline-banner-copy {
+  min-width: 0;
+}
+
+.marks-deadline-banner [data-deadline-remaining] {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.marks-deadline-banner.is-closed {
+  background: #f8f9fa;
+  border-color: #edf0f2;
+  color: #495057;
 }

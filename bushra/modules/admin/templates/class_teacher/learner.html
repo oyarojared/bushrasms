@@ -1,0 +1,174 @@
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar %}
+
+{% block head %}
+{{ super() }}
+<link
+  rel="stylesheet"
+  href="{{ url_for('admin.static', filename='class_teacher.css') }}"
+/>
+{% endblock %}
+
+{% block side_nav %}
+{{ sidebar("My class", current_user) }}
+{% endblock %}
+
+{% block main_content %}
+{{ render_flash_messages() }}
+
+<div class="mc-page">
+  <a
+    class="mc-back"
+    href="{% if learner.assignment_id %}{{ url_for('admin.my_class', assignment=learner.assignment_id) }}{% else %}{{ url_for('admin.my_class') }}{% endif %}"
+  >
+    <i class="bi bi-arrow-left"></i>
+    Back to my class
+  </a>
+
+  <div class="mc-profile">
+    <div class="mc-profile-hero">
+      <img
+        class="mc-profile-photo"
+        src="{{ url_for('admin.serve_passport', filename=learner.passport) }}"
+        alt="{{ learner.fullname }}"
+      />
+      <div>
+        <h1 class="mc-profile-name">{{ learner.fullname or "Unnamed learner" }}</h1>
+        <p class="mc-profile-class">
+          {{ learner.class_label }}
+          <span>·</span>
+          {{ learner.school }}
+        </p>
+        <p class="mc-profile-adm">Adm {{ learner.admission_number }}</p>
+      </div>
+    </div>
+
+    {% if learner.missing %}
+    <div class="mc-profile-flags">
+      <span class="mc-flag-label">Missing</span>
+      {% for item in learner.missing %}
+      <span class="mc-flag">{{ item }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <section class="mc-section">
+      <h2>Parent contact</h2>
+      <div class="mc-dl">
+        <div>
+          <span>Parent / guardian</span>
+          <strong>{{ learner.parent_fullname }}</strong>
+        </div>
+        <div>
+          <span>Phone</span>
+          {% if learner.parent_phone %}
+          <strong>{{ learner.parent_phone }}</strong>
+          <div class="mc-contact-actions">
+            <a class="mc-contact-btn" href="tel:{{ learner.parent_phone }}">
+              <i class="bi bi-telephone"></i> Call
+            </a>
+            <a
+              class="mc-contact-btn mc-contact-sms"
+              href="sms:{% if learner.whatsapp %}+{{ learner.whatsapp }}{% else %}{{ learner.parent_phone }}{% endif %}"
+            >
+              <i class="bi bi-chat-dots"></i> SMS
+            </a>
+            {% if learner.whatsapp %}
+            <a
+              class="mc-contact-btn mc-contact-wa"
+              href="https://wa.me/{{ learner.whatsapp }}"
+              target="_blank"
+              rel="noopener"
+            >
+              <i class="bi bi-whatsapp"></i> WhatsApp
+            </a>
+            {% endif %}
+          </div>
+          {% else %}
+          <strong class="mc-muted">Not recorded</strong>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <section class="mc-section">
+      <h2>Learner details</h2>
+      <div class="mc-dl">
+        <div><span>Gender</span><strong>{{ learner.gender }}</strong></div>
+        <div><span>Boarding</span><strong>{{ learner.boarding_status }}</strong></div>
+        <div><span>Date of birth</span><strong>{{ learner.dob }}</strong></div>
+        <div><span>Pathway</span><strong>{{ learner.pathway }}</strong></div>
+        <div><span>NEMIS</span><strong>{{ learner.nemis_number }}</strong></div>
+        <div><span>Assessment no</span><strong>{{ learner.knec_assessment_no }}</strong></div>
+        <div><span>Birth cert</span><strong>{{ learner.birth_cert_no }}</strong></div>
+      </div>
+    </section>
+
+    <section class="mc-section">
+      <h2>Subjects</h2>
+      {% if learner.subjects %}
+      <div class="mc-subjects">
+        {% for subject in learner.subjects %}
+        <span>{{ subject }}</span>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="mc-muted mb-0">No subjects allocated yet.</p>
+      {% endif %}
+    </section>
+    <section class="mc-section">
+      <h2>Academic records</h2>
+      {% set records = academic_history %}
+      {% if records %}
+      {% for exam in records %}
+      <article class="mc-exam-block">
+        <div class="mc-exam-head">
+          <div>
+            <h3>{{ exam.name }}</h3>
+            <p class="mc-exam-meta">
+              Term {{ exam.term }} · {{ exam.year }}
+              {% if exam.grade_form %} · {{ exam.grade_form }}{% endif %}
+              {% if exam.stream %} {{ exam.stream }}{% endif %}
+              {% if exam.average %} · Mean {{ exam.average }}{% endif %}
+              {% if exam.ranking and exam.ranking.overall_position %}
+              · Pos {{ exam.ranking.overall_position }}/{{ exam.ranking.overall_total }}
+              {% endif %}
+            </p>
+          </div>
+          <a
+            class="mc-pdf-btn"
+            href="{{ url_for('admin.my_class_student_report_pdf', student_id=learner.id, exam=exam.exam_id, assignment=learner.assignment_id) }}"
+          >
+            <i class="bi bi-file-earmark-pdf"></i>
+            PDF
+          </a>
+        </div>
+        <table class="mc-marks">
+          <thead>
+            <tr>
+              <th>{% if exam.is_844 %}Subject{% else %}Learning area{% endif %}</th>
+              <th>Marks</th>
+              <th>{% if exam.is_844 %}Grade{% else %}Level{% endif %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for subject in exam.subjects %}
+            <tr>
+              <td>{{ subject.subject_name }}</td>
+              <td>
+                {{ subject.marks }}{% if subject.marks_out_of %}/{{ subject.marks_out_of }}{% endif %}
+              </td>
+              <td>{{ subject.grade or "—" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </article>
+      {% endfor %}
+      {% else %}
+      <p class="mc-muted mb-0">No exam records yet for this learner.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

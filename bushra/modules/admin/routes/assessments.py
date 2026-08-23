@@ -1,13 +1,20 @@
 from .. import admin_bp
 from flask import render_template, flash, redirect, url_for, jsonify, request, current_app
-from ..forms.assessment_forms import ExamCreateForm
+from ..forms.assessment_forms import ExamCreateForm, ExamDeadlineForm
 from ....modals.branches_db import Branch, BranchClasses 
 from ....modals.assessment_db import GradingSystem, GradingScheme, GradeGradingScheme, GradingBoundary
 from ....modals.assessment_db import Exam, ExamBranch, ExamPaper, db
 from ....modals.students_db import Student
-from datetime import datetime
+from ...admin.utils.exam_deadlines import (
+    clear_deadline,
+    deadline_payload,
+    set_deadline,
+)
 from ...admin.services.report import get_report_card_data
-from ...admin.services.assessment_services import get_exams_for_user
+from ...admin.services.assessment_services import (
+    branch_has_locked_exams,
+    get_exams_for_user,
+)
 
 from flask import Blueprint, request, make_response, render_template
 from weasyprint import HTML 
@@ -18,6 +25,7 @@ from ..services.grades import filter_active_classes, live_class_name
 from ..services.grading_844 import generate_class_reports, normalize_form_name
 from ..services.pdf_render import render_bulk_report_pdf
 
+from datetime import datetime
 from urllib.parse import quote
 import traceback
 from sqlalchemy.orm import joinedload
@@ -25,7 +33,7 @@ from sqlalchemy.orm import joinedload
 from flask import render_template, make_response
 import weasyprint
 
-from ..utils import get_accessible_branches_query
+from ..utils import get_accessible_branches_query, user_can_access_branch
 
 DEVELOPER_ID = 11
 
@@ -101,6 +109,8 @@ def assessment_dash():
         )
 
         db.session.commit()
+        if exam_form.marks_due_at.data:
+            set_deadline(exam.id, exam_form.marks_due_at.data)
         flash("Exam created successfully.", "success")
         return redirect(url_for("admin.assessment_dash"))
     
@@ -117,11 +127,22 @@ def assessment_dash():
     else:
         grades = []
                 
+    exam_deadlines = {exam.id: deadline_payload(exam) for exam in exams_list}
+    deadline_form = ExamDeadlineForm()
+    has_locked_exams = (
+        not current_user.is_admin
+        and not exams_list
+        and branch_has_locked_exams(current_user)
+    )
+
     return render_template(
-        "academics/assessment_dash.html", 
+        "academics/assessment_dash.html",
         exam_form=exam_form,
         exams_list=exams_list,
         grades=grades,
+        exam_deadlines=exam_deadlines,
+        deadline_form=deadline_form,
+        has_locked_exams=has_locked_exams,
     )
 
 
@@ -157,7 +178,8 @@ def delete_exam(exam_id):
     try:
         # Soft delete i.e make exam inactive
         exam.is_inactive = True
-        db.session.commit() 
+        db.session.commit()
+        clear_deadline(exam_id)
 
         flash("Exam deleted successfully.", "success")
 
@@ -233,7 +255,56 @@ def unlock_exam(exam_id):
     return redirect(url_for("admin.assessment_dash"))
 
 
-@admin_bp.route("/exams/<int:exam_id>/marks", methods=["GET"]) 
+def _admin_can_manage_exam(exam):
+    if not exam or not current_user.is_authenticated or not current_user.is_admin:
+        return False
+    if current_user.is_super_admin:
+        return True
+    return any(user_can_access_branch(eb.branch_id) for eb in exam.exam_branches)
+
+
+@admin_bp.route("/exams/<int:exam_id>/deadline", methods=["POST"])
+@login_required
+@admin_required
+def set_exam_deadline(exam_id):
+    exam = Exam.query.get(exam_id)
+    if not exam or exam.is_inactive:
+        flash("Exam not found.", "danger")
+        return redirect(url_for("admin.assessment_dash"))
+    if not _admin_can_manage_exam(exam):
+        flash("You cannot set a marks entry deadline for this exam.", "warning")
+        return redirect(url_for("admin.assessment_dash"))
+
+    form = ExamDeadlineForm()
+    if not (form.exam_id.data or "").strip():
+        form.exam_id.data = str(exam_id)
+
+    clearing = bool(form.clear.data)
+    if not form.validate():
+        other_errors = {
+            name: messages
+            for name, messages in form.errors.items()
+            if not (clearing and name == "marks_due_at")
+        }
+        if other_errors:
+            flash("Could not save the marks entry deadline. Check the date and time.", "danger")
+            return redirect(url_for("admin.assessment_dash"))
+
+    if str(form.exam_id.data) != str(exam_id):
+        flash("That deadline did not match the exam.", "danger")
+        return redirect(url_for("admin.assessment_dash"))
+
+    if clearing or not form.marks_due_at.data:
+        clear_deadline(exam_id)
+        flash("Teachers' marks entry deadline removed.", "success")
+    else:
+        set_deadline(exam_id, form.marks_due_at.data)
+        flash("Teachers' marks entry deadline saved.", "success")
+
+    return redirect(url_for("admin.assessment_dash"))
+
+
+@admin_bp.route("/exams/<int:exam_id>/marks", methods=["GET"])
 @login_required
 def marks_entry(exam_id):
     exam = Exam.query.get_or_404(exam_id)
@@ -245,9 +316,12 @@ def marks_entry(exam_id):
         )
         return redirect(url_for("admin.assessment_dash"))
 
+    marks_deadline = deadline_payload(exam)
     return render_template(
         "academics/marks_entry.html",
-        exam=exam
+        exam=exam,
+        marks_deadline=marks_deadline,
+        marks_entry_closed=marks_deadline["is_closed"],
     )
 
 

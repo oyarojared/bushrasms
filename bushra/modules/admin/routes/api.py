@@ -16,8 +16,9 @@ from ..services.grades import (
     live_class_name,
     sort_grade_records,
 )
-from ....modals.assessment_db import (StudentExamMark,ExamPaper, GradeGradingScheme, 
+from ....modals.assessment_db import (StudentExamMark, Exam, ExamPaper, GradeGradingScheme, 
                                     GradingBoundary, GradingScheme, GradingSystem)
+from ..utils.exam_deadlines import is_deadline_passed
 
 from ..utils import resolve_grade, user_can_access_branch
 from ..services.grading_844 import (
@@ -446,6 +447,14 @@ def save_exam_marks():
 
     if not all([exam_id, branch_id, class_id, subject_id]):
         return jsonify({"error": "Missing required data"}), 400
+
+    exam = Exam.query.get(exam_id)
+    if not exam or exam.is_inactive:
+        return jsonify({"error": "Exam not found"}), 404
+    if exam.is_locked:
+        return jsonify({"error": "This exam is locked. Marks cannot be saved."}), 403
+    if is_deadline_passed(exam_id):
+        return jsonify({"error": "Teachers can no longer save marks. The entry deadline has passed."}), 403
 
     try:
         # 1. Get or create exam paper

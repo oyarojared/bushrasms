@@ -84,9 +84,10 @@ a {
 }
 
 .lp-wordmark {
-  font-size: 1.15rem;
+  font-family: "Plus Jakarta Sans", Inter, sans-serif;
+  font-size: 1.2rem;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.06em;
   color: var(--ink);
 }
 

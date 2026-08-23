@@ -1,0 +1,252 @@
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar %}
+
+{% block head %}
+{{ super() }}
+<link
+  rel="stylesheet"
+  href="{{ url_for('admin.static', filename='class_teacher.css') }}"
+/>
+{% endblock %}
+
+{% block side_nav %}
+{{ sidebar("My class", current_user) }}
+{% endblock %}
+
+{% block main_content %}
+{{ render_flash_messages() }}
+
+<div class="mc-page{% if active_tab == 'results' %} mc-page-wide{% endif %}">
+  <div class="app-page-title">
+    <div class="app-page-title-icon">
+      <i class="bi bi-people-fill"></i>
+    </div>
+    <div class="app-page-title-content">
+      <h6 class="app-page-title-heading">My class</h6>
+      <span class="app-page-title-subtitle">
+        Learners and exam marks
+      </span>
+    </div>
+  </div>
+
+  {% if not assignments %}
+  <div class="mc-empty">
+    <i class="bi bi-person-badge"></i>
+    <h6>You are not assigned as a class teacher</h6>
+    <p>
+      Ask an administrator to assign you under Classes → Manage class teachers.
+    </p>
+  </div>
+  {% else %}
+
+  {% if assignments|length > 1 %}
+  <div class="mc-class-switch" role="tablist" aria-label="Your classes">
+    {% for item in assignments %}
+    <a
+      class="mc-class-chip{% if selected_assignment and item.id == selected_assignment.id %} is-active{% endif %}"
+      href="{{ url_for('admin.my_class', assignment=item.id, tab=active_tab, exam=request.args.get('exam')) }}"
+    >
+      {{ item.label }}
+      {% if show_schools and item.school %}
+      <small>{{ item.school }}</small>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="mc-summary">
+    <div>
+      <h6 class="mc-summary-title">{{ selected_assignment.label }}</h6>
+      <p class="mc-summary-meta">
+        {{ learner_count }} learner{{ "s" if learner_count != 1 else "" }}
+        {% if missing_phone_count %}
+        · {{ missing_phone_count }} missing parent phone
+        {% endif %}
+      </p>
+    </div>
+    <nav class="mc-tabs" aria-label="My class sections">
+      <a
+        class="mc-tab{% if active_tab != 'results' %} is-active{% endif %}"
+        href="{{ url_for('admin.my_class', assignment=selected_assignment.id, exam=selected_exam.id if selected_exam else none, tab='learners') }}"
+      >
+        Learners
+      </a>
+      <a
+        class="mc-tab{% if active_tab == 'results' %} is-active{% endif %}"
+        href="{{ url_for('admin.my_class', assignment=selected_assignment.id, exam=selected_exam.id if selected_exam else none, tab='results') }}"
+      >
+        Exam results
+      </a>
+    </nav>
+  </div>
+
+  {% if active_tab != 'results' %}
+  <label class="mc-search">
+    <span class="visually-hidden">Search learners</span>
+    <i class="bi bi-search"></i>
+    <input
+      type="search"
+      id="mcSearch"
+      placeholder="Search name, adm no, or phone"
+      autocomplete="off"
+    />
+  </label>
+
+  {% if learners %}
+  <div class="mc-list" id="mcList">
+    {% for learner in learners %}
+    <a
+      class="mc-card"
+      href="{{ url_for('admin.my_class_student', student_id=learner.id, assignment=selected_assignment.id) }}"
+      data-search="{{ ((learner.fullname or '') ~ ' ' ~ (learner.admission_number or '') ~ ' ' ~ (learner.parent_fullname or '') ~ ' ' ~ (learner.parent_phone or '')) | lower }}"
+    >
+      <div class="mc-card-avatar" aria-hidden="true">
+        {% if learner.has_photo %}
+        <img
+          src="{{ url_for('admin.serve_passport', filename=learner.passport) }}"
+          alt=""
+        />
+        {% else %}
+        <span>{{ learner.initials }}</span>
+        {% endif %}
+      </div>
+      <div class="mc-card-body">
+        <div class="mc-card-top">
+          <div class="mc-card-name">{{ learner.fullname or "Unnamed learner" }}</div>
+          <span class="mc-card-adm">Adm {{ learner.admission_number }}</span>
+        </div>
+        {% if learner.gender or learner.boarding_status or learner.stream %}
+        <div class="mc-card-chips">
+          {% if learner.gender %}
+          <span class="mc-chip">{{ learner.gender }}</span>
+          {% endif %}
+          {% if learner.stream %}
+          <span class="mc-chip">{{ learner.stream }}</span>
+          {% endif %}
+          {% if learner.boarding_status %}
+          <span class="mc-chip">{{ learner.boarding_status }}</span>
+          {% endif %}
+        </div>
+        {% endif %}
+        <div class="mc-card-parent">
+          <i class="bi bi-telephone" aria-hidden="true"></i>
+          {% if learner.parent_phone %}
+          <span>
+            {% if learner.parent_fullname %}{{ learner.parent_fullname }} · {% endif %}{{ learner.parent_phone }}
+          </span>
+          {% else %}
+          <span class="mc-muted">No parent phone</span>
+          {% endif %}
+        </div>
+        {% if learner.missing %}
+        <div class="mc-missing">
+          {% for item in learner.missing %}
+          <span>{{ item }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <i class="bi bi-chevron-right mc-card-chevron" aria-hidden="true"></i>
+    </a>
+    {% endfor %}
+  </div>
+  <p class="mc-no-match d-none" id="mcNoMatch">No learner matches that search.</p>
+  {% else %}
+  <div class="mc-empty">
+    <i class="bi bi-inbox"></i>
+    <h6>No learners in this class yet</h6>
+  </div>
+  {% endif %}
+  {% else %}
+
+  <section class="mc-exam-panel">
+    {% if not exams %}
+    <div class="mc-empty">
+      <i class="bi bi-journal-x"></i>
+      <h6>No exams for this class yet</h6>
+      <p>When an exam has papers for this class, pick it here to see marks.</p>
+    </div>
+    {% else %}
+    <form method="get" class="mc-exam-filter">
+      {% if selected_assignment %}
+      <input type="hidden" name="assignment" value="{{ selected_assignment.id }}" />
+      {% endif %}
+      <input type="hidden" name="tab" value="results" />
+      <label for="mcExamSelect">Exam</label>
+      <select id="mcExamSelect" name="exam" onchange="this.form.submit()">
+        {% for exam in exams %}
+        <option
+          value="{{ exam.id }}"
+          {% if selected_exam and exam.id == selected_exam.id %}selected{% endif %}
+        >
+          {{ exam.name }} · Term {{ exam.term }} · {{ exam.year }}
+        </option>
+        {% endfor %}
+      </select>
+    </form>
+
+    {% set overview = exam_overview %}
+    {% if overview and overview.error %}
+    <p class="mc-muted mb-0">{{ overview.error }}</p>
+    {% elif overview and overview.rows %}
+    <div class="mc-marksheet-wrap">
+      <table class="mc-marksheet">
+        <thead>
+          <tr>
+            <th class="mc-col-adm">Adm</th>
+            <th class="mc-col-name">Name</th>
+            {% for subject in overview.subjects %}
+            <th title="{{ subject.name }}">{{ subject.label or subject.name }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in overview.rows %}
+          <tr>
+            <td class="mc-col-adm">{{ row.admission_number }}</td>
+            <td class="mc-col-name">
+              <a
+                href="{{ url_for('admin.my_class_student', student_id=row.id, assignment=selected_assignment.id) }}"
+              >
+                {{ row.fullname }}
+              </a>
+            </td>
+            {% for mark in row.marks %}
+            <td class="mc-mark{% if mark == '-' %} is-empty{% endif %}">{{ mark }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% elif overview %}
+    <p class="mc-muted mb-0">No learners in this class for this exam.</p>
+    {% endif %}
+    {% endif %}
+  </section>
+  {% endif %}
+  {% endif %}
+</div>
+
+<script>
+  (function () {
+    const input = document.getElementById("mcSearch");
+    const list = document.getElementById("mcList");
+    const empty = document.getElementById("mcNoMatch");
+    if (!input || !list) return;
+
+    input.addEventListener("input", function () {
+      const query = input.value.trim().toLowerCase();
+      let shown = 0;
+      list.querySelectorAll(".mc-card").forEach(function (card) {
+        const haystack = (card.getAttribute("data-search") || card.dataset.search || "").toLowerCase();
+        const match = !query || haystack.includes(query);
+        card.classList.toggle("d-none", !match);
+        if (match) shown += 1;
+      });
+      if (empty) empty.classList.toggle("d-none", shown !== 0);
+    });
+  })();
+</script>
+{% endblock %}
