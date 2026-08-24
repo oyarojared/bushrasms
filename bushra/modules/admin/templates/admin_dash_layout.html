@@ -21,9 +21,11 @@
 <div
   class="container-fluid shadow-sm bg-white fixed-top-bar px-0{% if current_user.is_admin %} has-search{% endif %}"
 >
-  <div class="app-header">
+  <div class="row align-items-center g-0 mx-0">
     <!-- Left: Brand -->
-    <div class="bg-bushra text-white overflow-hidden brand-container">
+    <div
+      class="col-12 col-sm-3 bg-bushra text-white overflow-hidden brand-container"
+    >
       <div class="brand-wrapper d-flex align-items-center">
         <!-- Company Logo -->
         <div class="brand-logo flex-shrink-0">
@@ -46,7 +48,9 @@
       </div>
     </div>
 
-    <div class="header-search-slot">
+    <div class="col-12 col-sm-9 right-section">
+      <div class="header-actions">
+        <div class="header-search-slot">
         {% if current_user.is_admin %}
         <div class="header-search">
           <form
@@ -90,7 +94,7 @@
           </form>
         </div>
         {% endif %}
-    </div>
+        </div>
 
         <div class="dropdown profile-wrapper">
           <a
@@ -231,6 +235,8 @@
             </li>
           </ul>
         </div>
+      </div>
+    </div>
   </div>
 </div>
 

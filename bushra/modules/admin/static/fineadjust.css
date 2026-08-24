@@ -1,26 +1,6 @@
 /* =========================================================
-    APP HEADER
+    RIGHT HEADER (laptop / tablet)
     ========================================================= */
-
-.app-header {
-  display: flex;
-  align-items: stretch;
-  width: 100%;
-  min-height: 60px;
-}
-
-.brand-container {
-  flex: 0 0 25%;
-  max-width: 25%;
-}
-
-.header-search-slot {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  padding-left: 1rem;
-}
 
 .right-section {
   height: 100%;
@@ -38,6 +18,14 @@
   justify-content: space-between;
 
   gap: 1rem;
+}
+
+.header-search-slot,
+.header-search-slot {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
 }
 
 /* =========================================================
@@ -202,6 +190,7 @@
    PROFILE TRIGGER
    ========================================================= */
 
+.profile-wrapper,
 .profile-wrapper {
   flex: 0 0 auto;
   display: flex;
@@ -209,6 +198,7 @@
   padding-right: 1rem;
 }
 
+.profile-trigger,
 .profile-trigger {
   display: flex;
   align-items: center;
@@ -487,6 +477,7 @@
    ========================================================= */
 
 @media (max-width: 767.98px) {
+  .header-search-slot,
   .header-search-slot {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
@@ -524,11 +515,13 @@
     font-size: 0.78rem;
   }
 
-  .profile-wrapper {
+  .profile-wrapper,
+.profile-wrapper {
     flex-shrink: 0;
   }
 
-  .profile-trigger {
+  .profile-trigger,
+.profile-trigger {
     padding: 2px;
     border-radius: 10px;
   }
@@ -605,10 +598,8 @@
     overflow: visible;
   }
 
-  .app-header {
-    display: block;
+  .fixed-top-bar .row {
     position: relative;
-    min-height: 0;
   }
 
   .brand-container {
@@ -617,15 +608,27 @@
     width: 100%;
   }
 
-  .header-search-slot {
-    padding: 6px 10px 8px;
+  .right-section {
+    padding-left: 0;
+    padding-right: 0;
   }
 
-  .fixed-top-bar:not(.has-search) .header-search-slot {
+  .header-actions {
+    min-height: 0;
+  }
+
+  .header-search-slot,
+  .header-search-slot {
+    padding: 6px 10px 8px;
+    width: 100%;
+  }
+
+  .fixed-top-bar:not(.has-search) .right-section {
     display: none;
   }
 
-  .profile-wrapper {
+  .profile-wrapper,
+.profile-wrapper {
     position: absolute;
     top: 0;
     right: 6px;
@@ -636,7 +639,8 @@
     align-items: center;
   }
 
-  .profile-trigger {
+  .profile-trigger,
+.profile-trigger {
     color: #fff;
   }
 
@@ -913,7 +917,8 @@
     height: 46px;
   }
 
-  .profile-wrapper {
+  .profile-wrapper,
+.profile-wrapper {
     height: 46px;
   }
 
