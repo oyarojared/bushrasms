@@ -1,35 +1,38 @@
-<table class="table table-bordered table-striped small">
-    <thead class="bg-secondary text-white">
-        <tr>
-            <th class="text-center">Code</th>
-            <th>Subject Name</th>
-            <th>Category</th>
-            <th class="text-center">Compulsory</th>
-            <th class="text-center">Examinable</th>
-        </tr>
-    </thead>
-    <caption>Total Subjects offered: {{ subjects_data | length }}</caption>
-    <header class="small text-muted text-danger">Total Subjects offered: {{ subjects_data | length }}</header>
-    <tbody>
-        {% for subject in subjects_data %}
-        <tr>
-            <td class="text-center">{{ subject.code or "---" }}</td>
-            <td>{{ subject.name | upper }}</td>
-            <td>{{ subject.category }}</td>
-            <td class="text-center text-danger">
-                {{ "✔" if subject.is_compulsory else "✖" }}
-            </td>
-            <td class="text-center">
-                {{ "✔" if subject.is_examinable else "✖" }}
-            </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="5" class="text-center text-muted">
-                No subjects assigned to this grade.
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
+{% set offered = subjects_data | length %}
+{% if offered %}
+<div class="sub-grade-results-head px-3 py-2 small text-muted">
+  {{ offered }} subject{{ "" if offered == 1 else "s" }} offered
+</div>
+{% endif %}
+<table class="sub-table">
+  <thead>
+    <tr>
+      <th class="sub-col-code">Code</th>
+      <th>Subject</th>
+      <th>Category</th>
+      <th class="text-center">Compulsory</th>
+      <th class="text-center">Examinable</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for subject in subjects_data %}
+    <tr>
+      <td class="sub-col-code">{{ subject.code or "—" }}</td>
+      <td>
+        <span class="sub-name">{{ subject.name | upper }}</span>
+      </td>
+      <td>{{ subject.category }}</td>
+      <td class="text-center">{{ "Yes" if subject.is_compulsory else "No" }}</td>
+      <td class="text-center">{{ "Yes" if subject.is_examinable else "No" }}</td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="5">
+        <div class="sub-grade-placeholder">
+          No subjects assigned to this grade.
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
-

@@ -1,55 +1,112 @@
-{% extends "admin_dash_layout.html" %} {% from "_macros.html" import
-render_flash_messages, sidebar, form_input %} {% block side_nav %}
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar, form_input %}
+
+{% block head %}
+{{ super() }}
+<link
+  rel="stylesheet"
+  href="{{ url_for('admin.static', filename='subjects.css') }}"
+/>
+{% endblock %}
+
+{% block side_nav %}
 <div class="sidebar">{{ sidebar("Subjects", current_user) }}</div>
-{% endblock %} {% block main_content %}
+{% endblock %}
 
-<!-- Catch and display any flashed message -->
-{{ render_flash_messages() }}
+{% block main_content %}
+{% set categories = subjects | map(attribute="category") | reject("none") | unique | sort | list if subjects else [] %}
+{% set can_delete = current_user.is_super_admin %}
 
-<div class="app-page-title">
-  <div class="app-page-title-icon">
-    <i class="bi bi-journal-bookmark-fill"></i>
-  </div>
+<div class="sub-page">
+  <div class="app-page-title">
+    <div class="app-page-title-icon">
+      <i class="bi bi-journal-bookmark-fill"></i>
+    </div>
 
-  <div class="app-page-title-content mb-2">
-    <h6 class="app-page-title-heading">Subjects &amp; Learning Areas</h6>
+    <div class="app-page-title-content">
+      <h6 class="app-page-title-heading">Subjects &amp; Learning Areas</h6>
+      <span class="app-page-title-subtitle">
+        Manage subjects &amp; learning areas
+      </span>
+    </div>
 
-    <span class="app-page-title-subtitle">
-      Manage subjects & learning areas
-    </span>
-  </div>
-</div>
-
-<div class="container bg-white pt-0 pb-3 px-0 shadow-sm rounded-6">
-  <div class="container orange-line"></div>
-  <div
-    class="accordion accordion-flush mt-2 mb-0 mx-4"
-    id="accordionFlushExample"
-  >
-    <div class="accordion-item">
-      <h2 class="accordion-header" id="flush-headingOne">
-        <button
-          class="accordion-button collapsed pt-1 pb-1 px-2 fw-light text-primary"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#flush-collapseOne"
-          aria-expanded="false"
-          aria-controls="flush-collapseOne"
-          id="accordionBtn"
-          style="box-shadow: none !important"
-        >
-          <span><i class="bi bi-plus h2 me-2"></i></span>Add Learning
-          Area/Subject
-        </button>
-      </h2>
-      <div
-        id="flush-collapseOne"
-        class="accordion-collapse collapse"
-        aria-labelledby="flush-headingOne"
-        data-bs-parent="#accordionFlushExample"
+    <div class="sub-page-actions">
+      {% if subjects %}
+      <button
+        type="button"
+        class="sa-btn sa-btn-outline"
+        data-bs-toggle="modal"
+        data-bs-target="#assignBranchesModal"
       >
-        <div class="accordion-body">
-          <div class="card p-3">
+        <i class="bi bi-eye"></i>
+        <span>View by grade</span>
+      </button>
+      {% endif %}
+      <button
+        type="button"
+        class="sa-btn sa-btn-primary"
+        id="subAddToggle"
+        data-bs-toggle="collapse"
+        data-bs-target="#flush-collapseOne"
+        aria-expanded="{{ 'true' if form_has_errors else 'false' }}"
+        aria-controls="flush-collapseOne"
+      >
+        <i class="bi bi-plus-lg"></i>
+        <span>Add subject</span>
+      </button>
+    </div>
+  </div>
+
+  {{ render_flash_messages() }}
+
+  <div class="sub-workbench">
+    <div
+      class="accordion accordion-flush"
+      id="accordionFlushExample"
+    >
+      <div class="accordion-item border-0 bg-transparent">
+        <h2 class="accordion-header d-none" id="flush-headingOne">
+          <button
+            class="accordion-button collapsed"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#flush-collapseOne"
+            aria-expanded="false"
+            aria-controls="flush-collapseOne"
+            id="accordionBtn"
+          >
+            Add Learning Area/Subject
+          </button>
+        </h2>
+
+        <div
+          id="flush-collapseOne"
+          class="accordion-collapse collapse sub-form-panel{% if form_has_errors %} show{% endif %}"
+          aria-labelledby="flush-headingOne"
+          data-bs-parent="#accordionFlushExample"
+        >
+          <div class="sub-form-head">
+            <div>
+              <h6 class="sub-form-title" id="subFormTitle">
+                <i class="bi bi-plus-circle"></i>
+                Add learning area / subject
+              </h6>
+              <p class="sub-form-copy">
+                Subjects apply across all school branches.
+              </p>
+            </div>
+            <button
+              type="button"
+              class="sub-form-close"
+              data-bs-toggle="collapse"
+              data-bs-target="#flush-collapseOne"
+              aria-label="Close form"
+            >
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+
+          <div class="sub-form-body">
             <form
               action="{{ url_for('admin.subjects_dash') }}"
               method="post"
@@ -57,237 +114,243 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
             >
               <input type="hidden" name="subject_id" id="subject_id" />
               {{ subject_form.hidden_tag() }}
-              <div class="row">
+
+              <div class="row g-2">
                 <div class="col-md-6">
-                  {{ form_input(subject_form.name, placeholder="eg. English",
-                  icon_class="bi bi-book") }}
+                  {{ form_input(subject_form.name, wrapper_class="mb-0",
+                  placeholder="eg. English", icon_class="bi bi-book") }}
                 </div>
                 <div class="col-md-6">
-                  {{ form_input(subject_form.code, placeholder="eg. 121",
-                  icon_class="bi bi-123")}}
+                  {{ form_input(subject_form.code, wrapper_class="mb-0",
+                  placeholder="eg. 121", icon_class="bi bi-123") }}
+                </div>
+                <div class="col-md-6">
+                  {{ form_input(subject_form.category, wrapper_class="mb-0",
+                  icon_class="bi bi-ui-checks-grid",
+                  input_class="form-select category") }}
+                </div>
+                <div class="col-md-6">
+                  <div class="sub-flags">
+                    {{ form_input(subject_form.is_examinable, wrapper_class="mb-0") }}
+                    {{ form_input(subject_form.is_compulsory, wrapper_class="mb-0") }}
+                  </div>
                 </div>
               </div>
-              <div class="row">
-                <div class="col-md-6">
-                  {{ form_input(subject_form.category, icon_class="bi
-                  bi-ui-checks-grid", input_class="form-select category") }}
+
+              <div class="sub-grades-box">
+                <div class="sub-grades-label">
+                  <span>Assign to classes</span>
+                  {% if grades %}
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="checkAllGrades"
+                    />
+                    <label class="form-check-label" for="checkAllGrades">
+                      All classes
+                    </label>
+                  </div>
+                  {% endif %}
                 </div>
-                <div class="col-md-6">
-                  {{ form_input(subject_form.is_examinable,
-                  input_class="btn-check")}} {{
-                  form_input(subject_form.is_compulsory,
-                  input_class="btn-check")}}
-                </div>
-              </div>
-              <div class="d-flex flex-wrap gap-3 border p-2">
-                {% if grades %} {% for g in grades %}
-                <div class="form-check">
-                  <input
-                    class="form-check-input grade-checkbox"
-                    type="checkbox"
-                    id="grade{{ g[0] }}"
-                    name="subject_grades"
-                    value="{{ g[1] }}"
-                  />
-                  <label class="form-check-label" for="grade{{ g[0] }}">
-                    {{ g[1] }}
+
+                <div class="sub-grade-grid">
+                  {% if grades %}
+                  {% for g in grades %}
+                  <label class="sub-grade-chip" for="grade{{ g[0] }}">
+                    <input
+                      class="grade-checkbox"
+                      type="checkbox"
+                      id="grade{{ g[0] }}"
+                      name="subject_grades"
+                      value="{{ g[1] }}"
+                    />
+                    <span>{{ g[1] }}</span>
                   </label>
+                  {% endfor %}
+                  {% else %}
+                  <small class="text-danger">No grades / forms found.</small>
+                  {% endif %}
                 </div>
-                {% endfor %} {% else %}
-                <small class="text-center text-danger"
-                  >No Grades / Forms Found!</small
+
+                <div class="sub-grade-error d-none" id="grade-error">
+                  Assign this subject to at least one class.
+                </div>
+              </div>
+
+              <div class="sub-form-actions" id="formbtns">
+                <button
+                  id="submit-btn"
+                  type="submit"
+                  class="sa-btn sa-btn-primary"
                 >
-                {% endif %}
-              </div>
-              {# ---- CHECK ALL ---- #}
-              <div class="small text-danger d-none" id="grade-error">
-                You must assign the subject to at least one class.
-              </div>
-              <div class="form-check ms-auto">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  id="checkAllGrades"
-                />
-                <label class="form-check-label fw-bold" for="checkAllGrades">
-                  Assign All Classes
-                </label>
-              </div>
-              <div class="row d-flex justify-content-center">
-                <div id="formbtns" class="col-auto">
-                  <button
-                    id="submit-btn"
-                    type="submit"
-                    class="btn btn-sm btn-secondary"
-                  >
-                    <i class="bi bi-plus-circle me-2"></i>Submit
-                  </button>
-                </div>
+                  <i class="bi bi-plus-circle"></i>
+                  Save subject
+                </button>
               </div>
             </form>
           </div>
         </div>
       </div>
-      <div class="row d-flex justify-content-center">
-        <div class="col-auto">
-          <small class="text-muted text-success"
-            >Subjects apply across branches</small
-          >
+    </div>
+
+    {% if subjects %}
+    <div class="sub-toolbar">
+      <div class="sub-search">
+        <label class="visually-hidden" for="sub-search">Search subjects</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input
+            type="search"
+            id="sub-search"
+            class="form-control"
+            placeholder="Search name, code, or category…"
+            autocomplete="off"
+          />
         </div>
       </div>
+      <span class="sub-count" id="sub-count">
+        {{ subjects | length }}
+        subject{{ "" if subjects | length == 1 else "s" }}
+      </span>
     </div>
-  </div>
-</div>
 
-<div class="conatiner">
-  <div class="row d-flex justify-content-end mt-2">
-    <div class="col-auto">
-      {% if subjects %}
-      <div class="row d-flex justify-content-end">
-        <div class="col-auto">
-          <button
-            type="button"
-            class="btn btn-danger btn-sm"
-            data-bs-toggle="modal"
-            data-bs-target="#assignBranchesModal"
+    {% if categories %}
+    <nav class="sub-nav" aria-label="Filter subjects by category">
+      <button
+        type="button"
+        class="sub-nav-btn is-active"
+        data-category="all"
+        aria-pressed="true"
+      >
+        All
+        <span class="sub-nav-count">{{ subjects | length }}</span>
+      </button>
+      {% for category in categories %}
+      {% set cat_count = subjects | selectattr("category", "equalto", category) | list | length %}
+      <button
+        type="button"
+        class="sub-nav-btn"
+        data-category="{{ category }}"
+        aria-pressed="false"
+      >
+        {{ category }}
+        <span class="sub-nav-count">{{ cat_count }}</span>
+      </button>
+      {% endfor %}
+    </nav>
+    {% endif %}
+
+    <div class="sub-table-wrap">
+      <table class="sub-table" id="subjects-table">
+        <thead>
+          <tr>
+            <th class="sub-col-code">Code</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th class="sub-col-grades">Classes</th>
+            <th class="text-center">Compulsory</th>
+            <th class="text-center">Examinable</th>
+            <th class="sub-col-action">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for subject in subjects %}
+          {% set subject_grades = subject.eligibility | map(attribute="grade_form") | list %}
+          <tr
+            class="sub-row"
+            data-category="{{ subject.category }}"
+            data-search="{{ (
+              (subject.name or '') ~ ' ' ~
+              (subject.code or '') ~ ' ' ~
+              (subject.category or '') ~ ' ' ~
+              (subject_grades | join(' '))
+            ) | lower }}"
           >
-            <i class="bi bi-eye me-2"></i>View L. areas/subjects per Grade
-          </button>
-        </div>
-      </div>
-      {% endif %}
+            <td class="sub-col-code" data-label="Code">
+              {{ subject.code or "—" }}
+            </td>
+            <td class="sub-col-name" data-label="Name">
+              <span class="sub-name">{{ subject.name | upper }}</span>
+            </td>
+            <td data-label="Category">{{ subject.category }}</td>
+            <td class="sub-col-grades" data-label="Classes">
+              {{ subject_grades | join(", ") if subject_grades else "—" }}
+            </td>
+            <td class="text-center" data-label="Compulsory">
+              {{ "Yes" if subject.is_compulsory else "No" }}
+            </td>
+            <td class="text-center" data-label="Examinable">
+              {{ "Yes" if subject.is_examinable else "No" }}
+            </td>
+            <td class="sub-col-action">
+              <div class="sub-actions">
+                <button
+                  type="button"
+                  class="sub-action-btn edit-btn"
+                  aria-label="Edit {{ subject.name }}"
+                  data-id="{{ subject.id }}"
+                  data-name="{{ subject.name }}"
+                  data-code="{{ subject.code or '' }}"
+                  data-category="{{ subject.category }}"
+                  data-examinable="{{ 1 if subject.is_examinable else 0 }}"
+                  data-compulsory="{{ 1 if subject.is_compulsory else 0 }}"
+                  data-grades='{{ subject_grades | tojson }}'
+                >
+                  <i class="bi bi-pencil"></i>
+                </button>
+                {% if can_delete %}
+                <button
+                  type="button"
+                  class="sub-action-btn is-danger delete-btn"
+                  aria-label="Delete {{ subject.name }}"
+                  data-bs-toggle="modal"
+                  data-bs-target="#deleteSubjectModal"
+                  data-subject-id="{{ subject.id }}"
+                  data-name="{{ subject.name }}"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+
+    <div class="sub-filter-empty d-none" id="sub-filter-empty">
+      <div class="sub-empty-icon" aria-hidden="true">
+        <i class="bi bi-search"></i>
+      </div>
+      <h6>No matching subjects</h6>
+      <p>Try another search or category.</p>
+    </div>
+    {% else %}
+    <div class="sub-empty">
+      <div class="sub-empty-icon" aria-hidden="true">
+        <i class="bi bi-journal-x"></i>
+      </div>
+      <h6>No subjects yet</h6>
+      <p>Add a learning area or subject to get started.</p>
+    </div>
+    {% endif %}
   </div>
 </div>
-<div class="container bg-white pt-3 pb-2 mt-2 shadow-sm rounded-6">
-  <div class="d-flex align-items-center my-2">
-    <span class="flex-grow-1 border-bottom"></span>
-    <h6 class="mx-3 mb-0 fw-light">SUBJECTS INFO</h6>
-    <span class="flex-grow-1 border-bottom"></span>
-  </div>
-  {% if subjects %}
-  <div class="table-reponsive fix-top-customized">
-    <table class="table table-bordered table-striped small">
-      <thead class="bg-secondary text-white">
-        <tr>
-          <th class="text-center">Code</th>
-          <th>Name</th>
-          <th>Category</th>
-          <th class="text-center">Compulsory</th>
-          <th class="text-center">Examinable</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for subject in subjects %}
-        <tr>
-          <td class="text-center">{{ subject.code or "---" }}</td>
-          <td>{{ subject.name | upper }}</td>
-          <td>{{ subject.category }}</td>
-          <td class="text-center">
-            {{ "✔" if subject.is_compulsory else "✖" }}
-          </td>
-          <td class="text-center">
-            {{ "✔" if subject.is_examinable else "✖" }}
-          </td>
-          <td>
-            <i
-              class="bi bi-pencil me-2 btn btn-sm btn-success edit-btn"
-              data-id="{{ subject.id }}"
-              data-name="{{ subject.name }}"
-              data-code="{{ subject.code or '' }}"
-              data-category="{{ subject.category }}"
-              data-examinable="{{ 1 if subject.is_examinable else 0 }}"
-              data-compulsory="{{ 1 if subject.is_compulsory else 0 }}"
-              data-grades='{{ subject.eligibility | map(attribute="grade_form") | list | tojson }}'
-            ></i>
 
-            <i
-              class="bi bi-trash btn btn-sm btn-danger delete-btn"
-              data-bs-toggle="modal"
-              data-bs-target="#deleteSubjectModal"
-              data-subject-id="{{ subject.id }}"
-              data-name="{{ subject.name }}"
-            ></i>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <h4 class="text-danger text-center">
-    <i class="bi bi-exclamation-triangle"></i>
-  </h4>
-  <h6 class="text-danger text-center small">No subject to show data!</h6>
-  {% endif %}
-</div>
-
-<!-- DELETE CONFIRMATION MODAL -->
 <div
-  class="modal fade"
+  class="modal fade sub-modal"
   id="deleteSubjectModal"
   tabindex="-1"
   aria-hidden="true"
 >
   <div class="modal-dialog modal-dialog-centered modal-md">
     <div class="modal-content">
-      <div class="modal-header bg-danger text-white py-2">
+      <div class="sub-modal-head is-danger">
         <h6 class="modal-title">
-          <i class="bi bi-trash me-2"></i>CONFIRM SUBJECT DELETION
-        </h6>
-        <button
-          type="button"
-          class="btn-close btn-close-white"
-          data-bs-dismiss="modal"
-        ></button>
-      </div>
-
-      <div class="modal-body">
-        <h4 class="text-center text-danger display-4">
-          <i class="bi bi-exclamation-triangle"></i>
-        </h4>
-        <p class="mb-2">
-          Are you sure you want to delete
-          <span class="fw-bold" id="target-subject"></span> from the system?
-        </p>
-        <small class="text-muted"> N/B: This action cannot be undone. </small>
-      </div>
-
-      <div class="modal-footer justify-content-end">
-        <form id="deleteSubjectForm" method="post">
-          {{ del_subject_form.hidden_tag() }}
-          <button
-            type="button"
-            class="btn btn-secondary btn-sm"
-            data-bs-dismiss="modal"
-          >
-            <i class="bi bi-slash-circle-fill me-2"></i>Cancel
-          </button>
-          <button type="submit" class="btn btn-danger btn-sm">
-            <i class="bi bi-x-octagon-fill me-2"></i>Yes, Delete
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- BRANCH SUBJECT VIEW MODAL -->
-<div
-  class="modal fade"
-  id="assignBranchesModal"
-  tabindex="-1"
-  aria-hidden="true"
-  data-bs-backdrop="static"
-  data-bs-keyboard="false"
->
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <!-- Modal Header -->
-      <div class="modal-header bg-danger text-white pb-2 pt-2">
-        <h6 class="modal-title">
-          <i class="bi bi-eye me-2"></i>VIEW SUBJECTS OF EACH GRADE / FORM
+          <i class="bi bi-trash"></i>
+          Delete subject
         </h6>
         <button
           type="button"
@@ -297,162 +360,98 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
         ></button>
       </div>
 
-      <!-- Modal Body -->
-      <div class="modal-body pt-0 mt-1">
-        <!-- Your form / UI goes here -->
-        <h6 class="text-center bg-light p-2 border-bottom">
-          Select Grade / Form to view specific subjects offered
+      <div class="sub-modal-body">
+        <div class="sub-delete-icon" aria-hidden="true">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+        <p class="sub-modal-copy mb-0">
+          Delete
+          <strong id="target-subject"></strong>
+          from the system? This cannot be undone.
+        </p>
+      </div>
+
+      <div class="sub-modal-foot">
+        <form id="deleteSubjectForm" method="post">
+          {{ del_subject_form.hidden_tag() }}
+          <button
+            type="button"
+            class="sa-btn sa-btn-outline"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          <button type="submit" class="sa-btn sub-btn-danger">
+            <i class="bi bi-trash"></i>
+            Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div
+  class="modal fade sub-modal"
+  id="assignBranchesModal"
+  tabindex="-1"
+  aria-hidden="true"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+>
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="sub-modal-head">
+        <h6 class="modal-title">
+          <i class="bi bi-eye"></i>
+          Subjects by grade
         </h6>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div class="sub-modal-body">
+        <p class="sub-modal-copy">
+          Choose a grade or form to see the learning areas offered.
+        </p>
         <form action="">
           {{ branch_grade_selection_form.hidden_tag() }}
-          <div class="row">
-            {{ form_input(branch_grade_selection_form.grades, icon_class="bi
-            bi-building", input_class="form-select") }}
+          {{ branch_grade_selection_form.grades(class="d-none", id="grades") }}
+
+          <div class="sub-grade-picker" id="subGradePicker" role="tablist" aria-label="Grades">
+            {% if grades %}
+            {% for g in grades %}
+            <button
+              type="button"
+              class="sub-grade-picker-btn"
+              data-grade="{{ g[1] }}"
+            >
+              {{ g[1] }}
+            </button>
+            {% endfor %}
+            {% endif %}
           </div>
-          <!-- Table showing subject info -->
+
           <div
             id="subjectsTableContainer"
-            class="mt-1"
-            style="max-height: 250px; top: 70px; overflow-y: scroll"
+            class="sub-grade-results"
           >
-            <div class="text-muted small text-center">
+            <div class="sub-grade-placeholder">
               Select a grade to view assigned subjects.
             </div>
           </div>
         </form>
       </div>
-      <hr />
     </div>
   </div>
 </div>
 
 <script>
-  const subjectId = `${subjectId}`;
+  window.SUBJECTS_FORM_HAS_ERRORS = {{ form_has_errors | tojson }};
 </script>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-
-      const accordionBtn = document.getElementById("accordionBtn");
-      const accordionCollapse = document.getElementById("flush-collapseOne");
-
-      const nameInput = document.getElementById("{{ subject_form.name.id }}");
-      const codeInput = document.getElementById("{{ subject_form.code.id }}");
-      const categoryInput = document.getElementById("{{ subject_form.category.id }}");
-      const examinableInput = document.getElementById("{{ subject_form.is_examinable.id }}");
-      const compulsoryInput = document.getElementById("{{ subject_form.is_compulsory.id }}");
-      const subjectIdInput = document.getElementById("subject_id");
-
-      const gradeCheckboxes = document.querySelectorAll(".grade-checkbox");
-
-      function scrollToForm() {
-          const target = document.getElementById("flush-collapseOne");
-
-          if (!target) return;
-
-          target.scrollIntoView({
-              behavior: "smooth",
-              block: "start"
-          });
-      }
-
-
-      document.querySelectorAll(".edit-btn").forEach(btn => {
-          btn.addEventListener("click", function () {
-
-              const wasClosed = !accordionCollapse.classList.contains("show");
-
-              // Open accordion if closed
-              if (wasClosed) {
-                  accordionBtn.click();
-              }
-
-              // Prefill fields
-              subjectIdInput.value = this.dataset.id;
-              nameInput.value = this.dataset.name;
-              codeInput.value = this.dataset.code;
-              categoryInput.value = this.dataset.category;
-
-              examinableInput.checked = this.dataset.examinable === "1";
-              compulsoryInput.checked = this.dataset.compulsory === "1";
-
-              gradeCheckboxes.forEach(cb => cb.checked = false);
-
-              const grades = JSON.parse(this.dataset.grades || "[]");
-              gradeCheckboxes.forEach(cb => {
-                  if (grades.includes(cb.value)) {
-                      cb.checked = true;
-                  }
-              });
-
-              accordionBtn.innerHTML = `
-                  <span><i class="bi bi-pencil-square h5 me-2"></i></span>
-                  Edit Learning Area/Subject
-              `;
-
-              const submitBtn = document.getElementById("submit-btn");
-              submitBtn.innerHTML = `
-                  <i class="bi bi-pencil-square me-2"></i>Update Changes
-              `;
-              const fields = document.querySelectorAll(".form-control, .category");
-              fields.forEach(field => {
-                  field.style.backgroundColor = "#fef3c7";
-              });
-
-              // 👇 Scroll AFTER accordion opens
-              if (wasClosed) {
-                  setTimeout(scrollToForm, 300);
-              } else {
-                  scrollToForm();
-              }
-
-
-              const formBtns = document.getElementById("formbtns");
-              const resetBtn = document.createElement("button");
-              resetBtn.id = "resetBtn";
-              resetBtn.classList = "btn btn-sm btn-primary";
-              resetBtn.setAttribute("type", "button");
-              resetBtn.setAttribute("id", "resetBtn");
-              resetBtn.innerHTML = `
-               <i class="bi bi-plus-circle me-2"></i>Add new L.Area/Subject instead?
-              `
-              const isResetBtnPresent = document.getElementById("resetBtn");
-              if (isResetBtnPresent) {
-                  formBtns.removeChild(isResetBtnPresent);
-              }
-
-              formBtns.appendChild(resetBtn)
-
-              // Reset button
-              resetBtn.addEventListener("click", () => {
-                  location.reload();
-              });
-
-          });
-      });
-
-      // OPEN ACCORDION AUTOMATICALLY IF SUBJECT FORM HAD ERRORS
-      const formHasErrors = {{ form_has_errors | tojson }};
-
-      if (formHasErrors) {
-          accordionBtn.click();
-      }
-
-      // CUSTOMIZE CHECK INPUTS VALIDATION
-      const addSubjectForm = document.getElementById("addSubjectForm");
-      addSubjectForm.addEventListener("submit", e => {
-          const checked = document.querySelectorAll(
-              "input[name='subject_grades']:checked"
-          );
-          if (checked.length === 0) {
-              e.preventDefault()
-              document.getElementById("grade-error").classList.remove("d-none");
-          }
-      });
-
-  });
-</script>
-
 <script src="{{ url_for('admin.static', filename='js/subject.js') }}"></script>
-
 {% endblock %}

@@ -1163,22 +1163,33 @@
     0 8px 25px rgba(0, 0, 0, 0.08);
 }
 
+.modal-dialog.search-results-dialog {
+  width: calc(100% - 2rem);
+  max-width: min(1320px, calc(100vw - 2rem));
+}
+
+@media (min-width: 1200px) {
+  .modal-dialog.search-results-dialog.modal-xl {
+    max-width: min(1320px, calc(100vw - 2.5rem));
+  }
+}
+
 /* =========================================================
    HEADER
    ========================================================= */
 
 .search-modal-header {
-  min-height: 68px;
+  min-height: 0;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-  padding: 12px 18px;
+  padding: 0.42rem 1rem;
 
-  border-bottom: 1px solid #edf0f3;
+  border-bottom: 0;
 
-  background: #ffffff;
+  background: #ff7979;
 }
 
 .search-modal-title-wrapper {
@@ -1189,61 +1200,59 @@
 }
 
 .search-modal-icon {
-  width: 38px;
-  height: 38px;
+  width: 28px;
+  height: 28px;
 
-  flex: 0 0 38px;
+  flex: 0 0 28px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  margin-right: 11px;
+  margin-right: 0.55rem;
 
-  border-radius: 10px;
+  border-radius: 8px;
 
-  background: rgba(13, 110, 253, 0.09);
+  background: rgba(255, 255, 255, 0.18);
 
-  color: #0d6efd;
+  color: #ffffff;
 
-  font-size: 0.95rem;
+  font-size: 0.82rem;
 }
 
 .search-modal-header .modal-title {
   margin: 0;
 
-  color: #252a34;
+  color: #ffffff;
 
-  font-size: 0.98rem;
+  font-size: 0.9rem;
   font-weight: 700;
+  line-height: 1.2;
 }
 
 .search-modal-subtitle {
-  margin-top: 2px;
+  margin-top: 1px;
 
-  color: #929aa6;
+  color: rgba(255, 255, 255, 0.88);
 
   font-size: 0.68rem;
+  line-height: 1.2;
 }
 
 .search-modal-header .btn-close {
   margin: 0;
 
-  padding: 8px;
+  padding: 0.4rem;
 
   border-radius: 8px;
 
-  opacity: 0.55;
-
-  transition:
-    background-color 0.15s ease,
-    opacity 0.15s ease;
+  opacity: 0.9;
 }
 
 .search-modal-header .btn-close:hover {
   opacity: 1;
 
-  background-color: #f1f3f5;
+  background-color: rgba(255, 255, 255, 0.16);
 }
 
 /* =========================================================
@@ -1322,7 +1331,7 @@
 
   padding: 0;
 
-  overflow-y: auto;
+  overflow: auto;
 
   background: #ffffff;
 }
@@ -1353,6 +1362,7 @@
 
 .search-results-body table {
   width: 100%;
+  min-width: 980px;
 
   margin: 0;
 
@@ -1397,6 +1407,8 @@
   border-bottom: 1px solid #f0f1f3;
 
   vertical-align: middle;
+
+  white-space: nowrap;
 }
 
 .search-results-body tbody tr {
@@ -1531,22 +1543,19 @@
   }
 
   .search-modal-header {
-    min-height: 60px;
-
-    padding: 10px 13px;
+    min-height: 0;
+    padding: 0.4rem 0.85rem;
   }
 
   .search-modal-icon {
-    width: 34px;
-    height: 34px;
-
-    flex-basis: 34px;
-
-    margin-right: 9px;
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
+    margin-right: 0.45rem;
   }
 
   .search-modal-header .modal-title {
-    font-size: 0.88rem;
+    font-size: 0.86rem;
   }
 
   .search-modal-subtitle {
@@ -1566,7 +1575,7 @@
   }
 
   .search-results-body table {
-    min-width: 650px;
+    min-width: 980px;
   }
 
   .search-results-body {
@@ -1591,13 +1600,15 @@
 
   margin-bottom: 4px;
 
-  background: linear-gradient(135deg, #495057 0%, #3f464d 100%);
+  background: #fff8f7;
 
-  color: #ffffff;
+  color: #1f2937;
 
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 121, 121, 0.16);
 
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+
+  box-shadow: none;
 }
 
 .dashboard-context-inner {
@@ -1645,9 +1656,9 @@
 
   background: #ffffff;
 
-  border: 2px solid rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(255, 121, 121, 0.22);
 
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: none;
 }
 
 .school-context-logo img {
@@ -1660,7 +1671,7 @@
 }
 
 .school-context-logo > i {
-  color: #9aa2ad;
+  color: #ff7979;
   font-size: 1.25rem;
 }
 
@@ -1680,7 +1691,7 @@
 
   overflow: hidden;
 
-  color: #ffffff;
+  color: #1f2937;
 
   font-size: 0.84rem;
   font-weight: 800;
@@ -1698,7 +1709,7 @@
 
   overflow: hidden;
 
-  color: rgba(255, 255, 255, 0.72);
+  color: #6b7280;
 
   font-size: 0.68rem;
   font-weight: 400;
@@ -1710,7 +1721,7 @@
 .school-context-motto span {
   margin-right: 3px;
 
-  color: #ffc107;
+  color: #ff7979;
 
   font-weight: 700;
 }
@@ -1728,17 +1739,17 @@
   margin-left: 12px;
   padding: 5px 11px;
 
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid #e8ecef;
 
   border-radius: 9px;
 
-  background: rgba(255, 255, 255, 0.08);
+  background: #fff;
 
   line-height: 1.15;
 }
 
 .subscription-status-label {
-  color: rgba(255, 255, 255, 0.62);
+  color: #6b7280;
 
   font-size: 0.58rem;
   font-weight: 600;
@@ -1751,34 +1762,36 @@
 .subscription-status-detail {
   margin-top: 2px;
 
+  color: #1f2937;
+
   font-size: 0.7rem;
   font-weight: 700;
 }
 
 .subscription-status.is-active .subscription-status-detail {
-  color: #8be0c1;
+  color: #067647;
 }
 
 .subscription-status.is-due_soon {
-  border-color: rgba(255, 193, 7, 0.35);
+  border-color: rgba(180, 83, 9, 0.22);
 
-  background: rgba(255, 193, 7, 0.1);
+  background: #fffbeb;
 }
 
 .subscription-status.is-due_soon .subscription-status-label,
 .subscription-status.is-due_soon .subscription-status-detail {
-  color: #ffc107;
+  color: #b45309;
 }
 
 .subscription-status.is-overdue {
-  border-color: rgba(255, 141, 152, 0.45);
+  border-color: rgba(220, 53, 69, 0.22);
 
-  background: rgba(220, 53, 69, 0.18);
+  background: #fff1f0;
 }
 
 .subscription-status.is-overdue .subscription-status-label,
 .subscription-status.is-overdue .subscription-status-detail {
-  color: #ff8d98;
+  color: #dc3545;
 }
 
 /* =========================================================
@@ -1795,16 +1808,13 @@
 
   padding: 6px 11px 6px 7px;
 
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid #e8ecef;
 
   border-radius: 12px;
 
-  background: rgba(255, 255, 255, 0.07);
+  background: #fff;
 
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  box-shadow: none;
 }
 
 /* User avatar */
@@ -1825,9 +1835,9 @@
 
   border-radius: 50%;
 
-  background: rgba(255, 255, 255, 0.1);
+  background: #fff5f5;
 
-  color: rgba(255, 255, 255, 0.85);
+  color: #ff7979;
 
   font-size: 1.65rem;
 }
@@ -1841,7 +1851,7 @@
   width: 9px;
   height: 9px;
 
-  border: 2px solid #495057;
+  border: 2px solid #fff;
 
   border-radius: 50%;
 
@@ -1859,7 +1869,7 @@
 
   overflow: hidden;
 
-  color: #ffffff;
+  color: #1f2937;
 
   font-size: 0.75rem;
   font-weight: 700;
@@ -1874,7 +1884,7 @@
 
   margin-top: 3px;
 
-  color: rgba(255, 193, 7, 0.9);
+  color: #ff7979;
 
   font-size: 0.62rem;
   font-weight: 600;
@@ -1896,11 +1906,11 @@
 
   padding: 7px 11px;
 
-  border: 1px solid rgba(255, 193, 7, 0.2);
+  border: 1px solid rgba(255, 121, 121, 0.22);
 
   border-radius: 11px;
 
-  background: rgba(255, 193, 7, 0.08);
+  background: #fff;
 }
 
 .super-admin-icon {
@@ -1917,9 +1927,9 @@
 
   border-radius: 9px;
 
-  background: rgba(255, 193, 7, 0.14);
+  background: #fff5f5;
 
-  color: #ffc107;
+  color: #ff7979;
 
   font-size: 1rem;
 }
@@ -1929,7 +1939,7 @@
 }
 
 .context-title {
-  color: #ffffff;
+  color: #1f2937;
 
   font-size: 0.76rem;
   font-weight: 700;
@@ -1938,7 +1948,7 @@
 .context-subtitle {
   margin-top: 2px;
 
-  color: rgba(255, 255, 255, 0.62);
+  color: #6b7280;
 
   font-size: 0.64rem;
 }
@@ -1950,9 +1960,9 @@
 
   border-radius: 6px;
 
-  background: rgba(255, 193, 7, 0.14);
+  background: #fff5f5;
 
-  color: #ffc107;
+  color: #ff7979;
 
   font-size: 0.57rem;
   font-weight: 700;
@@ -2081,7 +2091,7 @@
   }
 
   .context-user-status {
-    border-color: #495057;
+    border-color: #fff8f7;
   }
 
   .context-user-info {

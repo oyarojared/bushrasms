@@ -1,165 +1,246 @@
-{% extends "super_admin_dash.html" %} {% from "_macros.html" import
-render_flash_messages, sidebar %} {% block side_nav %} {{ sidebar("Accounts",
-current_user) }} {% endblock %} {% block main_content %}
+{% extends "super_admin_dash.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar %}
 
-<!-- Page Header -->
-<div class="app-page-title">
-  <div class="app-page-title-icon">
-    <i class="bi bi-person-lock"></i>
+{% block head %}
+{{ super() }}
+<link
+  rel="stylesheet"
+  href="{{ url_for('admin.static', filename='accounts.css') }}"
+/>
+{% endblock %}
+
+{% block side_nav %} {{ sidebar("Accounts", current_user) }} {% endblock %}
+
+{% block main_content %}
+{% set total = teachers | length if teachers else 0 %}
+{% set admin_count = teachers | selectattr("is_admin") | list | length if teachers else 0 %}
+{% set super_count = teachers | selectattr("is_super_admin") | list | length if teachers else 0 %}
+{% set teacher_count = teachers
+  | rejectattr("is_admin")
+  | rejectattr("is_super_admin")
+  | list
+  | length if teachers else 0 %}
+
+<div class="acc-page">
+  <div class="app-page-title">
+    <div class="app-page-title-icon">
+      <i class="bi bi-person-lock"></i>
+    </div>
+
+    <div class="app-page-title-content">
+      <h6 class="app-page-title-heading">Accounts</h6>
+      <span class="app-page-title-subtitle">
+        Manage school users, roles &amp; platform permissions
+      </span>
+    </div>
   </div>
 
-  <div class="app-page-title-content mb-2">
-    <h6 class="app-page-title-heading">User Access Control</h6>
+  {{ render_flash_messages() }}
 
-    <span class="app-page-title-subtitle">
-      Manage school users, roles &amp; platform permissions
-    </span>
-  </div>
-</div>
+  <div class="acc-workbench">
+    {% if teachers %}
+    <div class="acc-toolbar">
+      <div class="acc-search">
+        <label class="visually-hidden" for="acc-search">Search accounts</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input
+            type="search"
+            id="acc-search"
+            class="form-control"
+            placeholder="Search name, username, phone, or school…"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+      <span class="acc-count" id="acc-count">
+        {{ total }} account{{ "" if total == 1 else "s" }}
+      </span>
+    </div>
 
-{{ render_flash_messages() }}
+    <nav class="acc-nav" aria-label="Filter accounts by role">
+      <button type="button" class="acc-nav-btn is-active" data-role="all" aria-pressed="true">
+        All
+        <span class="acc-nav-count">{{ total }}</span>
+      </button>
+      <button type="button" class="acc-nav-btn" data-role="admin" aria-pressed="false">
+        Admin
+        <span class="acc-nav-count">{{ admin_count }}</span>
+      </button>
+      <button type="button" class="acc-nav-btn" data-role="super" aria-pressed="false">
+        Super admin
+        <span class="acc-nav-count">{{ super_count }}</span>
+      </button>
+      <button type="button" class="acc-nav-btn" data-role="teacher" aria-pressed="false">
+        Teacher
+        <span class="acc-nav-count">{{ teacher_count }}</span>
+      </button>
+    </nav>
 
-<!-- Accounts Card -->
-<div class="card shadow-sm border-0">
-  <div class="card-body px-4 py-3">
-    <div class="table-responsive">
-      <table class="table table-hover table-sm align-middle mb-0">
-        <!-- HEADER -->
-        <thead class="table-light text-uppercase small">
+    <div class="acc-table-wrap">
+      <table class="acc-table" id="acc-table">
+        <thead>
           <tr>
-            <th class="ps-2">#</th>
+            <th class="acc-col-index">#</th>
             <th>User</th>
             <th>Username</th>
             <th>Phone</th>
+            <th>School</th>
             <th>Role</th>
-            <th class="text-end pe-2">Actions</th>
+            <th class="acc-col-action">Actions</th>
           </tr>
         </thead>
-
-        <!-- BODY -->
         <tbody>
           {% for teacher in teachers %}
-          <tr>
-            <!-- INDEX -->
-            <td class="ps-2 text-muted">{{ loop.index }}</td>
-
-            <!-- USER INFO -->
+          {% set school_name = teacher.branch.branch_name if teacher.branch else "" %}
+          {% set role_key = "super" if teacher.is_super_admin else ("admin" if teacher.is_admin else "teacher") %}
+          {% set role_label = "Super admin" if teacher.is_super_admin else ("Admin" if teacher.is_admin else "Teacher") %}
+          <tr
+            class="acc-row"
+            data-role="{{ role_key }}"
+            data-search="{{ (
+              (teacher.title or '') ~ ' ' ~
+              (teacher.fullname or '') ~ ' ' ~
+              (teacher.username or '') ~ ' ' ~
+              (teacher.phone or '') ~ ' ' ~
+              (school_name or '') ~ ' ' ~
+              role_label
+            ) | lower }}"
+          >
+            <td class="acc-col-index">{{ loop.index }}</td>
             <td>
-              <div class="d-flex align-items-center">
-                <div
-                  class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
-                  style="width: 42px; height: 42px; font-weight: 600"
+              <span class="acc-name">
+                {{ teacher.title }} {{ teacher.fullname | upper }}
+              </span>
+            </td>
+            <td class="acc-muted">{{ teacher.username }}</td>
+            <td class="acc-muted">{{ teacher.phone or "—" }}</td>
+            <td class="acc-muted">{{ school_name or "—" }}</td>
+            <td>{{ role_label }}</td>
+            <td class="acc-col-action">
+              <div class="acc-actions">
+                <form
+                  method="POST"
+                  action="{{ url_for('admin.toggle_admin', teacher_id=teacher.id) }}"
                 >
-                  {{ teacher.fullname[0] }}
-                </div>
+                  {% if teacher.is_admin %}
+                  <button
+                    type="submit"
+                    class="sa-btn sa-btn-outline"
+                    onclick="return confirm('Remove admin rights from this user?');"
+                  >
+                    Remove admin
+                  </button>
+                  {% else %}
+                  <button
+                    type="submit"
+                    class="sa-btn sa-btn-outline"
+                    onclick="return confirm('Make this user an admin?');"
+                  >
+                    Make admin
+                  </button>
+                  {% endif %}
+                </form>
 
-                <div>
-                  <div class="fw-semibold">
-                    {{ teacher.title }} {{ teacher.fullname }}
-                  </div>
-                  <small class="text-muted">{{ teacher.employer }}</small>
-                </div>
+                {% if current_user.is_super_admin and teacher.id != current_user.id %}
+                <form
+                  method="POST"
+                  action="{{ url_for('admin.toggle_super_admin', teacher_id=teacher.id) }}"
+                >
+                  {% if teacher.is_super_admin %}
+                  <button
+                    type="submit"
+                    class="sa-btn sa-btn-outline"
+                    onclick="return confirm('Remove super admin rights?');"
+                  >
+                    Remove super
+                  </button>
+                  {% else %}
+                  <button
+                    type="submit"
+                    class="sa-btn sa-btn-outline"
+                    onclick="return confirm('Make this user a super admin?');"
+                  >
+                    Make super
+                  </button>
+                  {% endif %}
+                </form>
+                {% endif %}
               </div>
-            </td>
-
-            <!-- USERNAME -->
-            <td class="text-muted">{{ teacher.username }}</td>
-
-            <!-- PHONE -->
-            <td class="text-muted">{{ teacher.phone }}</td>
-
-            <!-- ROLE BADGES -->
-            <td>
-              {% if teacher.is_super_admin %}
-              <span
-                class="badge rounded-pill bg-danger text-white px-3 py-2 me-1"
-              >
-                <i class="bi bi-crown-fill me-1"></i> Super Admin
-              </span>
-              {% endif %} {% if teacher.is_admin %}
-              <span
-                class="badge rounded-pill bg-success-subtle text-success px-3 py-2 me-1"
-              >
-                <i class="bi bi-shield-lock-fill me-1"></i> Admin
-              </span>
-              {% endif %} {% if not teacher.is_admin and not
-              teacher.is_super_admin %}
-              <span
-                class="badge rounded-pill bg-secondary-subtle text-secondary px-3 py-2"
-              >
-                <i class="bi bi-person-fill me-1"></i> Teacher
-              </span>
-              {% endif %}
-            </td>
-
-            <!-- ACTIONS -->
-            <td class="text-end pe-2">
-              <!-- ADMIN TOGGLE -->
-              <form
-                method="POST"
-                action="{{ url_for('admin.toggle_admin', teacher_id=teacher.id) }}"
-                class="d-inline"
-              >
-                {% if teacher.is_admin %}
-                <button
-                  type="submit"
-                  class="btn btn-sm btn-outline-danger"
-                  onclick="
-                    return confirm('Remove ADMIN rights from this user?');
-                  "
-                >
-                  <i class="bi bi-person-x-fill me-1"></i> Admin
-                </button>
-                {% else %}
-                <button
-                  type="submit"
-                  class="btn btn-sm btn-outline-primary"
-                  onclick="return confirm('Make this user an ADMIN?');"
-                >
-                  <i class="bi bi-shield-plus me-1"></i> Admin
-                </button>
-                {% endif %}
-              </form>
-
-              <!-- SUPER ADMIN TOGGLE -->
-              <form
-                method="POST"
-                action="{{ url_for('admin.toggle_super_admin', teacher_id=teacher.id) }}"
-                class="d-inline ms-1"
-              >
-                {% if teacher.is_super_admin %}
-                <button
-                  type="submit"
-                  class="btn btn-sm btn-outline-danger"
-                  onclick="return confirm('Remove SUPER ADMIN rights?');"
-                >
-                  <i class="bi bi-crown me-1"></i> Super
-                </button>
-                {% else %}
-                <button
-                  type="submit"
-                  class="btn btn-sm btn-outline-dark"
-                  onclick="return confirm('Make this user a SUPER ADMIN?');"
-                >
-                  <i class="bi bi-crown-fill me-1"></i> Super
-                </button>
-                {% endif %}
-              </form>
-            </td>
-          </tr>
-
-          {% else %}
-          <tr>
-            <td colspan="6" class="text-center text-muted py-5">
-              <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-              No teachers found.
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+
+    <div class="acc-filter-empty d-none" id="acc-filter-empty">
+      <div class="acc-empty-icon" aria-hidden="true">
+        <i class="bi bi-search"></i>
+      </div>
+      <h6>No matching accounts</h6>
+      <p>Try another search or role.</p>
+    </div>
+    {% else %}
+    <div class="acc-empty">
+      <div class="acc-empty-icon" aria-hidden="true">
+        <i class="bi bi-inbox"></i>
+      </div>
+      <h6>No accounts yet</h6>
+      <p>Staff accounts will appear here once teachers are added.</p>
+    </div>
+    {% endif %}
   </div>
 </div>
 
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("acc-search");
+    const navButtons = document.querySelectorAll(".acc-nav-btn");
+    const rows = document.querySelectorAll(".acc-row");
+    const emptyFilter = document.getElementById("acc-filter-empty");
+    const countEl = document.getElementById("acc-count");
+    const tableWrap = document.querySelector(".acc-table-wrap");
+    let activeRole = "all";
+
+    function applyFilter() {
+      if (!rows.length) return;
+      const query = (searchInput?.value || "").trim().toLowerCase();
+      let visible = 0;
+
+      rows.forEach((row) => {
+        const role = row.dataset.role || "";
+        const haystack = row.dataset.search || "";
+        const roleOk =
+          activeRole === "all" ||
+          (activeRole === "admin" && (role === "admin" || role === "super")) ||
+          role === activeRole;
+        const queryOk = !query || haystack.includes(query);
+        const show = roleOk && queryOk;
+        row.classList.toggle("d-none", !show);
+        if (show) visible += 1;
+      });
+
+      if (countEl) {
+        countEl.textContent = `${visible} account${visible === 1 ? "" : "s"}`;
+      }
+      tableWrap?.classList.toggle("d-none", visible === 0);
+      emptyFilter?.classList.toggle("d-none", visible > 0);
+    }
+
+    searchInput?.addEventListener("input", applyFilter);
+
+    navButtons.forEach((btn) => {
+      btn.addEventListener("click", function () {
+        activeRole = this.dataset.role || "all";
+        navButtons.forEach((other) => {
+          const isActive = other === this;
+          other.classList.toggle("is-active", isActive);
+          other.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+        applyFilter();
+      });
+    });
+  });
+</script>
 {% endblock %}

@@ -65,7 +65,7 @@
               <i class="bi bi-search search-icon"></i>
 
               {{ form.query ( class="form-input", id="studentSearchInput",
-              placeholder="Search students...",
+              placeholder="Search by name, admission number, or assessment number.",
               autocomplete="off" ) }}
 
               <div class="search-shortcut d-none d-md-flex">
@@ -390,22 +390,19 @@
   aria-hidden="true"
 >
   <div
-    class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
+    class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable search-results-dialog"
   >
     <div class="modal-content search-results-modal">
-      <!-- ============================
-                 HEADER
-                 ============================ -->
       <div class="modal-header search-modal-header">
         <div class="search-modal-title-wrapper">
-          <div class="search-modal-icon bg-light">
+          <div class="search-modal-icon">
             <i class="bi bi-search"></i>
           </div>
 
           <div>
-            <h5 class="modal-title" id="searchResultsModalLabel">
+            <h6 class="modal-title" id="searchResultsModalLabel">
               Student Search
-            </h5>
+            </h6>
 
             <div class="search-modal-subtitle">
               Search results matching your query
@@ -415,19 +412,15 @@
 
         <button
           type="button"
-          class="btn-close"
+          class="btn-close btn-close-white"
           data-bs-dismiss="modal"
           aria-label="Close"
         ></button>
       </div>
 
-      <!-- ============================
-                 RESULT SUMMARY
-                 ============================ -->
       <div class="search-results-toolbar">
         <div class="d-flex align-items-center gap-2">
           <span class="results-status-dot"></span>
-
           <span class="results-label"> Search Result(s) </span>
         </div>
 
@@ -437,14 +430,7 @@
         </div>
       </div>
 
-      <!-- ============================
-                 RESULTS
-                 ============================ -->
       <div class="modal-body search-results-body" id="modalBodyContent">
-        <!--
-                    Results will be injected here.
-                -->
-
         <div class="search-empty-state">
           <div class="empty-state-icon">
             <i class="bi bi-search"></i>
@@ -459,9 +445,6 @@
         </div>
       </div>
 
-      <!-- ============================
-                 FOOTER
-                 ============================ -->
       <div class="modal-footer search-modal-footer">
         <div class="search-footer-hint">
           <span class="keyboard-key">ESC</span>

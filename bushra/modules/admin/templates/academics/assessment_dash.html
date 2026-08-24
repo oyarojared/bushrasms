@@ -900,7 +900,7 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
           </h6>
           <button
             type="button"
-            class="btn-close"
+            class="btn-close btn-close-white"
             data-bs-dismiss="modal"
             aria-label="Close"
           ></button>
@@ -955,6 +955,9 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
                 icon_class="bi bi-pencil-square",
                 placeholder="e.g. Mid Term Exam"
               ) }}
+              <div class="create-exam-name-hint">
+                Do not include the year in the exam name.
+              </div>
             </div>
 
             <div class="col-12">
@@ -1456,14 +1459,19 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     background: #fff;
   }
 
+  #createExamModal .create-exam-modal-header {
+    background: #ff7979;
+  }
+
   .create-exam-modal-header .modal-title {
     font-size: 0.95rem;
     font-weight: 700;
     color: #252a2f;
   }
 
-  .create-exam-modal-header .modal-title i {
-    color: #ff7979;
+  #createExamModal .create-exam-modal-header .modal-title,
+  #createExamModal .create-exam-modal-header .modal-title i {
+    color: #fff;
   }
 
   .create-exam-modal-body {
@@ -1483,6 +1491,10 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     color: #6c757d;
   }
 
+  #createExamModal .create-exam-modal-body .input-group-text {
+    color: #ff7979;
+  }
+
   .create-exam-modal-body .form-control,
   .create-exam-modal-body .form-select {
     border-color: #dee2e6;
@@ -1493,6 +1505,12 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
   .create-exam-modal-body .form-select:focus {
     border-color: rgba(255, 121, 121, 0.55);
     box-shadow: 0 0 0 0.2rem rgba(255, 121, 121, 0.12);
+  }
+
+  .create-exam-name-hint {
+    margin-top: 0.3rem;
+    font-size: 0.72rem;
+    color: #b45309;
   }
 
   .create-exam-modal-footer {

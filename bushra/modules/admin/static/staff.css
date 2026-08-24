@@ -11,6 +11,7 @@
 .sf-page .app-page-title {
   width: 100%;
   margin-bottom: 0.85rem;
+  padding-top: 0.45rem;
 }
 
 .sf-page-actions {
@@ -19,6 +20,7 @@
   align-items: center;
   gap: 0.4rem;
   margin-left: auto;
+  padding: 0.32rem;
 }
 
 .sf-page-actions .sa-btn {
