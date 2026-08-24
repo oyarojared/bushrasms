@@ -12,6 +12,7 @@ from .report import (
     build_static_image_path,
     build_pdf_image_data_uri,
     load_class_students_for_report,
+    sitting_stream_by_student,
     _lesson_for_subject,
     _paper_for_subject,
 )
@@ -393,7 +394,9 @@ def get_student_844_exam_trend(student, current_exam_id, previous_count=3):
 
 
 def _stream_key(stream):
-    return stream if stream not in (None, "") else ""
+    if stream is None:
+        return ""
+    return str(stream).strip()
 
 
 def _resolve_class_teacher(class_teachers_by_stream, student, stream=None):
@@ -568,7 +571,7 @@ def generate_student_report(student: Student, exam: Exam, ctx=None, stream_overr
     if not is_844_form(normalized_form):
         raise ValueError("This report generator is for Form 3 & 4 only")
 
-    lookup_stream = stream_override if stream_override not in (None, "") else student.stream
+    lookup_stream = student.stream if stream_override is None else stream_override
     stream_key = _stream_key(lookup_stream)
 
     if ctx is None:
@@ -805,24 +808,36 @@ def generate_student_report(student: Student, exam: Exam, ctx=None, stream_overr
 
 def generate_class_reports(branch_id, class_id, stream, exam_id, include_student_id=None):
     exam = Exam.query.get(exam_id)
+    include_id = int(include_student_id) if include_student_id else None
 
     all_students = load_class_students_for_report(
         branch_id,
         class_id,
         include_student_id=include_student_id,
+        exam_id=exam_id if include_id else None,
     )
 
     ctx = _build_844_class_context(branch_id, class_id, exam_id, all_students)
-    include_id = int(include_student_id) if include_student_id else None
-    all_reports = [
-        generate_student_report(
-            s,
-            exam,
-            ctx,
-            stream_override=stream if include_id and s.id == include_id else None,
+    sitting_streams = (
+        sitting_stream_by_student(branch_id, class_id, exam_id)
+        if include_id else {}
+    )
+    rank_stream = stream
+    if include_id and stream in (None, ""):
+        rank_stream = sitting_streams.get(include_id)
+
+    all_reports = []
+    for s in all_students:
+        stream_override = None
+        if include_id:
+            # Use the stream they sat in, including blank, so we never
+            # fall back to a classmate's current (post-move) stream.
+            stream_override = sitting_streams.get(s.id, "")
+            if s.id == include_id and rank_stream not in (None, ""):
+                stream_override = rank_stream
+        all_reports.append(
+            generate_student_report(s, exam, ctx, stream_override=stream_override)
         )
-        for s in all_students
-    ]
 
     # -----------------------------
     # General ranking (across all streams)
@@ -837,8 +852,12 @@ def generate_class_reports(branch_id, class_id, stream, exam_id, include_student
     # -----------------------------
     stream_reports = [
         r for r in all_reports
-        if r["stream"] == stream or (include_id is not None and r["student_id"] == include_id)
+        if _stream_key(r["stream"]) == _stream_key(rank_stream)
     ]
+    if include_id and not any(r["student_id"] == include_id for r in stream_reports):
+        stream_reports.extend(
+            r for r in all_reports if r["student_id"] == include_id
+        )
     stream_reports.sort(key=lambda r: r["summary"]["total_points"], reverse=True)
     for idx, r in enumerate(stream_reports, start=1):
         r["summary"]["position"] = idx
@@ -860,6 +879,11 @@ def compute_class_exam_rankings(branch_id, class_id, exam_id, include_student_id
         branch_id,
         class_id,
         include_student_id=include_student_id,
+        exam_id=exam_id if include_student_id else None,
+    )
+    sitting_streams = (
+        sitting_stream_by_student(branch_id, class_id, exam_id)
+        if include_student_id else {}
     )
 
     mark_rows = (
@@ -916,7 +940,9 @@ def compute_class_exam_rankings(branch_id, class_id, exam_id, include_student_id
         summaries.append(
             {
                 "student_id": student.id,
-                "stream": student.stream,
+                "stream": sitting_streams.get(student.id, "")
+                if include_student_id
+                else student.stream,
                 "total_points": agg["total_points"],
             }
         )

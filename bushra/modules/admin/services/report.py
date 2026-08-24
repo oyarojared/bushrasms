@@ -334,17 +334,72 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
 
-def load_class_students_for_report(branch_id, class_id, include_student_id=None):
-    """
-    Students currently in the class, plus a specific learner if they have
-    since been moved. Report cards are printed from the class where the
-    exam was sat, not only the learner's current class.
-    """
-    query_options = (
+def _report_student_options():
+    return (
         joinedload(Student.subject_allocations).joinedload(StudentSubjectAllocation.subject),
         joinedload(Student.branch),
         joinedload(Student.class_info),
     )
+
+
+def student_ids_who_sat_exam(branch_id, class_id, exam_id):
+    rows = (
+        db.session.query(StudentExamMark.student_id)
+        .join(ExamPaper, StudentExamMark.exam_paper_id == ExamPaper.id)
+        .filter(
+            ExamPaper.exam_id == int(exam_id),
+            ExamPaper.branch_id == int(branch_id),
+            ExamPaper.class_id == int(class_id),
+        )
+        .distinct()
+        .all()
+    )
+    return {student_id for (student_id,) in rows}
+
+
+def sitting_stream_by_student(branch_id, class_id, exam_id):
+    """Stream each learner sat in for this exam, from the marksheet papers."""
+    rows = (
+        db.session.query(StudentExamMark.student_id, ExamPaper.stream)
+        .join(ExamPaper, StudentExamMark.exam_paper_id == ExamPaper.id)
+        .filter(
+            ExamPaper.exam_id == int(exam_id),
+            ExamPaper.branch_id == int(branch_id),
+            ExamPaper.class_id == int(class_id),
+        )
+        .all()
+    )
+    streams = {}
+    for student_id, paper_stream in rows:
+        current = streams.get(student_id)
+        if student_id not in streams:
+            streams[student_id] = paper_stream
+        elif current in (None, "") and paper_stream not in (None, ""):
+            streams[student_id] = paper_stream
+    return streams
+
+
+def load_class_students_for_report(
+    branch_id, class_id, include_student_id=None, exam_id=None
+):
+    """
+    Class-wide printing uses the current class roster.
+
+    A single learner's historical card ranks against everyone who sat
+    that exam in that class, including classmates who have since moved.
+    """
+    query_options = _report_student_options()
+
+    if include_student_id and exam_id:
+        sat_ids = student_ids_who_sat_exam(branch_id, class_id, exam_id)
+        sat_ids.add(int(include_student_id))
+        return (
+            Student.query
+            .options(*query_options)
+            .filter(Student.id.in_(sat_ids))
+            .all()
+        )
+
     students = (
         Student.query
         .options(*query_options)
@@ -398,6 +453,11 @@ def compute_cbe_exam_rankings(branch_id, class_id, exam_id, include_student_id=N
         branch_id,
         class_id,
         include_student_id=include_student_id,
+        exam_id=exam_id if include_student_id else None,
+    )
+    sitting_streams = (
+        sitting_stream_by_student(branch_id, class_id, exam_id)
+        if include_student_id else {}
     )
 
     total_rows = (
@@ -419,7 +479,9 @@ def compute_cbe_exam_rankings(branch_id, class_id, exam_id, include_student_id=N
     student_rows = [
         {
             "id": student.id,
-            "stream": student.stream,
+            "stream": sitting_streams.get(student.id, "")
+            if include_student_id
+            else student.stream,
             "total_marks": totals.get(student.id, 0.0),
         }
         for student in students
@@ -510,6 +572,11 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
         branch_id,
         class_id,
         include_student_id=student_id,
+        exam_id=exam_id if student_id else None,
+    )
+    sitting_streams = (
+        sitting_stream_by_student(branch_id, class_id, exam_id)
+        if student_id else {}
     )
 
     mark_rows = (
@@ -560,8 +627,10 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
     # ==================================================================
     for s in students:
         sitting_stream = s.stream
-        if student_id and int(student_id) == s.id and stream not in (None, ""):
-            sitting_stream = stream
+        if student_id:
+            sitting_stream = sitting_streams.get(s.id, "")
+            if int(student_id) == s.id and stream not in (None, ""):
+                sitting_stream = stream
         stream_key = sitting_stream if sitting_stream not in (None, "") else ""
 
         if stream is None:
