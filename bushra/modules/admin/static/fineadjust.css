@@ -22,8 +22,9 @@
 
 .header-search-slot,
 .header-search-slot {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
+  width: 100%;
   display: flex;
   align-items: center;
 }
@@ -35,7 +36,8 @@
 .header-search {
   flex: 1 1 auto;
   min-width: 0;
-  max-width: 850px;
+  width: 100%;
+  max-width: none;
 }
 
 .search-form {

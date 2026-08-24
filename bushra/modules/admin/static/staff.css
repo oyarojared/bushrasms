@@ -1,5 +1,13 @@
 /* School Staff — list + teacher profile (UI only) */
 
+.main-content:has(.sf-page) {
+  padding-top: 0;
+}
+
+.main-content:has(.sf-page) .dashboard-context-bar {
+  margin-top: 20px;
+}
+
 .sf-page .app-page-title {
   width: 100%;
   margin-bottom: 0.85rem;
@@ -43,9 +51,9 @@
 }
 
 .sf-search {
-  flex: 1 1 220px;
+  flex: 1 1 280px;
   min-width: 0;
-  max-width: 360px;
+  max-width: 640px;
 }
 
 .sf-search .input-group-text,
@@ -100,8 +108,8 @@
 
 .sf-table thead th {
   position: sticky;
-  top: 0;
-  z-index: 2;
+  top: var(--marks-deadline-banner-height, 0px);
+  z-index: 21;
   padding: 0.48rem 0.85rem;
   background: #2c3e50;
   color: #fff;
@@ -220,13 +228,13 @@
 }
 
 .sf-phone {
-  color: inherit;
+  color: #111827 !important;
   text-decoration: none;
   font-variant-numeric: tabular-nums;
 }
 
 .sf-phone:hover {
-  color: #ff7979;
+  color: #9b2c2c !important;
   text-decoration: underline;
 }
 
@@ -475,9 +483,32 @@
 }
 
 .sf-hero-user {
-  margin: 0.2rem 0 0.45rem;
+  margin: 0.2rem 0 0.35rem;
   color: #6b7280;
   font-size: 0.8rem;
+}
+
+.sf-hero-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.1rem 0 0.55rem;
+  color: #111827 !important;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+}
+
+.sf-hero-phone i {
+  color: #c24141;
+  font-size: 1rem;
+}
+
+.sf-hero-phone:hover {
+  color: #9b2c2c !important;
+  text-decoration: underline;
 }
 
 .sf-hero-chips {
@@ -534,9 +565,22 @@
 
 .sf-dl dd {
   margin: 0;
-  color: #1f2937;
+  min-width: 0;
+  color: #111827;
   font-weight: 600;
   text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.sf-dl .sf-phone {
+  color: #111827 !important;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.sf-dl .sf-phone:hover {
+  color: #9b2c2c !important;
 }
 
 @media (max-width: 767.98px) {

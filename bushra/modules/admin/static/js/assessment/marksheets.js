@@ -304,7 +304,7 @@ function addPdfPageFooter(pdf) {
   for (let page = 1; page <= totalPages; page += 1) {
     pdf.setPage(page);
     pdf.setFont("times", "normal");
-    pdf.setFontSize(8);
+    pdf.setFontSize(9);
     pdf.setTextColor(90, 90, 90);
 
     pdf.text(`Generated: ${generatedOn}`, 0.35, footerY, { align: "left" });

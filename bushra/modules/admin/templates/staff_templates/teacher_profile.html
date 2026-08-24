@@ -44,6 +44,12 @@
       <div class="sf-hero-copy">
         <h4>{{ teacher.title }} {{ teacher.fullname }}</h4>
         <p class="sf-hero-user">{{ teacher.username }}</p>
+        {% if teacher.phone %}
+        <a class="sf-hero-phone" href="tel:{{ teacher.phone }}">
+          <i class="bi bi-telephone"></i>
+          {{ teacher.phone }}
+        </a>
+        {% endif %}
         <div class="sf-hero-chips">
           <span class="sf-chip">{{ branch_name }}</span>
           {% if teacher.staff_id %}
@@ -92,7 +98,9 @@
         <dd>
           {% if teacher.phone %}
           <a class="sf-phone" href="tel:{{ teacher.phone }}">{{ teacher.phone }}</a>
-          {% else %}—{% endif %}
+          {% else %}
+          —
+          {% endif %}
         </dd>
       </div>
       <div>

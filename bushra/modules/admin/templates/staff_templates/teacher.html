@@ -38,6 +38,12 @@ current_user) }} {% endblock %} {% block main_content %}
             {{ lessons|length }} class{{ "es" if lessons|length != 1 else "" }}
             taught
           </span>
+          {% if teacher.phone %}
+          <a class="teacher-meta-chip" href="tel:{{ teacher.phone }}">
+            <i class="bi bi-telephone me-1" aria-hidden="true"></i>
+            {{ teacher.phone }}
+          </a>
+          {% endif %}
         </div>
       </div>
 
@@ -322,10 +328,11 @@ current_user) }} {% endblock %} {% block main_content %}
     padding: 0.2rem 0.55rem;
     border-radius: 999px;
     background: rgba(255, 121, 121, 0.1);
-    color: #c95f5f;
+    color: #c95f5f !important;
     font-size: 0.72rem;
     font-weight: 700;
     white-space: nowrap;
+    text-decoration: none;
   }
 
   .teacher-meta-chip--role {
