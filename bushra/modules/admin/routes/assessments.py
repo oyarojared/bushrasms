@@ -357,12 +357,13 @@ def generate_reportcards_pdf():
             exam = Exam.query.get_or_404(exam_id)
             if student_id:
                 student_obj = Student.query.get_or_404(student_id)
-                ranking_stream = student_obj.stream or stream
+                ranking_stream = stream if stream not in (None, "") else student_obj.stream
                 class_reports = generate_class_reports(
                     branch_id=branch_id,
                     class_id=class_id,
                     exam_id=exam_id,
                     stream=ranking_stream,
+                    include_student_id=int(student_id),
                 )
                 report_data = [
                     report for report in class_reports

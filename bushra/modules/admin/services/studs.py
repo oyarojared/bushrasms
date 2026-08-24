@@ -94,16 +94,16 @@ def _subject_teacher_initials(branch_id, class_id, stream, subject_id):
     return ".".join(name[0].upper() for name in names)
 
 
-def _get_exam_ranking_map(branch_id, class_id, exam_id, is_844, ranking_cache):
-    cache_key = (branch_id, class_id, exam_id, is_844)
+def _get_exam_ranking_map(branch_id, class_id, exam_id, is_844, ranking_cache, include_student_id=None):
+    cache_key = (branch_id, class_id, exam_id, is_844, include_student_id)
     if cache_key not in ranking_cache:
         if is_844:
             ranking_cache[cache_key] = compute_class_exam_rankings(
-                branch_id, class_id, exam_id
+                branch_id, class_id, exam_id, include_student_id=include_student_id
             )
         else:
             ranking_cache[cache_key] = compute_cbe_exam_rankings(
-                branch_id, class_id, exam_id
+                branch_id, class_id, exam_id, include_student_id=include_student_id
             )
     return ranking_cache[cache_key]
 
@@ -116,6 +116,7 @@ def _attach_exam_ranking(student_id, exam, ranking_cache, student_stream=None):
         exam["exam_id"],
         exam["is_844"],
         ranking_cache,
+        include_student_id=student_id,
     )
     ranking = ranking_map.get(student_id)
     if ranking:

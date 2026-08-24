@@ -334,15 +334,71 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
 
-def compute_cbe_exam_rankings(branch_id, class_id, exam_id):
+def load_class_students_for_report(branch_id, class_id, include_student_id=None):
+    """
+    Students currently in the class, plus a specific learner if they have
+    since been moved. Report cards are printed from the class where the
+    exam was sat, not only the learner's current class.
+    """
+    query_options = (
+        joinedload(Student.subject_allocations).joinedload(StudentSubjectAllocation.subject),
+        joinedload(Student.branch),
+        joinedload(Student.class_info),
+    )
+    students = (
+        Student.query
+        .options(*query_options)
+        .filter_by(branch_id=branch_id, class_id=class_id)
+        .all()
+    )
+    if not include_student_id:
+        return students
+
+    include_student_id = int(include_student_id)
+    if any(student.id == include_student_id for student in students):
+        return students
+
+    extra = (
+        Student.query
+        .options(*query_options)
+        .filter_by(id=include_student_id)
+        .first()
+    )
+    if extra:
+        students.append(extra)
+    return students
+
+
+def _paper_for_subject(papers_by_stream_subject, stream_key, subject_id):
+    paper = papers_by_stream_subject.get((stream_key, subject_id))
+    if paper:
+        return paper
+    for (stored_stream, stored_subject_id), stored_paper in papers_by_stream_subject.items():
+        if stored_subject_id == subject_id:
+            return stored_paper
+    return None
+
+
+def _lesson_for_subject(lessons_by_stream_subject, stream_key, subject_id):
+    lesson = lessons_by_stream_subject.get((stream_key, subject_id))
+    if lesson:
+        return lesson
+    for (stored_stream, stored_subject_id), stored_lesson in lessons_by_stream_subject.items():
+        if stored_subject_id == subject_id:
+            return stored_lesson
+    return None
+
+
+def compute_cbe_exam_rankings(branch_id, class_id, exam_id, include_student_id=None):
     """
     Lightweight class rankings for CBE exams.
     Returns a dict keyed by student_id with stream/overall positions.
     """
-    students = Student.query.filter_by(
-        branch_id=branch_id,
-        class_id=class_id,
-    ).all()
+    students = load_class_students_for_report(
+        branch_id,
+        class_id,
+        include_student_id=include_student_id,
+    )
 
     total_rows = (
         db.session.query(
@@ -450,13 +506,10 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
     # Always load ALL students in the class.
     # Ranking is calculated before filtering by stream or student.
     # ------------------------------------------------------------------
-    students = (
-        Student.query
-        .options(
-            joinedload(Student.subject_allocations).joinedload(StudentSubjectAllocation.subject)
-        )
-        .filter_by(branch_id=branch_id, class_id=class_id)
-        .all()
+    students = load_class_students_for_report(
+        branch_id,
+        class_id,
+        include_student_id=student_id,
     )
 
     mark_rows = (
@@ -506,7 +559,10 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
     # Build student data
     # ==================================================================
     for s in students:
-        stream_key = s.stream if s.stream not in (None, "") else ""
+        sitting_stream = s.stream
+        if student_id and int(student_id) == s.id and stream not in (None, ""):
+            sitting_stream = stream
+        stream_key = sitting_stream if sitting_stream not in (None, "") else ""
 
         if stream is None:
             class_teacher_obj = class_teachers_by_stream.get(stream_key)
@@ -525,20 +581,32 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
             "admission_number": s.admission_number,
             "pathway": s.pathway,
             "gender": s.gender,
-            "stream": s.stream,
+            "stream": sitting_stream,
             "passport_path": build_pdf_image_data_uri(build_passport_path(s)),
             "class_teacher": teacher_name,
             "subjects": [],
             "total_marks": 0
         }
 
+        report_subjects = []
+        seen_subject_ids = set()
         for alloc in s.subject_allocations:
             subject = alloc.subject
-
-            if not subject:
+            if subject and subject.id not in seen_subject_ids:
+                report_subjects.append(subject)
+                seen_subject_ids.add(subject.id)
+        for student_id_key, subject_id in marks_by_student_subject:
+            if student_id_key != s.id or subject_id in seen_subject_ids:
                 continue
+            subject = Subject.query.get(subject_id)
+            if subject:
+                report_subjects.append(subject)
+                seen_subject_ids.add(subject_id)
 
-            lesson = lessons_by_stream_subject.get((stream_key, subject.id))
+        for subject in report_subjects:
+            lesson = _lesson_for_subject(
+                lessons_by_stream_subject, stream_key, subject.id
+            )
             teacher_initials = None
 
             if lesson and lesson.teacher:
@@ -547,24 +615,13 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
                     n[0].upper() for n in names
                 )
 
-            exam_paper = papers_by_stream_subject.get((stream_key, subject.id))
-            marks = None
+            marks = marks_by_student_subject.get((s.id, subject.id))
+            if marks is None:
+                continue
 
-            if exam_paper:
-                marks = marks_by_student_subject.get((s.id, subject.id))
+            student_data["total_marks"] += marks
 
-                if marks is not None:
-                    student_data["total_marks"] += marks
-
-            grade_info = (
-                resolve_grade(class_id, marks)
-                if marks is not None
-                else {
-                    "performance_level": None,
-                    "points": None,
-                    "descriptor": None
-                }
-            )
+            grade_info = resolve_grade(class_id, marks)
 
             student_data["subjects"].append({
                 "subject_code": subject.code,
