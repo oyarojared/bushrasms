@@ -18,12 +18,12 @@
 <script src="{{ url_for('admin.static', filename='js/lock_school_select.js') }}"></script>
 {% endblock %} {% block template_body %}
 <!-- ======== FIXED TOP HEADER ======== -->
-<div class="container-fluid shadow-sm bg-white fixed-top-bar px-0">
-  <div class="row align-items-center g-0 mx-0">
+<div
+  class="container-fluid shadow-sm bg-white fixed-top-bar px-0{% if current_user.is_admin %} has-search{% endif %}"
+>
+  <div class="app-header">
     <!-- Left: Brand -->
-    <div
-      class="col-12 col-sm-3 bg-bushra text-white overflow-hidden brand-container"
-    >
+    <div class="bg-bushra text-white overflow-hidden brand-container">
       <div class="brand-wrapper d-flex align-items-center">
         <!-- Company Logo -->
         <div class="brand-logo flex-shrink-0">
@@ -46,14 +46,7 @@
       </div>
     </div>
 
-    <!-- ================================
-     RIGHT HEADER SECTION
-     ================================ -->
-    <div class="col-12 col-sm-9 right-section">
-      <div class="header-actions">
-        <!-- ============================
-             SEARCH
-             ============================ -->
+    <div class="header-search-slot">
         {% if current_user.is_admin %}
         <div class="header-search">
           <form
@@ -97,10 +90,8 @@
           </form>
         </div>
         {% endif %}
+    </div>
 
-        <!-- ============================
-             PROFILE
-             ============================ -->
         <div class="dropdown profile-wrapper">
           <a
             href="#"
@@ -108,6 +99,8 @@
             id="dropdownUser"
             data-bs-toggle="dropdown"
             aria-expanded="false"
+            aria-label="Open account menu"
+            title="Account menu"
           >
             <!-- Avatar -->
             {% set passport = current_user.passport_url or 'default.jpg' %}
@@ -119,6 +112,9 @@
               ></div>
 
               <span class="profile-online-indicator"></span>
+              <span class="profile-menu-cue" aria-hidden="true">
+                <i class="bi bi-chevron-down"></i>
+              </span>
             </div>
 
             <!-- User information -->
@@ -235,8 +231,6 @@
             </li>
           </ul>
         </div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -492,6 +486,8 @@
       <div class="footer-text">
         <span class="footer-developed"> Developed by </span>
 
+        <span class="footer-company">Oyaro Jared</span>
+        <span class="footer-separator">·</span>
         <span class="footer-company"> Shuleka Tech </span>
 
         <span class="footer-separator">•</span>
@@ -507,7 +503,7 @@
 
         <span class="footer-contact">
           <i class="bi bi-envelope me-1"></i>
-          shulekatech@gmail.com
+          <a href="mailto:info@shuleka.com">info@shuleka.com</a>
         </span>
 
         <span class="footer-separator">•</span>

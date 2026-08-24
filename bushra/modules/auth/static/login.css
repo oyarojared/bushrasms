@@ -823,6 +823,48 @@ body {
   font-size: 1rem;
 }
 
+.btn-login-idle,
+.btn-login-busy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-login-busy {
+  display: none;
+}
+
+.btn-login.is-busy {
+  pointer-events: none;
+  cursor: wait;
+  transform: none;
+  box-shadow: 0 7px 18px rgba(255, 59, 69, 0.16);
+}
+
+.btn-login.is-busy .btn-login-idle {
+  display: none;
+}
+
+.btn-login.is-busy .btn-login-busy {
+  display: inline-flex;
+}
+
+.btn-login-spinner {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  animation: login-spin 0.7s linear infinite;
+}
+
+@keyframes login-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* =========================================================
    SECURITY MESSAGE
    ========================================================= */

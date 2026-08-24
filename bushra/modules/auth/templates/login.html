@@ -159,6 +159,7 @@
               ================================================== -->
 
               <form
+                id="loginForm"
                 method="POST"
                 action="{{ url_for('auth.login') }}"
                 class="login-form"
@@ -228,9 +229,15 @@
                   <a href="#login-help" class="forgot-link">Forgot password?</a>
                 </div>
 
-                <button type="submit" class="btn btn-login w-100">
-                  <i class="bi bi-box-arrow-in-right"></i>
-                  <span>Sign in</span>
+                <button type="submit" class="btn btn-login w-100" id="loginSubmit">
+                  <span class="btn-login-idle">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>Sign in</span>
+                  </span>
+                  <span class="btn-login-busy">
+                    <span class="btn-login-spinner" aria-hidden="true"></span>
+                    <span>Signing in…</span>
+                  </span>
                 </button>
               </form>
 
@@ -265,9 +272,9 @@
               <i class="bi bi-phone"></i>
               0782 811 403
             </a>
-            <a class="footer-item" href="mailto:shulekatech@gmail.com">
+            <a class="footer-item" href="mailto:info@shuleka.com">
               <i class="bi bi-envelope-fill"></i>
-              shulekatech@gmail.com
+              info@shuleka.com
             </a>
           </div>
           <p class="footer-copy">Shuleka Tech &copy; 2026</p>
@@ -287,10 +294,10 @@
 
     <script>
       const passwordInput = document.getElementById("password");
-
       const togglePassword = document.getElementById("togglePassword");
-
       const passwordIcon = document.getElementById("passwordIcon");
+      const loginForm = document.getElementById("loginForm");
+      const loginSubmit = document.getElementById("loginSubmit");
 
       if (passwordInput && togglePassword && passwordIcon) {
         togglePassword.addEventListener("click", function () {
@@ -304,6 +311,33 @@
             "aria-label",
             isPassword ? "Hide password" : "Show password",
           );
+        });
+      }
+
+      if (loginForm && loginSubmit) {
+        let signingIn = false;
+
+        function resetLoginButton() {
+          signingIn = false;
+          loginSubmit.classList.remove("is-busy");
+          loginSubmit.removeAttribute("aria-busy");
+        }
+
+        loginForm.addEventListener("submit", function (event) {
+          if (!loginForm.checkValidity()) return;
+
+          if (signingIn) {
+            event.preventDefault();
+            return;
+          }
+
+          signingIn = true;
+          loginSubmit.classList.add("is-busy");
+          loginSubmit.setAttribute("aria-busy", "true");
+        });
+
+        window.addEventListener("pageshow", function (event) {
+          if (event.persisted) resetLoginButton();
         });
       }
     </script>
