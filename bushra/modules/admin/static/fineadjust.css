@@ -1,4 +1,18 @@
 /* =========================================================
+   Shared dark chrome (footer + school context strip)
+   ========================================================= */
+
+:root {
+  --chrome-dark: #3f4854;
+  --chrome-dark-text: #eef1f4;
+  --chrome-dark-muted: #b8c0ca;
+  --chrome-dark-faint: #b0b8c2;
+  --chrome-dark-line: rgba(255, 255, 255, 0.14);
+  --chrome-dark-chip: rgba(255, 255, 255, 0.08);
+  --chrome-dark-chip-border: rgba(255, 255, 255, 0.12);
+}
+
+/* =========================================================
     RIGHT HEADER (laptop / tablet)
     ========================================================= */
 
@@ -66,10 +80,10 @@
 
 .search-box:focus-within {
   background: #ffffff;
-  border-color: rgba(13, 110, 253, 0.45);
+  border-color: rgba(255, 121, 121, 0.55);
 
   box-shadow:
-    0 0 0 3px rgba(13, 110, 253, 0.08),
+    0 0 0 3px rgba(255, 121, 121, 0.12),
     0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
@@ -154,7 +168,7 @@
   border: 0;
   border-radius: 9px;
 
-  background: var(--bs-primary, #0d6efd);
+  background: #ff7979;
   color: #ffffff;
 
   cursor: pointer;
@@ -166,8 +180,8 @@
 }
 
 .search-submit:hover {
-  background: #0b5ed7;
-  box-shadow: 0 3px 8px rgba(13, 110, 253, 0.25);
+  background: #f56868;
+  box-shadow: 0 3px 8px rgba(255, 121, 121, 0.28);
 }
 
 .search-submit:active {
@@ -970,16 +984,13 @@
   display: flex;
   align-items: center;
 
-  background: rgba(255, 255, 255, 0.97);
+  background: var(--chrome-dark);
 
-  border-top: 1px solid #ff7979;
+  border-top: 2px solid #ff7979;
 
-  box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.035);
+  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.22);
 
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-
-  color: #7a8493;
+  color: var(--chrome-dark-muted);
   font-size: 0.7rem;
 }
 
@@ -1021,8 +1032,8 @@
 
   border-radius: 7px;
 
-  background: rgba(13, 110, 253, 0.08);
-  color: #0d6efd;
+  background: rgba(255, 121, 121, 0.18);
+  color: #ffc4c4;
 
   font-size: 0.75rem;
 }
@@ -1040,23 +1051,23 @@
 }
 
 .footer-developed {
-  color: #9aa2ad;
+  color: var(--chrome-dark-faint);
 }
 
 .footer-company {
-  color: #343a40;
+  color: var(--chrome-dark-text);
   font-weight: 700;
 }
 
 .footer-separator {
-  color: #c8cdd4;
+  color: var(--chrome-dark-line);
   margin: 0 2px;
 }
 
 .footer-contact {
   display: inline-flex;
   align-items: center;
-  color: #707986;
+  color: var(--chrome-dark-muted);
 }
 
 .footer-contact a {
@@ -1065,22 +1076,22 @@
 }
 
 .footer-contact a:hover {
-  color: #ff7979;
+  color: #ffb4b4;
   text-decoration: underline;
 }
 
 .footer-contact i {
-  color: #8b95a3;
+  color: var(--chrome-dark-faint);
 }
 
 .footer-or {
   margin: 0 4px;
-  color: #adb4be;
+  color: var(--chrome-dark-faint);
   font-size: 0.64rem;
 }
 
 .footer-copyright {
-  color: #9aa2ad;
+  color: var(--chrome-dark-faint);
 }
 
 /* Clock */
@@ -1095,7 +1106,7 @@
 
   padding-left: 12px;
 
-  border-left: 1px solid #eceef1;
+  border-left: 1px solid var(--chrome-dark-line);
 }
 
 .status-indicator {
@@ -1108,7 +1119,7 @@
 
   background: #20c997;
 
-  box-shadow: 0 0 0 3px rgba(32, 201, 151, 0.1);
+  box-shadow: 0 0 0 3px rgba(32, 201, 151, 0.28);
 }
 
 .footer-clock-wrapper {
@@ -1120,17 +1131,17 @@
 }
 
 .footer-clock-label {
-  color: #9aa2ad;
+  color: var(--chrome-dark-faint);
   font-size: 0.63rem;
   font-weight: 500;
 }
 
 .footer-clock-label i {
-  color: #7f8996;
+  color: var(--chrome-dark-muted);
 }
 
 .footer-clock {
-  color: #3f4854;
+  color: var(--chrome-dark-text);
   font-size: 0.7rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -1600,15 +1611,17 @@
 
   margin-bottom: 4px;
 
-  background: #ffffff;
+  background: var(--chrome-dark);
 
-  color: #1f2937;
+  color: var(--chrome-dark-text);
 
-  border: 1px solid #dfe5ea;
+  border: 1px solid var(--chrome-dark-chip-border);
+
+  border-top: 2px solid #ff7979;
 
   border-radius: 8px;
 
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.18);
 }
 
 .dashboard-context-inner {
@@ -1654,9 +1667,9 @@
 
   border-radius: 10px;
 
-  background: #f8fafc;
+  background: #f4f6f8;
 
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.18);
 
   box-shadow: none;
 }
@@ -1691,7 +1704,7 @@
 
   overflow: hidden;
 
-  color: #1f2937;
+  color: var(--chrome-dark-text);
 
   font-size: 0.84rem;
   font-weight: 800;
@@ -1709,7 +1722,7 @@
 
   overflow: hidden;
 
-  color: #6b7280;
+  color: var(--chrome-dark-muted);
 
   font-size: 0.68rem;
   font-weight: 400;
@@ -1721,7 +1734,7 @@
 .school-context-motto span {
   margin-right: 3px;
 
-  color: #64748b;
+  color: var(--chrome-dark-faint);
 
   font-weight: 700;
 }
@@ -1739,17 +1752,17 @@
   margin-left: 12px;
   padding: 5px 11px;
 
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--chrome-dark-chip-border);
 
   border-radius: 9px;
 
-  background: #f8fafc;
+  background: var(--chrome-dark-chip);
 
   line-height: 1.15;
 }
 
 .subscription-status-label {
-  color: #6b7280;
+  color: var(--chrome-dark-faint);
 
   font-size: 0.58rem;
   font-weight: 600;
@@ -1762,36 +1775,36 @@
 .subscription-status-detail {
   margin-top: 2px;
 
-  color: #1f2937;
+  color: var(--chrome-dark-text);
 
   font-size: 0.7rem;
   font-weight: 700;
 }
 
 .subscription-status.is-active .subscription-status-detail {
-  color: #067647;
+  color: #3ddc97;
 }
 
 .subscription-status.is-due_soon {
-  border-color: rgba(180, 83, 9, 0.22);
+  border-color: rgba(251, 191, 36, 0.35);
 
-  background: #fffbeb;
+  background: rgba(251, 191, 36, 0.12);
 }
 
 .subscription-status.is-due_soon .subscription-status-label,
 .subscription-status.is-due_soon .subscription-status-detail {
-  color: #b45309;
+  color: #fbbf24;
 }
 
 .subscription-status.is-overdue {
-  border-color: rgba(220, 53, 69, 0.22);
+  border-color: rgba(255, 121, 121, 0.4);
 
-  background: #fff1f0;
+  background: rgba(255, 121, 121, 0.14);
 }
 
 .subscription-status.is-overdue .subscription-status-label,
 .subscription-status.is-overdue .subscription-status-detail {
-  color: #dc3545;
+  color: #ff9a9a;
 }
 
 /* =========================================================
@@ -1808,11 +1821,11 @@
 
   padding: 6px 11px 6px 7px;
 
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--chrome-dark-chip-border);
 
   border-radius: 12px;
 
-  background: #f8fafc;
+  background: var(--chrome-dark-chip);
 
   box-shadow: none;
 }
@@ -1835,9 +1848,9 @@
 
   border-radius: 50%;
 
-  background: #eef2f6;
+  background: rgba(255, 255, 255, 0.12);
 
-  color: #64748b;
+  color: var(--chrome-dark-text);
 
   font-size: 1.65rem;
 }
@@ -1851,7 +1864,7 @@
   width: 9px;
   height: 9px;
 
-  border: 2px solid #fff;
+  border: 2px solid var(--chrome-dark);
 
   border-radius: 50%;
 
@@ -1869,7 +1882,7 @@
 
   overflow: hidden;
 
-  color: #1f2937;
+  color: var(--chrome-dark-text);
 
   font-size: 0.75rem;
   font-weight: 700;
@@ -1884,7 +1897,7 @@
 
   margin-top: 3px;
 
-  color: #64748b;
+  color: var(--chrome-dark-muted);
 
   font-size: 0.62rem;
   font-weight: 600;
@@ -1906,11 +1919,11 @@
 
   padding: 7px 11px;
 
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--chrome-dark-chip-border);
 
   border-radius: 11px;
 
-  background: #f8fafc;
+  background: var(--chrome-dark-chip);
 }
 
 .super-admin-icon {
@@ -1927,9 +1940,9 @@
 
   border-radius: 9px;
 
-  background: #eef2f6;
+  background: rgba(255, 255, 255, 0.12);
 
-  color: #64748b;
+  color: var(--chrome-dark-text);
 
   font-size: 1rem;
 }
@@ -1939,7 +1952,7 @@
 }
 
 .context-title {
-  color: #1f2937;
+  color: var(--chrome-dark-text);
 
   font-size: 0.76rem;
   font-weight: 700;
@@ -1948,7 +1961,7 @@
 .context-subtitle {
   margin-top: 2px;
 
-  color: #6b7280;
+  color: var(--chrome-dark-muted);
 
   font-size: 0.64rem;
 }
@@ -1960,9 +1973,9 @@
 
   border-radius: 6px;
 
-  background: #eef2f6;
+  background: rgba(255, 121, 121, 0.2);
 
-  color: #475569;
+  color: #ffc4c4;
 
   font-size: 0.57rem;
   font-weight: 700;
@@ -2091,7 +2104,7 @@
   }
 
   .context-user-status {
-    border-color: #ffffff;
+    border-color: var(--chrome-dark);
   }
 
   .context-user-info {

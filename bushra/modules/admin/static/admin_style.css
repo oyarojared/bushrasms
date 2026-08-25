@@ -1269,3 +1269,139 @@ body.ui-blocker-active {
     gap: 8px;
   }
 }
+
+/* =========================================================
+   COMING SOON PLACEHOLDER
+   ========================================================= */
+
+.coming-soon-panel {
+  margin-top: 14px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 280px;
+
+  padding: 36px 22px;
+
+  background: #ffffff;
+
+  border: 1px solid #edf0f2;
+
+  border-radius: 12px;
+
+  text-align: center;
+}
+
+.coming-soon-icon {
+  width: 52px;
+  height: 52px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 14px;
+
+  border-radius: 14px;
+
+  background: rgba(255, 121, 121, 0.1);
+
+  color: #ff7979;
+
+  font-size: 1.35rem;
+}
+
+.coming-soon-panel h6 {
+  margin: 0;
+
+  color: #343a40;
+
+  font-size: 1.05rem;
+  font-weight: 800;
+
+  letter-spacing: -0.02em;
+}
+
+.coming-soon-panel p {
+  max-width: 380px;
+
+  margin: 8px 0 0;
+
+  color: #98a1ad;
+
+  font-size: 0.8rem;
+  font-weight: 500;
+
+  line-height: 1.5;
+}
+
+.coming-soon-ticker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 42px;
+  max-width: min(520px, 100%);
+
+  margin-top: 22px;
+  padding: 10px 18px 10px 16px;
+
+  background: rgba(255, 121, 121, 0.06);
+
+  border: 1px solid rgba(255, 121, 121, 0.16);
+
+  border-radius: 999px;
+
+  color: #3f4854;
+
+  font-family: Inter, "Open Sans", system-ui, sans-serif;
+
+  font-size: 0.86rem;
+  font-weight: 600;
+
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+
+  white-space: nowrap;
+}
+
+.coming-soon-caret {
+  display: inline-block;
+
+  width: 2px;
+  height: 1.05em;
+
+  margin-left: 4px;
+
+  flex: 0 0 2px;
+
+  border-radius: 1px;
+
+  background: #ff7979;
+
+  animation: coming-soon-caret 0.9s steps(1) infinite;
+}
+
+@keyframes coming-soon-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .coming-soon-ticker {
+    white-space: normal;
+    border-radius: 14px;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coming-soon-caret {
+    animation: none;
+  }
+}
+

@@ -1,0 +1,94 @@
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar %}
+
+{% block side_nav %}
+{{ sidebar("Messages", current_user) }}
+{% endblock %}
+
+{% block main_content %}
+<div class="msg-page">
+  <div class="app-page-title">
+    <div class="app-page-title-icon">
+      <i class="bi bi-chat-dots"></i>
+    </div>
+
+    <div class="app-page-title-content">
+      <h6 class="app-page-title-heading">Messages</h6>
+      <span class="app-page-title-subtitle">
+        Send messages to teachers or parents
+      </span>
+    </div>
+  </div>
+
+  {{ render_flash_messages() }}
+
+  <div class="coming-soon-panel">
+    <div class="coming-soon-icon">
+      <i class="bi bi-hourglass-split"></i>
+    </div>
+    <h6>Coming soon</h6>
+    <p>
+      Messaging for teachers and parents is not available yet.
+    </p>
+    <div class="coming-soon-ticker" data-typewriter>
+      <span data-typewriter-text></span><span class="coming-soon-caret" aria-hidden="true"></span>
+    </div>
+  </div>
+</div>
+<script>
+  (function () {
+    const root = document.querySelector("[data-typewriter]");
+    const textEl = root?.querySelector("[data-typewriter-text]");
+    if (!root || !textEl) return;
+
+    const lines = [
+      "Working on it...",
+      "Hang tight, Jared got you 👍",
+      "Hang tight...",
+      "Send notification & results to parents...",
+    ];
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      textEl.textContent = lines[0];
+      return;
+    }
+
+    let lineIndex = 0;
+    let charIndex = 0;
+    let deleting = false;
+
+    function chars(line) {
+      return Array.from(line);
+    }
+
+    function tick() {
+      const units = chars(lines[lineIndex]);
+
+      if (!deleting) {
+        charIndex += 1;
+        textEl.textContent = units.slice(0, charIndex).join("");
+        if (charIndex === units.length) {
+          deleting = true;
+          const hold = lineIndex === 1 ? 1800 : 1400;
+          setTimeout(tick, hold);
+          return;
+        }
+        setTimeout(tick, 64);
+        return;
+      }
+
+      charIndex -= 1;
+      textEl.textContent = units.slice(0, charIndex).join("");
+      if (charIndex === 0) {
+        deleting = false;
+        lineIndex = (lineIndex + 1) % lines.length;
+        setTimeout(tick, 280);
+        return;
+      }
+      setTimeout(tick, 34);
+    }
+
+    tick();
+  })();
+</script>
+{% endblock %}

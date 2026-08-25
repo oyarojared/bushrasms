@@ -321,3 +321,10 @@ def teacher_dash():
         branch=branch,
         teacher=current_user,
     )
+
+
+@admin_bp.route("/messages")
+@login_required
+@admin_required
+def messages():
+    return render_template("admin_templates/messages.html")
