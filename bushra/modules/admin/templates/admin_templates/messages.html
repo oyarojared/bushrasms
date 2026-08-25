@@ -1,11 +1,6 @@
-{% extends "admin_dash_layout.html" %}
-{% from "_macros.html" import render_flash_messages, sidebar %}
-
-{% block side_nav %}
-{{ sidebar("Messages", current_user) }}
-{% endblock %}
-
-{% block main_content %}
+{% extends "admin_dash_layout.html" %} {% from "_macros.html" import
+render_flash_messages, sidebar %} {% block side_nav %} {{ sidebar("Messages",
+current_user) }} {% endblock %} {% block main_content %}
 <div class="msg-page">
   <div class="app-page-title">
     <div class="app-page-title-icon">
@@ -27,11 +22,10 @@
       <i class="bi bi-hourglass-split"></i>
     </div>
     <h6>Coming soon</h6>
-    <p>
-      Messaging for teachers and parents is not available yet.
-    </p>
+    <p>Messaging for teachers and parents is not available yet.</p>
     <div class="coming-soon-ticker" data-typewriter>
-      <span data-typewriter-text></span><span class="coming-soon-caret" aria-hidden="true"></span>
+      <span data-typewriter-text></span
+      ><span class="coming-soon-caret" aria-hidden="true"></span>
     </div>
   </div>
 </div>
