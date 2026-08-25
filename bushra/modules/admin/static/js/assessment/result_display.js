@@ -15,9 +15,11 @@ function getResultsContext() {
     className: gradeSelect.selectedOptions[0]?.textContent?.trim() || "",
     examName: examSelect.selectedOptions[0]?.textContent?.trim() || "",
     streamLabel,
-    gradingType: "cbc",
+    gradingType: lastLoadedGradingType,
   };
 }
+
+let lastLoadedGradingType = "cbc";
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -254,6 +256,7 @@ async function loadReportCards(branchId, classId, examId, stream = null) {
     const students = data.students || [];
 
     context.gradingType = data.grading_type === "844" ? "844" : "cbc";
+    lastLoadedGradingType = context.gradingType;
 
     if (students.length === 0) {
       container.innerHTML = `
@@ -348,10 +351,37 @@ document.getElementById("generate-pdf-btn").addEventListener("click", () => {
 
   if (!requireResultsStreamForDownload()) return;
 
-  generatePDF(branchId, classId, examId, stream);
+  if (lastLoadedGradingType === "844") {
+    generatePDF(branchId, classId, examId, stream);
+    return;
+  }
+
+  if (typeof bindCbeReportCardOptionsModal !== "function") {
+    generatePDF(branchId, classId, examId, stream);
+    return;
+  }
+
+  if (!window.__cbeReportOptionsModal) {
+    window.__cbeReportOptionsModal = bindCbeReportCardOptionsModal((options) => {
+      const currentBranchId = document.getElementById("results-branch").value;
+      const currentClassId = document.getElementById("results-grade").value;
+      const currentExamId = document.getElementById("results-exam").value;
+      const currentStream =
+        document.getElementById("results-stream").value || null;
+      generatePDF(
+        currentBranchId,
+        currentClassId,
+        currentExamId,
+        currentStream,
+        options,
+      );
+    });
+  }
+
+  window.__cbeReportOptionsModal?.show();
 });
 
-function generatePDF(branchId, classId, examId, stream) {
+function generatePDF(branchId, classId, examId, stream, printOptions = {}) {
   blockUI(
     "Generating report cards",
     "This may take 1–2 minutes for a full class. Please keep this tab open.",
@@ -385,6 +415,9 @@ function generatePDF(branchId, classId, examId, stream) {
       class_id: classId,
       exam_id: examId,
       stream: stream,
+      include_ranking: Boolean(printOptions.include_ranking),
+      include_opening_date: Boolean(printOptions.include_opening_date),
+      opening_date: printOptions.opening_date || "",
     }),
   })
     .then(async (response) => {

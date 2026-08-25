@@ -175,8 +175,17 @@
             font-size: 11px;
         }
 
-        /* FOOTER */
-        .footer {
+        .opening-date {
+            margin-top: 12px;
+            padding: 8px 10px;
+            background: #ecf0f1;
+            border-left: 3px solid #923006;
+            font-size: 11px;
+        }
+
+        .opening-date strong {
+            color: #923006;
+        }
             text-align: center;
             font-size: 9px;
             margin-top: 10px;
@@ -400,7 +409,7 @@
             <strong>Adm:</strong> {{ student.admission_number }} |
             <strong>Ass. No:</strong><span class="text-upper">{{ student.assessment_no or "---" }}</span> |
             <strong>Gender:</strong> <span class="text-upper">{{ student.gender or "---" }}</span> |
-            {% if data.students %}
+            {% if include_ranking|default(true) %}
     {% if student.stream %}
         <div class="position-badge">
             <div class="main-position">
@@ -583,6 +592,11 @@
 
             <div class="stamp">Official Stamp</div>
         </div>
+        {% if opening_date %}
+        <div class="opening-date">
+            School opens on: <strong>{{ opening_date }}</strong>
+        </div>
+        {% endif %}
         <!-- <div class="footer">
             © 2026 {{ data.branch.name }}. Developed by Oyaro Jared | 0701948782 | 0782811403
             <small>All Rights Reserved.</small>

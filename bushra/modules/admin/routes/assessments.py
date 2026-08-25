@@ -325,11 +325,39 @@ def marks_entry(exam_id):
     )
 
 
+def _as_bool(value, default=False):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes")
+    if value is None:
+        return default
+    return bool(value)
+
+
+def _cbe_report_print_options(payload, is_844):
+    """CBE-only print switches. 8-4-4 always prints ranking and never an opening date."""
+    if is_844:
+        return True, None
+
+    include_ranking = _as_bool(payload.get("include_ranking"), default=True)
+    opening_date = None
+    if _as_bool(payload.get("include_opening_date"), default=False):
+        raw = payload.get("opening_date")
+        raw = raw.strip() if isinstance(raw, str) else ""
+        if raw:
+            try:
+                opening_date = datetime.strptime(raw, "%Y-%m-%d").strftime("%d %B %Y")
+            except ValueError:
+                opening_date = None
+    return include_ranking, opening_date
+
+
 @admin_bp.route("/generate-reportcards-pdf", methods=["POST"])
 @login_required
 @admin_required
 def generate_reportcards_pdf():
-    data = request.get_json()
+    data = request.get_json() or {}
 
     branch_id = data.get("branch_id")
     class_id = data.get("class_id")
@@ -391,10 +419,21 @@ def generate_reportcards_pdf():
         if not report_data:
             raise ValueError("No report data generated")
 
+        include_ranking, opening_date = _cbe_report_print_options(data, is_844)
+        template_extras = {
+            "include_ranking": include_ranking,
+            "opening_date": opening_date,
+        }
+
         # 🔹 2️⃣ Render HTML and generate PDF
         if not student_id and template == "academics/report_card_844.html" and len(report_data) > 1:
             html_documents = [
-                render_template(template, data=[student_report], school=school)
+                render_template(
+                    template,
+                    data=[student_report],
+                    school=school,
+                    **template_extras,
+                )
                 for student_report in report_data
             ]
             pdf = render_bulk_report_pdf(html_documents)
@@ -408,12 +447,18 @@ def generate_reportcards_pdf():
                     template,
                     data={**report_data, "students": [student]},
                     school=school,
+                    **template_extras,
                 )
                 for student in report_data["students"]
             ]
             pdf = render_bulk_report_pdf(html_documents)
         else:
-            rendered_html = render_template(template, data=report_data, school=school)
+            rendered_html = render_template(
+                template,
+                data=report_data,
+                school=school,
+                **template_extras,
+            )
             pdf = HTML(string=rendered_html).write_pdf()
 
         class_name = class_obj.grade_form

@@ -1350,6 +1350,9 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
   });
 </script>
 {% endif %}
+
+{% include "academics/_cbe_report_options_modal.html" %}
+<script src="{{ url_for('admin.static', filename='js/assessment/cbe_report_options.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/assessment/result_display.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/assessment/grading_config.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/assessment/results_reports.js') }}"></script>
