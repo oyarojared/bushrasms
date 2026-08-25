@@ -44,6 +44,25 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
   <!-- Setup toolbar -->
   <div class="marks-setup-toolbar mb-3">
+    <div class="marks-mode-toggle" role="group" aria-label="Marks entry mode">
+      <button
+        type="button"
+        class="marks-mode-btn is-active"
+        id="marksModeSubject"
+        data-mode="subject"
+      >
+        By subject
+      </button>
+      <button
+        type="button"
+        class="marks-mode-btn"
+        id="marksModeLearner"
+        data-mode="learner"
+      >
+        By learner
+      </button>
+    </div>
+
     <div class="marks-setup-filters">
       {% if exam.exam_branches|length > 1 %}
       <div class="marks-setup-field">
@@ -77,14 +96,21 @@ render_flash_messages, sidebar %} {% block side_nav %}
         </select>
       </div>
 
-      <div class="marks-setup-field">
+      <div class="marks-setup-field" id="subjectField">
         <label class="marks-setup-label" for="subjectSelect">Subject</label>
         <select id="subjectSelect" class="form-select form-select-sm marks-setup-control" disabled>
           <option value="">Select subject</option>
         </select>
       </div>
 
-      <div class="marks-setup-field marks-setup-field-outof">
+      <div class="marks-setup-field d-none" id="learnerField">
+        <label class="marks-setup-label" for="learnerSelect">Learner</label>
+        <select id="learnerSelect" class="form-select form-select-sm marks-setup-control" disabled>
+          <option value="">Select learner</option>
+        </select>
+      </div>
+
+      <div class="marks-setup-field marks-setup-field-outof" id="outOfField">
         <label class="marks-setup-label" for="marksOutOf">Out of</label>
         <input
           type="number"
@@ -258,6 +284,32 @@ render_flash_messages, sidebar %} {% block side_nav %}
     background: #f8f9fa;
   }
 
+  .marks-mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 0.7rem;
+    padding: 0.18rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    background: #fff;
+  }
+
+  .marks-mode-btn {
+    border: 0;
+    background: transparent;
+    color: #6b7280;
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 0.32rem 0.85rem;
+    border-radius: 999px;
+  }
+
+  .marks-mode-btn.is-active {
+    background: #ff7979;
+    color: #fff;
+  }
+
   .marks-setup-filters {
     display: flex;
     flex-wrap: wrap;
@@ -277,6 +329,11 @@ render_flash_messages, sidebar %} {% block side_nav %}
     min-width: 88px;
     max-width: 110px;
     flex: 0 0 88px;
+  }
+
+  #learnerField {
+    min-width: 220px;
+    flex: 1.6 1 220px;
   }
 
   .marks-setup-label {
@@ -698,6 +755,12 @@ render_flash_messages, sidebar %} {% block side_nav %}
     const streamWrapper = document.getElementById("streamWrapper");
     const streamSelect = document.getElementById("streamSelect");
     const subjectSelect = document.getElementById("subjectSelect");
+    const learnerSelect = document.getElementById("learnerSelect");
+    const subjectField = document.getElementById("subjectField");
+    const learnerField = document.getElementById("learnerField");
+    const outOfField = document.getElementById("outOfField");
+    const marksModeSubject = document.getElementById("marksModeSubject");
+    const marksModeLearner = document.getElementById("marksModeLearner");
     const marksOutOf = document.getElementById("marksOutOf");
     const studentsContainer = document.getElementById("studentsContainer");
     const marksSetupHint = document.getElementById("marksSetupHint");
@@ -711,6 +774,8 @@ render_flash_messages, sidebar %} {% block side_nav %}
     const marksEntryClosed = {{ marks_entry_closed | default(false) | tojson }};
 
     let currentStudents = { students: [] };
+    let currentLearner = { student: null, subjects: [] };
+    let entryMode = "subject";
     let sortBy = "admission_number";
     let searchQuery = "";
     let isSaving = false;
@@ -860,7 +925,264 @@ render_flash_messages, sidebar %} {% block side_nav %}
       subjectSelect.innerHTML = '<option value="">Select subject</option>';
       subjectSelect.disabled = true;
       marksOutOf.disabled = true;
-      resetStudents("Select class and subject to load students.");
+      if (!isLearnerMode()) {
+        resetStudents("Select class and subject to load students.");
+      }
+    }
+
+    function resetLearners() {
+      if (!learnerSelect) return;
+      learnerSelect.innerHTML = '<option value="">Select learner</option>';
+      learnerSelect.disabled = true;
+      currentLearner = { student: null, subjects: [] };
+    }
+
+    function classSelectionReady() {
+      const hasStreams = !streamWrapper.classList.contains("d-none");
+      if (!branchSelect.value || !gradeSelect.value) return false;
+      if (hasStreams && !streamSelect.value) return false;
+      return true;
+    }
+
+    function setEntryMode(mode) {
+      entryMode = mode === "learner" ? "learner" : "subject";
+      marksModeSubject.classList.toggle("is-active", !isLearnerMode());
+      marksModeLearner.classList.toggle("is-active", isLearnerMode());
+      subjectField.classList.toggle("d-none", isLearnerMode());
+      outOfField.classList.toggle("d-none", isLearnerMode());
+      learnerField.classList.toggle("d-none", !isLearnerMode());
+      searchQuery = "";
+      marksStudentSearch.value = "";
+      marksSearchClear.classList.add("d-none");
+      marksStudentSearch.placeholder = isLearnerMode()
+        ? "Search subjects…"
+        : "Search by adm no or name…";
+
+      currentStudents = { students: [] };
+      currentLearner = { student: null, subjects: [] };
+      studentsContainer.innerHTML = "";
+      marksSaveBar.classList.add("d-none");
+      marksSearchBar.classList.add("d-none");
+
+      if (isLearnerMode()) {
+        resetSubjects();
+        if (classSelectionReady()) {
+          loadLearners();
+        } else if (!gradeSelect.value) {
+          setSetupHint("Select a class, then a learner.");
+          resetStudents("Select a class, then a learner.");
+        } else {
+          setSetupHint("Select a stream, then a learner.");
+          resetStudents("Select a stream, then a learner.");
+        }
+      } else {
+        resetLearners();
+        if (classSelectionReady()) {
+          loadSubjects(
+            branchSelect.value,
+            gradeSelect.value,
+            streamSelect.value || null
+          );
+        } else {
+          setSetupHint("Select class and subject to load students.");
+          resetStudents("Select class and subject to load students.");
+        }
+      }
+    }
+
+    function loadLearners() {
+      resetLearners();
+      if (!classSelectionReady()) {
+        setSetupHint(
+          streamWrapper.classList.contains("d-none")
+            ? "Select a class, then a learner."
+            : "Select a stream, then a learner."
+        );
+        resetStudents("Select a class, then a learner.");
+        return;
+      }
+
+      const params = new URLSearchParams({
+        branch_id: branchSelect.value,
+        class_id: gradeSelect.value,
+      });
+      if (streamSelect.value) params.append("stream", streamSelect.value);
+
+      setSetupHint("Loading learners…");
+      fetch(`/admin/api/exam-class-learners?${params}`)
+        .then((r) => r.json())
+        .then((data) => {
+          const students = data.students || [];
+          students.forEach((student) => {
+            const opt = document.createElement("option");
+            opt.value = student.id;
+            opt.textContent = `${student.admission_number} — ${student.full_name}`;
+            learnerSelect.appendChild(opt);
+          });
+          learnerSelect.disabled = students.length === 0;
+          if (!students.length) {
+            resetStudents("No learners found for this class.");
+            setSetupHint("No learners found for this class.");
+            return;
+          }
+          setSetupHint("Choose the learner to enter all subject marks.");
+          resetStudents("Select a learner to load their subjects.");
+        })
+        .catch(() => {
+          resetStudents("Could not load learners. Please try again.");
+        });
+    }
+
+    function loadLearnerSubjects() {
+      const studentId = learnerSelect.value;
+      const examId = document.getElementById("examId").value;
+      if (!classSelectionReady() || !studentId) {
+        resetStudents("Select a learner to load their subjects.");
+        return;
+      }
+
+      currentLearner = { student: null, subjects: [] };
+      studentsContainer.innerHTML = "";
+      setSetupHint("Loading subjects…");
+      saveMarksBtn.disabled = true;
+
+      const params = new URLSearchParams({
+        exam_id: examId,
+        student_id: studentId,
+        branch_id: branchSelect.value,
+        class_id: gradeSelect.value,
+      });
+      if (streamSelect.value) params.append("stream", streamSelect.value);
+
+      fetch(`/admin/api/exam-learner-subjects?${params}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.error) throw new Error(data.error);
+          currentLearner = {
+            student: data.student || null,
+            subjects: data.subjects || [],
+          };
+          renderLearnerSubjects({ preserveTypedMarks: false });
+          scrollStudentsIntoView();
+        })
+        .catch(() => {
+          resetStudents("Could not load this learner's subjects. Please try again.");
+          setSetupHint("Failed to load subjects.");
+        });
+    }
+
+    function subjectMatchesSearch(subject, query) {
+      const code = String(subject.code || "").toLowerCase();
+      const name = String(subject.name || "").toLowerCase();
+      return code.includes(query) || name.includes(query);
+    }
+
+    function renderLearnerSubjects({ preserveTypedMarks = true } = {}) {
+      if (preserveTypedMarks) captureMarksFromDom();
+
+      const subjects = currentLearner.subjects || [];
+      if (!subjects.length) {
+        resetStudents("This learner has no allocated subjects.");
+        setSetupHint("This learner has no allocated subjects to enter marks for.");
+        return;
+      }
+
+      const query = searchQuery.trim().toLowerCase();
+      const studentName = currentLearner.student?.full_name || "Learner";
+      const adm = currentLearner.student?.admission_number || "";
+      let tableRows = "";
+      let cards = "";
+      let matchCount = 0;
+
+      subjects.forEach((subject, i) => {
+        const markValue =
+          subject.marks !== null && subject.marks !== undefined ? subject.marks : "";
+        const maxMarks = subject.marks_out_of || 100;
+        const isMatch = query && subjectMatchesSearch(subject, query);
+        if (isMatch) matchCount += 1;
+        const matchClass = isMatch ? " marks-entry-item--match" : "";
+        const hiddenClass = query && !isMatch ? " d-none" : "";
+        const safeName = escapeHtml(subject.name);
+        const safeCode = escapeHtml(subject.code || "");
+
+        tableRows += `
+          <tr class="marks-entry-item${matchClass}${hiddenClass}" data-subject-id="${subject.id}">
+            <td class="text-center text-muted">${i + 1}</td>
+            <td class="text-center">${safeCode}</td>
+            <td>${safeName}</td>
+            <td>
+              <input
+                type="number"
+                class="form-control form-control-sm marks-input"
+                min="0"
+                max="${maxMarks}"
+                inputmode="numeric"
+                autocomplete="off"
+                value="${markValue}"
+                ${marksEntryClosed ? "disabled" : ""}
+              >
+            </td>
+            <td class="text-muted">/ ${maxMarks}</td>
+          </tr>
+        `;
+
+        cards += `
+          <div class="marks-entry-card marks-entry-item${matchClass}${hiddenClass}${markValue === "" ? " is-empty" : ""}" data-subject-id="${subject.id}">
+            <div class="marks-entry-card-meta">
+              <div class="marks-entry-card-name">${safeName}</div>
+              <div class="marks-entry-card-adm">${safeCode} · out of ${maxMarks}</div>
+            </div>
+            <input
+              type="number"
+              class="form-control marks-input"
+              min="0"
+              max="${maxMarks}"
+              inputmode="numeric"
+              autocomplete="off"
+              value="${markValue}"
+              aria-label="Marks for ${safeName}"
+              ${marksEntryClosed ? "disabled" : ""}
+            >
+          </div>
+        `;
+      });
+
+      studentsContainer.innerHTML = `
+        <div class="marks-students-card">
+          <div class="marks-students-card-header">
+            <h6 class="marks-students-title">${escapeHtml(studentName)}${adm ? ` · Adm ${escapeHtml(adm)}` : ""}</h6>
+          </div>
+          <div class="marks-entry-table-wrap table-responsive">
+            <table class="table table-sm table-hover marks-entry-table mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="text-center">#</th>
+                  <th class="text-center">Code</th>
+                  <th>Subject</th>
+                  <th>Marks</th>
+                  <th>Out of</th>
+                </tr>
+              </thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+          </div>
+          <div class="marks-entry-cards">${cards}</div>
+        </div>
+      `;
+
+      marksSaveBar.classList.remove("d-none");
+      marksSearchBar.classList.remove("d-none");
+      marksSearchClear.classList.toggle("d-none", !query);
+
+      if (query && matchCount === 0) {
+        setSetupHint(`No subject found for "${searchQuery.trim()}".`);
+      } else if (marksEntryClosed) {
+        setSetupHint("Teachers can no longer save marks. You can view marks but cannot save.");
+      } else {
+        setSetupHint("Enter marks for this learner, then tap Save Marks.");
+      }
+
+      updateMarksCount();
     }
 
     function isMobileLayout() {
@@ -874,7 +1196,25 @@ render_flash_messages, sidebar %} {% block side_nav %}
       return root ? [...root.querySelectorAll(".marks-entry-item")] : [];
     }
 
+    function isLearnerMode() {
+      return entryMode === "learner";
+    }
+
     function captureMarksFromDom() {
+      if (isLearnerMode()) {
+        if (!currentLearner.subjects || !currentLearner.subjects.length) return;
+        getMarkEntryItems().forEach((row) => {
+          const subjectId = row.dataset.subjectId;
+          const input = row.querySelector(".marks-input");
+          const subject = currentLearner.subjects.find(
+            (item) => String(item.id) === String(subjectId)
+          );
+          if (!subject || !input) return;
+          subject.marks = input.value === "" ? null : parseInt(input.value, 10);
+        });
+        return;
+      }
+
       if (!currentStudents.students || !currentStudents.students.length) return;
 
       getMarkEntryItems().forEach((row) => {
@@ -1176,7 +1516,97 @@ render_flash_messages, sidebar %} {% block side_nav %}
       }
     }
 
+    function collectAndSaveLearnerMarks() {
+      if (isSaving) return;
+      if (marksEntryClosed) {
+        showSaveAlert("warning", "Teachers can no longer save marks. The entry deadline has passed.");
+        return;
+      }
+
+      const invalidInput = document.querySelector(".marks-input.is-invalid");
+      if (invalidInput) {
+        invalidInput.focus();
+        showSaveAlert("warning", "Fix invalid marks before saving.");
+        return;
+      }
+
+      const marksData = [];
+      getMarkEntryItems().forEach((row) => {
+        const input = row.querySelector(".marks-input");
+        const subjectId = row.dataset.subjectId;
+        if (!input || !subjectId || input.value === "") return;
+        const subject = currentLearner.subjects.find(
+          (item) => String(item.id) === String(subjectId)
+        );
+        marksData.push({
+          subject_id: parseInt(subjectId, 10),
+          marks: parseInt(input.value, 10),
+          marks_out_of: subject?.marks_out_of || parseInt(input.max, 10) || 100,
+        });
+      });
+
+      if (!marksData.length) {
+        showSaveAlert("warning", "Enter at least one mark before saving.");
+        return;
+      }
+
+      isSaving = true;
+      saveMarksBtn.disabled = true;
+      saveMarksAlert.classList.add("d-none");
+      setBlockerLoading(
+        "Saving marks",
+        `Saving ${marksData.length} subject mark(s) for this learner…`
+      );
+
+      fetch("/admin/api/save-exam-learner-marks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          exam_id: {{ exam.id }},
+          branch_id: branchSelect.value,
+          class_id: gradeSelect.value,
+          stream: streamSelect.value || null,
+          student_id: parseInt(learnerSelect.value, 10),
+          marks: marksData,
+        }),
+      })
+        .then(async (response) => {
+          let resp = {};
+          try {
+            resp = await response.json();
+          } catch (error) {
+            throw new Error("Unexpected server response. Marks were not saved.");
+          }
+          if (!response.ok || !resp.success) {
+            throw new Error(resp.error || "Failed to save marks to the database.");
+          }
+          return resp;
+        })
+        .then((resp) => {
+          showBlockerResult(
+            "success",
+            "Marks saved successfully",
+            `${resp.saved || marksData.length} subject mark(s) were saved for this learner.`
+          );
+        })
+        .catch((error) => {
+          showBlockerResult(
+            "error",
+            "Save failed",
+            error.message || "Marks could not be saved. Please try again."
+          );
+        })
+        .finally(() => {
+          isSaving = false;
+          updateMarksCount();
+        });
+    }
+
     function collectAndSaveMarks() {
+      if (isLearnerMode()) {
+        collectAndSaveLearnerMarks();
+        return;
+      }
       if (isSaving) return;
       if (marksEntryClosed) {
         showSaveAlert("warning", "Teachers can no longer save marks. The entry deadline has passed.");
@@ -1281,6 +1711,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
     gradeSelect.addEventListener("change", function () {
       resetStreams();
       resetSubjects();
+      resetLearners();
 
       const selected = this.options[this.selectedIndex];
       const streams = JSON.parse(selected.dataset.streams || "[]");
@@ -1293,13 +1724,26 @@ render_flash_messages, sidebar %} {% block side_nav %}
           streamSelect.appendChild(opt);
         });
         streamWrapper.classList.remove("d-none");
-        setSetupHint("Select a stream, then subject.");
+        setSetupHint(
+          isLearnerMode()
+            ? "Select a stream, then a learner."
+            : "Select a stream, then subject."
+        );
+        if (isLearnerMode()) {
+          resetStudents("Select a stream, then a learner.");
+        }
+      } else if (isLearnerMode()) {
+        loadLearners();
       } else {
         loadSubjects(branchSelect.value, gradeSelect.value);
       }
     });
 
     streamSelect.addEventListener("change", () => {
+      if (isLearnerMode()) {
+        loadLearners();
+        return;
+      }
       loadSubjects(branchSelect.value, gradeSelect.value, streamSelect.value);
     });
 
@@ -1311,6 +1755,19 @@ render_flash_messages, sidebar %} {% block side_nav %}
         setSetupHint("Choose the subject to load students.");
       }
     });
+
+    learnerSelect.addEventListener("change", function () {
+      if (this.value) {
+        loadLearnerSubjects();
+      } else {
+        currentLearner = { student: null, subjects: [] };
+        resetStudents("Select a learner to load their subjects.");
+        setSetupHint("Choose the learner to enter all subject marks.");
+      }
+    });
+
+    marksModeSubject.addEventListener("click", () => setEntryMode("subject"));
+    marksModeLearner.addEventListener("click", () => setEntryMode("learner"));
 
     marksOutOf.addEventListener("input", () => {
       if (subjectSelect.value) {
@@ -1324,7 +1781,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       if (!e.target.classList.contains("marks-input")) return;
 
       const input = e.target;
-      const maxMarks = parseInt(marksOutOf.value, 10);
+      const maxMarks = parseInt(input.max || marksOutOf.value, 10);
       let value = input.value;
 
       if (value === "") {
@@ -1373,6 +1830,10 @@ render_flash_messages, sidebar %} {% block side_nav %}
     marksStudentSearch.addEventListener("input", () => {
       searchQuery = marksStudentSearch.value;
       marksSearchClear.classList.toggle("d-none", !searchQuery.trim());
+      if (isLearnerMode()) {
+        if (currentLearner.subjects?.length) renderLearnerSubjects();
+        return;
+      }
       const subjectText =
         subjectSelect.options[subjectSelect.selectedIndex]?.text || "Subject";
       if (subjectSelect.value && currentStudents.students?.length) {
@@ -1391,6 +1852,13 @@ render_flash_messages, sidebar %} {% block side_nav %}
       searchQuery = "";
       marksStudentSearch.value = "";
       marksSearchClear.classList.add("d-none");
+      if (isLearnerMode()) {
+        if (currentLearner.subjects?.length) {
+          renderLearnerSubjects();
+          marksStudentSearch.focus();
+        }
+        return;
+      }
       const subjectText =
         subjectSelect.options[subjectSelect.selectedIndex]?.text || "Subject";
       if (subjectSelect.value && currentStudents.students?.length) {
@@ -1406,6 +1874,10 @@ render_flash_messages, sidebar %} {% block side_nav %}
       if (mobileNow === lastMobileLayout) return;
       lastMobileLayout = mobileNow;
 
+      if (isLearnerMode()) {
+        if (currentLearner.subjects?.length) renderLearnerSubjects();
+        return;
+      }
       if (!subjectSelect.value || !currentStudents.students?.length) return;
       const subjectText =
         subjectSelect.options[subjectSelect.selectedIndex]?.text || "Subject";

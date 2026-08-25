@@ -512,6 +512,297 @@ def save_exam_marks():
         return jsonify({"error": "Failed to save marks"}), 500
 
 
+def _normalize_exam_stream(stream):
+    if stream in ("", "null", "None", None, "All"):
+        return None
+    return stream
+
+
+def _teacher_lesson_subject_ids(branch_id, class_id, stream, teacher_id):
+    query = Lesson.query.filter_by(
+        branch_id=branch_id,
+        class_id=class_id,
+        teacher_id=teacher_id,
+    )
+    if stream:
+        query = query.filter_by(stream=stream)
+    return {row.subject_id for row in query.all() if row.subject_id}
+
+
+def _exam_save_guards(exam_id):
+    exam = Exam.query.get(exam_id)
+    if not exam or exam.is_inactive:
+        return None, (jsonify({"error": "Exam not found"}), 404)
+    if exam.is_locked:
+        return None, (
+            jsonify({"error": "This exam is locked. Marks cannot be saved."}),
+            403,
+        )
+    if is_deadline_passed(exam_id):
+        return None, (
+            jsonify({
+                "error": "Teachers can no longer save marks. The entry deadline has passed."
+            }),
+            403,
+        )
+    return exam, None
+
+
+@admin_bp.route("/api/exam-class-learners")
+@login_required
+def api_exam_class_learners():
+    branch_id = request.args.get("branch_id", type=int)
+    class_id = request.args.get("class_id", type=int)
+    stream = _normalize_exam_stream(request.args.get("stream"))
+
+    if not branch_id or not class_id:
+        return jsonify({"error": "branch_id and class_id are required"}), 400
+    if not user_can_access_branch(branch_id):
+        return jsonify({"error": "forbidden"}), 403
+
+    try:
+        students_query = Student.query.filter_by(
+            branch_id=branch_id,
+            class_id=class_id,
+        ).order_by(Student.admission_number, Student.fullname)
+        if stream:
+            students_query = students_query.filter_by(stream=stream)
+
+        students = students_query.all()
+        return jsonify({
+            "students": [
+                {
+                    "id": student.id,
+                    "admission_number": student.admission_number,
+                    "full_name": student.fullname,
+                    "stream": student.stream or "",
+                }
+                for student in students
+            ]
+        })
+    except Exception as exc:
+        current_app.logger.error(
+            f"Error fetching class learners: {exc}", exc_info=True
+        )
+        return jsonify({"error": "Failed to load students"}), 500
+
+
+@admin_bp.route("/api/exam-learner-subjects")
+@login_required
+def api_exam_learner_subjects():
+    exam_id = request.args.get("exam_id", type=int)
+    student_id = request.args.get("student_id", type=int)
+    branch_id = request.args.get("branch_id", type=int)
+    class_id = request.args.get("class_id", type=int)
+    stream = _normalize_exam_stream(request.args.get("stream"))
+
+    if not all([exam_id, student_id, branch_id, class_id]):
+        return jsonify({"error": "Missing required parameters"}), 400
+    if not user_can_access_branch(branch_id):
+        return jsonify({"error": "forbidden"}), 403
+
+    try:
+        student = Student.query.get(student_id)
+        if (
+            not student
+            or student.branch_id != branch_id
+            or student.class_id != class_id
+        ):
+            return jsonify({"error": "Student not found in this class"}), 404
+        if stream and (student.stream or "") != stream:
+            return jsonify({"error": "Student not found in this stream"}), 404
+
+        paper_stream = _normalize_exam_stream(student.stream) or stream
+
+        allocations = StudentSubjectAllocation.query.filter_by(
+            student_id=student.id
+        ).all()
+        allocated_ids = [row.subject_id for row in allocations if row.subject_id]
+        if not current_user.is_admin:
+            allowed = _teacher_lesson_subject_ids(
+                branch_id, class_id, paper_stream, current_user.id
+            )
+            allocated_ids = [sid for sid in allocated_ids if sid in allowed]
+
+        if not allocated_ids:
+            return jsonify({
+                "student": {
+                    "id": student.id,
+                    "admission_number": student.admission_number,
+                    "full_name": student.fullname,
+                    "stream": student.stream or "",
+                },
+                "subjects": [],
+            })
+
+        subjects = (
+            Subject.query.filter(Subject.id.in_(allocated_ids))
+            .order_by(Subject.name)
+            .all()
+        )
+        papers = ExamPaper.query.filter_by(
+            exam_id=exam_id,
+            branch_id=branch_id,
+            class_id=class_id,
+            stream=paper_stream,
+        ).filter(ExamPaper.subject_id.in_(allocated_ids)).all()
+        paper_by_subject = {paper.subject_id: paper for paper in papers}
+        marks_by_paper = {}
+        if papers:
+            for row in StudentExamMark.query.filter(
+                StudentExamMark.exam_paper_id.in_([paper.id for paper in papers]),
+                StudentExamMark.student_id == student.id,
+            ).all():
+                marks_by_paper[row.exam_paper_id] = row.marks
+
+        return jsonify({
+            "student": {
+                "id": student.id,
+                "admission_number": student.admission_number,
+                "full_name": student.fullname,
+                "stream": student.stream or "",
+            },
+            "subjects": [
+                {
+                    "id": subject.id,
+                    "code": subject.code,
+                    "name": subject.name,
+                    "marks_out_of": (
+                        paper_by_subject[subject.id].marks_out_of
+                        if subject.id in paper_by_subject
+                        else 100
+                    ),
+                    "marks": (
+                        marks_by_paper.get(paper_by_subject[subject.id].id)
+                        if subject.id in paper_by_subject
+                        else None
+                    ),
+                }
+                for subject in subjects
+            ],
+        })
+    except Exception as exc:
+        current_app.logger.error(
+            f"Error fetching learner subjects: {exc}", exc_info=True
+        )
+        return jsonify({"error": "Failed to load subjects"}), 500
+
+
+@admin_bp.route("/api/save-exam-learner-marks", methods=["POST"])
+@login_required
+def save_exam_learner_marks():
+    data = request.get_json() or {}
+    exam_id = data.get("exam_id")
+    branch_id = data.get("branch_id")
+    class_id = data.get("class_id")
+    stream = _normalize_exam_stream(data.get("stream"))
+    student_id = data.get("student_id")
+    marks_list = data.get("marks") or []
+
+    if not all([exam_id, branch_id, class_id, student_id]):
+        return jsonify({"error": "Missing required data"}), 400
+    if not user_can_access_branch(branch_id):
+        return jsonify({"error": "forbidden"}), 403
+
+    _, error_response = _exam_save_guards(exam_id)
+    if error_response:
+        return error_response
+
+    student = Student.query.get(student_id)
+    if (
+        not student
+        or student.branch_id != int(branch_id)
+        or student.class_id != int(class_id)
+    ):
+        return jsonify({"error": "Student not found in this class"}), 404
+
+    paper_stream = _normalize_exam_stream(student.stream) or stream
+    allocated_ids = {
+        row.subject_id
+        for row in StudentSubjectAllocation.query.filter_by(student_id=student.id)
+        if row.subject_id
+    }
+    if not current_user.is_admin:
+        allowed = _teacher_lesson_subject_ids(
+            branch_id, class_id, paper_stream, current_user.id
+        )
+        allocated_ids &= allowed
+
+    try:
+        saved = 0
+        for item in marks_list:
+            subject_id = item.get("subject_id")
+            marks = item.get("marks")
+            if subject_id is None or marks is None or marks == "":
+                continue
+            subject_id = int(subject_id)
+            if subject_id not in allocated_ids:
+                continue
+            try:
+                marks_value = float(marks)
+            except (TypeError, ValueError):
+                continue
+
+            marks_out_of = item.get("marks_out_of") or 100
+            try:
+                marks_out_of = int(marks_out_of)
+            except (TypeError, ValueError):
+                marks_out_of = 100
+            if marks_out_of < 1:
+                marks_out_of = 100
+            if marks_value < 0 or marks_value > marks_out_of:
+                return jsonify({
+                    "error": f"Marks must be between 0 and {marks_out_of}."
+                }), 400
+
+            paper = ExamPaper.query.filter_by(
+                exam_id=exam_id,
+                branch_id=branch_id,
+                class_id=class_id,
+                stream=paper_stream,
+                subject_id=subject_id,
+            ).first()
+            if not paper:
+                paper = ExamPaper(
+                    exam_id=exam_id,
+                    branch_id=branch_id,
+                    class_id=class_id,
+                    stream=paper_stream,
+                    subject_id=subject_id,
+                    marks_out_of=marks_out_of,
+                )
+                db.session.add(paper)
+                db.session.flush()
+
+            record = StudentExamMark.query.filter_by(
+                exam_paper_id=paper.id,
+                student_id=student.id,
+            ).first()
+            if record:
+                record.marks = marks_value
+            else:
+                db.session.add(
+                    StudentExamMark(
+                        exam_paper_id=paper.id,
+                        student_id=student.id,
+                        marks=marks_value,
+                    )
+                )
+            saved += 1
+
+        if saved == 0:
+            return jsonify({"error": "Enter at least one mark before saving."}), 400
+
+        db.session.commit()
+        return jsonify({"success": True, "saved": saved})
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.error(
+            f"Saving learner marks failed: {exc}", exc_info=True
+        )
+        return jsonify({"error": "Failed to save marks"}), 500
+
+
 @admin_bp.route("/api/exams")
 @login_required
 def api_exams():
