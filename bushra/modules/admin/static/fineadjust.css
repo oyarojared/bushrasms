@@ -1600,15 +1600,15 @@
 
   margin-bottom: 4px;
 
-  background: #fff8f7;
+  background: #ffffff;
 
   color: #1f2937;
 
-  border-bottom: 1px solid rgba(255, 121, 121, 0.16);
+  border: 1px solid #dfe5ea;
 
   border-radius: 8px;
 
-  box-shadow: none;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
 .dashboard-context-inner {
@@ -1654,9 +1654,9 @@
 
   border-radius: 10px;
 
-  background: #ffffff;
+  background: #f8fafc;
 
-  border: 1px solid rgba(255, 121, 121, 0.22);
+  border: 1px solid #e5e7eb;
 
   box-shadow: none;
 }
@@ -1671,7 +1671,7 @@
 }
 
 .school-context-logo > i {
-  color: #ff7979;
+  color: #64748b;
   font-size: 1.25rem;
 }
 
@@ -1721,7 +1721,7 @@
 .school-context-motto span {
   margin-right: 3px;
 
-  color: #ff7979;
+  color: #64748b;
 
   font-weight: 700;
 }
@@ -1739,11 +1739,11 @@
   margin-left: 12px;
   padding: 5px 11px;
 
-  border: 1px solid #e8ecef;
+  border: 1px solid #e5e7eb;
 
   border-radius: 9px;
 
-  background: #fff;
+  background: #f8fafc;
 
   line-height: 1.15;
 }
@@ -1808,11 +1808,11 @@
 
   padding: 6px 11px 6px 7px;
 
-  border: 1px solid #e8ecef;
+  border: 1px solid #e5e7eb;
 
   border-radius: 12px;
 
-  background: #fff;
+  background: #f8fafc;
 
   box-shadow: none;
 }
@@ -1835,9 +1835,9 @@
 
   border-radius: 50%;
 
-  background: #fff5f5;
+  background: #eef2f6;
 
-  color: #ff7979;
+  color: #64748b;
 
   font-size: 1.65rem;
 }
@@ -1884,7 +1884,7 @@
 
   margin-top: 3px;
 
-  color: #ff7979;
+  color: #64748b;
 
   font-size: 0.62rem;
   font-weight: 600;
@@ -1906,11 +1906,11 @@
 
   padding: 7px 11px;
 
-  border: 1px solid rgba(255, 121, 121, 0.22);
+  border: 1px solid #e5e7eb;
 
   border-radius: 11px;
 
-  background: #fff;
+  background: #f8fafc;
 }
 
 .super-admin-icon {
@@ -1927,9 +1927,9 @@
 
   border-radius: 9px;
 
-  background: #fff5f5;
+  background: #eef2f6;
 
-  color: #ff7979;
+  color: #64748b;
 
   font-size: 1rem;
 }
@@ -1960,9 +1960,9 @@
 
   border-radius: 6px;
 
-  background: #fff5f5;
+  background: #eef2f6;
 
-  color: #ff7979;
+  color: #475569;
 
   font-size: 0.57rem;
   font-weight: 700;
@@ -2091,7 +2091,7 @@
   }
 
   .context-user-status {
-    border-color: #fff8f7;
+    border-color: #ffffff;
   }
 
   .context-user-info {
@@ -2620,12 +2620,15 @@
 }
 
 .sa-table thead th {
-  background: #f8fafc;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #6b7280;
+  padding: 0.48rem 0.85rem;
+  background: #2c3e50;
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  border-bottom: 1px solid #243442;
+  white-space: nowrap;
 }
 
 .sa-table tbody tr {
@@ -2648,8 +2651,11 @@
 
 .sa-col-adm {
   width: 88px;
-  color: #6b7280;
   font-variant-numeric: tabular-nums;
+}
+
+.sa-table tbody .sa-col-adm {
+  color: #6b7280;
 }
 
 .sa-col-assign {
