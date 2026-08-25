@@ -260,21 +260,24 @@ def compute_844_aggregate(all_subject_points):
 # =========================================================
 # Automatic comment based on marks
 # =========================================================
+SUBJECT_COMMENT_BANDS = [
+    (80, "Excellent."),
+    (70, "Very good."),
+    (60, "Good."),
+    (50, "Satisfactory."),
+    (40, "Fair"),
+    (30, "Need Improvement."),
+    (0, "Poor."),
+]
+
+
 def subject_comment(marks):
-    if marks >= 80:
-        return "Excellent."
-    elif marks >= 70:
-        return "Very good."
-    elif marks >= 60:
-        return "Good."
-    elif marks >= 50:
-        return "Satisfactory."
-    elif marks >= 40:
-        return "Fair"
-    elif marks >= 30:
-        return "Need Improvement."
-    else:
-        return "Poor."
+    if marks is None:
+        return None
+    for min_score, text in SUBJECT_COMMENT_BANDS:
+        if marks >= min_score:
+            return text
+    return "Poor."
 
 
 def _term_sort_key(term):

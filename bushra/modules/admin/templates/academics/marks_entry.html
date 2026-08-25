@@ -518,7 +518,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
   }
 
   .marks-entry-table thead th {
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.02em;
@@ -528,6 +528,103 @@ render_flash_messages, sidebar %} {% block side_nav %}
   .marks-entry-table tbody td {
     font-size: 0.82rem;
     vertical-align: middle;
+  }
+
+  .marks-entry-table-wrap--learner {
+    padding: 0.35rem 1rem 1rem;
+  }
+
+  .marks-entry-table--learner {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+  }
+
+  .marks-entry-table--learner thead th {
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .marks-entry-table--learner th,
+  .marks-entry-table--learner td {
+    padding: 0.38rem 0.7rem;
+    border-right: 1px solid #eceef1;
+  }
+
+  .marks-entry-table--learner th:last-child,
+  .marks-entry-table--learner td:last-child {
+    border-right: 0;
+  }
+
+  .marks-entry-table--learner tbody tr + tr td {
+    border-top: 1px solid #eceef1;
+  }
+
+  .marks-entry-table--learner .marks-input {
+    min-width: 64px;
+    max-width: 88px;
+    margin: 0 auto;
+  }
+
+  .marks-entry-teacher,
+  .marks-entry-grade {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .marks-entry-teacher {
+    color: #5b6570;
+  }
+
+  .marks-entry-grade {
+    color: #252a2f;
+  }
+
+  .marks-entry-grade.is-empty,
+  .marks-entry-remark.is-empty {
+    color: #98a1ad;
+    font-weight: 600;
+  }
+
+  .marks-entry-remark {
+    color: #5b6570;
+    font-weight: 600;
+    max-width: 220px;
+    line-height: 1.25;
+  }
+
+  .marks-entry-card-side {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex: 0 0 auto;
+  }
+
+  .marks-entry-card .marks-entry-grade {
+    min-width: 2.4rem;
+    text-align: center;
+    font-size: 0.82rem;
+  }
+
+  .marks-entry-card-foot {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex: 1 1 100%;
+    margin-top: 0.1rem;
+  }
+
+  .marks-entry-card-foot .marks-entry-remark {
+    max-width: none;
+    flex: 1 1 auto;
+    font-size: 0.74rem;
+  }
+
+  .marks-entry-card-foot .marks-entry-teacher {
+    font-size: 0.74rem;
   }
 
   .marks-input {
@@ -545,9 +642,10 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
   .marks-entry-card {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: 0.55rem 0.75rem;
     padding: 0.7rem 0.8rem;
     border: 1px solid #edf0f2;
     border-radius: 10px;
@@ -774,7 +872,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
     const marksEntryClosed = {{ marks_entry_closed | default(false) | tojson }};
 
     let currentStudents = { students: [] };
-    let currentLearner = { student: null, subjects: [] };
+    let currentLearner = { student: null, subjects: [], grading: null };
     let entryMode = "subject";
     let sortBy = "admission_number";
     let searchQuery = "";
@@ -861,7 +959,9 @@ render_flash_messages, sidebar %} {% block side_nav %}
     }
 
     function scrollStudentsIntoView() {
-      const target = marksSearchBar;
+      const target = isLearnerMode()
+        ? studentsContainer
+        : marksSearchBar;
       const scroller = document.querySelector(".main-content");
       if (!target || !scroller || target.classList.contains("d-none")) {
         focusFirstMarksInput();
@@ -934,7 +1034,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       if (!learnerSelect) return;
       learnerSelect.innerHTML = '<option value="">Select learner</option>';
       learnerSelect.disabled = true;
-      currentLearner = { student: null, subjects: [] };
+      currentLearner = { student: null, subjects: [], grading: null };
     }
 
     function classSelectionReady() {
@@ -954,12 +1054,10 @@ render_flash_messages, sidebar %} {% block side_nav %}
       searchQuery = "";
       marksStudentSearch.value = "";
       marksSearchClear.classList.add("d-none");
-      marksStudentSearch.placeholder = isLearnerMode()
-        ? "Search subjects…"
-        : "Search by adm no or name…";
+      marksStudentSearch.placeholder = "Search by adm no or name…";
 
       currentStudents = { students: [] };
-      currentLearner = { student: null, subjects: [] };
+      currentLearner = { student: null, subjects: [], grading: null };
       studentsContainer.innerHTML = "";
       marksSaveBar.classList.add("d-none");
       marksSearchBar.classList.add("d-none");
@@ -1041,7 +1139,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
         return;
       }
 
-      currentLearner = { student: null, subjects: [] };
+      currentLearner = { student: null, subjects: [], grading: null };
       studentsContainer.innerHTML = "";
       setSetupHint("Loading subjects…");
       saveMarksBtn.disabled = true;
@@ -1061,6 +1159,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
           currentLearner = {
             student: data.student || null,
             subjects: data.subjects || [],
+            grading: data.grading || null,
           };
           renderLearnerSubjects({ preserveTypedMarks: false });
           scrollStudentsIntoView();
@@ -1071,10 +1170,97 @@ render_flash_messages, sidebar %} {% block side_nav %}
         });
     }
 
-    function subjectMatchesSearch(subject, query) {
-      const code = String(subject.code || "").toLowerCase();
-      const name = String(subject.name || "").toLowerCase();
-      return code.includes(query) || name.includes(query);
+    function is844Grading() {
+      return currentLearner.grading?.type === "844";
+    }
+
+    function gradeColumnLabel() {
+      return is844Grading() ? "Grade" : "Perf. Level";
+    }
+
+    function remarkColumnLabel() {
+      return is844Grading() ? "Comment" : "Descriptor";
+    }
+
+    function emptyOutcome() {
+      return { grade: "—", remark: "—" };
+    }
+
+    function outcomeFromMarks(subject, marks) {
+      if (marks === "" || marks === null || marks === undefined) return emptyOutcome();
+      const value = Number(marks);
+      const outOf = Number(subject?.marks_out_of) || 100;
+      if (!Number.isFinite(value) || outOf <= 0) return emptyOutcome();
+      const score = outOf === 100 ? value : Math.round((value / outOf) * 100);
+      const grading = currentLearner.grading;
+      if (!grading) return emptyOutcome();
+
+      if (grading.type === "844") {
+        const category = String(subject?.category || "").toUpperCase();
+        const bands = grading.scales?.[category] || [];
+        let grade = "—";
+        for (const band of bands) {
+          const minS = Number(band[0]);
+          const maxS = Number(band[1]);
+          const letter = band[2];
+          if (score >= minS && score <= maxS) {
+            grade = letter || "—";
+            break;
+          }
+        }
+        let remark = "—";
+        for (const band of grading.comments || []) {
+          if (score >= Number(band[0])) {
+            remark = band[1] || "—";
+            break;
+          }
+        }
+        return { grade, remark: grade === "—" ? "—" : remark };
+      }
+
+      const boundaries = grading.boundaries || [];
+      if (!boundaries.length) return emptyOutcome();
+      for (const boundary of boundaries) {
+        if (score >= boundary.min_score && score <= boundary.max_score) {
+          return {
+            grade: boundary.performance_level || "—",
+            remark: boundary.descriptor || "—",
+          };
+        }
+      }
+      return emptyOutcome();
+    }
+
+    function gradeCellHtml(grade) {
+      const empty = !grade || grade === "—";
+      return `<span class="marks-entry-grade${empty ? " is-empty" : ""}">${escapeHtml(grade || "—")}</span>`;
+    }
+
+    function remarkCellHtml(remark) {
+      const empty = !remark || remark === "—";
+      return `<span class="marks-entry-remark${empty ? " is-empty" : ""}">${escapeHtml(remark || "—")}</span>`;
+    }
+
+    function updateLearnerGradeCell(input) {
+      if (!isLearnerMode()) return;
+      const row = input.closest(".marks-entry-item");
+      if (!row) return;
+      const gradeEl = row.querySelector(".marks-entry-grade");
+      const remarkEl = row.querySelector(".marks-entry-remark");
+      const subject = currentLearner.subjects.find(
+        (item) => String(item.id) === String(row.dataset.subjectId)
+      );
+      if (!subject) return;
+      const invalid = input.classList.contains("is-invalid") || input.value === "";
+      const outcome = invalid ? emptyOutcome() : outcomeFromMarks(subject, input.value);
+      if (gradeEl) {
+        gradeEl.textContent = outcome.grade;
+        gradeEl.classList.toggle("is-empty", outcome.grade === "—");
+      }
+      if (remarkEl) {
+        remarkEl.textContent = outcome.remark;
+        remarkEl.classList.toggle("is-empty", outcome.remark === "—");
+      }
     }
 
     function renderLearnerSubjects({ preserveTypedMarks = true } = {}) {
@@ -1087,27 +1273,23 @@ render_flash_messages, sidebar %} {% block side_nav %}
         return;
       }
 
-      const query = searchQuery.trim().toLowerCase();
       const studentName = currentLearner.student?.full_name || "Learner";
       const adm = currentLearner.student?.admission_number || "";
       let tableRows = "";
       let cards = "";
-      let matchCount = 0;
 
-      subjects.forEach((subject, i) => {
+      subjects.forEach((subject) => {
         const markValue =
           subject.marks !== null && subject.marks !== undefined ? subject.marks : "";
         const maxMarks = subject.marks_out_of || 100;
-        const isMatch = query && subjectMatchesSearch(subject, query);
-        if (isMatch) matchCount += 1;
-        const matchClass = isMatch ? " marks-entry-item--match" : "";
-        const hiddenClass = query && !isMatch ? " d-none" : "";
+        const initials = subject.teacher_initials || "—";
+        const outcome = outcomeFromMarks(subject, markValue);
         const safeName = escapeHtml(subject.name);
         const safeCode = escapeHtml(subject.code || "");
+        const safeInitials = escapeHtml(initials);
 
         tableRows += `
-          <tr class="marks-entry-item${matchClass}${hiddenClass}" data-subject-id="${subject.id}">
-            <td class="text-center text-muted">${i + 1}</td>
+          <tr class="marks-entry-item" data-subject-id="${subject.id}">
             <td class="text-center">${safeCode}</td>
             <td>${safeName}</td>
             <td>
@@ -1122,27 +1304,36 @@ render_flash_messages, sidebar %} {% block side_nav %}
                 ${marksEntryClosed ? "disabled" : ""}
               >
             </td>
-            <td class="text-muted">/ ${maxMarks}</td>
+            <td class="text-center">${gradeCellHtml(outcome.grade)}</td>
+            <td>${remarkCellHtml(outcome.remark)}</td>
+            <td class="text-center marks-entry-teacher">${safeInitials}</td>
           </tr>
         `;
 
         cards += `
-          <div class="marks-entry-card marks-entry-item${matchClass}${hiddenClass}${markValue === "" ? " is-empty" : ""}" data-subject-id="${subject.id}">
+          <div class="marks-entry-card marks-entry-item${markValue === "" ? " is-empty" : ""}" data-subject-id="${subject.id}">
             <div class="marks-entry-card-meta">
               <div class="marks-entry-card-name">${safeName}</div>
-              <div class="marks-entry-card-adm">${safeCode} · out of ${maxMarks}</div>
+              <div class="marks-entry-card-adm">${safeCode}</div>
             </div>
-            <input
-              type="number"
-              class="form-control marks-input"
-              min="0"
-              max="${maxMarks}"
-              inputmode="numeric"
-              autocomplete="off"
-              value="${markValue}"
-              aria-label="Marks for ${safeName}"
-              ${marksEntryClosed ? "disabled" : ""}
-            >
+            <div class="marks-entry-card-side">
+              <input
+                type="number"
+                class="form-control marks-input"
+                min="0"
+                max="${maxMarks}"
+                inputmode="numeric"
+                autocomplete="off"
+                value="${markValue}"
+                aria-label="Marks for ${safeName}"
+                ${marksEntryClosed ? "disabled" : ""}
+              >
+              ${gradeCellHtml(outcome.grade)}
+            </div>
+            <div class="marks-entry-card-foot">
+              ${remarkCellHtml(outcome.remark)}
+              <span class="marks-entry-teacher">${safeInitials}</span>
+            </div>
           </div>
         `;
       });
@@ -1152,15 +1343,16 @@ render_flash_messages, sidebar %} {% block side_nav %}
           <div class="marks-students-card-header">
             <h6 class="marks-students-title">${escapeHtml(studentName)}${adm ? ` · Adm ${escapeHtml(adm)}` : ""}</h6>
           </div>
-          <div class="marks-entry-table-wrap table-responsive">
-            <table class="table table-sm table-hover marks-entry-table mb-0">
+          <div class="marks-entry-table-wrap marks-entry-table-wrap--learner table-responsive">
+            <table class="table table-sm table-hover marks-entry-table marks-entry-table--learner mb-0">
               <thead class="table-light">
                 <tr>
-                  <th class="text-center">#</th>
                   <th class="text-center">Code</th>
                   <th>Subject</th>
-                  <th>Marks</th>
-                  <th>Out of</th>
+                  <th class="text-center">Marks</th>
+                  <th class="text-center">${escapeHtml(gradeColumnLabel())}</th>
+                  <th>${escapeHtml(remarkColumnLabel())}</th>
+                  <th class="text-center">Teacher</th>
                 </tr>
               </thead>
               <tbody>${tableRows}</tbody>
@@ -1171,12 +1363,9 @@ render_flash_messages, sidebar %} {% block side_nav %}
       `;
 
       marksSaveBar.classList.remove("d-none");
-      marksSearchBar.classList.remove("d-none");
-      marksSearchClear.classList.toggle("d-none", !query);
+      marksSearchBar.classList.add("d-none");
 
-      if (query && matchCount === 0) {
-        setSetupHint(`No subject found for "${searchQuery.trim()}".`);
-      } else if (marksEntryClosed) {
+      if (marksEntryClosed) {
         setSetupHint("Teachers can no longer save marks. You can view marks but cannot save.");
       } else {
         setSetupHint("Enter marks for this learner, then tap Save Marks.");
@@ -1504,6 +1693,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       }
       feedback.textContent = message;
       input.value = "";
+      updateLearnerGradeCell(input);
       updateMarksCount();
     }
 
@@ -1760,7 +1950,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       if (this.value) {
         loadLearnerSubjects();
       } else {
-        currentLearner = { student: null, subjects: [] };
+        currentLearner = { student: null, subjects: [], grading: null };
         resetStudents("Select a learner to load their subjects.");
         setSetupHint("Choose the learner to enter all subject marks.");
       }
@@ -1775,6 +1965,11 @@ render_flash_messages, sidebar %} {% block side_nav %}
           subjectSelect.options[subjectSelect.selectedIndex]?.text || "Subject";
         renderStudents(subjectText);
       }
+    });
+
+    document.addEventListener("focusout", function (e) {
+      if (!e.target.classList.contains("marks-input")) return;
+      updateLearnerGradeCell(e.target);
     });
 
     document.addEventListener("input", function (e) {
@@ -1828,12 +2023,9 @@ render_flash_messages, sidebar %} {% block side_nav %}
     saveMarksBtn.addEventListener("click", collectAndSaveMarks);
 
     marksStudentSearch.addEventListener("input", () => {
+      if (isLearnerMode()) return;
       searchQuery = marksStudentSearch.value;
       marksSearchClear.classList.toggle("d-none", !searchQuery.trim());
-      if (isLearnerMode()) {
-        if (currentLearner.subjects?.length) renderLearnerSubjects();
-        return;
-      }
       const subjectText =
         subjectSelect.options[subjectSelect.selectedIndex]?.text || "Subject";
       if (subjectSelect.value && currentStudents.students?.length) {
@@ -1842,6 +2034,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
     });
 
     marksStudentSearch.addEventListener("keydown", (event) => {
+      if (isLearnerMode()) return;
       if (event.key === "Enter") {
         event.preventDefault();
         focusFirstSearchMatch();
@@ -1849,16 +2042,10 @@ render_flash_messages, sidebar %} {% block side_nav %}
     });
 
     marksSearchClear.addEventListener("click", () => {
+      if (isLearnerMode()) return;
       searchQuery = "";
       marksStudentSearch.value = "";
       marksSearchClear.classList.add("d-none");
-      if (isLearnerMode()) {
-        if (currentLearner.subjects?.length) {
-          renderLearnerSubjects();
-          marksStudentSearch.focus();
-        }
-        return;
-      }
       const subjectText =
         subjectSelect.options[subjectSelect.selectedIndex]?.text || "Subject";
       if (subjectSelect.value && currentStudents.students?.length) {

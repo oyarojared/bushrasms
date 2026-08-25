@@ -27,13 +27,17 @@ from ..utils.exam_deadlines import is_deadline_passed
 
 from ..utils import resolve_grade, user_can_access_branch
 from ..services.grading_844 import (
+    EIGHT_FOUR_FOUR_GRADING,
+    SUBJECT_COMMENT_BANDS,
     normalize_form_name,
     is_844_form,
     resolve_844_grade,
     subject_comment,
     compute_844_aggregate,
+    teacher_initials,
 )
 from flask_login import login_required
+from sqlalchemy.orm import joinedload
 from ..utils.route_protect import admin_required
 from flask import render_template, make_response, send_file
 from weasyprint import HTML, CSS
@@ -523,6 +527,72 @@ def _normalize_exam_stream(stream):
     return stream
 
 
+def _class_grading_payload(class_id):
+    class_obj = BranchClasses.query.get(class_id)
+    comments = [list(band) for band in SUBJECT_COMMENT_BANDS]
+    if not class_obj:
+        return {"type": "cbc", "boundaries": [], "scales": {}, "comments": comments}
+
+    if is_844_form(normalize_form_name(class_obj.grade_form)):
+        return {
+            "type": "844",
+            "boundaries": [],
+            "scales": {
+                category: [list(band) for band in bands]
+                for category, bands in EIGHT_FOUR_FOUR_GRADING.items()
+            },
+            "comments": comments,
+        }
+
+    mapping = (
+        GradeGradingScheme.query.join(GradeGradingScheme.scheme)
+        .filter(GradeGradingScheme.grade_id == class_id)
+        .order_by(
+            GradingScheme.is_active.desc(),
+            GradingScheme.created_at.desc(),
+        )
+        .first()
+    )
+    boundaries = []
+    if mapping:
+        boundaries = [
+            {
+                "min_score": row.min_score,
+                "max_score": row.max_score,
+                "performance_level": row.performance_level,
+                "descriptor": row.descriptor,
+            }
+            for row in GradingBoundary.query.filter_by(scheme_id=mapping.scheme_id)
+            .order_by(GradingBoundary.min_score.desc())
+            .all()
+        ]
+    return {
+        "type": "cbc",
+        "boundaries": boundaries,
+        "scales": {},
+        "comments": comments,
+    }
+
+
+def _lesson_for_subject_stream(lessons, subject_id, stream):
+    stream_key = (stream or "").strip()
+    fallback = None
+    for lesson in lessons:
+        if lesson.subject_id != subject_id:
+            continue
+        lesson_stream = (lesson.stream or "").strip()
+        if stream_key and lesson_stream == stream_key:
+            return lesson
+        if not fallback:
+            fallback = lesson
+    return fallback
+
+
+def _subject_teacher_initials(lessons, subject_id, stream):
+    lesson = _lesson_for_subject_stream(lessons, subject_id, stream)
+    return teacher_initials(lesson.teacher if lesson else None)
+
+
 def _teacher_lesson_subject_ids(branch_id, class_id, stream, teacher_id):
     query = Lesson.query.filter_by(
         branch_id=branch_id,
@@ -637,6 +707,7 @@ def api_exam_learner_subjects():
                     "full_name": student.fullname,
                     "stream": student.stream or "",
                 },
+                "grading": _class_grading_payload(class_id),
                 "subjects": [],
             })
 
@@ -660,6 +731,12 @@ def api_exam_learner_subjects():
             ).all():
                 marks_by_paper[row.exam_paper_id] = row.marks
 
+        lessons = (
+            Lesson.query.filter_by(branch_id=branch_id, class_id=class_id)
+            .options(joinedload(Lesson.teacher))
+            .all()
+        )
+
         return jsonify({
             "student": {
                 "id": student.id,
@@ -667,11 +744,16 @@ def api_exam_learner_subjects():
                 "full_name": student.fullname,
                 "stream": student.stream or "",
             },
+            "grading": _class_grading_payload(class_id),
             "subjects": [
                 {
                     "id": subject.id,
                     "code": subject.code,
                     "name": subject.name,
+                    "category": subject.category,
+                    "teacher_initials": _subject_teacher_initials(
+                        lessons, subject.id, paper_stream
+                    ),
                     "marks_out_of": (
                         paper_by_subject[subject.id].marks_out_of
                         if subject.id in paper_by_subject
