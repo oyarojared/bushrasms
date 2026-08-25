@@ -619,7 +619,12 @@ def generate_student_report(student: Student, exam: Exam, ctx=None, stream_overr
     subjects = []
     all_subject_points = []
 
+    report_subjects.sort(key=lambda item: (item.name or "").lower())
+
     for subject in report_subjects:
+        marks = None
+        lesson = None
+
         if ctx is None:
             exam_paper = (
                 ExamPaper.query
@@ -644,22 +649,17 @@ def generate_student_report(student: Student, exam: Exam, ctx=None, stream_overr
                     .first()
                 )
 
-            if not exam_paper:
-                continue
-
-            mark = (
-                StudentExamMark.query
-                .filter_by(
-                    exam_paper_id=exam_paper.id,
-                    student_id=student.id,
+            if exam_paper:
+                mark = (
+                    StudentExamMark.query
+                    .filter_by(
+                        exam_paper_id=exam_paper.id,
+                        student_id=student.id,
+                    )
+                    .first()
                 )
-                .first()
-            )
-
-            if not mark:
-                continue
-
-            marks = mark.marks
+                if mark:
+                    marks = mark.marks
 
             lesson = (
                 Lesson.query
@@ -685,19 +685,24 @@ def generate_student_report(student: Student, exam: Exam, ctx=None, stream_overr
             paper = _paper_for_subject(
                 ctx["papers_by_stream_subject"], stream_key, subject.id
             )
-            if not paper:
-                continue
-
-            marks = ctx["marks_by_student_subject"].get((student.id, subject.id))
-            if marks is None:
-                continue
+            if paper:
+                marks = ctx["marks_by_student_subject"].get((student.id, subject.id))
 
             lesson = _lesson_for_subject(
                 ctx["lessons_by_stream_subject"], stream_key, subject.id
             )
 
-        grade, points = resolve_844_grade(marks, subject.category)
         teacher = lesson.teacher if lesson else None
+        if marks is None:
+            grade, points, comment = None, None, None
+        else:
+            grade, points = resolve_844_grade(marks, subject.category)
+            comment = subject_comment(marks)
+            all_subject_points.append({
+                "subject": subject.name,
+                "points": points,
+                "category": subject.category,
+            })
 
         subjects.append({
             "subject": subject.name,
@@ -708,67 +713,22 @@ def generate_student_report(student: Student, exam: Exam, ctx=None, stream_overr
             "points": points,
             "teacher": teacher.fullname if teacher else None,
             "teacher_initials": teacher_initials(teacher),
-            "comment": subject_comment(marks),
-        })
-
-        all_subject_points.append({
-            "subject": subject.name,
-            "points": points,
-            "category": subject.category,
+            "comment": comment,
         })
 
     # ==========================
     # AGGREGATE POINT CALCULATION
+    # Unmarked subjects are omitted so missing papers never count as 0.
     # ==========================
-    # 1. Include Mathematics
-    math_points = [s["points"] for s in all_subject_points if s["category"].upper() == "MATHEMATICS"]
-    math_points = math_points[0] if math_points else 0
-
-    # 2. Highest language (English / Kiswahili)
-    language_points = [s["points"] for s in all_subject_points if s["category"].upper() == "LANGUAGES"]
-    language_points = max(language_points) if language_points else 0
-
-
-    # 3. Remaining subjects → exclude ONLY the selected math and best language
-    #  so the other language (if present) can still be counted
-
-    # get math index
-    math_index = next(
-        (i for i, s in enumerate(all_subject_points) if s["category"].upper() == "MATHEMATICS"),
-        None
-    )
-
-    # get best language index
-    language_indices = [
-        i for i, s in enumerate(all_subject_points)
-        if s["category"].upper() == "LANGUAGES"
-    ]
-
-    best_language_index = None
-    if language_indices:
-        best_language_index = max(language_indices, key=lambda i: all_subject_points[i]["points"])
-
-    # collect remaining subjects
-    remaining_points = [
-        s["points"]
-        for i, s in enumerate(all_subject_points)
-        if i not in (math_index, best_language_index)
-    ]
-
-    best_five = sorted(remaining_points, reverse=True)[:5]
-
-    total_points = math_points + language_points + sum(best_five)
+    aggregate = compute_844_aggregate(all_subject_points)
+    total_points = aggregate["total_points"]
+    final_grade = aggregate["mean_grade"]
 
     # ==========================
-    # FINAL GRADE
+    # MEAN SCORE (scored subjects only)
     # ==========================
-    final_grade = aggregate_to_final_grade(total_points)
-
-    # ==========================
-    # MEAN SCORE (all subjects)
-    # ==========================
-    total_marks = sum(s["marks"] for s in subjects)
-    mean_score = round(total_marks / len(subjects), 2) if subjects else 0
+    scored_marks = [row["marks"] for row in subjects if row["marks"] is not None]
+    mean_score = round(sum(scored_marks) / len(scored_marks), 2) if scored_marks else None
 
     if ctx is None:
         school_logo = build_pdf_image_data_uri(
@@ -800,7 +760,7 @@ def generate_student_report(student: Student, exam: Exam, ctx=None, stream_overr
             "total_points": total_points,
             "mean_score": mean_score,
             "final_grade": final_grade,
-            "remarks": performance_remark(total_points),
+            "remarks": performance_remark(total_points) if scored_marks else None,
         },
         "class_teacher": class_teacher.teacher.fullname if class_teacher and class_teacher.teacher else None,
         "school_logo": school_logo,
