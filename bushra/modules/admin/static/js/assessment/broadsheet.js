@@ -4,6 +4,7 @@ const bsStream = document.getElementById("bs-stream");
 const bsExam = document.getElementById("bs-exam");
 const bsBtn = document.getElementById("load-broadsheet");
 const bsContainer = document.getElementById("broadsheetContainer");
+const lastBroadsheet = { data: null, stream: null, includeGrades: true };
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -109,13 +110,38 @@ function formatMarkValue(value) {
   return String(value);
 }
 
-function formatMarkCell(mark, gradingType) {
+function formatMarkCell(mark, gradingType, includeGrades = true) {
   if (!mark || mark.marks === "-") {
     return "<td>—</td>";
   }
 
-  const gradeHtml = gradeBadge(mark.grade, gradingType);
+  const gradeHtml = includeGrades ? gradeBadge(mark.grade, gradingType) : "";
   return `<td><span class="bs-mark-value">${escapeHtml(formatMarkValue(mark.marks))}</span>${gradeHtml}</td>`;
+}
+
+function studentMarkTotals(student, subjects) {
+  const values = [];
+  subjects.forEach((subj) => {
+    const mark = student.marks?.[subj.id];
+    const raw = mark?.marks;
+    if (raw === "-" || raw == null || raw === "") return;
+    const num = Number(raw);
+    if (!Number.isNaN(num) && Number.isFinite(num)) values.push(num);
+  });
+  if (!values.length) return { total: "—", mean: "—" };
+  const total = Math.round(values.reduce((sum, value) => sum + value, 0));
+  const mean = Math.round((total / values.length) * 10) / 10;
+  return { total: String(total), mean: String(mean) };
+}
+
+function formatPointsCell(value) {
+  if (value == null || value === "") return "—";
+  return String(value);
+}
+
+function formatMeanGradeCell(grade, gradingType) {
+  if (!grade) return "—";
+  return gradeBadge(grade, gradingType);
 }
 
 function renderPerformanceLegend(gradingType) {
@@ -232,7 +258,7 @@ function renderAtRiskAlert(atRisk) {
   `;
 }
 
-function renderBroadsheetTable(students, subjects, atRisk, gradingType) {
+function renderBroadsheetTableGrid(students, subjects, atRisk, gradingType, includeGrades = true) {
   const headerCells = subjects
     .map(
       (subj) => `
@@ -248,19 +274,43 @@ function renderBroadsheetTable(students, subjects, atRisk, gradingType) {
     .map((student) => {
       const isAtRisk = atRisk.some((entry) => entry.id === student.id);
       const subjectCells = subjects
-        .map((subj) => formatMarkCell(student.marks[subj.id], gradingType))
+        .map((subj) => formatMarkCell(student.marks[subj.id], gradingType, includeGrades))
         .join("");
+      const totals = studentMarkTotals(student, subjects);
 
       return `
         <tr class="${isAtRisk ? "bs-row-risk" : ""}">
           <td>${escapeHtml(student.admission_number)}</td>
           <td class="bs-col-name">${escapeHtml(student.full_name)}</td>
           ${subjectCells}
+          <td>${escapeHtml(totals.total)}</td>
+          <td>${escapeHtml(totals.mean)}</td>
+          <td>${escapeHtml(formatPointsCell(student.total_points))}</td>
+          <td>${formatMeanGradeCell(student.mean_grade, gradingType)}</td>
         </tr>
       `;
     })
     .join("");
 
+  return `
+    <table class="bs-table">
+      <thead>
+        <tr>
+          <th>Adm</th>
+          <th class="text-start">Name</th>
+          ${headerCells}
+          <th>Total</th>
+          <th>Mean</th>
+          <th>Pts</th>
+          <th>Mean Grade</th>
+        </tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+  `;
+}
+
+function renderBroadsheetTable(students, subjects, atRisk, gradingType, includeGrades = true) {
   return `
     <div class="bs-section">
       <div class="bs-section-header">
@@ -271,16 +321,7 @@ function renderBroadsheetTable(students, subjects, atRisk, gradingType) {
       </div>
       <div class="bs-section-body" style="padding:0.55rem;">
         <div class="bs-table-wrap">
-          <table class="bs-table">
-            <thead>
-              <tr>
-                <th>Adm</th>
-                <th class="text-start">Name</th>
-                ${headerCells}
-              </tr>
-            </thead>
-            <tbody>${bodyRows}</tbody>
-          </table>
+          ${renderBroadsheetTableGrid(students, subjects, atRisk, gradingType, includeGrades)}
         </div>
       </div>
     </div>
@@ -327,7 +368,7 @@ function renderMissingMarks(missing) {
   `;
 }
 
-function renderBroadsheetDocument(data, stream) {
+function renderBroadsheetDocument(data, stream, includeGrades = true) {
   const gradingType = data.grading_type === "844" ? "844" : "cbc";
   const gradingLabel = gradingType === "844" ? "8-4-4" : "CBC";
   const students = data.students || [];
@@ -386,6 +427,13 @@ function renderBroadsheetDocument(data, stream) {
       </div>
 
       <div class="bs-action-bar">
+        <label class="bs-include-grades">
+          <input type="checkbox" id="bsIncludeGrades" ${includeGrades ? "checked" : ""}>
+          Include grades
+        </label>
+        <button type="button" id="bsExcelBtn" class="bs-btn bs-btn-outline">
+          <i class="bi bi-file-earmark-excel"></i> Excel
+        </button>
         <button type="button" id="fullPDFBtn" class="bs-btn bs-btn-primary">
           <i class="bi bi-file-earmark-pdf"></i> Full Analysis PDF
         </button>
@@ -395,7 +443,7 @@ function renderBroadsheetDocument(data, stream) {
       </div>
 
       ${renderAtRiskAlert(atRisk)}
-      ${renderBroadsheetTable(students, subjects, atRisk, gradingType)}
+      ${renderBroadsheetTable(students, subjects, atRisk, gradingType, includeGrades)}
       ${renderMissingMarks(missing)}
       ${renderSubjectPerformanceSection(subjects, subjectAnalysis, gradingType)}
     </div>
@@ -443,6 +491,22 @@ function bindBroadsheetActions(averages, subjects, subjectAnalysis, gradingType)
     openBroadsheetPdf("/admin/api/broadsheet/missing-pdf");
   });
 
+  document.getElementById("bsExcelBtn")?.addEventListener("click", downloadBroadsheetExcel);
+
+  document.getElementById("bsIncludeGrades")?.addEventListener("change", (event) => {
+    lastBroadsheet.includeGrades = event.target.checked;
+    const wrap = document.querySelector(".bs-table-wrap");
+    if (!wrap || !lastBroadsheet.data) return;
+    const data = lastBroadsheet.data;
+    wrap.innerHTML = renderBroadsheetTableGrid(
+      data.students || [],
+      data.subjects || [],
+      data.at_risk_learners || [],
+      data.grading_type === "844" ? "844" : "cbc",
+      lastBroadsheet.includeGrades,
+    );
+  });
+
   const chartCanvas = document.getElementById("subjectMeansChart");
   if (!chartCanvas || typeof Chart === "undefined") return;
 
@@ -488,6 +552,83 @@ function bindBroadsheetActions(averages, subjects, subjectAnalysis, gradingType)
 
 function atRiskToggleNeeded() {
   return Boolean(document.getElementById("showMoreAtRisk"));
+}
+
+function filenameFromDisposition(header, fallback) {
+  if (!header) return fallback;
+  const utfMatch = header.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utfMatch) {
+    try {
+      return decodeURIComponent(utfMatch[1]);
+    } catch (err) {
+      return utfMatch[1];
+    }
+  }
+  const quotedMatch = header.match(/filename="([^"]+)"/i);
+  if (quotedMatch) return quotedMatch[1];
+  const plainMatch = header.match(/filename=([^;]+)/i);
+  if (plainMatch) return plainMatch[1].trim();
+  return fallback;
+}
+
+function downloadBroadsheetExcel() {
+  const branchId = bsBranch.value;
+  const classId = bsGrade.value;
+  const examId = bsExam.value;
+  const stream = bsStream.value || "";
+
+  if (!branchId || !classId || !examId) {
+    alert("Please select school, grade, and exam.");
+    return;
+  }
+
+  if (!requireStreamSelection()) return;
+
+  const params = new URLSearchParams({
+    branch_id: branchId,
+    class_id: classId,
+    exam_id: examId,
+    include_grades: lastBroadsheet.includeGrades ? "1" : "0",
+  });
+
+  if (stream) {
+    params.append("stream", stream);
+  }
+
+  if (typeof blockUI === "function") {
+    blockUI("Generating Excel", "Preparing spreadsheet…");
+  }
+
+  fetch(`/admin/api/broadsheet/excel?${params.toString()}`)
+    .then(async (res) => {
+      const contentType = res.headers.get("content-type") || "";
+      if (!res.ok || contentType.includes("application/json")) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Failed to generate Excel");
+      }
+      const filename = filenameFromDisposition(
+        res.headers.get("content-disposition"),
+        "broadsheet.xlsx",
+      );
+      const blob = await res.blob();
+      return { blob, filename };
+    })
+    .then(({ blob, filename }) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    })
+    .catch((err) => {
+      alert(err.message || "Failed to generate Excel");
+    })
+    .finally(() => {
+      if (typeof unblockUI === "function") unblockUI();
+    });
 }
 
 function openBroadsheetPdf(path) {
@@ -597,7 +738,13 @@ bsBtn.addEventListener("click", function () {
       const averages = data.subject_averages || {};
       const gradingType = data.grading_type === "844" ? "844" : "cbc";
 
-      bsContainer.innerHTML = renderBroadsheetDocument(data, stream);
+      lastBroadsheet.data = data;
+      lastBroadsheet.stream = stream;
+      bsContainer.innerHTML = renderBroadsheetDocument(
+        data,
+        stream,
+        lastBroadsheet.includeGrades,
+      );
       bindBroadsheetActions(
         averages,
         subjects,

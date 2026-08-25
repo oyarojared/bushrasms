@@ -9,7 +9,12 @@ from ....modals.branches_db import BranchClasses
 from ....modals.students_db import Student, StudentSubjectAllocation
 from ....modals.subjects_db import Subject, SubjectEligibility, Lesson
 from ....modals.staff_db import Teacher, ClassTeacher
-from ..services.report import build_broadsheet_data, compute_full_analysis
+from ..services.report import (
+    build_broadsheet_data,
+    build_broadsheet_excel,
+    broadsheet_excel_filename,
+    compute_full_analysis,
+)
 from ..services.grades import (
     filter_active_classes,
     is_archived_class_name,
@@ -30,7 +35,7 @@ from ..services.grading_844 import (
 )
 from flask_login import login_required
 from ..utils.route_protect import admin_required
-from flask import render_template, make_response
+from flask import render_template, make_response, send_file
 from weasyprint import HTML, CSS
 from ..utils import get_accessible_branches_query
 
@@ -1384,6 +1389,46 @@ def api_broadsheet():
     except Exception:
         current_app.logger.exception("Error building broadsheet")
         return jsonify({"error": "Failed to load broadsheet"}), 500
+
+
+@admin_bp.route("/api/broadsheet/excel")
+@login_required
+def broadsheet_excel():
+    branch_id = request.args.get("branch_id", type=int)
+    class_id = request.args.get("class_id", type=int)
+    exam_id = request.args.get("exam_id", type=int)
+    stream = request.args.get("stream", default=None, type=str)
+    include_grades = str(request.args.get("include_grades", "1")).lower() not in (
+        "0",
+        "false",
+        "no",
+    )
+
+    try:
+        data = build_broadsheet_data(branch_id, class_id, exam_id, stream)
+        if not data.get("students"):
+            return jsonify({"error": "No learners found for this selection."}), 404
+
+        workbook = build_broadsheet_excel(data, include_grades=include_grades)
+        payload = workbook.getvalue()
+        workbook.seek(0)
+
+        filename = broadsheet_excel_filename(data)
+
+        response = send_file(
+            workbook,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True,
+            download_name=filename,
+        )
+        response.headers["Content-Length"] = str(len(payload))
+        return response
+
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception:
+        current_app.logger.exception("Error generating broadsheet Excel")
+        return jsonify({"error": "Failed to generate Excel"}), 500
     
 
 @admin_bp.route("/api/broadsheet/pdf")

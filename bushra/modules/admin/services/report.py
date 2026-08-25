@@ -990,6 +990,9 @@ def build_broadsheet_data(branch_id, class_id, exam_id, stream=None):
                                 if grade_info
                                 else None
                             )
+                            points_value = (
+                                grade_info.get("points") if grade_info else None
+                            )
                             if grade_value:
                                 subject_analysis[subj.id][grade_value] = (
                                     subject_analysis[subj.id].get(grade_value, 0) + 1
@@ -1026,12 +1029,21 @@ def build_broadsheet_data(branch_id, class_id, exam_id, stream=None):
                     "low_count": low_count,
                 })
 
+            total_points, mean_grade = _broadsheet_student_summary(
+                marks_per_subject,
+                subjects,
+                is_844,
+                class_id,
+            )
+
             students_data.append({
                 "id": s.id,
                 "admission_number": s.admission_number,
                 "full_name": s.fullname.upper(),
                 "gender": s.gender,
-                "marks": marks_per_subject
+                "marks": marks_per_subject,
+                "total_points": total_points,
+                "mean_grade": mean_grade,
             })
 
         # -------------------- 9. Additional Analytics --------------------
@@ -1094,6 +1106,245 @@ def build_broadsheet_data(branch_id, class_id, exam_id, stream=None):
         raise
 
 
+def _broadsheet_class_stream_label(data):
+    class_name = str(data.get("class_name") or "").strip()
+    stream = str(data.get("stream") or "").strip()
+    if class_name and stream:
+        return f"{class_name} {stream}"
+    return class_name or stream or "class"
+
+
+def broadsheet_excel_filename(data):
+    label = _broadsheet_class_stream_label(data)
+    safe = "".join(
+        char if char.isalnum() or char in " ._-()" else "_"
+        for char in label
+    ).strip(" ._")
+    return f"{safe or 'Broadsheet'}.xlsx"
+
+
+def _excel_subject_label(name):
+    raw = " ".join(str(name or "").split())
+    if not raw:
+        return "Subject"
+    known = {
+        "agriculture": "Agriculture",
+        "arabic": "Arabic",
+        "biology": "Biology",
+        "business studies": "Business",
+        "chemistry": "Chemistry",
+        "christian religious education": "CRE",
+        "computer studies": "Computer",
+        "creative arts": "Creative Arts",
+        "cre": "CRE",
+        "english": "English",
+        "environmental activities": "Environment",
+        "fasihi ya kiswahili": "Fasihi",
+        "french": "French",
+        "geography": "Geography",
+        "german": "German",
+        "health education": "Health",
+        "hindu religious education": "HRE",
+        "history": "History",
+        "history and citizenship": "History",
+        "home science": "Home Science",
+        "hygiene and nutrition": "Hygiene",
+        "ict": "ICT",
+        "indigenous language": "Indigenous",
+        "indigenous languages": "Indigenous",
+        "integrated science": "Int. Science",
+        "integrated sciences": "Int. Science",
+        "islamic religious education": "IRE",
+        "kenyan sign language": "KSL",
+        "kiswahili": "Kiswahili",
+        "life skills": "Life Skills",
+        "literature in english": "Literature",
+        "mandarin": "Mandarin",
+        "mathematics": "Maths",
+        "maths": "Maths",
+        "music": "Music",
+        "physical education": "PE",
+        "physics": "Physics",
+        "pre technical studies": "Pre-Technical",
+        "pre-technical studies": "Pre-Technical",
+        "religious education": "RE",
+        "science and technology": "Sci & Tech",
+        "social studies": "Social Studies",
+    }
+    mapped = known.get(raw.lower())
+    if mapped:
+        return mapped
+    if len(raw) <= 16:
+        return raw
+    shortened = raw.lower()
+    for tail in (" education", " studies", " activities", " language"):
+        if shortened.endswith(tail) and len(shortened) > len(tail) + 3:
+            shortened = shortened[: -len(tail)].strip()
+    words = [word for word in shortened.split() if word not in {"and", "&", "of", "the", "ya"}]
+    label = " ".join(words).title() if words else raw
+    parts = label.split()
+    if len(label) > 18 and len(parts) > 2:
+        return " ".join(parts[:2])
+    return label
+
+
+def _excel_safe(value):
+    if value is None:
+        return ""
+    if isinstance(value, (int, float)):
+        return value
+    text = str(value)
+    if text.startswith(("=", "+", "-", "@")):
+        return f"'{text}"
+    return text
+
+
+def _broadsheet_numeric_marks(student, subjects):
+    values = []
+    for subject in subjects:
+        mark_info = (student.get("marks") or {}).get(subject["id"], {})
+        raw = mark_info.get("marks")
+        if raw in (None, "-", ""):
+            continue
+        try:
+            values.append(float(raw))
+        except (TypeError, ValueError):
+            continue
+    return values
+
+
+def build_broadsheet_excel(data, include_grades=True):
+    """Spreadsheet of learners × subjects for one exam."""
+    from io import BytesIO
+
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    subjects = data.get("subjects") or []
+    students = data.get("students") or []
+    include_grades = bool(include_grades)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Broadsheet"
+
+    title_font = Font(bold=True, size=14, color="FFFFFF")
+    header_font = Font(bold=True, color="FFFFFF", size=10)
+    header_fill = PatternFill("solid", fgColor="2C3E50")
+    title_fill = PatternFill("solid", fgColor="FF7979")
+    center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    left = Alignment(horizontal="left", vertical="center")
+
+    headers = ["Adm", "Name"]
+    for subject in subjects:
+        label = _excel_subject_label(subject.get("name") or subject.get("code") or "Subject")
+        headers.append(label)
+        if include_grades:
+            headers.append(f"{label} Grade")
+    headers.extend(["Total", "Mean", "Total Points", "Mean Grade"])
+
+    last_col = get_column_letter(len(headers))
+    class_stream = _broadsheet_class_stream_label(data)
+    subtitle = " · ".join(
+        part
+        for part in [
+            class_stream,
+            data.get("exam_name") or "",
+            "Broadsheet",
+        ]
+        if part
+    )
+    school_name = str(data.get("branch_name") or "Broadsheet").strip().upper()
+
+    ws.merge_cells(f"A1:{last_col}1")
+    title_cell = ws["A1"]
+    title_cell.value = _excel_safe(school_name)
+    title_cell.font = title_font
+    title_cell.fill = title_fill
+    title_cell.alignment = Alignment(horizontal="left", vertical="center")
+
+    ws.merge_cells(f"A2:{last_col}2")
+    sub_cell = ws["A2"]
+    sub_cell.value = _excel_safe(subtitle)
+    sub_cell.font = Font(bold=True, size=11, color="1F2937")
+    sub_cell.alignment = Alignment(horizontal="left", vertical="center")
+
+    for col, header in enumerate(headers, start=1):
+        cell = ws.cell(row=4, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+
+    for row_index, student in enumerate(students, start=5):
+        numeric = _broadsheet_numeric_marks(student, subjects)
+        total = round(sum(numeric)) if numeric else None
+        mean = round(sum(numeric) / len(numeric), 1) if numeric else None
+
+        ws.cell(row=row_index, column=1, value=_excel_safe(student.get("admission_number"))).alignment = center
+        ws.cell(row=row_index, column=2, value=_excel_safe(student.get("full_name"))).alignment = left
+
+        col = 3
+        marks = student.get("marks") or {}
+        for subject in subjects:
+            mark_info = marks.get(subject["id"], {})
+            raw = mark_info.get("marks")
+            mark_cell = ws.cell(row=row_index, column=col)
+            if raw in (None, "-", ""):
+                mark_cell.value = None
+            else:
+                try:
+                    mark_cell.value = int(round(float(raw)))
+                except (TypeError, ValueError):
+                    mark_cell.value = _excel_safe(raw)
+            mark_cell.alignment = center
+            col += 1
+            if include_grades:
+                grade_cell = ws.cell(
+                    row=row_index,
+                    column=col,
+                    value=_excel_safe(mark_info.get("grade") or ""),
+                )
+                grade_cell.alignment = center
+                col += 1
+
+        ws.cell(row=row_index, column=col, value=total).alignment = center
+        ws.cell(row=row_index, column=col + 1, value=mean).alignment = center
+        points = student.get("total_points")
+        ws.cell(
+            row=row_index,
+            column=col + 2,
+            value=points if points not in (None, "") else None,
+        ).alignment = center
+        ws.cell(
+            row=row_index,
+            column=col + 3,
+            value=_excel_safe(student.get("mean_grade") or ""),
+        ).alignment = center
+
+    ws.freeze_panes = "A5"
+    ws.auto_filter.ref = f"A4:{last_col}{max(4, 4 + len(students))}"
+    ws.row_dimensions[1].height = 22
+    ws.row_dimensions[4].height = 22
+
+    for col in range(1, len(headers) + 1):
+        letter = get_column_letter(col)
+        values = [
+            str(cell.value)
+            for cell in ws[letter]
+            if cell.row >= 4 and cell.value not in (None, "")
+        ]
+        max_len = max((len(v) for v in values), default=8)
+        ws.column_dimensions[letter].width = max(8, min(max_len + 2, 28))
+    ws.column_dimensions["A"].width = min(ws.column_dimensions["A"].width or 10, 12)
+    ws.column_dimensions["B"].width = max(ws.column_dimensions["B"].width or 18, 22)
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output
+
+
 GRADE_ORDER_844 = [
     "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "E",
 ]
@@ -1149,6 +1400,60 @@ def _build_subject_grade_table(subject_grade_breakdown, grading_type):
         })
 
     return {"columns": columns, "rows": rows}
+
+
+def _broadsheet_student_summary(marks_per_subject, subjects, is_844, class_id):
+    """Total points and mean grade for one learner on the broadsheet."""
+    def subject_id(subject):
+        return subject["id"] if isinstance(subject, dict) else subject.id
+
+    def subject_category(subject):
+        if isinstance(subject, dict):
+            return subject.get("category") or ""
+        return subject.category or ""
+
+    if is_844:
+        from .grading_844 import compute_844_aggregate
+
+        points_rows = []
+        for subject in subjects:
+            mark_info = marks_per_subject.get(subject_id(subject), {}) or {}
+            if mark_info.get("points") is not None:
+                points_rows.append({
+                    "points": mark_info["points"],
+                    "category": subject_category(subject),
+                })
+
+        if not points_rows:
+            return None, None
+
+        summary = compute_844_aggregate(points_rows)
+        return summary["total_points"], summary["mean_grade"]
+
+    points_total = 0
+    has_points = False
+    numeric = []
+    for subject in subjects:
+        mark_info = marks_per_subject.get(subject_id(subject), {}) or {}
+        pts = mark_info.get("points")
+        if pts is not None:
+            points_total += pts
+            has_points = True
+        raw = mark_info.get("marks")
+        if raw in (None, "-", ""):
+            continue
+        try:
+            numeric.append(float(raw))
+        except (TypeError, ValueError):
+            continue
+
+    mean_grade = None
+    if numeric:
+        mean = int(round(sum(numeric) / len(numeric)))
+        grade_info = resolve_grade(class_id, mean)
+        mean_grade = grade_info.get("performance_level") if grade_info else None
+
+    return (points_total if has_points else None), mean_grade
 
 
 def _student_ranking_score(student, subjects, is_844):
