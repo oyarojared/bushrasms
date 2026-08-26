@@ -1,8 +1,7 @@
-from flask import Blueprint, flash, redirect, render_template, session, url_for, request
+from flask import Blueprint, flash, redirect, render_template, url_for, request
 from werkzeug.security import check_password_hash
 
 from ...modals.staff_db import Teacher
-from ..admin.forms.students_forms import PassportUploadForm
 from .forms import LoginForm
 from flask_login import current_user, login_user, logout_user, login_required
 
@@ -38,7 +37,6 @@ def login():
             return redirect(next_page or url_for("admin.admin_dash"))
 
     return render_template("login.html", form=form)
-
 
 
 @auth_bp.route("/logout")
