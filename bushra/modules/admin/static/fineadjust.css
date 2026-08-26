@@ -3,13 +3,13 @@
    ========================================================= */
 
 :root {
-  --chrome-dark: #3f4854;
-  --chrome-dark-text: #eef1f4;
-  --chrome-dark-muted: #b8c0ca;
-  --chrome-dark-faint: #b0b8c2;
-  --chrome-dark-line: rgba(255, 255, 255, 0.14);
-  --chrome-dark-chip: rgba(255, 255, 255, 0.08);
-  --chrome-dark-chip-border: rgba(255, 255, 255, 0.12);
+  --chrome-dark: #5a6470;
+  --chrome-dark-text: #ffffff;
+  --chrome-dark-muted: #e8edf2;
+  --chrome-dark-faint: #d5dce4;
+  --chrome-dark-line: rgba(255, 255, 255, 0.18);
+  --chrome-dark-chip: rgba(255, 255, 255, 0.10);
+  --chrome-dark-chip-border: rgba(255, 255, 255, 0.16);
 }
 
 /* =========================================================

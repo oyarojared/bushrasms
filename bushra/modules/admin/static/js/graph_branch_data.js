@@ -5,7 +5,7 @@ const branchPopulation = branchData.map(b => b.population);
 const shuleka = {
     brand: '#ff7979',
     brandHover: '#f56868',
-    chrome: '#3f4854',
+    chrome: '#5a6470',
     ink: '#6c757d',
     muted: '#98a1ad',
     grid: '#f0f1f3',

@@ -3,7 +3,8 @@ from werkzeug.security import check_password_hash
 
 from ..bushra.modules.admin.utils import (allowed_file,
                                           generate_initial_password,
-                                          generate_username)
+                                          generate_username,
+                                          next_available_username)
 
 # ---------- allowed_file Tests ---------- #
 
@@ -33,29 +34,37 @@ def test_allowed_file_edge_cases():
 # ---------- generate_username Tests ---------- #
 
 def test_generate_username_basic_cases():
-    """Basic expected behavior with typical full names."""
-    assert generate_username("Oyaro Jared", "0701948782") == "ojared782"
-    assert generate_username("Oyaro", "0701948782") == "oyaro782"
+    """New accounts use last 4 phone digits. Pass [] so no DB lookup."""
+    assert generate_username("Oyaro Jared", "0701948782", existing_usernames=[]) == "ojared8782"
+    assert generate_username("Oyaro", "0701948782", existing_usernames=[]) == "oyaro8782"
 
 
 def test_generate_username_whitespace_handling():
     """Names with leading/trailing/multiple spaces should normalize correctly."""
-    assert generate_username("  Oyaro   ", "0712345678") == "oyaro678"
-    assert generate_username("   Oyaro   Jared   ", "0712345678") == "ojared678"
+    assert generate_username("  Oyaro   ", "0712345678", existing_usernames=[]) == "oyaro5678"
+    assert generate_username("   Oyaro   Jared   ", "0712345678", existing_usernames=[]) == "ojared5678"
 
 
 def test_generate_username_case_insensitivity():
     """Upper/lowercase letters in names should not affect final output."""
-    assert generate_username("oYaRo JaReD", "0712345678") == "ojared678"
+    assert generate_username("oYaRo JaReD", "0712345678", existing_usernames=[]) == "ojared5678"
 
 
 def test_generate_username_special_characters():
-    """
-    Special characters in the name should be removed.
-    Example: "@a#red" → "ared"
-    """
-    assert generate_username("Oyaro Jared Mon'gare", "0701948782") == "omongare782"
-    assert generate_username("O'Ya@ro @a#red", "0712345678") == "oared678"
+    """Special characters in the name should be removed."""
+    assert generate_username("Oyaro Jared Mon'gare", "0701948782", existing_usernames=[]) == "omongare8782"
+    assert generate_username("O'Ya@ro @a#red", "0712345678", existing_usernames=[]) == "oared5678"
+
+
+def test_generate_username_skips_taken_names():
+    """If the preferred name is already used, append 2, 3, ... Existing accounts stay put."""
+    taken = ["ojared8782", "ojared87822"]
+    assert generate_username("Oyaro Jared", "0701948782", existing_usernames=taken) == "ojared87823"
+
+
+def test_next_available_username_keeps_first_free_stem():
+    assert next_available_username("ojared8782", []) == "ojared8782"
+    assert next_available_username("ojared8782", ["ojared8782"]) == "ojared87822"
 
 
 # ---------- generate_initial_password Tests ---------- #

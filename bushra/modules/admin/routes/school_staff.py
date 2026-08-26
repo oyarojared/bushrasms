@@ -97,6 +97,7 @@ def school_staff():
 
         # SAVE TEACHER
         try:
+            username = generate_username(fullname, str(phone))
             new_teacher = Teacher(
                 fullname=fullname,
                 title=title,
@@ -108,14 +109,14 @@ def school_staff():
                 tsc_no=tsc_no or None,
                 id_no=id_no or None,
                 branch_id=branch_id_int,
-                username=generate_username(fullname, str(phone)),
+                username=username,
                 password_hash=generate_initial_password(str(phone)),
             )
 
             db.session.add(new_teacher)
             db.session.commit()
 
-            flash(f"Teacher added successfully!", "success")
+            flash(f"Teacher added successfully. Username: {username}", "success")
             return redirect(url_for("admin.school_staff"))
 
         except Exception as e:

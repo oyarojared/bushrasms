@@ -55,16 +55,59 @@ def check_unique_teacher_fields(phone=None, email=None, tsc_no=None, id_no=None,
     return {"field": "unknown"}
 
 
-def generate_username(fullname: str, phone: str):
-    names = fullname.strip().split()
-    first = names[0]
+def _phone_digits(phone: str) -> str:
+    return re.sub(r"\D", "", phone or "")
+
+
+def build_username_stem(fullname: str, phone: str) -> str:
+    """Build the preferred username for a new account. Does not check uniqueness."""
+    names = (fullname or "").strip().split()
+    first = names[0] if names else "user"
     last = names[-1] if len(names) > 1 else ""
-    suffix = phone[-3:]
+    digits = _phone_digits(phone)
+    suffix = digits[-4:] if digits else ""
+
     if last:
-        username = f"{first[0]}{last}{suffix}".lower()
+        raw = f"{first[0]}{last}{suffix}"
     else:
-        username = f"{first}{suffix}".lower()
-    return re.sub(r"[^a-z0-9]", "", username)
+        raw = f"{first}{suffix}"
+
+    stem = re.sub(r"[^a-z0-9]", "", raw.lower())
+    if len(stem) < 6:
+        stem = (stem + "user00")[:6]
+    return stem[:50]
+
+
+def next_available_username(stem: str, taken) -> str:
+    """Return stem, or stem2 / stem3 / ... if those names are already used."""
+    taken_lower = {str(name).lower() for name in taken if name}
+    candidate = stem
+    n = 2
+    while candidate in taken_lower:
+        suffix = str(n)
+        candidate = f"{stem[:50 - len(suffix)]}{suffix}"
+        n += 1
+        if n > 9999:
+            raise ValueError("Could not allocate a unique username")
+    return candidate
+
+
+def _usernames_starting_with(stem: str):
+    rows = Teacher.query.filter(Teacher.username.ilike(f"{stem}%")).all()
+    return [teacher.username for teacher in rows if teacher.username]
+
+
+def generate_username(fullname: str, phone: str, existing_usernames=None):
+    """
+    Username for a newly created teacher.
+
+    Existing accounts are never rewritten. This only allocates a name that
+    is not already in use, including older generated usernames.
+    """
+    stem = build_username_stem(fullname, phone)
+    if existing_usernames is None:
+        existing_usernames = _usernames_starting_with(stem)
+    return next_available_username(stem, existing_usernames)
 
 
 def generate_initial_password(phone: str):
