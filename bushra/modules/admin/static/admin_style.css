@@ -1405,3 +1405,49 @@ body.ui-blocker-active {
   }
 }
 
+/* Pull-to-refresh: body scroll is locked, so mobile uses a custom gesture. */
+.ptr-indicator {
+  position: fixed;
+  left: 50%;
+  top: 72px;
+  z-index: 1080;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #fff;
+  color: #ff7979;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transform: translateX(-50%) scale(0.75);
+}
+
+.ptr-indicator.is-visible {
+  visibility: visible;
+}
+
+.ptr-indicator.is-armed {
+  color: #fff;
+  background: #ff7979;
+}
+
+.ptr-indicator.is-refreshing i {
+  animation: ptr-spin 0.7s linear infinite;
+}
+
+@keyframes ptr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ptr-indicator.is-refreshing i {
+    animation: none;
+  }
+}
+

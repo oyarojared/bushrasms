@@ -640,11 +640,26 @@
   }
 
   .fixed-top-bar:not(.has-search) .right-section {
+    flex: 0 0 0;
+    width: 0;
+    max-width: 0;
+    height: 0;
+    min-height: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .fixed-top-bar:not(.has-search) .header-actions {
+    min-height: 0;
+    height: 0;
+  }
+
+  .fixed-top-bar:not(.has-search) .header-search-slot {
     display: none;
   }
 
   .profile-wrapper,
-.profile-wrapper {
+  .profile-wrapper {
     position: absolute;
     top: 0;
     right: 6px;
@@ -678,7 +693,7 @@
 
   .brand-wrapper {
     padding-left: 10px;
-    padding-right: 10px;
+    padding-right: 52px;
   }
 
   .search-box {

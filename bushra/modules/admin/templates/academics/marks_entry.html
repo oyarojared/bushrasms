@@ -673,13 +673,14 @@ render_flash_messages, sidebar %} {% block side_nav %}
   }
 
   .marks-entry-card-name {
-    font-size: 0.76rem;
+    font-size: clamp(0.62rem, 3.05vw, 0.76rem);
     font-weight: 700;
     color: #252a2f;
     line-height: 1.25;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 
   .marks-entry-card-adm {
