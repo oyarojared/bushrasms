@@ -281,14 +281,19 @@
             <span class="mc-perf-rank-pos">{{ student.position }}</span>
             <span class="mc-perf-rank-name">{{ student.name }}</span>
             <span class="mc-perf-rank-score">
+              {% if performance.is_844 %}
+              {{ student.score }}
+              <small>{{ student.mean_value }}</small>
+              {% else %}
               {{ student.mean_value }}
-              <small>{{ performance.grade_label }}</small>
+              <small>{{ student.score }}</small>
+              {% endif %}
             </span>
           </li>
           {% endfor %}
         </ol>
         {% else %}
-        <p class="mc-muted mb-0">No ranked learners yet for this exam.</p>
+        <p class="mc-muted mb-0">No complete sittings to rank yet. Enter missing marks first.</p>
         {% endif %}
       </div>
 
@@ -300,7 +305,13 @@
             <dd>
               {% if performance.best_boy %}
               {{ performance.best_boy.name }}
-              <span>{{ performance.best_boy.mean_value }}</span>
+              <span>
+                {% if performance.is_844 %}
+                {{ performance.best_boy.score }} {{ performance.best_boy.mean_value }}
+                {% else %}
+                {{ performance.best_boy.mean_value }}
+                {% endif %}
+              </span>
               {% else %}
               <span class="mc-muted">—</span>
               {% endif %}
@@ -311,7 +322,13 @@
             <dd>
               {% if performance.best_girl %}
               {{ performance.best_girl.name }}
-              <span>{{ performance.best_girl.mean_value }}</span>
+              <span>
+                {% if performance.is_844 %}
+                {{ performance.best_girl.score }} {{ performance.best_girl.mean_value }}
+                {% else %}
+                {{ performance.best_girl.mean_value }}
+                {% endif %}
+              </span>
               {% else %}
               <span class="mc-muted">—</span>
               {% endif %}

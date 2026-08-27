@@ -356,7 +356,9 @@ def _grade_chart_color(grade, grading_type, index=0):
 
 
 def _ranked_person(row):
-    if not row or not row.get("subjects_count"):
+    if not row:
+        return None
+    if row.get("rank_score") is None and not row.get("mean_value"):
         return None
     return {
         "name": row.get("name") or "",
@@ -364,7 +366,91 @@ def _ranked_person(row):
         "mean_value": row.get("mean_value"),
         "score": row.get("score"),
         "position": row.get("position"),
+        "gender": row.get("gender"),
     }
+
+
+def _student_mark_mean(student):
+    values = []
+    for info in (student.get("marks") or {}).values():
+        raw = info.get("marks") if isinstance(info, dict) else info
+        if raw in (None, "-", ""):
+            continue
+        try:
+            values.append(float(raw))
+        except (TypeError, ValueError):
+            continue
+    if not values:
+        return None
+    return int(round(sum(values) / len(values)))
+
+
+def _incomplete_student_ids(missing_marks):
+    ids = set()
+    for row in missing_marks or []:
+        student_id = row.get("id")
+        if student_id is not None:
+            ids.add(student_id)
+    return ids
+
+
+def _learner_rank_rows(data, missing_marks):
+    """
+    Rank learners the same way the marksheet does, but only if every
+    allocated paper for the sitting is entered. Incomplete sittings are
+    omitted so a few strong papers cannot produce a mean grade.
+    """
+    grading_type = data.get("grading_type") or "cbc"
+    is_844 = grading_type == "844"
+    incomplete = _incomplete_student_ids(missing_marks)
+    ranked = []
+
+    for student in data.get("students") or []:
+        student_id = student.get("id")
+        if student_id in incomplete:
+            continue
+
+        total_points = student.get("total_points")
+        mean_grade = student.get("mean_grade")
+        mark_mean = _student_mark_mean(student)
+
+        if is_844:
+            if total_points is None or not mean_grade:
+                continue
+            rank_score = float(total_points)
+            display_score = int(round(float(total_points)))
+            mean_value = mean_grade
+        else:
+            if mark_mean is None:
+                continue
+            rank_score = float(mark_mean)
+            display_score = mark_mean
+            mean_value = mean_grade or mark_mean
+
+        ranked.append(
+            {
+                "id": student_id,
+                "name": student.get("full_name") or "",
+                "admission_number": student.get("admission_number"),
+                "gender": student.get("gender"),
+                "rank_score": rank_score,
+                "score": display_score,
+                "mean_value": mean_value,
+            }
+        )
+
+    ranked.sort(key=lambda row: (-row["rank_score"], row["name"] or ""))
+    for position, row in enumerate(ranked, start=1):
+        row["position"] = position
+    return ranked
+
+
+def _best_by_gender(ranked, predicate):
+    for row in ranked:
+        gender = str(row.get("gender") or "").strip().lower()
+        if predicate(gender):
+            return _ranked_person(row)
+    return None
 
 
 def _subject_means_from_data(data):
@@ -476,8 +562,9 @@ def class_exam_performance(assignment, exam_id):
         if row.get("grade")
     ]
 
+    ranked = _learner_rank_rows(data, missing)
     top_students = []
-    for row in analysis.get("top_students") or []:
+    for row in ranked[:5]:
         person = _ranked_person(row)
         if person:
             top_students.append(person)
@@ -512,8 +599,12 @@ def class_exam_performance(assignment, exam_id):
         "weakest_subjects": weakest,
         "grade_distribution": grade_distribution,
         "top_students": top_students,
-        "best_boy": _ranked_person(analysis.get("best_boy")),
-        "best_girl": _ranked_person(analysis.get("best_girl")),
+        "best_boy": _best_by_gender(
+            ranked, lambda gender: gender.startswith("m")
+        ),
+        "best_girl": _best_by_gender(
+            ranked, lambda gender: gender.startswith("f")
+        ),
         "missing_marks": missing[:8],
         "missing_more": max(0, len(missing) - 8),
         "charts": {

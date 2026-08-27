@@ -1078,6 +1078,7 @@ def build_broadsheet_data(branch_id, class_id, exam_id, stream=None):
 
             if missing_subjects:
                 missing_marks_list.append({
+                    "id": student_obj.id,
                     "student": student_row["full_name"],
                     "admission_number": student_row.get("admission_number"),
                     "subjects": missing_subjects,
