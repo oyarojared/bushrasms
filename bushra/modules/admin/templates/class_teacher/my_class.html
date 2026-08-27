@@ -16,7 +16,7 @@
 {% block main_content %}
 {{ render_flash_messages() }}
 
-<div class="mc-page{% if active_tab == 'results' %} mc-page-wide{% endif %}">
+<div class="mc-page{% if active_tab == 'results' %} mc-page-wide{% elif active_tab == 'performance' %} mc-page-perf{% endif %}">
   <div class="app-page-title">
     <div class="app-page-title-icon">
       <i class="bi bi-people-fill"></i>
@@ -24,7 +24,7 @@
     <div class="app-page-title-content">
       <h6 class="app-page-title-heading">My class</h6>
       <span class="app-page-title-subtitle">
-        Learners and exam marks
+        Learners, exam marks, and class performance
       </span>
     </div>
   </div>
@@ -44,7 +44,7 @@
     {% for item in assignments %}
     <a
       class="mc-class-chip{% if selected_assignment and item.id == selected_assignment.id %} is-active{% endif %}"
-      href="{{ url_for('admin.my_class', assignment=item.id, tab=active_tab, exam=request.args.get('exam')) }}"
+      href="{{ url_for('admin.my_class', assignment=item.id, tab=active_tab, exam=request.args.get('exam'), year=request.args.get('year'), term=request.args.get('term')) }}"
     >
       {{ item.label }}
       {% if show_schools and item.school %}
@@ -67,7 +67,7 @@
     </div>
     <nav class="mc-tabs" aria-label="My class sections">
       <a
-        class="mc-tab{% if active_tab != 'results' %} is-active{% endif %}"
+        class="mc-tab{% if active_tab == 'learners' %} is-active{% endif %}"
         href="{{ url_for('admin.my_class', assignment=selected_assignment.id, exam=selected_exam.id if selected_exam else none, tab='learners') }}"
       >
         Learners
@@ -76,12 +76,292 @@
         class="mc-tab{% if active_tab == 'results' %} is-active{% endif %}"
         href="{{ url_for('admin.my_class', assignment=selected_assignment.id, exam=selected_exam.id if selected_exam else none, tab='results') }}"
       >
-        Exam results
+        <span class="mc-tab-full">Exam results</span>
+        <span class="mc-tab-short">Results</span>
+      </a>
+      <a
+        class="mc-tab{% if active_tab == 'performance' %} is-active{% endif %}"
+        href="{{ url_for('admin.my_class', assignment=selected_assignment.id, exam=selected_exam.id if selected_exam else none, year=selected_year, term=selected_term, tab='performance') }}"
+      >
+        Performance
       </a>
     </nav>
   </div>
 
-  {% if active_tab != 'results' %}
+  {% if active_tab == 'results' %}
+
+  <section class="mc-exam-panel">
+    {% if not exams %}
+    <div class="mc-empty">
+      <i class="bi bi-journal-x"></i>
+      <h6>No exams for this class yet</h6>
+      <p>When an exam has papers for this class, pick it here to see marks.</p>
+    </div>
+    {% else %}
+    <form method="get" class="mc-exam-filter">
+      {% if selected_assignment %}
+      <input type="hidden" name="assignment" value="{{ selected_assignment.id }}" />
+      {% endif %}
+      <input type="hidden" name="tab" value="results" />
+      <label for="mcExamSelect">Exam</label>
+      <select id="mcExamSelect" name="exam" onchange="this.form.submit()">
+        {% for exam in exams %}
+        <option
+          value="{{ exam.id }}"
+          {% if selected_exam and exam.id == selected_exam.id %}selected{% endif %}
+        >
+          {{ exam.name }} · Term {{ exam.term }} · {{ exam.year }}
+        </option>
+        {% endfor %}
+      </select>
+    </form>
+
+    {% set overview = exam_overview %}
+    {% if overview and overview.error %}
+    <p class="mc-muted mb-0">{{ overview.error }}</p>
+    {% elif overview and overview.rows %}
+    <div class="mc-marksheet-wrap">
+      <table class="mc-marksheet">
+        <thead>
+          <tr>
+            <th class="mc-col-adm">Adm</th>
+            <th class="mc-col-name">Name</th>
+            {% for subject in overview.subjects %}
+            <th title="{{ subject.name }}">{{ subject.label or subject.name }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in overview.rows %}
+          <tr>
+            <td class="mc-col-adm">{{ row.admission_number }}</td>
+            <td class="mc-col-name">
+              <a
+                href="{{ url_for('admin.my_class_student', student_id=row.id, assignment=selected_assignment.id) }}"
+              >
+                {{ row.fullname }}
+              </a>
+            </td>
+            {% for mark in row.marks %}
+            <td class="mc-mark{% if mark == '-' %} is-empty{% endif %}">{{ mark }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% elif overview %}
+    <p class="mc-muted mb-0">No learners in this class for this exam.</p>
+    {% endif %}
+    {% endif %}
+  </section>
+
+  {% elif active_tab == 'performance' %}
+
+  <section class="mc-exam-panel mc-perf-panel">
+    {% if not exams %}
+    <div class="mc-empty">
+      <i class="bi bi-graph-up"></i>
+      <h6>No exams for this class yet</h6>
+      <p>When an exam has papers for this class, pick it here to see how the class performed.</p>
+    </div>
+    {% else %}
+    <form method="get" class="mc-exam-filter mc-perf-filter">
+      {% if selected_assignment %}
+      <input type="hidden" name="assignment" value="{{ selected_assignment.id }}" />
+      {% endif %}
+      <input type="hidden" name="tab" value="performance" />
+      <label class="mc-filter-field">
+        <span>Year</span>
+        <select name="year" onchange="this.form.submit()">
+          {% for year in filter_years %}
+          <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>
+            {{ year }}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="mc-filter-field">
+        <span>Term</span>
+        <select name="term" onchange="this.form.submit()">
+          {% for term in filter_terms %}
+          <option value="{{ term }}" {% if selected_term == term %}selected{% endif %}>
+            Term {{ term }}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="mc-filter-field mc-filter-exam">
+        <span>Exam</span>
+        <select name="exam" onchange="this.form.submit()">
+          {% for exam in sitting_exams %}
+          <option
+            value="{{ exam.id }}"
+            {% if selected_exam and exam.id == selected_exam.id %}selected{% endif %}
+          >
+            {{ exam.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+    </form>
+
+    {% if performance and performance.error %}
+    <p class="mc-muted mb-0">{{ performance.error }}</p>
+    {% elif performance %}
+    {% set summary = performance.summary %}
+    <div class="mc-perf-stats">
+      <div class="mc-perf-stat">
+        <span class="mc-perf-stat-label">Class mean</span>
+        <strong class="mc-perf-stat-value">
+          {% if summary.class_mean is not none %}{{ summary.class_mean }}{% else %}—{% endif %}
+          {% if summary.class_mean_unit %}
+          <small>{{ summary.class_mean_unit }}</small>
+          {% endif %}
+          {% if summary.class_mean_grade %}
+          <span
+            class="mc-perf-grade"
+            {% if summary.class_mean_grade_color %}style="background: {{ summary.class_mean_grade_color }}"{% endif %}
+          >{{ summary.class_mean_grade }}</span>
+          {% endif %}
+        </strong>
+        <span class="mc-perf-stat-hint">
+          {% if performance.is_844 %}
+          Average learner points · 8-4-4 ranking scale
+          {% else %}
+          Average of subject means
+          {% endif %}
+        </span>
+      </div>
+      <div class="mc-perf-stat">
+        <span class="mc-perf-stat-label">With marks</span>
+        <strong class="mc-perf-stat-value">
+          {{ summary.entered }}
+          <small>/ {{ summary.total_learners }}</small>
+        </strong>
+        <span class="mc-perf-stat-hint">Learners who have at least one mark</span>
+      </div>
+      <div class="mc-perf-stat{% if summary.missing_count %} is-warn{% endif %}">
+        <span class="mc-perf-stat-label">Missing marks</span>
+        <strong class="mc-perf-stat-value">{{ summary.missing_count }}</strong>
+        <span class="mc-perf-stat-hint">Learners with at least one blank subject</span>
+      </div>
+    </div>
+
+    {% if performance.charts.subject_labels or performance.charts.grade_labels %}
+    {% if performance.charts.subject_labels %}
+    <div class="mc-perf-card mc-perf-line-card">
+      <h3>Subject means</h3>
+      <div class="mc-perf-chart mc-perf-chart-line">
+        <canvas id="mcSubjectMeansChart" aria-label="Subject mean scores"></canvas>
+      </div>
+    </div>
+    {% endif %}
+    {% if performance.charts.grade_labels %}
+    <div class="mc-perf-charts">
+      <div class="mc-perf-card">
+        <h3>{{ performance.overall_grade_title }}</h3>
+        <div class="mc-perf-chart mc-perf-chart-donut">
+          <canvas id="mcGradeChart" aria-label="Grade distribution"></canvas>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    <script type="application/json" id="mcPerfData">{{ performance.charts | tojson }}</script>
+    {% endif %}
+
+    {% if performance.top_students or performance.best_boy or performance.best_girl or performance.weakest_subjects %}
+    <div class="mc-perf-lists">
+      <div class="mc-perf-card">
+        <h3>Top learners</h3>
+        {% if performance.top_students %}
+        <ol class="mc-perf-ranks">
+          {% for student in performance.top_students %}
+          <li>
+            <span class="mc-perf-rank-pos">{{ student.position }}</span>
+            <span class="mc-perf-rank-name">{{ student.name }}</span>
+            <span class="mc-perf-rank-score">
+              {{ student.mean_value }}
+              <small>{{ performance.grade_label }}</small>
+            </span>
+          </li>
+          {% endfor %}
+        </ol>
+        {% else %}
+        <p class="mc-muted mb-0">No ranked learners yet for this exam.</p>
+        {% endif %}
+      </div>
+
+      <div class="mc-perf-card">
+        <h3>Highlights</h3>
+        <dl class="mc-perf-highlights">
+          <div>
+            <dt>Best boy</dt>
+            <dd>
+              {% if performance.best_boy %}
+              {{ performance.best_boy.name }}
+              <span>{{ performance.best_boy.mean_value }}</span>
+              {% else %}
+              <span class="mc-muted">—</span>
+              {% endif %}
+            </dd>
+          </div>
+          <div>
+            <dt>Best girl</dt>
+            <dd>
+              {% if performance.best_girl %}
+              {{ performance.best_girl.name }}
+              <span>{{ performance.best_girl.mean_value }}</span>
+              {% else %}
+              <span class="mc-muted">—</span>
+              {% endif %}
+            </dd>
+          </div>
+        </dl>
+        {% if performance.weakest_subjects %}
+        <h4 class="mc-perf-subhead">Subjects to watch</h4>
+        <ul class="mc-perf-weak">
+          {% for subject in performance.weakest_subjects %}
+          <li>
+            <span>{{ subject.label }}</span>
+            <strong>{{ subject.mean }}</strong>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if performance.missing_marks %}
+    <div class="mc-perf-card mc-perf-missing">
+      <h3>Missing marks</h3>
+      <ul class="mc-perf-missing-list">
+        {% for row in performance.missing_marks %}
+        <li>
+          <span>{{ row.student }}</span>
+          <small>{{ row.subjects | join(", ") }}</small>
+        </li>
+        {% endfor %}
+      </ul>
+      {% if performance.missing_more %}
+      <p class="mc-muted mb-0">+ {{ performance.missing_more }} more learner{{ "s" if performance.missing_more != 1 else "" }}</p>
+      {% endif %}
+    </div>
+    {% elif summary.entered == 0 %}
+    <div class="mc-empty">
+      <i class="bi bi-clipboard-x"></i>
+      <h6>Marks have not been entered yet</h6>
+      <p>Once subject teachers enter marks for this exam, graphs and rankings will appear here.</p>
+    </div>
+    {% endif %}
+    {% else %}
+    <p class="mc-muted mb-0">No learners in this class for this exam.</p>
+    {% endif %}
+    {% endif %}
+  </section>
+
+  {% else %}
   <label class="mc-search">
     <span class="visually-hidden">Search learners</span>
     <i class="bi bi-search"></i>
@@ -158,94 +438,79 @@
     <h6>No learners in this class yet</h6>
   </div>
   {% endif %}
-  {% else %}
-
-  <section class="mc-exam-panel">
-    {% if not exams %}
-    <div class="mc-empty">
-      <i class="bi bi-journal-x"></i>
-      <h6>No exams for this class yet</h6>
-      <p>When an exam has papers for this class, pick it here to see marks.</p>
-    </div>
-    {% else %}
-    <form method="get" class="mc-exam-filter">
-      {% if selected_assignment %}
-      <input type="hidden" name="assignment" value="{{ selected_assignment.id }}" />
-      {% endif %}
-      <input type="hidden" name="tab" value="results" />
-      <label for="mcExamSelect">Exam</label>
-      <select id="mcExamSelect" name="exam" onchange="this.form.submit()">
-        {% for exam in exams %}
-        <option
-          value="{{ exam.id }}"
-          {% if selected_exam and exam.id == selected_exam.id %}selected{% endif %}
-        >
-          {{ exam.name }} · Term {{ exam.term }} · {{ exam.year }}
-        </option>
-        {% endfor %}
-      </select>
-    </form>
-
-    {% set overview = exam_overview %}
-    {% if overview and overview.error %}
-    <p class="mc-muted mb-0">{{ overview.error }}</p>
-    {% elif overview and overview.rows %}
-    <div class="mc-marksheet-wrap">
-      <table class="mc-marksheet">
-        <thead>
-          <tr>
-            <th class="mc-col-adm">Adm</th>
-            <th class="mc-col-name">Name</th>
-            {% for subject in overview.subjects %}
-            <th title="{{ subject.name }}">{{ subject.label or subject.name }}</th>
-            {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in overview.rows %}
-          <tr>
-            <td class="mc-col-adm">{{ row.admission_number }}</td>
-            <td class="mc-col-name">
-              <a
-                href="{{ url_for('admin.my_class_student', student_id=row.id, assignment=selected_assignment.id) }}"
-              >
-                {{ row.fullname }}
-              </a>
-            </td>
-            {% for mark in row.marks %}
-            <td class="mc-mark{% if mark == '-' %} is-empty{% endif %}">{{ mark }}</td>
-            {% endfor %}
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% elif overview %}
-    <p class="mc-muted mb-0">No learners in this class for this exam.</p>
-    {% endif %}
-    {% endif %}
-  </section>
   {% endif %}
   {% endif %}
 </div>
 
+<script src="{{ url_for('admin.static', filename='js/class_performance_chart.js') }}"></script>
 <script>
   (function () {
     const input = document.getElementById("mcSearch");
     const list = document.getElementById("mcList");
     const empty = document.getElementById("mcNoMatch");
-    if (!input || !list) return;
-
-    input.addEventListener("input", function () {
-      const query = input.value.trim().toLowerCase();
-      let shown = 0;
-      list.querySelectorAll(".mc-card").forEach(function (card) {
-        const haystack = (card.getAttribute("data-search") || card.dataset.search || "").toLowerCase();
-        const match = !query || haystack.includes(query);
-        card.classList.toggle("d-none", !match);
-        if (match) shown += 1;
+    if (input && list) {
+      input.addEventListener("input", function () {
+        const query = input.value.trim().toLowerCase();
+        let shown = 0;
+        list.querySelectorAll(".mc-card").forEach(function (card) {
+          const haystack = (card.getAttribute("data-search") || card.dataset.search || "").toLowerCase();
+          const match = !query || haystack.includes(query);
+          card.classList.toggle("d-none", !match);
+          if (match) shown += 1;
+        });
+        if (empty) empty.classList.toggle("d-none", shown !== 0);
       });
-      if (empty) empty.classList.toggle("d-none", shown !== 0);
+    }
+
+    const dataNode = document.getElementById("mcPerfData");
+    if (!dataNode) return;
+
+    let charts;
+    try {
+      charts = JSON.parse(dataNode.textContent);
+    } catch (err) {
+      return;
+    }
+
+    if (typeof renderSubjectMeansLine === "function") {
+      renderSubjectMeansLine(document.getElementById("mcSubjectMeansChart"), charts);
+    }
+
+    const gradeCanvas = document.getElementById("mcGradeChart");
+    if (!gradeCanvas || typeof Chart === "undefined") return;
+    if (!charts.grade_labels || !charts.grade_labels.length) return;
+
+    new Chart(gradeCanvas.getContext("2d"), {
+      type: "doughnut",
+      data: {
+        labels: charts.grade_labels,
+        datasets: [
+          {
+            data: charts.grade_values,
+            backgroundColor: charts.grade_colors,
+            borderWidth: 2,
+            borderColor: "#fff",
+            hoverOffset: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "58%",
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: {
+              boxWidth: 10,
+              boxHeight: 10,
+              padding: 12,
+              color: "#4b5563",
+              font: { size: 11, family: "Inter, sans-serif" },
+            },
+          },
+        },
+      },
     });
   })();
 </script>

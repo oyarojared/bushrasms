@@ -1,127 +1,116 @@
 {% extends "admin_dash_layout.html" %} {% from "_macros.html" import
-render_flash_messages, sidebar %} {% block side_nav %}
+render_flash_messages, sidebar %} {% block head %} {{ super() }}
+<link
+  rel="stylesheet"
+  href="{{ url_for('admin.static', filename='schools.css') }}"
+/>
+{% endblock %} {% block side_nav %}
 <div class="sidebar">{{ sidebar("Schools", current_user) }}</div>
 {% endblock %} {% block main_content %} {{ render_flash_messages() }}
 
-<div class="app-page-title">
-  <div class="app-page-title-icon">
-    <i class="bi bi-buildings-fill"></i>
-  </div>
-
-  <div class="app-page-title-content mb-2">
-    <h6 class="app-page-title-heading">Schools Management</h6>
-
-    <span class="app-page-title-subtitle">
-      Manage schools &amp; school information
-    </span>
-  </div>
-</div>
-
-<!-- School Selector -->
-<div class="container bg-white p-4 mb-2 shadow-sm rounded-6">
-  <div class="container orange-line mb-2"></div>
-  <h6 class="fw-light mb-1">Select Branch / School to view details</h6>
-  <form id="branchForm" method="GET">
-    {{ select_branch_form.hidden_tag() }}
-    <div class="input-group">
-      <div class="input-group-text">
-        <i class="bi bi-building"></i>
-      </div>
-      {{ select_branch_form.branches(class="form-select", id="branchSelect") }}
+<div class="sch-page">
+  <div class="app-page-title">
+    <div class="app-page-title-icon">
+      <i class="bi bi-buildings-fill"></i>
     </div>
-  </form>
-</div>
+    <div class="app-page-title-content">
+      <h6 class="app-page-title-heading">Schools Management</h6>
+      <span class="app-page-title-subtitle">
+        Manage schools &amp; school information
+      </span>
+    </div>
+  </div>
 
-<!-- Actions and Info Header -->
-<div class="container pb-2">
-  <div class="row text-white rounded-2 p-1">
-    <div class="col-sm-9"></div>
-    <div class="col-sm-3 d-flex">
-      <!-- Add Branch Trigger -->
-      <a
-        href="#"
-        data-bs-toggle="modal"
-        data-bs-target="#addModal"
-        id="add-branch-link"
-      >
-        <div class="nav-div btn btn-sm btn-danger px-2 me-1">
-          <span><i class="bi bi-plus-circle-dotted"></i></span>
-          <span>Add</span>
+  <div class="sch-card">
+    <div class="sch-card-accent"></div>
+    <div class="sch-select-row">
+      <form id="branchForm" method="GET" class="sch-select-form">
+        {{ select_branch_form.hidden_tag() }}
+        <label class="sch-select-label" for="branchSelect">
+          Select branch / school to view details
+        </label>
+        <div class="sch-select-field">
+          <span class="sch-select-icon" aria-hidden="true">
+            <i class="bi bi-building"></i>
+          </span>
+          {{ select_branch_form.branches(class="form-select", id="branchSelect") }}
         </div>
-      </a>
-      <button id="editBranchBtn" class="btn btn-sm btn-danger">
-        <i class="bi bi-pencil"></i> Edit
-      </button>
-      <button
-        data-bs-toggle="modal"
-        data-bs-target="#deleteBranchModal"
-        class="btn btn-sm btn-danger small mx-1"
-      >
-        <i class="bi bi-trash"></i> Delete
-      </button>
+      </form>
+
+      <div class="sch-actions">
+        <a
+          href="#"
+          class="btn btn-sm btn-danger"
+          data-bs-toggle="modal"
+          data-bs-target="#addModal"
+          id="add-branch-link"
+        >
+          <i class="bi bi-plus-circle-dotted"></i> Add
+        </a>
+        <button type="button" id="editBranchBtn" class="btn btn-sm btn-danger">
+          <i class="bi bi-pencil"></i> Edit
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-danger"
+          data-bs-toggle="modal"
+          data-bs-target="#deleteBranchModal"
+          {% if branch_id == 0 %}disabled{% endif %}
+        >
+          <i class="bi bi-trash"></i> Delete
+        </button>
+      </div>
     </div>
   </div>
-</div>
 
-{% if branch_id == 0 %} {% else %}
-<div class="container bg-white p-3 shadow-sm rounded-6">
-  <div class="d-flex flex-column flex-md-row align-items-center gap-3">
-    {% if data.branch.logo %}
-    <img
-      src="{{ url_for('admin.serve_passport', filename=data.branch.logo) }}"
-      alt="Logo"
-      class="img-fluid"
-      style="max-width: 120px; max-height: 120px"
-    />
-    {% endif %} {% if data.branch.motto %}
-    <div class="text-center text-md-start">
-      <h5 class="mb-0 fw-bold">{{ data.branch.branch_name }}</h5>
-      <small class="text-muted">{{ data.branch.motto }}</small>
+  {% if branch_id != 0 and data and data.branch %}
+  <div class="sch-card sch-profile-card">
+    <div class="d-flex flex-column flex-md-row align-items-center gap-3 mb-2">
+      {% if data.branch.logo %}
+      <img
+        src="{{ url_for('admin.serve_passport', filename=data.branch.logo) }}"
+        alt="Logo"
+        class="img-fluid sch-logo-img"
+      />
+      {% endif %}
+      <div class="text-center text-md-start">
+        <h5 class="mb-0 fw-bold">{{ data.branch.branch_name }}</h5>
+        {% if data.branch.motto %}
+        <small class="text-muted">{{ data.branch.motto }}</small>
+        {% endif %}
+      </div>
     </div>
-    {% endif %}
-  </div>
 
-  <div class="floating-box">
-    <span class="floating-label h4">
-      <i class="bi bi-house-fill me-2"></i>{{ data.branch.branch_name | upper }}
-    </span>
-    <div class="floating-content">
-      <div>
+    <div class="floating-box">
+      <span class="floating-label h4">
+        <i class="bi bi-house-fill me-2"></i>{{ data.branch.branch_name | upper }}
+      </span>
+      <div class="floating-content">
         <div class="row">
           <div class="col-md-4">
             <h6>
               School Code:
-              <span class="fw-light"
-                >{{ data.branch.school_code or "---" }}</span
-              >
+              <span class="fw-light">{{ data.branch.school_code or "---" }}</span>
             </h6>
             <h6>
               School Gender:
-              <span class="fw-light"
-                >{{ data.branch.school_gender or "---" }}</span
-              >
+              <span class="fw-light">{{ data.branch.school_gender or "---" }}</span>
             </h6>
           </div>
           <div class="col-md-4">
             <h6>
               School Type:
-              <span class="fw-light"
-                >{{ data.branch.school_type or "---" }}</span
-              >
+              <span class="fw-light">{{ data.branch.school_type or "---" }}</span>
             </h6>
             <h6>
               School Manager:
-              <span class="fw-light"
-                >{{ data.branch.branch_manager or "---" }}</span
-              >
+              <span class="fw-light">{{ data.branch.branch_manager or "---" }}</span>
             </h6>
           </div>
           <div class="col-md-4">
             <h6>
               School Head:
-              <span class="fw-light"
-                >{{ data.branch.branch_head or "---" }}</span
-              >
+              <span class="fw-light">{{ data.branch.branch_head or "---" }}</span>
             </h6>
             <h6>
               Email:
@@ -131,114 +120,99 @@ render_flash_messages, sidebar %} {% block side_nav %}
             </h6>
           </div>
         </div>
-      </div>
-      <div class="row g-3 d-flex justify-content-center">
-        <div
-          class="col-md-3 p-3 d-flex justify-content-center info-card-bg-success border rounded-2"
-        >
-          <div>
-            <h5 class="text-center">{{ data.total_students }}</h5>
-            <span>Students</span>
+
+        <div class="row g-3 d-flex justify-content-center mt-2">
+          <div class="col-md-3 p-3 d-flex justify-content-center info-card-bg-success border rounded-2">
+            <div>
+              <h5 class="text-center">{{ data.total_students }}</h5>
+              <span>Students</span>
+            </div>
           </div>
-        </div>
-        <div
-          class="col-md-3 mx-5 p-3 rounded-2 d-flex justify-content-center info-card-bg-warning"
-        >
-          <div class="info-card">
-            <h5 class="text-center">{{ data.total_teachers }}</h5>
-            <span>Teachers</span>
+          <div class="col-md-3 p-3 rounded-2 d-flex justify-content-center info-card-bg-warning">
+            <div class="info-card">
+              <h5 class="text-center">{{ data.total_teachers }}</h5>
+              <span>Teachers</span>
+            </div>
           </div>
-        </div>
-        <div
-          class="col-md-3 p-3 rounded-2 d-flex justify-content-center info-card-bg-danger"
-        >
-          <div class="info-card">
-            <h5 class="text-center">0</h5>
-            <span>Support Staff</span>
+          <div class="col-md-3 p-3 rounded-2 d-flex justify-content-center info-card-bg-danger">
+            <div class="info-card">
+              <h5 class="text-center">0</h5>
+              <span>Support Staff</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>
-{% endif %}
+  {% endif %}
 
-<div class="container bg-white mt-3 pt-3 pb-3 shadow-sm rounded-6">
-  <ul class="nav nav-tabs" id="myTab" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button
-        class="nav-link active fw-bold"
-        id="stats-tab"
-        data-bs-toggle="tab"
-        data-bs-target="#stats"
-        type="button"
-        role="tab"
+  <div class="sch-card sch-stats-card">
+    <ul class="nav nav-tabs exam-tabs" id="myTab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link active"
+          id="stats-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#stats"
+          type="button"
+          role="tab"
+        >
+          <i class="bi bi-bar-chart-line"></i> Stats
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
+          id="academics-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#academics"
+          type="button"
+          role="tab"
+        >
+          <i class="bi bi-book"></i> Academics
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content p-3" id="myTabContent">
+      <div
+        class="tab-pane fade show active"
+        id="stats"
+        role="tabpanel"
+        aria-labelledby="stats-tab"
       >
-        <i class="bi bi-bar-chart-line me-2"></i> Stats
-      </button>
-    </li>
-
-    <li class="nav-item" role="presentation">
-      <button
-        class="nav-link fw-bold"
-        id="academics-tab"
-        data-bs-toggle="tab"
-        data-bs-target="#academics"
-        type="button"
-        role="tab"
-      >
-        <i class="bi bi-book me-2"></i> Academics
-      </button>
-    </li>
-  </ul>
-
-  <div class="tab-content mt-3" id="myTabContent">
-    <!-- STATS TAB -->
-    <div
-      class="tab-pane fade show active"
-      id="stats"
-      role="tabpanel"
-      aria-labelledby="stats-tab"
-    >
-      <!-- STUDENT STATISTICS -->
-      <h5 class="fw-bold mb-3">Student Statistics</h5>
-
-      <div class="row g-4">
-        <!-- Student Gender Chart -->
-        <div class="col-md-4 col-12">
-          <div class="p-3 shadow-sm rounded bg-light">
-            <h6 class="text-center fw-bold">Student Gender</h6>
-            <canvas id="studentGenderChart"></canvas>
+        <h5 class="fw-bold mb-3">Student Statistics</h5>
+        <div class="row g-4">
+          <div class="col-md-4 col-12">
+            <div class="p-3 shadow-sm rounded bg-light sch-chart-box">
+              <h6 class="text-center fw-bold">Student Gender</h6>
+              <canvas id="studentGenderChart"></canvas>
+            </div>
           </div>
-        </div>
-
-        <!-- Teacher Gender Chart -->
-        <div class="col-md-4 col-12">
-          <div class="p-3 shadow-sm rounded bg-light">
-            <h6 class="text-center fw-bold">Teacher Gender</h6>
-            <canvas id="teacherGenderChart"></canvas>
+          <div class="col-md-4 col-12">
+            <div class="p-3 shadow-sm rounded bg-light sch-chart-box">
+              <h6 class="text-center fw-bold">Teacher Gender</h6>
+              <canvas id="teacherGenderChart"></canvas>
+            </div>
           </div>
-        </div>
-
-        <!-- Students Per Class Chart -->
-        <div class="col-md-4 col-12">
-          <div class="p-3 shadow-sm rounded bg-light">
-            <h6 class="text-center fw-bold">Students Per Class</h6>
-            <canvas id="studentsPerClassChart"></canvas>
+          <div class="col-md-4 col-12">
+            <div class="p-3 shadow-sm rounded bg-light sch-chart-box">
+              <h6 class="text-center fw-bold">Students Per Class</h6>
+              <canvas id="studentsPerClassChart"></canvas>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- ACADEMICS TAB -->
-    <div
-      class="tab-pane fade"
-      id="academics"
-      role="tabpanel"
-      aria-labelledby="academics-tab"
-    >
-      <h5 class="fw-bold">Academic Performance</h5>
-      <p>Coming soon...</p>
+      <div
+        class="tab-pane fade"
+        id="academics"
+        role="tabpanel"
+        aria-labelledby="academics-tab"
+      >
+        <h5 class="fw-bold">Academic Performance</h5>
+        <p>Coming soon...</p>
+      </div>
     </div>
   </div>
 </div>
@@ -520,7 +494,6 @@ render_flash_messages, sidebar %} {% block side_nav %}
   const data = {{ data.branch|tojson }}
 
   // URLs
-  const baseUrl = "{{ url_for('admin.branch_profile', branch_id="1") }}"
   const update_branch_url = "{{ url_for('admin.update_branch', branch_id=data.branch.id if data.branch else 0) }}";
 
   // CHART.JS GRAPHS TO SHOW DATA.
@@ -531,6 +504,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
 {% endif %}
 <script>
   const add_branch_url = "{{ url_for('admin.add_school') }}";
+  const baseUrl = "{{ url_for('admin.branch_profile', branch_id=1) }}";
 </script>
 <script src="{{ url_for('admin.static', filename='js/branch.js')}}"></script>
 {% endblock %}

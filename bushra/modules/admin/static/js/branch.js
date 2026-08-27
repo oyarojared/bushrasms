@@ -1,101 +1,99 @@
 document.addEventListener("DOMContentLoaded", function () {
   const select = document.getElementById("branchSelect");
   const branchform = document.getElementById("branchForm");
-  const branchSelect = document.getElementById("branchSelect");
 
-  if (data) {
-    branchSelect.value = data.id;
+  if (typeof data !== "undefined" && data && select) {
+    select.value = String(data.id);
   }
 
-  select.addEventListener("change", function () {
+  select?.addEventListener("change", function () {
     const branchId = this.value;
-    if (branchId) {
-      // dynamically set form action
-      branchform.action = baseUrl.replace("1", branchId);
-      branchform.submit();
-    }
+    if (!branchId || !branchform) return;
+    const template = typeof baseUrl === "string" ? baseUrl : "";
+    branchform.action = template.replace(/\/\d+(?:\/)?$/, "/" + branchId);
+    branchform.submit();
   });
 
-  // ------ UPDATE AND ADD BRANCH MODAL FUNCTIONALITY------ //
   const editBtn = document.getElementById("editBranchBtn");
   const addBtn = document.getElementById("add-branch-link");
-
   const addModalEl = document.getElementById("addModal");
-  const addModal = new bootstrap.Modal(addModalEl);
-
+  const form = document.getElementById("addBranchForm");
   const modalHeaderTitle = document.getElementById("modal-header-title");
   const formHeader = document.getElementById("form-header");
   const submitBtn = document.getElementById("submit-btn");
-  const form = document.getElementById("addBranchForm");
 
-  /* ============================================================
-       RESET BACKGROUND COLORS WHEN MODAL CLOSES
-    ============================================================ */
+  if (!addModalEl || !form) return;
+
+  const addModal = new bootstrap.Modal(addModalEl);
+
   addModalEl.addEventListener("hidden.bs.modal", () => {
-    const inputs = document.querySelectorAll(".form-control, .form-select");
-    inputs.forEach((input) => (input.style.backgroundColor = ""));
+    document.querySelectorAll("#addBranchForm .form-control, #addBranchForm .form-select")
+      .forEach((input) => (input.style.backgroundColor = ""));
   });
 
-  /* ============================================================
-       ADD MODE
-    ============================================================ */
-  addBtn.addEventListener("click", function () {
+  addBtn?.addEventListener("click", function () {
     modalHeaderTitle.innerHTML = "ADD BRANCH / SCHOOL";
     formHeader.innerHTML = "Branch / School Data Entry";
-    submitBtn.innerHTML = `
-            <i class="bi bi-plus-circle me-1"></i> Add
-        `;
-
-    // Clear inputs when adding
+    submitBtn.innerHTML = `<i class="bi bi-plus-circle me-1"></i> Add`;
     form.reset();
-
-    // Reset highlights also when opening in ADD mode
-    const inputs = document.querySelectorAll(".form-control, .form-select");
-    inputs.forEach((input) => (input.style.backgroundColor = ""));
-
+    document.querySelectorAll("#addBranchForm .form-control, #addBranchForm .form-select")
+      .forEach((input) => (input.style.backgroundColor = ""));
     form.action = add_branch_url;
-    console.log(add_branch_url);
   });
 
-  /* ============================================================
-       EDIT MODE
-    ============================================================ */
-  editBtn.addEventListener("click", function () {
+  function setSelectValue(select, value) {
+    if (!select) return;
+    const raw = value == null ? "" : String(value).trim();
+    if (!raw) {
+      select.value = "";
+      return;
+    }
+    const byValue = [...select.options].find((opt) => opt.value === raw);
+    if (byValue) {
+      select.value = byValue.value;
+      return;
+    }
+    const needle = raw.toLowerCase();
+    const byLabel = [...select.options].find(
+      (opt) => opt.text.trim().toLowerCase() === needle
+    );
+    select.value = byLabel ? byLabel.value : "";
+  }
+
+  editBtn?.addEventListener("click", function () {
+    if (typeof data === "undefined" || !data) return;
+
     modalHeaderTitle.innerHTML = "UPDATE BRANCH / SCHOOL INFO";
     formHeader.innerHTML = "Branch / School Info Update";
-    submitBtn.innerHTML = `
-            <i class="bi bi-arrow-repeat me-1"></i> Update
-        `;
+    submitBtn.innerHTML = `<i class="bi bi-arrow-repeat me-1"></i> Update`;
 
-    // Highlight fields in light yellow for update mode
-    const inputs = document.querySelectorAll(".form-control, .form-select");
-    inputs.forEach((input) => {
-      input.style.backgroundColor = "rgb(241 240 236)";
-    });
+    document.querySelectorAll("#addBranchForm .form-control, #addBranchForm .form-select")
+      .forEach((input) => {
+        input.style.backgroundColor = "rgb(241 240 236)";
+      });
 
-    // Prefill from Jinja
-    const branch = data;
+    form.querySelector("[name='branch_name']").value = data.branch_name || "";
+    form.querySelector("[name='school_code']").value = data.school_code || "";
+    form.querySelector("[name='branch_manager']").value = data.branch_manager || "";
+    setSelectValue(form.querySelector("[name='branch_level']"), data.branch_level);
+    setSelectValue(
+      form.querySelector("[name='branch_head']"),
+      data.branch_head_id || data.branch_head
+    );
+    setSelectValue(form.querySelector("[name='school_gender']"), data.school_gender);
+    setSelectValue(form.querySelector("[name='school_type']"), data.school_type);
+    form.querySelector("[name='email']").value = data.email || "";
+    const mottoField = form.querySelector("[name='motto']");
+    if (mottoField) mottoField.value = data.motto || "";
 
-    form.querySelector("[name='branch_name']").value = branch.branch_name || "";
-    form.querySelector("[name='school_code']").value = branch.school_code || "";
-    form.querySelector("[name='branch_manager']").value =
-      branch.branch_manager || "";
-    form.querySelector("[name='branch_level']").value =
-      branch.branch_level || "";
-    form.querySelector("[name='branch_head']").value = branch.branch_head || "";
-    form.querySelector("[name='school_gender']").value =
-      branch.school_gender || "";
-    form.querySelector("[name='school_type']").value = branch.school_type || "";
-    form.querySelector("[name='email']").value = branch.email || "";
-
-    // Open modal
     addModal.show();
-
     form.action = update_branch_url;
   });
 
-  // COLORS
-  const genderColors = ["#0d6efd", "#dc3545"]; // Blue (M), Red (F)
+  if (typeof Chart === "undefined") return;
+  if (typeof studentGender === "undefined") return;
+
+  const genderColors = ["#0d6efd", "#dc3545"];
   const classColors = [
     "#0d6efd",
     "#198754",
@@ -105,70 +103,73 @@ document.addEventListener("DOMContentLoaded", function () {
     "#20c997",
   ];
 
-  // STUDENT GENDER CHART
-  new Chart(document.getElementById("studentGenderChart"), {
-    type: "doughnut",
-    data: {
-      labels: ["Male", "Female"],
-      datasets: [
-        {
-          data: studentGender,
-          backgroundColor: genderColors,
-          hoverOffset: 8,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: "bottom" },
-      },
-    },
-  });
+  const studentEl = document.getElementById("studentGenderChart");
+  const teacherEl = document.getElementById("teacherGenderChart");
+  const classEl = document.getElementById("studentsPerClassChart");
 
-  // TEACHER GENDER CHART
-  new Chart(document.getElementById("teacherGenderChart"), {
-    type: "doughnut",
-    data: {
-      labels: ["Male", "Female"],
-      datasets: [
-        {
-          data: teacherGender,
-          backgroundColor: genderColors,
-          hoverOffset: 8,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: "bottom" },
+  if (studentEl) {
+    new Chart(studentEl, {
+      type: "doughnut",
+      data: {
+        labels: ["Male", "Female"],
+        datasets: [
+          {
+            data: studentGender,
+            backgroundColor: genderColors,
+            hoverOffset: 8,
+          },
+        ],
       },
-    },
-  });
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom" } },
+      },
+    });
+  }
 
-  // STUDENTS PER CLASS BAR CHART
-  new Chart(document.getElementById("studentsPerClassChart"), {
-    type: "bar",
-    data: {
-      labels: Object.keys(studentsPerClass),
-      datasets: [
-        {
-          label: "Students",
-          data: Object.values(studentsPerClass),
-          backgroundColor: classColors,
-          borderRadius: 6,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: { stepSize: 5 },
+  if (teacherEl && typeof teacherGender !== "undefined") {
+    new Chart(teacherEl, {
+      type: "doughnut",
+      data: {
+        labels: ["Male", "Female"],
+        datasets: [
+          {
+            data: teacherGender,
+            backgroundColor: genderColors,
+            hoverOffset: 8,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom" } },
+      },
+    });
+  }
+
+  if (classEl && typeof studentsPerClass !== "undefined") {
+    new Chart(classEl, {
+      type: "bar",
+      data: {
+        labels: Object.keys(studentsPerClass),
+        datasets: [
+          {
+            label: "Students",
+            data: Object.values(studentsPerClass),
+            backgroundColor: classColors,
+            borderRadius: 6,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 5 } },
         },
       },
-    },
-  });
+    });
+  }
 });

@@ -7,7 +7,7 @@ from ....modals.assessment_db import Exam, ExamPaper
 from ....modals.staff_db import ClassTeacher
 from ....modals.students_db import Student
 from ..services.grades import live_class_name
-from ..services.report import build_broadsheet_data
+from ..services.report import build_broadsheet_data, compute_full_analysis
 
 
 def list_class_teacher_assignments(teacher):
@@ -290,11 +290,304 @@ def class_exam_overview(assignment, exam_id):
     }
 
 
+_TERM_ORDER = {"I": 1, "II": 2, "III": 3}
+_CBC_GRADE_COLORS = {
+    "EE": "#16a34a",
+    "ME": "#2563eb",
+    "AE": "#d97706",
+    "BE": "#dc2626",
+}
+_844_GRADE_COLORS = {
+    "A": "#15803d",
+    "A-": "#16a34a",
+    "B+": "#22c55e",
+    "B": "#4ade80",
+    "B-": "#84cc16",
+    "C+": "#eab308",
+    "C": "#f59e0b",
+    "C-": "#f97316",
+    "D+": "#fb923c",
+    "D": "#ef4444",
+    "D-": "#dc2626",
+    "E": "#991b1b",
+}
+_FALLBACK_CHART_COLORS = [
+    "#ff7979",
+    "#2563eb",
+    "#16a34a",
+    "#d97706",
+    "#7c3aed",
+    "#0891b2",
+]
+
+
+def exam_term_key(term):
+    return str(term or "").strip().upper()
+
+
+def sitting_filters(exams, year=None, term=None):
+    years = sorted({exam.year for exam in exams if exam.year}, reverse=True)
+    selected_year = year if year in years else (years[0] if years else None)
+
+    terms = sorted(
+        {
+            exam_term_key(exam.term)
+            for exam in exams
+            if exam.year == selected_year and exam_term_key(exam.term)
+        },
+        key=lambda value: _TERM_ORDER.get(value, 99),
+    )
+    wanted_term = exam_term_key(term)
+    selected_term = wanted_term if wanted_term in terms else (terms[-1] if terms else None)
+
+    sitting = [
+        exam
+        for exam in exams
+        if exam.year == selected_year and exam_term_key(exam.term) == selected_term
+    ]
+    return years, terms, sitting, selected_year, selected_term
+
+
+def _grade_chart_color(grade, grading_type, index=0):
+    palette = _844_GRADE_COLORS if grading_type == "844" else _CBC_GRADE_COLORS
+    if grade in palette:
+        return palette[grade]
+    return _FALLBACK_CHART_COLORS[index % len(_FALLBACK_CHART_COLORS)]
+
+
+def _ranked_person(row):
+    if not row or not row.get("subjects_count"):
+        return None
+    return {
+        "name": row.get("name") or "",
+        "admission_number": row.get("admission_number"),
+        "mean_value": row.get("mean_value"),
+        "score": row.get("score"),
+        "position": row.get("position"),
+    }
+
+
+def _subject_means_from_data(data):
+    subjects = data.get("subjects") or []
+    averages = data.get("subject_averages") or {}
+    subject_means = []
+    for subject in subjects:
+        subject_id = subject.get("id")
+        mean = averages.get(subject_id)
+        if mean is None:
+            mean = averages.get(str(subject_id))
+        if mean is not None:
+            try:
+                mean = int(round(float(mean)))
+            except (TypeError, ValueError):
+                mean = None
+        name = subject.get("name") or ""
+        subject_means.append(
+            {
+                "name": name,
+                "label": _short_subject_label(name) or name,
+                "mean": mean,
+            }
+        )
+    numeric_means = [row["mean"] for row in subject_means if row["mean"] is not None]
+    class_mean = (
+        int(round(sum(numeric_means) / len(numeric_means))) if numeric_means else None
+    )
+    return subject_means, class_mean
+
+
+def _class_mean_display(data, mark_mean, class_id):
+    """
+    Class mean + mean grade for the class-teacher summary.
+    8-4-4 uses average learner ranking points, then the same
+    aggregate scale as class ranking. CBC uses subject-mean score
+    against the class grading scheme.
+    """
+    grading_type = data.get("grading_type") or "cbc"
+    if grading_type == "844":
+        from ..services.grading_844 import aggregate_to_final_grade
+
+        totals = []
+        for student in data.get("students") or []:
+            points = student.get("total_points")
+            if points is None:
+                continue
+            try:
+                totals.append(float(points))
+            except (TypeError, ValueError):
+                continue
+        if not totals:
+            return None, None, "pts"
+        class_mean_points = int(round(sum(totals) / len(totals)))
+        return (
+            class_mean_points,
+            aggregate_to_final_grade(class_mean_points),
+            "pts",
+        )
+
+    if mark_mean is None or not class_id:
+        return mark_mean, None, None
+    from ..utils import resolve_grade
+
+    info = resolve_grade(class_id, mark_mean) or {}
+    return mark_mean, info.get("performance_level"), None
+
+
+def class_exam_performance(assignment, exam_id):
+    if not assignment or not exam_id:
+        return None
+
+    stream = (assignment.stream or "").strip() or None
+    data = build_broadsheet_data(
+        assignment.branch_id,
+        assignment.class_id,
+        exam_id,
+        stream,
+    )
+    analysis = compute_full_analysis(data)
+    subject_means, mark_mean = _subject_means_from_data(data)
+    class_mean, class_mean_grade, class_mean_unit = _class_mean_display(
+        data, mark_mean, assignment.class_id
+    )
+
+    students = data.get("students") or []
+    entered = 0
+    for student in students:
+        marks = student.get("marks") or {}
+        has_mark = False
+        for info in marks.values():
+            value = info.get("marks") if isinstance(info, dict) else info
+            if value not in (None, "-", ""):
+                has_mark = True
+                break
+        if has_mark:
+            entered += 1
+
+    missing = data.get("missing_marks") or []
+    grading_type = data.get("grading_type") or "cbc"
+    grade_rows = analysis.get("overall_grade_analysis") or []
+    grade_distribution = [
+        {
+            "grade": row.get("grade"),
+            "count": row.get("count") or 0,
+            "color": _grade_chart_color(row.get("grade"), grading_type, index),
+        }
+        for index, row in enumerate(grade_rows)
+        if row.get("grade")
+    ]
+
+    top_students = []
+    for row in analysis.get("top_students") or []:
+        person = _ranked_person(row)
+        if person:
+            top_students.append(person)
+
+    weakest = sorted(
+        [row for row in subject_means if row["mean"] is not None],
+        key=lambda row: row["mean"],
+    )[:3]
+
+    return {
+        "exam_name": data.get("exam_name") or "Exam",
+        "grading_type": grading_type,
+        "is_844": grading_type == "844",
+        "grade_label": analysis.get("grade_label") or "Mean Score",
+        "score_label": analysis.get("score_label") or "Total Marks",
+        "overall_grade_title": analysis.get("overall_grade_title")
+        or "Grade distribution",
+        "summary": {
+            "class_mean": class_mean,
+            "class_mean_grade": class_mean_grade,
+            "class_mean_unit": class_mean_unit,
+            "class_mean_grade_color": (
+                _grade_chart_color(class_mean_grade, grading_type)
+                if class_mean_grade
+                else None
+            ),
+            "total_learners": data.get("total_learners") or len(students),
+            "entered": entered,
+            "missing_count": len(missing),
+        },
+        "subject_means": subject_means,
+        "weakest_subjects": weakest,
+        "grade_distribution": grade_distribution,
+        "top_students": top_students,
+        "best_boy": _ranked_person(analysis.get("best_boy")),
+        "best_girl": _ranked_person(analysis.get("best_girl")),
+        "missing_marks": missing[:8],
+        "missing_more": max(0, len(missing) - 8),
+        "charts": {
+            "subject_labels": [row["label"] for row in subject_means],
+            "subject_names": [row["name"] for row in subject_means],
+            "subject_values": [row["mean"] for row in subject_means],
+            "grade_labels": [row["grade"] for row in grade_distribution],
+            "grade_values": [row["count"] for row in grade_distribution],
+            "grade_colors": [row["color"] for row in grade_distribution],
+        },
+    }
+
+
+def dashboard_class_performance(teacher):
+    assignments = list_class_teacher_assignments(teacher)
+    if not assignments:
+        return None
+
+    assignment = assignments[0]
+    exams = exams_for_assignment(assignment)
+    snapshot = {
+        "assignment_id": assignment.id,
+        "class_label": assignment_label(assignment),
+        "exam_id": None,
+        "exam_name": None,
+        "year": None,
+        "term": None,
+        "class_mean": None,
+        "class_mean_grade": None,
+        "class_mean_unit": None,
+        "charts": {"subject_labels": [], "subject_values": []},
+    }
+    if not exams:
+        return snapshot
+
+    exam = exams[0]
+    snapshot["exam_id"] = exam.id
+    snapshot["exam_name"] = exam.name
+    snapshot["year"] = exam.year
+    snapshot["term"] = exam_term_key(exam.term)
+
+    try:
+        stream = (assignment.stream or "").strip() or None
+        data = build_broadsheet_data(
+            assignment.branch_id,
+            assignment.class_id,
+            exam.id,
+            stream,
+        )
+        subject_means, mark_mean = _subject_means_from_data(data)
+        class_mean, class_mean_grade, class_mean_unit = _class_mean_display(
+            data, mark_mean, assignment.class_id
+        )
+        snapshot["class_mean"] = class_mean
+        snapshot["class_mean_grade"] = class_mean_grade
+        snapshot["class_mean_unit"] = class_mean_unit
+        snapshot["charts"] = {
+            "subject_labels": [row["label"] for row in subject_means],
+            "subject_names": [row["name"] for row in subject_means],
+            "subject_values": [row["mean"] for row in subject_means],
+        }
+    except Exception:
+        pass
+    return snapshot
+
+
 list_class_teacher_assignments = list_class_teacher_assignments
 get_assignment_for_teacher = get_assignment_for_teacher
 students_for_assignment = students_for_assignment
 exams_for_assignment = exams_for_assignment
 class_exam_overview = class_exam_overview
+class_exam_performance = class_exam_performance
+dashboard_class_performance = dashboard_class_performance
+sitting_filters = sitting_filters
 assignment_has_exam = assignment_has_exam
 teacher_owns_student = teacher_owns_student
 kenya_whatsapp_number = kenya_whatsapp_number

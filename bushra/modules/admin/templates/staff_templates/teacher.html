@@ -202,6 +202,59 @@ current_user) }} {% endblock %} {% block main_content %}
     </div>
   </section>
 
+  {% if class_performance %}
+  <section class="teacher-section teacher-perf-section" aria-labelledby="teacherPerfHeading">
+    <div class="teacher-section-header teacher-perf-header">
+      <div class="teacher-section-heading">
+        <span class="teacher-section-icon" aria-hidden="true">
+          <i class="bi bi-graph-up"></i>
+        </span>
+        <div>
+          <h2 id="teacherPerfHeading" class="teacher-section-title">
+            Class performance
+          </h2>
+          <p class="teacher-section-subtitle">
+            {{ class_performance.class_label }}
+            {% if class_performance.exam_name %}
+            · {{ class_performance.exam_name }}
+            {% if class_performance.term %} · Term {{ class_performance.term }}{% endif %}
+            {% if class_performance.year %} · {{ class_performance.year }}{% endif %}
+            {% endif %}
+            {% if class_performance.class_mean is not none %}
+            · Mean {{ class_performance.class_mean }}{% if class_performance.class_mean_unit %} {{ class_performance.class_mean_unit }}{% endif %}{% if class_performance.class_mean_grade %} {{ class_performance.class_mean_grade }}{% endif %}
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      <a
+        class="teacher-perf-link"
+        href="{{ url_for('admin.my_class', assignment=class_performance.assignment_id, tab='performance', exam=class_performance.exam_id, year=class_performance.year, term=class_performance.term) }}"
+      >
+        View detailed analysis
+        <i class="bi bi-arrow-right" aria-hidden="true"></i>
+      </a>
+    </div>
+    <div class="teacher-section-body teacher-perf-body">
+      {% if class_performance.charts.subject_labels %}
+      <div class="teacher-perf-chart">
+        <canvas id="teacherSubjectMeansChart" aria-label="Subject mean scores"></canvas>
+      </div>
+      <script type="application/json" id="teacherPerfData">{{ class_performance.charts | tojson }}</script>
+      {% elif class_performance.exam_id %}
+      <p class="teacher-perf-empty">
+        Marks have not been entered for this exam yet.
+        <a href="{{ url_for('admin.my_class', assignment=class_performance.assignment_id, tab='performance', exam=class_performance.exam_id, year=class_performance.year, term=class_performance.term) }}">Open analysis</a>
+      </p>
+      {% else %}
+      <p class="teacher-perf-empty">
+        No exam for this class yet.
+        <a href="{{ url_for('admin.my_class', assignment=class_performance.assignment_id, tab='performance') }}">Open My class</a>
+      </p>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
   <footer class="teacher-portal-footer">
     <div class="teacher-portal-footer-main">
       <span class="teacher-portal-footer-brand">Shuleka Tech</span>
@@ -261,13 +314,14 @@ current_user) }} {% endblock %} {% block main_content %}
 <style>
   .teacher-portal-page {
     max-width: 100%;
-    overflow-x: hidden;
+    overflow-x: clip;
     overscroll-behavior-x: none;
     padding-bottom: 4.75rem;
   }
 
   .main-content:has(.teacher-portal-page) {
-    overflow-x: hidden;
+    overflow-x: clip;
+    overflow-y: auto;
     overscroll-behavior-x: none;
   }
 
@@ -443,6 +497,67 @@ current_user) }} {% endblock %} {% block main_content %}
     color: #98a1ad;
     font-size: 0.68rem;
     font-weight: 500;
+  }
+
+  .teacher-perf-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem 1rem;
+  }
+
+  .teacher-perf-header .teacher-section-heading {
+    min-width: 0;
+    flex: 1 1 12rem;
+  }
+
+  .teacher-perf-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: auto;
+    color: #c95f5f !important;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none !important;
+    white-space: nowrap;
+  }
+
+  .teacher-perf-link:hover,
+  .teacher-perf-link:focus {
+    color: #ff7979 !important;
+  }
+
+  .teacher-perf-body {
+    padding: 0.75rem 1rem 1rem;
+  }
+
+  .teacher-perf-chart {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .teacher-perf-chart canvas {
+    display: block;
+    max-width: 100% !important;
+    touch-action: pan-y;
+  }
+
+  .teacher-perf-empty {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.82rem;
+  }
+
+  .teacher-perf-empty a {
+    color: #c95f5f;
+    font-weight: 700;
+    text-decoration: none;
   }
 
   .teacher-lessons-table-wrap {
@@ -729,6 +844,18 @@ current_user) }} {% endblock %} {% block main_content %}
     .teacher-portal-footer-contacts {
       padding: 0 0.5rem;
     }
+
+    .teacher-perf-header {
+      align-items: flex-start;
+    }
+
+    .teacher-perf-link {
+      margin-left: 0;
+    }
+
+    .teacher-perf-chart {
+      height: 180px;
+    }
   }
 
   @media (min-width: 576px) {
@@ -747,4 +874,18 @@ current_user) }} {% endblock %} {% block main_content %}
     }
   }
 </style>
+<script src="{{ url_for('admin.static', filename='js/class_performance_chart.js') }}"></script>
+<script>
+  (function () {
+    const dataNode = document.getElementById("teacherPerfData");
+    if (!dataNode || typeof renderSubjectMeansLine !== "function") return;
+    let charts;
+    try {
+      charts = JSON.parse(dataNode.textContent);
+    } catch (err) {
+      return;
+    }
+    renderSubjectMeansLine(document.getElementById("teacherSubjectMeansChart"), charts);
+  })();
+</script>
 {% endblock %}

@@ -18,6 +18,7 @@ from ..utils.class_teacher import (
     assignment_has_exam,
     assignment_label,
     class_exam_overview,
+    class_exam_performance,
     exams_for_assignment,
     get_assignment_for_teacher,
     kenya_whatsapp_number,
@@ -25,6 +26,7 @@ from ..utils.class_teacher import (
     learner_initials,
     list_class_teacher_assignments,
     missing_learner_fields,
+    sitting_filters,
     students_for_assignment,
     teacher_owns_student,
 )
@@ -145,8 +147,42 @@ def my_class():
     if not selected_exam and exams:
         selected_exam = exams[0]
 
+    tab = (request.args.get("tab") or "learners").strip().lower()
+    if tab not in ("learners", "results", "performance"):
+        tab = "learners"
+
     overview = None
-    if selected and selected_exam:
+    performance = None
+    filter_years = []
+    filter_terms = []
+    selected_year = None
+    selected_term = None
+    sitting_exams = exams
+
+    if tab == "performance":
+        year = request.args.get("year", type=int)
+        term = (request.args.get("term") or "").strip() or None
+        if year is None and selected_exam:
+            year = selected_exam.year
+        if not term and selected_exam:
+            term = selected_exam.term
+        filter_years, filter_terms, sitting_exams, selected_year, selected_term = (
+            sitting_filters(exams, year, term)
+        )
+        selected_exam = next(
+            (exam for exam in sitting_exams if exam.id == exam_id),
+            None,
+        )
+        if not selected_exam and sitting_exams:
+            selected_exam = sitting_exams[0]
+        if selected and selected_exam:
+            try:
+                performance = class_exam_performance(selected, selected_exam.id)
+            except Exception:
+                performance = {
+                    "error": "Could not load performance for this exam yet.",
+                }
+    elif tab == "results" and selected and selected_exam:
         try:
             overview = class_exam_overview(selected, selected_exam.id)
         except Exception:
@@ -157,10 +193,6 @@ def my_class():
                 "error": "Could not load results for this exam yet.",
             }
 
-    tab = (request.args.get("tab") or "learners").strip().lower()
-    if tab not in ("learners", "results"):
-        tab = "learners"
-
     return render_template(
         "class_teacher/my_class.html",
         assignments=assignment_views,
@@ -170,8 +202,14 @@ def my_class():
         learner_count=len(learner_rows),
         missing_phone_count=missing_phone,
         exams=exams,
+        sitting_exams=sitting_exams,
         selected_exam=selected_exam,
         exam_overview=overview,
+        performance=performance,
+        filter_years=filter_years,
+        filter_terms=filter_terms,
+        selected_year=selected_year,
+        selected_term=selected_term,
         active_tab=tab,
     )
 

@@ -11,6 +11,7 @@ from flask_login import current_user, login_required
 from sqlalchemy.orm import aliased
 
 from ..utils.route_protect import admin_required
+from ..utils.class_teacher import dashboard_class_performance
 from ..services.grades import live_class_name, sort_grade_list
 from ....modals.subjects_db import Lesson
 
@@ -320,6 +321,7 @@ def teacher_dash():
         lessons=classes_info,
         branch=branch,
         teacher=current_user,
+        class_performance=dashboard_class_performance(current_user),
     )
 
 

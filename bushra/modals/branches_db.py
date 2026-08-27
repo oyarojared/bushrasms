@@ -52,6 +52,7 @@ class Branch(db.Model):
             "branch_manager": self.branch_manager,
             "branch_level": self.branch_level,
             "branch_head": teacher.fullname if teacher else None,
+            "branch_head_id": str(self.branch_head) if self.branch_head else "",
             "school_gender": self.school_gender,
             "school_type": self.school_type,
             "email": self.email,

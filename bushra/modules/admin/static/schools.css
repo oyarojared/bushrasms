@@ -1,0 +1,122 @@
+/* Schools page layout — keeps the school select visible */
+
+.sch-page .app-page-title {
+  margin-bottom: 0.85rem;
+}
+
+.sch-card {
+  background: #fff;
+  border: 1px solid #edf0f2;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.sch-card-accent {
+  height: 3px;
+  background: #ff7979;
+}
+
+.sch-select-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.85rem 1rem;
+  padding: 1rem 1.1rem 1.05rem;
+}
+
+.sch-select-form {
+  flex: 1 1 240px;
+  min-width: 0;
+  margin: 0;
+}
+
+.sch-select-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+.sch-select-field {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  max-width: 520px;
+}
+
+.sch-select-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0 0.75rem;
+  background: #fff5f5;
+  border: 1px solid #dee2e6;
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+  color: #ff7979;
+}
+
+.sch-select-field .form-select {
+  min-height: 40px;
+  border: 1px solid #dee2e6;
+  border-radius: 0 8px 8px 0;
+  background-color: #fff;
+}
+
+.sch-select-field:focus-within .sch-select-icon,
+.sch-select-field:focus-within .form-select {
+  border-color: #ff7979;
+}
+
+.sch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sch-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sch-profile-card {
+  padding: 1rem 1.1rem 1.15rem;
+}
+
+.sch-logo-img {
+  max-width: 120px;
+  max-height: 120px;
+}
+
+.sch-stats-card .exam-tabs {
+  border-radius: 0;
+}
+
+.sch-chart-box {
+  min-height: 280px;
+}
+
+.sch-chart-box canvas {
+  max-height: 240px;
+}
+
+@media (max-width: 767.98px) {
+  .sch-select-row {
+    padding: 0.85rem 0.85rem 0.9rem;
+  }
+
+  .sch-select-field {
+    max-width: none;
+  }
+
+  .sch-profile-card {
+    padding: 0.85rem;
+  }
+}

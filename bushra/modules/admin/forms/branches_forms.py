@@ -102,7 +102,8 @@ class AddBranchForm(FlaskForm):
     # This will be populated dynamically inside your route
     branch_head = SelectField(
         "Branch Head",
-        coerce=str,   
+        coerce=str,
+        validators=[Optional()],
     )
 
     # Added fields
