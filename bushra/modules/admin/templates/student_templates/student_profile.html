@@ -1992,6 +1992,7 @@
 <script src="{{ url_for('admin.static', filename='js/update_passport.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/load_grade_streams.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/assessment/cbe_report_options.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='js/assessment/report_card_download.js') }}"></script>
 <script>
   document.getElementById("editStudentBtn")?.addEventListener("click", () => {
     const tabTrigger = document.querySelector('[href="#student-info"]');
@@ -2127,47 +2128,22 @@
 
   async function downloadStudentReportCard(payload) {
     if (typeof blockUI === "function") {
-      blockUI("Generating result", "Preparing PDF download…");
+      blockUI("Generating report card", "Preparing this learner's PDF…", {
+        progress: true,
+      });
     }
 
     try {
-      const response = await fetch("/admin/generate-reportcards-pdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest",
+      await downloadReportCardPdf(payload, {
+        onProgress: (percent, message) => {
+          if (typeof setUIProgress === "function") {
+            setUIProgress(percent, message);
+          }
         },
-        body: JSON.stringify(payload),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate PDF");
-      }
-
-      const blob = await response.blob();
-      const contentDisposition = response.headers.get("Content-Disposition");
-      let filename = "exam_assessment_result.pdf";
-
-      if (contentDisposition) {
-        const match = contentDisposition.match(
-          /filename\*?=(?:UTF-8'')?["']?([^"';]+)/,
-        );
-        if (match && match[1]) {
-          filename = decodeURIComponent(match[1]);
-        }
-      }
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
     } catch (error) {
       console.error(error);
-      alert("Could not generate the exam/assessment result. Please try again.");
+      alert(error.message || "Could not generate the exam/assessment result. Please try again.");
     } finally {
       if (typeof unblockUI === "function") {
         unblockUI();

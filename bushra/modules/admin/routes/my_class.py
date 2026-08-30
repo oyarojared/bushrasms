@@ -1,16 +1,12 @@
 from flask import flash, make_response, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from urllib.parse import quote
-from weasyprint import HTML
+from ..services.report_pdf import build_report_bundle, render_bundle_pdf
 
 from ....modals.assessment_db import Exam
-from ....modals.branches_db import Branch, BranchClasses
 from ....modals.students_db import Student
 from .. import admin_bp
-from ..services import grading_844 as grading_844_service
-from ..services import report as report_service
 from ..services.grades import live_class_name
-from ..services.grading_844 import normalize_form_name
 from ..services import studs as studs_service
 from ..utils import safe_date
 from ..utils.class_teacher import (
@@ -74,59 +70,14 @@ def _selected_assignment(assignments):
 
 
 def _render_student_report_pdf(student, exam_id):
-    branch_id = student.branch_id
-    class_id = student.class_id
-    stream = student.stream or None
-    school = Branch.query.get(branch_id)
-    class_obj = BranchClasses.query.get_or_404(class_id)
-    normalized_form = normalize_form_name(live_class_name(class_obj.grade_form))
-    is_844 = normalized_form in ("Form 3", "Form 4", "IGCSE")
-
-    make_844_reports = next(
-        (
-            getattr(grading_844_service, name)
-            for name in dir(grading_844_service)
-            if name.startswith("generate_") and "class" in name and "report" in name
-        ),
-        None,
+    bundle = build_report_bundle(
+        branch_id=student.branch_id,
+        class_id=student.class_id,
+        exam_id=exam_id,
+        stream=student.stream or None,
+        student_id=student.id,
     )
-    fetch_report = next(
-        (
-            getattr(report_service, name)
-            for name in dir(report_service)
-            if name.startswith("get_") and "report" in name and name.endswith("_data")
-        ),
-        None,
-    )
-
-    if is_844:
-        class_reports = make_844_reports(
-            branch_id=branch_id,
-            class_id=class_id,
-            exam_id=exam_id,
-            stream=stream,
-        )
-        report_data = [
-            report for report in class_reports if report["student_id"] == student.id
-        ]
-        if not report_data:
-            raise ValueError("Student report not found in class rankings")
-        template = "academics/report_card_844.html"
-    else:
-        report_data = fetch_report(
-            branch_id=branch_id,
-            class_id=class_id,
-            exam_id=exam_id,
-            stream=stream,
-            student_id=student.id,
-        )
-        template = "academics/report_card.html"
-
-    if not report_data:
-        raise ValueError("No report data generated")
-
-    rendered_html = render_template(template, data=report_data, school=school)
-    return HTML(string=rendered_html).write_pdf()
+    return render_bundle_pdf(bundle, lite=True)
 
 
 @admin_bp.route("/my-class")

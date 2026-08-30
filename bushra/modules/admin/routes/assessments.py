@@ -29,11 +29,6 @@ from ..services.pdf_jobs import (
     pdf_path,
     read_job,
 )
-from ..services.report_pdf import (
-    build_report_bundle,
-    pdf_http_headers,
-    render_bundle_pdf,
-)
 
 from datetime import datetime
 from urllib.parse import quote
@@ -391,36 +386,18 @@ def generate_reportcards_pdf():
         return {"error": "You cannot generate reports for that school."}, 403
 
     try:
-        if student_id:
-            class_obj = BranchClasses.query.get_or_404(class_id)
-            normalized_form = normalize_form_name(live_class_name(class_obj.grade_form))
-            is_844 = normalized_form in ("Form 3", "Form 4", "IGCSE")
-            include_ranking, opening_date = _cbe_report_print_options(data, is_844)
-            bundle = build_report_bundle(
-                branch_id=branch_id,
-                class_id=class_id,
-                exam_id=exam_id,
-                stream=stream,
-                student_id=student_id,
-                include_ranking=include_ranking,
-                opening_date=opening_date,
-            )
-            pdf = render_bundle_pdf(bundle, lite=False)
-            response = make_response(pdf)
-            for header, value in pdf_http_headers(bundle["filename"]).items():
-                response.headers[header] = value
-            response.headers["Content-Length"] = str(len(pdf))
-            return response
-
         class_obj = BranchClasses.query.get_or_404(class_id)
         normalized_form = normalize_form_name(live_class_name(class_obj.grade_form))
         is_844 = normalized_form in ("Form 3", "Form 4", "IGCSE")
         include_ranking, opening_date = _cbe_report_print_options(data, is_844)
-        filename = (
-            f"{class_obj.grade_form} {stream}_Assessment_Reports.pdf"
-            if stream
-            else f"{class_obj.grade_form}_Assessment_Reports.pdf"
-        )
+        if student_id:
+            student_obj = Student.query.get(student_id)
+            student_name = student_obj.fullname if student_obj else "learner"
+            filename = f"{student_name}_assessment.pdf"
+        elif stream:
+            filename = f"{class_obj.grade_form} {stream}_Assessment_Reports.pdf"
+        else:
+            filename = f"{class_obj.grade_form}_Assessment_Reports.pdf"
         job_id = create_job(
             current_user.id,
             filename,
@@ -429,7 +406,7 @@ def generate_reportcards_pdf():
                 "class_id": class_id,
                 "exam_id": exam_id,
                 "stream": stream,
-                "student_id": None,
+                "student_id": student_id,
                 "include_ranking": include_ranking,
                 "opening_date": opening_date,
             },

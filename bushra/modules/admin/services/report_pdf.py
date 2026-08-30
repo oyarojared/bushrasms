@@ -199,7 +199,7 @@ def render_class_report_pdf(params, on_progress=None):
     )
     pdf = render_bundle_pdf(
         bundle,
-        lite=not params.get("student_id"),
+        lite=True,
         on_progress=on_progress,
     )
     return pdf, bundle["filename"]

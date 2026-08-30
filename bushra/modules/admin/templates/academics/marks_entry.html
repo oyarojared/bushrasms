@@ -165,6 +165,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
 <div id="saveMarksAlert" class="marks-save-alert d-none" role="status"></div>
 
+<script src="{{ url_for('admin.static', filename='js/assessment/report_card_download.js') }}"></script>
 <script>
   function setBlockerLoading(message = "Please wait…", sub = "Processing your request") {
     const blocker = document.getElementById("uiBlocker");
@@ -178,9 +179,31 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
     blocker.querySelector(".ui-blocker-title").textContent = message;
     blocker.querySelector(".ui-blocker-message").textContent = sub;
+    const progressBar = blocker.querySelector(".ui-blocker-progress-bar");
+    if (progressBar) {
+      progressBar.classList.remove("is-determinate");
+      progressBar.style.width = "";
+      progressBar.style.animation = "";
+    }
     blocker.classList.remove("d-none");
     blocker.setAttribute("aria-busy", "true");
     document.body.classList.add("ui-blocker-active");
+  }
+
+  function setBlockerProgress(percent, statusText) {
+    const blocker = document.getElementById("uiBlocker");
+    if (!blocker) return;
+    const value = Math.min(100, Math.max(0, Math.round(percent)));
+    const progressBar = blocker.querySelector(".ui-blocker-progress-bar");
+    if (progressBar) {
+      progressBar.classList.add("is-determinate");
+      progressBar.style.width = `${value}%`;
+      progressBar.style.animation = "none";
+    }
+    if (statusText) {
+      blocker.querySelector(".ui-blocker-message").textContent =
+        `${statusText} (${value}%)`;
+    }
   }
 
   function blockUI(message = "Please wait…", sub = "Processing your request") {
@@ -2332,56 +2355,21 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
       setBlockerLoading(
         "Generating report card",
-        "Preparing this learner's PDF from the saved marks…"
+        "Preparing this learner's PDF…"
       );
 
-      return fetch("/admin/generate-reportcards-pdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest",
-        },
-        body: JSON.stringify({
+      return downloadReportCardPdf(
+        {
           exam_id: {{ exam.id }},
           branch_id: branchSelect.value,
           class_id: gradeSelect.value,
           stream: streamSelect.value || null,
           student_id: studentId,
-        }),
-      }).then(async (response) => {
-        const contentType = response.headers.get("Content-Type") || "";
-        if (
-          !response.ok ||
-          contentType.includes("application/json") ||
-          contentType.includes("text/html")
-        ) {
-          let message = "Failed to generate the report card.";
-          if (contentType.includes("application/json")) {
-            try {
-              const err = await response.json();
-              message = err.error || err.details || message;
-            } catch (error) {
-              /* keep default */
-            }
-          }
-          throw new Error(message);
-        }
-
-        const blob = await response.blob();
-        const studentName = currentLearner.student?.full_name || "learner";
-        const filename = filenameFromDisposition(
-          response.headers.get("Content-Disposition"),
-          `${studentName}_assessment.pdf`
-        );
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
-      });
+        },
+        {
+          onProgress: (percent, message) => setBlockerProgress(percent, message),
+        },
+      );
     }
 
     function learnerMarksSaveMessage(resp, fallbackCount) {
