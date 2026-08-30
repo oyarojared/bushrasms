@@ -3,7 +3,10 @@ from ..bushra.modals.branches_db import Branch, BranchClasses
 from ..bushra.modals.staff_db import Teacher
 from ..bushra.modals.students_db import Student, StudentSubjectAllocation
 from ..bushra.modals.subjects_db import Lesson, Subject, SubjectEligibility
-from ..bushra.modules.admin.services.subs import auto_allocate_subjects
+from ..bushra.modules.admin.services.subs import (
+    auto_allocate_subjects,
+    form34_report_subject_sort_key,
+)
 
 
 def _make_branch(db, name="Test School", code="TS001"):
@@ -295,3 +298,27 @@ def test_auto_allocate_ignores_subjects_not_eligible_for_class(db):
     db.session.commit()
 
     assert _allocated_names(student) == ["English"]
+
+
+def test_form34_report_subjects_core_before_optionals():
+    names = [
+        "Physics",
+        "Chemistry",
+        "Biology",
+        "Maths",
+        "Arabic",
+        "English",
+        "Kiswahili",
+        "Business Studies",
+    ]
+    ordered = sorted(names, key=form34_report_subject_sort_key)
+    assert ordered == [
+        "English",
+        "Maths",
+        "Kiswahili",
+        "Chemistry",
+        "Arabic",
+        "Biology",
+        "Business Studies",
+        "Physics",
+    ]

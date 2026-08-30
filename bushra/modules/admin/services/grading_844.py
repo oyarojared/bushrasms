@@ -19,6 +19,7 @@ from .report import (
 
 
 from .grades import live_class_name
+from .subs import form34_report_subject_sort_key
 
 
 # =========================================================
@@ -635,7 +636,7 @@ def generate_student_report(student: Student, exam: Exam, ctx=None, stream_overr
     subjects = []
     all_subject_points = []
 
-    report_subjects.sort(key=lambda item: (item.name or "").lower())
+    report_subjects.sort(key=lambda item: form34_report_subject_sort_key(item.name))
 
     for subject in report_subjects:
         marks = None

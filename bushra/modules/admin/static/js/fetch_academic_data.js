@@ -889,6 +889,17 @@ document.addEventListener("DOMContentLoaded", function () {
                     </button>
                 </div>
             </div>
+            <div class="sa-search-bar">
+                <label class="visually-hidden" for="studentAllocSearch">Search students</label>
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <input
+                  type="search"
+                  id="studentAllocSearch"
+                  class="form-control form-control-sm"
+                  placeholder="Search by name or adm no…"
+                  autocomplete="off"
+                >
+            </div>
             <div id="student-table" class="sa-table-wrap">
                 <table class="sa-table">
                     <thead>
@@ -902,10 +913,15 @@ document.addEventListener("DOMContentLoaded", function () {
     `;
 
     students["students"].forEach((student) => {
+      const safeName = escapeHtml(student.fullname);
+      const safeAdm = escapeHtml(student.admission_number);
+      const searchText = escapeHtml(
+        `${student.fullname || ""} ${student.admission_number || ""}`.toLowerCase(),
+      );
       html += `
-            <tr class="${student.allocated ? "is-assigned" : ""}">
-                <td class="sa-col-adm">${student.admission_number}</td>
-                <td class="sa-name">${student.fullname}</td>
+            <tr class="${student.allocated ? "is-assigned" : ""}" data-search="${searchText}">
+                <td class="sa-col-adm">${safeAdm}</td>
+                <td class="sa-name">${safeName}</td>
                 <td class="sa-col-assign">
                   <input
                     type="checkbox"
@@ -922,6 +938,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     </tbody>
                 </table>
             </div>
+            <p class="sa-no-match d-none" id="studentAllocNoMatch">No student matches that search.</p>
             <div class="sa-results-foot">
                 <button type="button" class="sa-btn sa-btn-primary sa-save-btn">
                   <i class="bi bi-save"></i>Save
@@ -930,6 +947,12 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>`;
     container.innerHTML = html;
 
+    function visibleStudentRows() {
+      return [...container.querySelectorAll(".sa-table tbody tr")].filter(
+        (row) => !row.classList.contains("d-none"),
+      );
+    }
+
     function setRowAssigned(checkbox) {
       const row = checkbox.closest("tr");
       if (!row) return;
@@ -937,10 +960,27 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function setAllAssigned(checked) {
-      document.querySelectorAll(".student-checkbox").forEach((cb) => {
+      visibleStudentRows().forEach((row) => {
+        const cb = row.querySelector(".student-checkbox");
+        if (!cb) return;
         cb.checked = checked;
         setRowAssigned(cb);
       });
+    }
+
+    function filterStudentRows(query) {
+      const needle = String(query || "").trim().toLowerCase();
+      let visible = 0;
+      container.querySelectorAll(".sa-table tbody tr").forEach((row) => {
+        const haystack = row.dataset.search || "";
+        const show = !needle || haystack.includes(needle);
+        row.classList.toggle("d-none", !show);
+        if (show) visible += 1;
+      });
+      const noMatch = document.getElementById("studentAllocNoMatch");
+      if (noMatch) noMatch.classList.toggle("d-none", visible > 0);
+      const tableWrap = container.querySelector(".sa-table-wrap");
+      if (tableWrap) tableWrap.classList.toggle("d-none", visible === 0 && !!needle);
     }
 
     container.querySelectorAll(".student-checkbox").forEach((cb) => {
@@ -956,6 +996,16 @@ document.addEventListener("DOMContentLoaded", function () {
         setRowAssigned(checkbox);
       });
     });
+
+    const studentAllocSearch = document.getElementById("studentAllocSearch");
+    if (studentAllocSearch) {
+      studentAllocSearch.addEventListener("input", () => {
+        filterStudentRows(studentAllocSearch.value);
+      });
+      studentAllocSearch.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") event.preventDefault();
+      });
+    }
 
     const allocateAllBtn = document.getElementById("allocateAllBtn");
     if (allocateAllBtn) {

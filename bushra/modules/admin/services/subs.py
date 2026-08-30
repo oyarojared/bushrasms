@@ -31,6 +31,14 @@ FORM_3_4_SUBJECT_ALIASES = {
     "chem": "chemistry",
 }
 
+# Report-card table order: core papers first, then optionals A–Z.
+FORM_3_4_REPORT_SUBJECT_ORDER = {
+    "english": 0,
+    "mathematics": 1,
+    "kiswahili": 2,
+    "chemistry": 3,
+}
+
 
 def get_subjects():
     try:
@@ -276,6 +284,18 @@ def _canonical_form34_subject(name):
     if normalized in FORM_3_4_DEFAULT_SUBJECTS:
         return normalized
     return FORM_3_4_SUBJECT_ALIASES.get(normalized)
+
+
+def form34_report_subject_sort_key(name):
+    """
+    English, Mathematics, Kiswahili, Chemistry, then remaining subjects
+    alphabetically.
+    """
+    display = _normalize_subject_name(name)
+    canonical = _canonical_form34_subject(name)
+    if canonical in FORM_3_4_REPORT_SUBJECT_ORDER:
+        return (0, FORM_3_4_REPORT_SUBJECT_ORDER[canonical], display)
+    return (1, 0, display)
 
 
 def _form34_default_subjects(eligible_subjects):
