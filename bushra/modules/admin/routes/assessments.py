@@ -16,14 +16,24 @@ from ...admin.services.assessment_services import (
     get_exams_for_user,
 )
 
-from flask import Blueprint, request, make_response, render_template
-from weasyprint import HTML 
+from flask import Blueprint, request, make_response, render_template 
+from flask import current_app, jsonify, send_file
 from flask_login import login_required, current_user
 from ...admin.utils.route_protect import admin_required
 
 from ..services.grades import filter_active_classes, live_class_name
 from ..services.grading_844 import generate_class_reports, normalize_form_name
-from ..services.pdf_render import render_bulk_report_pdf
+from ..services.pdf_jobs import (
+    create_job,
+    pdf_path,
+    read_job,
+    start_class_pdf_process,
+)
+from ..services.report_pdf import (
+    build_report_bundle,
+    pdf_http_headers,
+    render_bundle_pdf,
+)
 
 from datetime import datetime
 from urllib.parse import quote
@@ -368,128 +378,110 @@ def generate_reportcards_pdf():
     if not branch_id or not class_id or not exam_id:
         return {"error": "branch_id, class_id, and exam_id are required"}, 400
 
-    report_data = None
+    try:
+        branch_id = int(branch_id)
+        class_id = int(class_id)
+        exam_id = int(exam_id)
+        if student_id:
+            student_id = int(student_id)
+    except (TypeError, ValueError):
+        return {"error": "Invalid report request."}, 400
 
-    school = Branch.query.get(branch_id)
+    if not user_can_access_branch(branch_id):
+        return {"error": "You cannot generate reports for that school."}, 403
 
     try:
-        # 🔹 Fetch class info first
-        class_obj = BranchClasses.query.get_or_404(class_id)
-
-        # ✅ SAFE normalization (handles Form 3, FORM3, Form 3 North, etc.)
-        normalized_form = normalize_form_name(live_class_name(class_obj.grade_form))
-        is_844 = normalized_form in ("Form 3", "Form 4", "IGCSE")
-
-        # 🔹 1️⃣ Fetch data (CBC or 8-4-4)
-        if is_844:
-            exam = Exam.query.get_or_404(exam_id)
-            if student_id:
-                class_reports = generate_class_reports(
-                    branch_id=branch_id,
-                    class_id=class_id,
-                    exam_id=exam_id,
-                    stream=stream,
-                    include_student_id=int(student_id),
-                )
-                report_data = [
-                    report for report in class_reports
-                    if report["student_id"] == int(student_id)
-                ]
-                if not report_data:
-                    raise ValueError("Student report not found in class rankings")
-            else:
-                report_data = generate_class_reports(
-                    branch_id=branch_id,
-                    class_id=class_id,
-                    exam_id=exam_id,
-                    stream=stream,
-                )
-            template = "academics/report_card_844.html"
-        else:
-            report_data = get_report_card_data(   # existing CBC function
+        if student_id:
+            class_obj = BranchClasses.query.get_or_404(class_id)
+            normalized_form = normalize_form_name(live_class_name(class_obj.grade_form))
+            is_844 = normalized_form in ("Form 3", "Form 4", "IGCSE")
+            include_ranking, opening_date = _cbe_report_print_options(data, is_844)
+            bundle = build_report_bundle(
                 branch_id=branch_id,
                 class_id=class_id,
                 exam_id=exam_id,
                 stream=stream,
-                student_id=student_id
+                student_id=student_id,
+                include_ranking=include_ranking,
+                opening_date=opening_date,
             )
-            template = "academics/report_card.html"
+            pdf = render_bundle_pdf(bundle, lite=False)
+            response = make_response(pdf)
+            for header, value in pdf_http_headers(bundle["filename"]).items():
+                response.headers[header] = value
+            response.headers["Content-Length"] = str(len(pdf))
+            return response
 
-        # 🛡️ Extra safety: ensure data was actually generated
-        if not report_data:
-            raise ValueError("No report data generated")
-
+        class_obj = BranchClasses.query.get_or_404(class_id)
+        normalized_form = normalize_form_name(live_class_name(class_obj.grade_form))
+        is_844 = normalized_form in ("Form 3", "Form 4", "IGCSE")
         include_ranking, opening_date = _cbe_report_print_options(data, is_844)
-        template_extras = {
-            "include_ranking": include_ranking,
-            "opening_date": opening_date,
-        }
-
-        # 🔹 2️⃣ Render HTML and generate PDF
-        if not student_id and template == "academics/report_card_844.html" and len(report_data) > 1:
-            html_documents = [
-                render_template(
-                    template,
-                    data=[student_report],
-                    school=school,
-                    **template_extras,
-                )
-                for student_report in report_data
-            ]
-            pdf = render_bulk_report_pdf(html_documents)
-        elif (
-            not student_id
-            and template == "academics/report_card.html"
-            and len(report_data.get("students", [])) > 1
-        ):
-            html_documents = [
-                render_template(
-                    template,
-                    data={**report_data, "students": [student]},
-                    school=school,
-                    **template_extras,
-                )
-                for student in report_data["students"]
-            ]
-            pdf = render_bulk_report_pdf(html_documents)
-        else:
-            rendered_html = render_template(
-                template,
-                data=report_data,
-                school=school,
-                **template_extras,
-            )
-            pdf = HTML(string=rendered_html).write_pdf()
-
-        class_name = class_obj.grade_form
-        if stream:
-            class_name += f" {stream}"      
-        
-        student_name = ""
-        if student_id:
-            student_obj = Student.query.get(student_id)
-            student_name = student_obj.fullname if student_obj else ""    
-        # 🔹 4️⃣ Send response
-        response = make_response(pdf)
-        response.headers["Content-Type"] = "application/pdf"
-        response.headers["Content-Length"] = str(len(pdf))
-        if student_id:
-            filename = f"{student_name}_assessment.pdf"
-        else:
-            filename = f"{class_name}_Assessment_Reports.pdf"
-        
-        safe_filename = quote(filename)
-
-        response.headers["Content-Disposition"] = f'attachment; filename="{safe_filename}"'
-        return response
-
+        filename = (
+            f"{class_obj.grade_form} {stream}_Assessment_Reports.pdf"
+            if stream
+            else f"{class_obj.grade_form}_Assessment_Reports.pdf"
+        )
+        job_id = create_job(current_user.id, filename)
+        start_class_pdf_process(
+            job_id,
+            {
+                "branch_id": branch_id,
+                "class_id": class_id,
+                "exam_id": exam_id,
+                "stream": stream,
+                "student_id": None,
+                "include_ranking": include_ranking,
+                "opening_date": opening_date,
+            },
+        )
+        return jsonify({"job_id": job_id, "status": "queued"}), 202
     except Exception as e:
-        import traceback
+        current_app.logger.exception("Failed to start report-card PDF")
         traceback.print_exc()
         return {
             "error": "Failed to generate PDF! Make sure you have configured grading first!",
-            "details": str(e)
+            "details": str(e),
         }, 500
+
+
+@admin_bp.route("/reportcards-pdf-status/<job_id>")
+@login_required
+@admin_required
+def reportcards_pdf_status(job_id):
+    meta = read_job(job_id)
+    if not meta or meta.get("user_id") != current_user.id:
+        return jsonify({"error": "Report job not found."}), 404
+    return jsonify(
+        {
+            "status": meta.get("status"),
+            "done": meta.get("done") or 0,
+            "total": meta.get("total") or 0,
+            "message": meta.get("message") or "",
+            "error": meta.get("error"),
+            "filename": meta.get("filename"),
+        }
+    )
+
+
+@admin_bp.route("/reportcards-pdf-download/<job_id>")
+@login_required
+@admin_required
+def reportcards_pdf_download(job_id):
+    meta = read_job(job_id)
+    if not meta or meta.get("user_id") != current_user.id:
+        return jsonify({"error": "Report job not found."}), 404
+    if meta.get("status") != "ready":
+        return jsonify({"error": "The PDF is not ready yet."}), 409
+    path = pdf_path(job_id)
+    if not path.exists():
+        return jsonify({"error": "The PDF file is missing. Please generate it again."}), 404
+    filename = meta.get("filename") or "Assessment_Reports.pdf"
+    return send_file(
+        path,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=filename,
+    )
 
 
 

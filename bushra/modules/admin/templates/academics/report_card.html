@@ -22,11 +22,6 @@
             margin: 0;
             padding: 0;
             color: #333;
-            height: 100%;
-        }
-
-        html {
-            height: 100%;
         }
 
         .report-card {
@@ -35,11 +30,18 @@
             padding: 28px 16px 36px;
             box-sizing: border-box;
             page-break-inside: avoid;
-            page-break-after: avoid;
+            break-inside: avoid;
+            page-break-after: auto;
+            break-after: auto;
             height: 270mm;
             min-height: 270mm;
             max-height: 270mm;
             overflow: hidden;
+        }
+
+        .report-card + .report-card {
+            page-break-before: always;
+            break-before: page;
         }
 
         /* HEADER */
@@ -640,10 +642,6 @@
         </div>
 
     </div>
-
-    {% if not loop.last %}
-    <div style="page-break-after: always;"></div>
-    {% endif %}
 
     {% endfor %}
 

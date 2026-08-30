@@ -14,7 +14,7 @@
 }
 
 body {
-    font-family: "Segoe UI", Arial, sans-serif;
+    font-family: Arial, sans-serif;
     font-size: 12px;
     line-height: 1.32;
     margin: 0;
@@ -31,12 +31,19 @@ body {
     border-radius: 4px;
     padding: 20px 14px 0;
     page-break-inside: avoid;
-    page-break-after: avoid;
+    break-inside: avoid;
+    page-break-after: auto;
+    break-after: auto;
     background-color: #fff;
     overflow: hidden;
     box-shadow: inset 0 0 0 1px #f0e0d6;
     display: flex;
     flex-direction: column;
+}
+
+.report-card + .report-card {
+    page-break-before: always;
+    break-before: page;
 }
 
 .rc-card-body {
@@ -668,6 +675,7 @@ body {
     </table>
 
     {% if student.subjects %}
+    {% if not pdf_lite %}
     <div class="rc-chart-wrap">
         <p class="rc-chart-title">Subject Performance Overview</p>
         <div class="rc-chart">
@@ -697,6 +705,7 @@ body {
             {% endfor %}
         </div>
     </div>
+    {% endif %}
 
     <div class="rc-subject-stats">
         <span>Total subjects: <strong>{{ subject_count }}</strong></span>
@@ -741,7 +750,7 @@ body {
             </table>
         </div>
 
-        {% if trend | length >= 2 %}
+        {% if not pdf_lite and trend | length >= 2 %}
         <div class="rc-history-chart-wrap">
             <h5 class="rc-history-title">Points Trend</h5>
             <svg class="rc-trend-svg" viewBox="0 0 {{ svg_w }} {{ svg_h }}" aria-hidden="true">
@@ -828,10 +837,6 @@ body {
         © {{ student.exam.year }} {{ student.branch_name }} · Developed by Shuleka Tech · 0701948782 / 0782811403
     </div>
 </div>
-
-{% if not loop.last %}
-<div style="page-break-after: always;"></div>
-{% endif %}
 
 {% endfor %}
 

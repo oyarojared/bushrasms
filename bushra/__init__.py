@@ -2,7 +2,7 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-from flask import Flask
+from flask import Flask, has_request_context
 
 from .config import DevelopmentConfig
 from .modals import db, migrate
@@ -46,6 +46,9 @@ def create_app():
             user_can_select_branch,
         )
 
+        if not has_request_context():
+            return {"can_select_branch": False, "locked_branch_id": None}
+
         return {
             "can_select_branch": user_can_select_branch(),
             "locked_branch_id": locked_branch_id(),
@@ -55,7 +58,9 @@ def create_app():
     def inject_branch_data():
         from .modules.admin.utils.subscription import subscription_for_branch
 
-        if not current_user.is_authenticated:
+        if not has_request_context() or not getattr(
+            current_user, "is_authenticated", False
+        ):
             return {}
 
         if current_user.is_super_admin:

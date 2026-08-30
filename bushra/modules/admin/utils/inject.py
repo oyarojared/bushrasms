@@ -1,7 +1,7 @@
 # Inject forms and other functionalities that is meant
 # to appear in all routes.
 
-from flask import session
+from flask import has_request_context, session
 from flask_login import current_user
 
 from ....modals.staff_db import Teacher
@@ -16,6 +16,14 @@ def inject_global_context():
     Inject shared forms and the logged-in teacher into
     all admin blueprint templates.
     """
+    if not has_request_context():
+        return {
+            "form": None,
+            "teacher_passport_upload_form": None,
+            "user": None,
+            "marks_deadline_banner": None,
+        }
+
     student_search_form = StudentSearchForm()
     teacher_passport_form = TeacherPassportUploadForm()
 
