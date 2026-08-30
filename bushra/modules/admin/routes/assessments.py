@@ -24,10 +24,10 @@ from ...admin.utils.route_protect import admin_required
 from ..services.grades import filter_active_classes, live_class_name
 from ..services.grading_844 import generate_class_reports, normalize_form_name
 from ..services.pdf_jobs import (
+    advance_class_pdf_job,
     create_job,
     pdf_path,
     read_job,
-    start_class_pdf_process,
 )
 from ..services.report_pdf import (
     build_report_bundle,
@@ -421,9 +421,9 @@ def generate_reportcards_pdf():
             if stream
             else f"{class_obj.grade_form}_Assessment_Reports.pdf"
         )
-        job_id = create_job(current_user.id, filename)
-        start_class_pdf_process(
-            job_id,
+        job_id = create_job(
+            current_user.id,
+            filename,
             {
                 "branch_id": branch_id,
                 "class_id": class_id,
@@ -451,6 +451,8 @@ def reportcards_pdf_status(job_id):
     meta = read_job(job_id)
     if not meta or meta.get("user_id") != current_user.id:
         return jsonify({"error": "Report job not found."}), 404
+    if meta.get("status") not in ("ready", "error"):
+        meta = advance_class_pdf_job(job_id) or meta
     return jsonify(
         {
             "status": meta.get("status"),

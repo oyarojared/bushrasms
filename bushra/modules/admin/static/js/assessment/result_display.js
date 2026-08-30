@@ -469,7 +469,7 @@ function filenameFromPdfResponse(response) {
 function pollReportCardJob(jobId) {
   return new Promise((resolve, reject) => {
     const started = Date.now();
-    const maxWaitMs = 10 * 60 * 1000;
+    const maxWaitMs = 20 * 60 * 1000;
 
     const tick = () => {
       if (Date.now() - started > maxWaitMs) {
@@ -512,7 +512,7 @@ function pollReportCardJob(jobId) {
           if (body.status === "error") {
             throw new Error(body.error || "Failed to generate PDF");
           }
-          window.setTimeout(tick, 1000);
+          window.setTimeout(tick, body.status === "running" ? 400 : 1000);
           return null;
         })
         .then((result) => {

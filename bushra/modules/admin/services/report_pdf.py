@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 from flask import render_template
 from urllib.parse import quote
 
@@ -12,7 +14,7 @@ from .grading_844 import generate_class_reports, normalize_form_name
 from .pdf_render import render_html_chunks_to_pdf, render_html_to_pdf
 from .report import get_report_card_data
 
-CHUNK_SIZE = 6
+CHUNK_SIZE = 4
 
 
 def _student_rows(template, report_data):
@@ -94,6 +96,46 @@ def build_report_bundle(branch_id, class_id, exam_id, stream=None, student_id=No
         "filename": filename,
         "is_844": is_844,
     }
+
+
+def row_count(bundle):
+    return len(_student_rows(bundle["template"], bundle["report_data"])) or 1
+
+
+def snapshot_bundle(bundle):
+    school = bundle.get("school")
+    if school is not None and not isinstance(school, dict):
+        bundle = dict(bundle)
+        bundle["school"] = {
+            "school_code": getattr(school, "school_code", None),
+            "email": getattr(school, "email", None),
+        }
+    return bundle
+
+
+def _school_for_template(school):
+    if school is None:
+        return None
+    if isinstance(school, dict):
+        return SimpleNamespace(**school)
+    return school
+
+
+def render_chunk_pdf(bundle, next_index, lite=True):
+    template = bundle["template"]
+    report_data = bundle["report_data"]
+    extras = {**bundle["extras"], "pdf_lite": lite}
+    rows = _student_rows(template, report_data)
+    total = len(rows) or 1
+    chunk = rows[next_index: next_index + CHUNK_SIZE]
+    html = render_template(
+        template,
+        data=_slice_report_data(template, report_data, chunk),
+        school=_school_for_template(bundle.get("school")),
+        **extras,
+    )
+    pdf = render_html_to_pdf(html)
+    return pdf, next_index + len(chunk), total
 
 
 def render_bundle_pdf(bundle, lite=False, on_progress=None):
