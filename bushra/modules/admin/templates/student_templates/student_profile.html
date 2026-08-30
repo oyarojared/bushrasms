@@ -2152,17 +2152,21 @@
   }
 
   let pendingCbeReportDownload = null;
-  const cbeReportOptionsModal =
-    typeof bindCbeReportCardOptionsModal === "function"
-      ? bindCbeReportCardOptionsModal((options) => {
-          if (!pendingCbeReportDownload) return;
-          downloadStudentReportCard({
-            ...pendingCbeReportDownload,
-            ...options,
-          });
-          pendingCbeReportDownload = null;
-        })
-      : null;
+  let cbeReportOptionsModal = null;
+
+  function getCbeReportOptionsModal() {
+    if (cbeReportOptionsModal) return cbeReportOptionsModal;
+    if (typeof bindCbeReportCardOptionsModal !== "function") return null;
+    cbeReportOptionsModal = bindCbeReportCardOptionsModal((options) => {
+      if (!pendingCbeReportDownload) return;
+      downloadStudentReportCard({
+        ...pendingCbeReportDownload,
+        ...options,
+      });
+      pendingCbeReportDownload = null;
+    });
+    return cbeReportOptionsModal;
+  }
 
   document.querySelectorAll(".js-download-report").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -2186,13 +2190,19 @@
         student_id: studentId,
       };
 
-      if (is844 || !cbeReportOptionsModal) {
+      if (is844) {
+        downloadStudentReportCard(payload);
+        return;
+      }
+
+      const modal = getCbeReportOptionsModal();
+      if (!modal) {
         downloadStudentReportCard(payload);
         return;
       }
 
       pendingCbeReportDownload = payload;
-      cbeReportOptionsModal.show();
+      modal.show();
     });
   });
 </script>

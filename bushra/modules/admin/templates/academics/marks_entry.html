@@ -165,6 +165,8 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
 <div id="saveMarksAlert" class="marks-save-alert d-none" role="status"></div>
 
+{% include "academics/_cbe_report_options_modal.html" %}
+<script src="{{ url_for('admin.static', filename='js/assessment/cbe_report_options.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/assessment/report_card_download.js') }}"></script>
 <script>
   function setBlockerLoading(message = "Please wait…", sub = "Processing your request") {
@@ -2347,7 +2349,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       }
     }
 
-    function downloadLearnerReportPdf() {
+    function downloadLearnerReportPdf(printOptions = {}) {
       const studentId = parseInt(learnerSelect.value, 10);
       if (!branchSelect.value || !gradeSelect.value || !studentId) {
         return Promise.reject(new Error("Select a class and learner first."));
@@ -2358,18 +2360,22 @@ render_flash_messages, sidebar %} {% block side_nav %}
         "Preparing this learner's PDF…"
       );
 
-      return downloadReportCardPdf(
-        {
-          exam_id: {{ exam.id }},
-          branch_id: branchSelect.value,
-          class_id: gradeSelect.value,
-          stream: streamSelect.value || null,
-          student_id: studentId,
-        },
-        {
-          onProgress: (percent, message) => setBlockerProgress(percent, message),
-        },
-      );
+      const payload = {
+        exam_id: {{ exam.id }},
+        branch_id: branchSelect.value,
+        class_id: gradeSelect.value,
+        stream: streamSelect.value || null,
+        student_id: studentId,
+      };
+      if (Object.prototype.hasOwnProperty.call(printOptions, "include_ranking")) {
+        payload.include_ranking = Boolean(printOptions.include_ranking);
+        payload.include_opening_date = Boolean(printOptions.include_opening_date);
+        payload.opening_date = printOptions.opening_date || "";
+      }
+
+      return downloadReportCardPdf(payload, {
+        onProgress: (percent, message) => setBlockerProgress(percent, message),
+      });
     }
 
     function learnerMarksSaveMessage(resp, fallbackCount) {
@@ -2385,7 +2391,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       return `${savedCount} subject mark(s) were saved for this learner.`;
     }
 
-    function collectAndSaveLearnerMarks({ generatePdf = false } = {}) {
+    function collectAndSaveLearnerMarks({ generatePdf = false, printOptions = {} } = {}) {
       if (isSaving) return;
       const collected = collectLearnerMarksData();
       if (collected.error) {
@@ -2414,7 +2420,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
             );
             return null;
           }
-          return downloadLearnerReportPdf().then(() => {
+          return downloadLearnerReportPdf(printOptions).then(() => {
             showBlockerResult(
               "success",
               "Report card downloaded",
@@ -2435,7 +2441,36 @@ render_flash_messages, sidebar %} {% block side_nav %}
         });
     }
 
+    let cbeReportOptionsModal = null;
+
+    function getCbeReportOptionsModal() {
+      if (cbeReportOptionsModal) return cbeReportOptionsModal;
+      if (typeof bindCbeReportCardOptionsModal !== "function") return null;
+      cbeReportOptionsModal = bindCbeReportCardOptionsModal((options) => {
+        startLearnerReportCard(options);
+      });
+      return cbeReportOptionsModal;
+    }
+
     function generateLearnerReportCard() {
+      if (isSaving) return;
+      if (!isLearnerMode() || !learnerSelect.value) {
+        showSaveAlert("warning", "Select a learner first.");
+        return;
+      }
+
+      if (!is844Grading()) {
+        const modal = getCbeReportOptionsModal();
+        if (modal) {
+          modal.show();
+          return;
+        }
+      }
+
+      startLearnerReportCard();
+    }
+
+    function startLearnerReportCard(printOptions = {}) {
       if (isSaving) return;
       if (!isLearnerMode() || !learnerSelect.value) {
         showSaveAlert("warning", "Select a learner first.");
@@ -2445,7 +2480,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       if (marksEntryClosed) {
         isSaving = true;
         if (generateLearnerPdfBtn) generateLearnerPdfBtn.disabled = true;
-        downloadLearnerReportPdf()
+        downloadLearnerReportPdf(printOptions)
           .then(() => {
             showBlockerResult(
               "success",
@@ -2467,7 +2502,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
         return;
       }
 
-      collectAndSaveLearnerMarks({ generatePdf: true });
+      collectAndSaveLearnerMarks({ generatePdf: true, printOptions });
     }
 
     function collectAndSaveMarks() {
