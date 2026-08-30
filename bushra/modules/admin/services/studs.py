@@ -196,7 +196,7 @@ def get_student_academic_history(student_id):
                     "marks_out_of": paper.marks_out_of,
                     "grade": letter_grade,
                     "points": points,
-                    "comment": subject_comment(mark.marks),
+                    "comment": subject_comment(letter_grade),
                     "teacher_initials": teacher,
                 }
             )

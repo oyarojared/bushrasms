@@ -53,19 +53,6 @@ def teacher_initials(teacher: Teacher):
     initials = ".".join(n[0].upper() for n in names[:2])
     return initials
 
-def performance_remark(points):
-    # Remarks based on total points
-    if points >= 75:
-        return "Excellent performance. Keep it up!"
-    elif points >= 65:
-        return "Very good work. Aim higher."
-    elif points >= 50:
-        return "Good effort. Can do better."
-    elif points >= 40:
-        return "Fair performance. Put more effort."
-    else:
-        return "Below average. Needs serious improvement."
-
 
 # =========================================================
 # KCSE GRADE → POINTS (SOURCE OF TRUTH)
@@ -83,6 +70,27 @@ GRADE_POINTS = {
     "D": 3,
     "D-": 2,
     "E": 1,
+}
+
+LETTER_FAMILY_COMMENTS = {
+    "A": "Excellent.",
+    "B": "Very good.",
+    "C": "Satisfactory.",
+    "D": "Need Improvement.",
+    "E": "Poor.",
+}
+
+LETTER_FAMILY_REMARKS = {
+    "A": "Excellent performance. Keep it up!",
+    "B": "Very good work. Aim higher.",
+    "C": "Good effort. Can do better.",
+    "D": "Fair performance. Put more effort.",
+    "E": "Below average. Needs serious improvement.",
+}
+
+GRADE_COMMENTS = {
+    grade: LETTER_FAMILY_COMMENTS[grade[0]]
+    for grade in GRADE_POINTS
 }
 
 
@@ -197,6 +205,20 @@ def simplify_844_grade(grade):
     return None
 
 
+def subject_comment(grade):
+    family = simplify_844_grade(grade)
+    if not family:
+        return None
+    return LETTER_FAMILY_COMMENTS.get(family)
+
+
+def performance_remark(grade):
+    family = simplify_844_grade(grade)
+    if not family:
+        return None
+    return LETTER_FAMILY_REMARKS.get(family)
+
+
 def is_low_844_grade(grade):
     bucket = simplify_844_grade(grade)
     return bucket in ("D", "E")
@@ -272,29 +294,6 @@ def compute_844_aggregate(all_subject_points):
         "papers_used": papers_used,
         "complete": complete,
     }
-
-
-# =========================================================
-# Automatic comment based on marks
-# =========================================================
-SUBJECT_COMMENT_BANDS = [
-    (80, "Excellent."),
-    (70, "Very good."),
-    (60, "Good."),
-    (50, "Satisfactory."),
-    (40, "Fair"),
-    (30, "Need Improvement."),
-    (0, "Poor."),
-]
-
-
-def subject_comment(marks):
-    if marks is None:
-        return None
-    for min_score, text in SUBJECT_COMMENT_BANDS:
-        if marks >= min_score:
-            return text
-    return "Poor."
 
 
 def _term_sort_key(term):
@@ -714,7 +713,7 @@ def generate_student_report(student: Student, exam: Exam, ctx=None, stream_overr
             grade, points, comment = None, None, None
         else:
             grade, points = resolve_844_grade(marks, subject.category)
-            comment = subject_comment(marks)
+            comment = subject_comment(grade)
             all_subject_points.append({
                 "subject": subject.name,
                 "points": points,
@@ -777,7 +776,7 @@ def generate_student_report(student: Student, exam: Exam, ctx=None, stream_overr
             "total_points": total_points,
             "mean_score": mean_score,
             "final_grade": final_grade,
-            "remarks": performance_remark(total_points) if scored_marks else None,
+            "remarks": performance_remark(final_grade) if scored_marks else None,
         },
         "class_teacher": class_teacher.teacher.fullname if class_teacher and class_teacher.teacher else None,
         "school_logo": school_logo,
@@ -842,8 +841,9 @@ def generate_class_reports(branch_id, class_id, stream, exam_id, include_student
     for idx, r in enumerate(stream_reports, start=1):
         r["summary"]["position"] = idx
         r["summary"]["out_of"] = len(stream_reports)
-        # final_grade stays the same
         r["summary"]["final_grade"] = aggregate_to_final_grade(r["summary"]["total_points"])
+        if r["summary"].get("mean_score") is not None:
+            r["summary"]["remarks"] = performance_remark(r["summary"]["final_grade"])
 
     return stream_reports
 

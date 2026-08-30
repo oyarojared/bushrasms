@@ -3,6 +3,10 @@ from ..bushra.modals.branches_db import Branch, BranchClasses
 from ..bushra.modals.staff_db import Teacher
 from ..bushra.modals.students_db import Student, StudentSubjectAllocation
 from ..bushra.modals.subjects_db import Lesson, Subject, SubjectEligibility
+from ..bushra.modules.admin.services.grading_844 import (
+    performance_remark,
+    subject_comment,
+)
 from ..bushra.modules.admin.services.subs import (
     auto_allocate_subjects,
     form34_report_subject_sort_key,
@@ -322,3 +326,26 @@ def test_form34_report_subjects_core_before_optionals():
         "Business Studies",
         "Physics",
     ]
+
+
+def test_subject_comment_follows_grade_family():
+    assert subject_comment("A") == subject_comment("A-") == "Excellent."
+    assert subject_comment("B+") == subject_comment("B-") == "Very good."
+    assert subject_comment("C") == "Satisfactory."
+    assert subject_comment("D+") == "Need Improvement."
+    assert subject_comment("E") == "Poor."
+    assert subject_comment(None) is None
+
+
+def test_performance_remark_follows_mean_grade_family():
+    assert performance_remark("A") == performance_remark("A-") == (
+        "Excellent performance. Keep it up!"
+    )
+    assert performance_remark("B+") == performance_remark("B") == (
+        "Very good work. Aim higher."
+    )
+    assert performance_remark("C-") == "Good effort. Can do better."
+    assert performance_remark("D") == "Fair performance. Put more effort."
+    assert performance_remark("E") == "Below average. Needs serious improvement."
+    assert performance_remark("—") is None
+    assert performance_remark(None) is None

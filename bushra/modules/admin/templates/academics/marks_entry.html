@@ -1462,13 +1462,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
             break;
           }
         }
-        let remark = "—";
-        for (const band of grading.comments || []) {
-          if (score >= Number(band[0])) {
-            remark = band[1] || "—";
-            break;
-          }
-        }
+        const remark = grading.grade_comments?.[grade] || "—";
         return {
           grade,
           points: grade === "—" ? "—" : subjectPoints844(score, category, grading),

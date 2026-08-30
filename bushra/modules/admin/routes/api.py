@@ -31,7 +31,7 @@ from ..services.grading_844 import (
     AGGREGATE_POINT_SCALE,
     EIGHT_FOUR_FOUR_GRADING,
     GRADE_POINTS,
-    SUBJECT_COMMENT_BANDS,
+    GRADE_COMMENTS,
     normalize_form_name,
     is_844_form,
     resolve_844_grade,
@@ -662,13 +662,12 @@ def _learner_subject_payload(subject, paper_by_subject, marks_by_paper, lessons,
 
 def _class_grading_payload(class_id):
     class_obj = BranchClasses.query.get(class_id)
-    comments = [list(band) for band in SUBJECT_COMMENT_BANDS]
     if not class_obj:
         return {
             "type": "cbc",
             "boundaries": [],
             "scales": {},
-            "comments": comments,
+            "grade_comments": {},
             "grade_points": {},
             "aggregate_scale": [],
         }
@@ -681,7 +680,7 @@ def _class_grading_payload(class_id):
                 category: [list(band) for band in bands]
                 for category, bands in EIGHT_FOUR_FOUR_GRADING.items()
             },
-            "comments": comments,
+            "grade_comments": dict(GRADE_COMMENTS),
             "grade_points": dict(GRADE_POINTS),
             "aggregate_scale": [list(band) for band in AGGREGATE_POINT_SCALE],
         }
@@ -713,7 +712,7 @@ def _class_grading_payload(class_id):
         "type": "cbc",
         "boundaries": boundaries,
         "scales": {},
-        "comments": comments,
+        "grade_comments": {},
         "grade_points": {},
         "aggregate_scale": [],
     }
@@ -1332,7 +1331,7 @@ def api_exam_students_with_grades_all_subjects():
                             grade_info = {
                                 "performance_level": grade,
                                 "points": points,
-                                "descriptor": subject_comment(marks_value),
+                                "descriptor": subject_comment(grade),
                                 "category": subject.category,
                             }
                         else:
