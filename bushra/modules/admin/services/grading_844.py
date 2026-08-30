@@ -202,9 +202,19 @@ def is_low_844_grade(grade):
 
 
 def compute_844_aggregate(all_subject_points):
-    """Compute KCSE aggregate total and mean grade from subject point rows."""
+    """Compute KCSE aggregate total and mean grade from subject point rows.
+
+    Ranking and mean grade use a 7-paper cluster:
+    Mathematics + best language + the next 5 highest remaining papers.
+    """
+    empty = {
+        "total_points": 0,
+        "mean_grade": "—",
+        "papers_used": 0,
+        "complete": False,
+    }
     if not all_subject_points:
-        return {"total_points": 0, "mean_grade": "—"}
+        return empty
 
     math_points = [
         s["points"]
@@ -249,11 +259,17 @@ def compute_844_aggregate(all_subject_points):
     ]
 
     best_five = sorted(remaining_points, reverse=True)[:5]
+    has_math = math_index is not None
+    has_language = best_language_index is not None
+    papers_used = (1 if has_math else 0) + (1 if has_language else 0) + len(best_five)
+    complete = has_math and has_language and len(best_five) == 5
     total_points = math_points + language_points + sum(best_five)
 
     return {
         "total_points": total_points,
         "mean_grade": aggregate_to_final_grade(total_points),
+        "papers_used": papers_used,
+        "complete": complete,
     }
 
 

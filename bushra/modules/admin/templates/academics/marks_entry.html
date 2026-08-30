@@ -152,9 +152,14 @@ render_flash_messages, sidebar %} {% block side_nav %}
       <span id="marksEntryCount" class="marks-entry-count">0 / 0 entered</span>
       <small id="marksSaveHint" class="marks-save-hint text-muted d-none"></small>
     </div>
-    <button type="button" class="btn btn-sm marks-save-btn" id="saveMarksBtn" disabled>
-      <i class="bi bi-save me-1"></i>{% if marks_entry_closed %}Entry closed{% else %}Save Marks{% endif %}
-    </button>
+    <div class="marks-save-bar-actions">
+      <button type="button" class="btn btn-sm marks-pdf-btn d-none" id="generateLearnerPdfBtn" disabled>
+        <i class="bi bi-file-earmark-pdf me-1"></i>Generate PDF
+      </button>
+      <button type="button" class="btn btn-sm marks-save-btn" id="saveMarksBtn" disabled>
+        <i class="bi bi-save me-1"></i>{% if marks_entry_closed %}Entry closed{% else %}Save Marks{% endif %}
+      </button>
+    </div>
   </div>
 </div>
 
@@ -530,25 +535,111 @@ render_flash_messages, sidebar %} {% block side_nav %}
     vertical-align: middle;
   }
 
+  .marks-students-card-header--learner {
+    padding: 0.4rem 1.35rem;
+    border-bottom: 1px solid #b8b8b8;
+    background: #cbcbcb;
+  }
+
+  .marks-students-card-header--learner .marks-students-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #252a2f;
+  }
+
+  .marks-students-card-header--subject {
+    padding: 0.4rem 1.35rem;
+    gap: 0.4rem;
+    border-bottom: 1px solid #b8b8b8;
+    background: #cbcbcb;
+  }
+
+  .marks-students-card-header--subject .marks-students-title {
+    font-size: 0.82rem;
+  }
+
+  .marks-students-card-header--subject .marks-sort-label {
+    font-size: 0.68rem;
+  }
+
+  .marks-students-card-header--subject .marks-sort-btn {
+    font-size: 0.68rem;
+    padding: 0.18rem 0.5rem;
+  }
+
+  .marks-entry-table-wrap--subject {
+    padding: 0.2rem 1.35rem 0.7rem;
+  }
+
+  .marks-entry-table--subject {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+
+  .marks-entry-table--subject thead th {
+    padding: 0.22rem 1.05rem;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.68rem;
+    line-height: 1.2;
+  }
+
+  .marks-entry-table--subject th,
+  .marks-entry-table--subject td {
+    padding: 0.18rem 1.05rem;
+    border-right: 1px solid #eceef1;
+  }
+
+  .marks-entry-table--subject th:last-child,
+  .marks-entry-table--subject td:last-child {
+    border-right: 0;
+  }
+
+  .marks-entry-table--subject tbody td {
+    font-size: 0.78rem;
+    line-height: 1.2;
+  }
+
+  .marks-entry-table--subject tbody tr + tr td {
+    border-top: 1px solid #eceef1;
+  }
+
+  .marks-entry-table--subject .marks-input {
+    min-width: 56px;
+    max-width: 76px;
+    min-height: 26px;
+    margin: 0;
+    padding: 0.1rem 0.3rem;
+    font-size: 0.78rem;
+    line-height: 1.15;
+  }
+
   .marks-entry-table-wrap--learner {
-    padding: 0.35rem 1rem 1rem;
+    padding: 0.2rem 1.35rem 0.7rem;
   }
 
   .marks-entry-table--learner {
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    border-radius: 6px;
     border-collapse: separate;
     border-spacing: 0;
     overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
   }
 
   .marks-entry-table--learner thead th {
+    padding: 0.22rem 1.05rem;
     border-bottom: 1px solid #e5e7eb;
+    font-size: 0.68rem;
+    line-height: 1.2;
   }
 
   .marks-entry-table--learner th,
   .marks-entry-table--learner td {
-    padding: 0.38rem 0.7rem;
+    padding: 0.18rem 1.05rem;
     border-right: 1px solid #eceef1;
   }
 
@@ -557,18 +648,69 @@ render_flash_messages, sidebar %} {% block side_nav %}
     border-right: 0;
   }
 
+  .marks-entry-table--learner tbody td {
+    font-size: 0.78rem;
+    line-height: 1.2;
+  }
+
   .marks-entry-table--learner tbody tr + tr td {
     border-top: 1px solid #eceef1;
   }
 
   .marks-entry-table--learner .marks-input {
-    min-width: 64px;
-    max-width: 88px;
+    min-width: 56px;
+    max-width: 76px;
+    min-height: 26px;
     margin: 0 auto;
+    padding: 0.1rem 0.3rem;
+    font-size: 0.78rem;
+    line-height: 1.15;
+  }
+
+  .marks-learner-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 1rem;
+    margin: 0.45rem 1.35rem 0.75rem;
+    padding: 0.32rem 0.85rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #f7f8f9;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+
+  .marks-learner-summary-item {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .marks-learner-summary-label {
+    color: #6c757d;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .marks-learner-summary-value {
+    color: #252a2f;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .marks-learner-summary-value.is-empty {
+    color: #98a1ad;
+    font-weight: 600;
   }
 
   .marks-entry-teacher,
-  .marks-entry-grade {
+  .marks-entry-grade,
+  .marks-entry-points {
     font-weight: 700;
     letter-spacing: 0.02em;
     white-space: nowrap;
@@ -578,11 +720,13 @@ render_flash_messages, sidebar %} {% block side_nav %}
     color: #5b6570;
   }
 
-  .marks-entry-grade {
+  .marks-entry-grade,
+  .marks-entry-points {
     color: #252a2f;
   }
 
   .marks-entry-grade.is-empty,
+  .marks-entry-points.is-empty,
   .marks-entry-remark.is-empty {
     color: #98a1ad;
     font-weight: 600;
@@ -610,8 +754,10 @@ render_flash_messages, sidebar %} {% block side_nav %}
     font-size: 0.72rem;
   }
 
-  .marks-entry-card-foot .marks-entry-grade {
+  .marks-entry-card-foot .marks-entry-grade,
+  .marks-entry-card-foot .marks-entry-points {
     flex: 0 0 auto;
+    font-size: 0.72rem;
   }
 
   .marks-entry-card-foot {
@@ -798,6 +944,37 @@ render_flash_messages, sidebar %} {% block side_nav %}
     font-size: 0.72rem;
   }
 
+  .marks-save-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex: 0 0 auto;
+  }
+
+  .marks-pdf-btn {
+    min-width: 128px;
+    min-height: 38px;
+    border: 1px solid #d0d5dd;
+    background: #fff;
+    color: #252a2f;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+
+  .marks-pdf-btn:hover:not(:disabled),
+  .marks-pdf-btn:focus:not(:disabled) {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+    color: #252a2f;
+  }
+
+  .marks-pdf-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
   .marks-save-btn {
     min-width: 120px;
     min-height: 38px;
@@ -867,6 +1044,17 @@ render_flash_messages, sidebar %} {% block side_nav %}
       padding: 0.55rem 0.6rem;
     }
 
+    .marks-students-card-header--learner,
+    .marks-students-card-header--subject {
+      padding: 0.38rem 1rem;
+    }
+
+    .marks-learner-summary {
+      margin: 0.35rem 0.4rem 0.55rem;
+      padding: 0.3rem 0.55rem;
+      gap: 0.2rem 0.75rem;
+    }
+
     .marks-entry-table-wrap {
       display: none;
     }
@@ -879,6 +1067,11 @@ render_flash_messages, sidebar %} {% block side_nav %}
       align-items: stretch;
     }
 
+    .marks-save-bar-actions {
+      width: auto;
+    }
+
+    .marks-pdf-btn,
     .marks-save-btn {
       width: auto;
       flex: 0 0 auto;
@@ -914,15 +1107,27 @@ render_flash_messages, sidebar %} {% block side_nav %}
     const marksSaveBar = document.getElementById("marksSaveBar");
     const marksEntryCount = document.getElementById("marksEntryCount");
     const saveMarksBtn = document.getElementById("saveMarksBtn");
+    const generateLearnerPdfBtn = document.getElementById("generateLearnerPdfBtn");
     const saveMarksAlert = document.getElementById("saveMarksAlert");
     const marksEntryClosed = {{ marks_entry_closed | default(false) | tojson }};
 
     let currentStudents = { students: [] };
-    let currentLearner = { student: null, subjects: [], grading: null };
+    let currentLearner = emptyLearnerState();
     let entryMode = "subject";
     let sortBy = "admission_number";
     let searchQuery = "";
     let isSaving = false;
+
+    function emptyLearnerState() {
+      return {
+        student: null,
+        subjects: [],
+        summary_subjects: [],
+        grading: null,
+        rank_peers: [],
+        has_streams: false,
+      };
+    }
 
     function escapeHtml(value) {
       return String(value)
@@ -1080,7 +1285,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       if (!learnerSelect) return;
       learnerSelect.innerHTML = '<option value="">Select learner</option>';
       learnerSelect.disabled = true;
-      currentLearner = { student: null, subjects: [], grading: null };
+      currentLearner = emptyLearnerState();
     }
 
     function classSelectionReady() {
@@ -1103,7 +1308,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       marksStudentSearch.placeholder = "Search by adm no or name…";
 
       currentStudents = { students: [] };
-      currentLearner = { student: null, subjects: [], grading: null };
+      currentLearner = emptyLearnerState();
       studentsContainer.innerHTML = "";
       marksSaveBar.classList.add("d-none");
       marksSearchBar.classList.add("d-none");
@@ -1185,7 +1390,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
         return;
       }
 
-      currentLearner = { student: null, subjects: [], grading: null };
+      currentLearner = emptyLearnerState();
       studentsContainer.innerHTML = "";
       setSetupHint("Loading subjects…");
       saveMarksBtn.disabled = true;
@@ -1205,7 +1410,10 @@ render_flash_messages, sidebar %} {% block side_nav %}
           currentLearner = {
             student: data.student || null,
             subjects: data.subjects || [],
+            summary_subjects: data.summary_subjects || data.subjects || [],
             grading: data.grading || null,
+            rank_peers: data.rank_peers || [],
+            has_streams: !!data.has_streams,
           };
           renderLearnerSubjects({ preserveTypedMarks: false });
           scrollStudentsIntoView();
@@ -1229,7 +1437,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
     }
 
     function emptyOutcome() {
-      return { grade: "—", remark: "—" };
+      return { grade: "—", points: "—", remark: "—" };
     }
 
     function outcomeFromMarks(subject, marks) {
@@ -1261,20 +1469,276 @@ render_flash_messages, sidebar %} {% block side_nav %}
             break;
           }
         }
-        return { grade, remark: grade === "—" ? "—" : remark };
+        return {
+          grade,
+          points: grade === "—" ? "—" : subjectPoints844(score, category, grading),
+          remark: grade === "—" ? "—" : remark,
+        };
       }
 
       const boundaries = grading.boundaries || [];
       if (!boundaries.length) return emptyOutcome();
       for (const boundary of boundaries) {
         if (score >= boundary.min_score && score <= boundary.max_score) {
+          const points =
+            boundary.points === null || boundary.points === undefined || boundary.points === ""
+              ? "—"
+              : Number(boundary.points);
           return {
             grade: boundary.performance_level || "—",
+            points: Number.isFinite(points) ? points : "—",
             remark: boundary.descriptor || "—",
           };
         }
       }
       return emptyOutcome();
+    }
+
+    function overlaySummarySubjects() {
+      const base = currentLearner.summary_subjects?.length
+        ? currentLearner.summary_subjects
+        : currentLearner.subjects || [];
+      const byId = {};
+      base.forEach((subject) => {
+        byId[String(subject.id)] = { ...subject };
+      });
+      getMarkEntryItems().forEach((row) => {
+        const id = String(row.dataset.subjectId || "");
+        const input = row.querySelector(".marks-input");
+        if (!id || !input || !byId[id]) return;
+        if (input.classList.contains("is-invalid") || input.value === "") {
+          byId[id].marks = null;
+          return;
+        }
+        const parsed = parseInt(input.value, 10);
+        byId[id].marks = Number.isFinite(parsed) ? parsed : null;
+      });
+      return Object.values(byId);
+    }
+
+    function enteredSummarySubjects(subjects) {
+      return (subjects || []).filter((subject) => {
+        const marks = subject?.marks;
+        return marks !== null && marks !== undefined && marks !== "";
+      });
+    }
+
+    function cbcBoundaryForScore(score, boundaries) {
+      for (const boundary of boundaries || []) {
+        if (
+          score >= Number(boundary.min_score) &&
+          score <= Number(boundary.max_score)
+        ) {
+          return boundary;
+        }
+      }
+      return null;
+    }
+
+    function subjectPoints844(score, category, grading) {
+      const bands = grading?.scales?.[String(category || "").toUpperCase()] || [];
+      let grade = "E";
+      for (const band of bands) {
+        if (score >= Number(band[0]) && score <= Number(band[1])) {
+          grade = band[2] || "E";
+          break;
+        }
+      }
+      const mapped = grading?.grade_points?.[grade];
+      return Number.isFinite(Number(mapped)) ? Number(mapped) : 1;
+    }
+
+    function aggregateToFinalGrade(points, scale) {
+      for (const band of scale || []) {
+        if (points >= Number(band[0]) && points <= Number(band[1])) {
+          return band[2] || "E";
+        }
+      }
+      return "E";
+    }
+
+    function compute844Aggregate(pointRows, grading) {
+      if (!pointRows.length) {
+        return { totalPoints: 0, meanGrade: "—", papersUsed: 0, complete: false };
+      }
+
+      const mathIndex = pointRows.findIndex(
+        (row) => String(row.category || "").toUpperCase() === "MATHEMATICS"
+      );
+      const mathPoints = mathIndex >= 0 ? Number(pointRows[mathIndex].points) || 0 : 0;
+
+      const languageIndices = pointRows
+        .map((row, index) =>
+          String(row.category || "").toUpperCase() === "LANGUAGES" ? index : -1
+        )
+        .filter((index) => index >= 0);
+      let bestLanguageIndex = null;
+      if (languageIndices.length) {
+        bestLanguageIndex = languageIndices.reduce((best, index) =>
+          Number(pointRows[index].points) > Number(pointRows[best].points)
+            ? index
+            : best
+        );
+      }
+      const languagePoints =
+        bestLanguageIndex === null
+          ? 0
+          : Number(pointRows[bestLanguageIndex].points) || 0;
+
+      const remaining = pointRows
+        .filter((_, index) => index !== mathIndex && index !== bestLanguageIndex)
+        .map((row) => Number(row.points) || 0)
+        .sort((a, b) => b - a)
+        .slice(0, 5);
+      const hasMath = mathIndex >= 0;
+      const hasLanguage = bestLanguageIndex !== null;
+      const complete = hasMath && hasLanguage && remaining.length === 5;
+      const totalPoints =
+        mathPoints + languagePoints + remaining.reduce((sum, value) => sum + value, 0);
+
+      return {
+        totalPoints,
+        meanGrade: complete
+          ? aggregateToFinalGrade(totalPoints, grading?.aggregate_scale)
+          : "—",
+        papersUsed: (hasMath ? 1 : 0) + (hasLanguage ? 1 : 0) + remaining.length,
+        complete,
+      };
+    }
+
+    function computeLearnerLiveSummary() {
+      const subjects = enteredSummarySubjects(overlaySummarySubjects());
+      const grading = currentLearner.grading || {};
+      if (!subjects.length) {
+        return { meanGrade: "—", points: "—", rankScore: null };
+      }
+
+      if (grading.type === "844") {
+        const pointRows = subjects.map((subject) => {
+          const outOf = Number(subject.marks_out_of) || 100;
+          const score =
+            outOf === 100
+              ? Number(subject.marks)
+              : Math.round((Number(subject.marks) / outOf) * 100);
+          return {
+            points: subjectPoints844(score, subject.category, grading),
+            category: subject.category || "",
+          };
+        });
+        const aggregate = compute844Aggregate(pointRows, grading);
+        if (!aggregate.complete) {
+          return { meanGrade: "—", points: "—", rankScore: null };
+        }
+        return {
+          meanGrade: aggregate.meanGrade || "—",
+          points: aggregate.totalPoints,
+          rankScore: aggregate.totalPoints,
+        };
+      }
+
+      let rawTotal = 0;
+      let outOfTotal = 0;
+      let pointsTotal = 0;
+      subjects.forEach((subject) => {
+        const marks = Number(subject.marks);
+        const outOf = Number(subject.marks_out_of) || 100;
+        rawTotal += marks;
+        outOfTotal += outOf;
+        const score = outOf === 100 ? marks : Math.round((marks / outOf) * 100);
+        const boundary = cbcBoundaryForScore(score, grading.boundaries);
+        if (boundary?.points != null && boundary.points !== "") {
+          pointsTotal += Number(boundary.points) || 0;
+        }
+      });
+      const percentage = outOfTotal > 0 ? (rawTotal / outOfTotal) * 100 : 0;
+      const meanBoundary = cbcBoundaryForScore(percentage, grading.boundaries);
+      return {
+        meanGrade: meanBoundary?.performance_level || "—",
+        points: pointsTotal,
+        rankScore: rawTotal,
+      };
+    }
+
+    function formatRank(position, total) {
+      if (!position || !total) return "—";
+      return `${position}/${total}`;
+    }
+
+    function projectedLearnerRank(rankScore) {
+      const peers = currentLearner.rank_peers || [];
+      const studentId = currentLearner.student?.id;
+      const stream = currentLearner.student?.stream || "";
+      if (rankScore === null || studentId == null) {
+        return { stream: "—", overall: "—", showStream: false };
+      }
+
+      const is844 = is844Grading();
+      const rows = peers
+        .filter((peer) => {
+          if (String(peer.id) === String(studentId)) return false;
+          if (is844 && !peer.complete) return false;
+          return true;
+        })
+        .map((peer) => ({
+          id: peer.id,
+          stream: peer.stream || "",
+          score: Number(peer.score) || 0,
+        }));
+      rows.push({ id: studentId, stream, score: rankScore });
+
+      rows.sort((a, b) => b.score - a.score);
+      const overallPos = rows.findIndex((row) => String(row.id) === String(studentId)) + 1;
+      const overallTotal = rows.length;
+      const streamGroup = rows.filter((row) => (row.stream || "") === stream);
+      const streamPos =
+        stream && streamGroup.length
+          ? streamGroup.findIndex((row) => String(row.id) === String(studentId)) + 1
+          : 0;
+      const showStream =
+        !!currentLearner.has_streams &&
+        !!stream &&
+        streamGroup.length > 0 &&
+        streamGroup.length < overallTotal;
+
+      return {
+        stream: formatRank(streamPos, streamGroup.length),
+        overall: formatRank(overallPos, overallTotal),
+        showStream,
+      };
+    }
+
+    function setSummaryValue(element, value) {
+      if (!element) return;
+      const text = value === null || value === undefined || value === "" ? "—" : String(value);
+      element.textContent = text;
+      element.classList.toggle("is-empty", text === "—");
+    }
+
+    function updateLearnerLiveSummary() {
+      const root = document.getElementById("marksLearnerSummary");
+      if (!root || !isLearnerMode()) return;
+
+      const summary = computeLearnerLiveSummary();
+      const rank = projectedLearnerRank(summary.rankScore);
+      const streamWrap = document.getElementById("learnerSummaryStreamWrap");
+      const overallLabel = document.getElementById("learnerSummaryOverallLabel");
+
+      setSummaryValue(document.getElementById("learnerSummaryMean"), summary.meanGrade);
+      setSummaryValue(document.getElementById("learnerSummaryPoints"), summary.points);
+      setSummaryValue(document.getElementById("learnerSummaryStream"), rank.stream);
+      setSummaryValue(document.getElementById("learnerSummaryOverall"), rank.overall);
+
+      if (streamWrap) streamWrap.classList.toggle("d-none", !rank.showStream);
+      if (overallLabel) overallLabel.textContent = rank.showStream ? "Overall" : "Rank";
+
+      if (is844Grading()) {
+        root.title =
+          summary.rankScore === null
+            ? "8-4-4 mean grade, points, and rank use 7 papers: Mathematics + best language + best 5 others."
+            : "8-4-4 aggregate: Mathematics + best language + best 5 others.";
+      } else {
+        root.removeAttribute("title");
+      }
     }
 
     function gradeCellHtml(grade) {
@@ -1287,11 +1751,17 @@ render_flash_messages, sidebar %} {% block side_nav %}
       return `<span class="marks-entry-remark${empty ? " is-empty" : ""}">${escapeHtml(remark || "—")}</span>`;
     }
 
+    function pointsCellHtml(points) {
+      const empty = points === "" || points === null || points === undefined || points === "—";
+      return `<span class="marks-entry-points${empty ? " is-empty" : ""}">${escapeHtml(empty ? "—" : points)}</span>`;
+    }
+
     function updateLearnerGradeCell(input) {
       if (!isLearnerMode()) return;
       const row = input.closest(".marks-entry-item");
       if (!row) return;
       const gradeEl = row.querySelector(".marks-entry-grade");
+      const pointsEl = row.querySelector(".marks-entry-points");
       const remarkEl = row.querySelector(".marks-entry-remark");
       const subject = currentLearner.subjects.find(
         (item) => String(item.id) === String(row.dataset.subjectId)
@@ -1302,6 +1772,11 @@ render_flash_messages, sidebar %} {% block side_nav %}
       if (gradeEl) {
         gradeEl.textContent = outcome.grade;
         gradeEl.classList.toggle("is-empty", outcome.grade === "—");
+      }
+      if (pointsEl) {
+        const empty = outcome.points === "—" || outcome.points === "" || outcome.points == null;
+        pointsEl.textContent = empty ? "—" : outcome.points;
+        pointsEl.classList.toggle("is-empty", empty);
       }
       if (remarkEl) {
         remarkEl.textContent = outcome.remark;
@@ -1351,6 +1826,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
               >
             </td>
             <td class="text-center">${gradeCellHtml(outcome.grade)}</td>
+            <td class="text-center">${pointsCellHtml(outcome.points)}</td>
             <td>${remarkCellHtml(outcome.remark)}</td>
             <td class="text-center marks-entry-teacher">${safeInitials}</td>
           </tr>
@@ -1377,6 +1853,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
             </div>
             <div class="marks-entry-card-foot">
               ${gradeCellHtml(outcome.grade)}
+              ${pointsCellHtml(outcome.points)}
               ${remarkCellHtml(outcome.remark)}
               <span class="marks-entry-teacher">${safeInitials}</span>
             </div>
@@ -1386,7 +1863,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
       studentsContainer.innerHTML = `
         <div class="marks-students-card">
-          <div class="marks-students-card-header">
+          <div class="marks-students-card-header marks-students-card-header--learner">
             <h6 class="marks-students-title">${escapeHtml(studentName)}${adm ? ` · Adm ${escapeHtml(adm)}` : ""}</h6>
           </div>
           <div class="marks-entry-table-wrap marks-entry-table-wrap--learner table-responsive">
@@ -1397,6 +1874,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
                   <th>Subject</th>
                   <th class="text-center">Marks</th>
                   <th class="text-center">${escapeHtml(gradeColumnLabel())}</th>
+                  <th class="text-center">Pts</th>
                   <th>${escapeHtml(remarkColumnLabel())}</th>
                   <th class="text-center">Teacher</th>
                 </tr>
@@ -1405,6 +1883,24 @@ render_flash_messages, sidebar %} {% block side_nav %}
             </table>
           </div>
           <div class="marks-entry-cards">${cards}</div>
+          <div class="marks-learner-summary" id="marksLearnerSummary">
+            <div class="marks-learner-summary-item">
+              <span class="marks-learner-summary-label">Mean Grade</span>
+              <span class="marks-learner-summary-value" id="learnerSummaryMean">—</span>
+            </div>
+            <div class="marks-learner-summary-item">
+              <span class="marks-learner-summary-label">Points</span>
+              <span class="marks-learner-summary-value" id="learnerSummaryPoints">—</span>
+            </div>
+            <div class="marks-learner-summary-item d-none" id="learnerSummaryStreamWrap">
+              <span class="marks-learner-summary-label">Stream</span>
+              <span class="marks-learner-summary-value" id="learnerSummaryStream">—</span>
+            </div>
+            <div class="marks-learner-summary-item">
+              <span class="marks-learner-summary-label" id="learnerSummaryOverallLabel">Rank</span>
+              <span class="marks-learner-summary-value" id="learnerSummaryOverall">—</span>
+            </div>
+          </div>
         </div>
       `;
 
@@ -1471,12 +1967,20 @@ render_flash_messages, sidebar %} {% block side_nav %}
       const entered = inputs.filter((input) => input.value !== "").length;
 
       marksEntryCount.textContent = `${entered} / ${total} entered`;
-      saveMarksBtn.disabled = marksEntryClosed || isSaving || entered === 0;
+      const tableReady = total > 0 && !marksSaveBar.classList.contains("d-none");
+      saveMarksBtn.disabled = marksEntryClosed || isSaving || !tableReady;
+      if (generateLearnerPdfBtn) {
+        const learnerReady = isLearnerMode() && tableReady;
+        generateLearnerPdfBtn.classList.toggle("d-none", !learnerReady);
+        generateLearnerPdfBtn.disabled = isSaving || !learnerReady;
+      }
 
       document.querySelectorAll(".marks-entry-card").forEach((card) => {
         const input = card.querySelector(".marks-input");
         card.classList.toggle("is-empty", !!(input && input.value === ""));
       });
+
+      if (isLearnerMode()) updateLearnerLiveSummary();
     }
 
     function showSaveAlert(type, message) {
@@ -1656,7 +2160,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
       studentsContainer.innerHTML = `
         <div class="marks-students-card">
-          <div class="marks-students-card-header">
+          <div class="marks-students-card-header marks-students-card-header--subject">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 w-100">
               <h6 class="marks-students-title">${escapeHtml(subjectName)}</h6>
               <div class="marks-sort-control">
@@ -1688,8 +2192,8 @@ render_flash_messages, sidebar %} {% block side_nav %}
             </div>
           </div>
 
-          <div class="marks-entry-table-wrap table-responsive">
-            <table class="table table-sm table-hover marks-entry-table mb-0">
+          <div class="marks-entry-table-wrap marks-entry-table-wrap--subject table-responsive">
+            <table class="table table-sm table-hover marks-entry-table marks-entry-table--subject mb-0">
               <thead class="table-light">
                 <tr>
                   <th class="text-center">#</th>
@@ -1754,49 +2258,43 @@ render_flash_messages, sidebar %} {% block side_nav %}
       }
     }
 
-    function collectAndSaveLearnerMarks() {
-      if (isSaving) return;
+    function collectLearnerMarksData() {
       if (marksEntryClosed) {
-        showSaveAlert("warning", "Teachers can no longer save marks. The entry deadline has passed.");
-        return;
+        return {
+          error: "Teachers can no longer save marks. The entry deadline has passed.",
+        };
       }
 
       const invalidInput = document.querySelector(".marks-input.is-invalid");
       if (invalidInput) {
         invalidInput.focus();
-        showSaveAlert("warning", "Fix invalid marks before saving.");
-        return;
+        return { error: "Fix invalid marks before saving." };
       }
 
       const marksData = [];
       getMarkEntryItems().forEach((row) => {
         const input = row.querySelector(".marks-input");
         const subjectId = row.dataset.subjectId;
-        if (!input || !subjectId || input.value === "") return;
+        if (!input || !subjectId) return;
         const subject = currentLearner.subjects.find(
           (item) => String(item.id) === String(subjectId)
         );
         marksData.push({
           subject_id: parseInt(subjectId, 10),
-          marks: parseInt(input.value, 10),
+          marks: input.value === "" ? null : parseInt(input.value, 10),
           marks_out_of: subject?.marks_out_of || parseInt(input.max, 10) || 100,
         });
       });
 
       if (!marksData.length) {
-        showSaveAlert("warning", "Enter at least one mark before saving.");
-        return;
+        return { error: "No subjects to save." };
       }
 
-      isSaving = true;
-      saveMarksBtn.disabled = true;
-      saveMarksAlert.classList.add("d-none");
-      setBlockerLoading(
-        "Saving marks",
-        `Saving ${marksData.length} subject mark(s) for this learner…`
-      );
+      return { marksData };
+    }
 
-      fetch("/admin/api/save-exam-learner-marks", {
+    function saveLearnerMarksRequest(marksData) {
+      return fetch("/admin/api/save-exam-learner-marks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1807,30 +2305,145 @@ render_flash_messages, sidebar %} {% block side_nav %}
           student_id: parseInt(learnerSelect.value, 10),
           marks: marksData,
         }),
-      })
-        .then(async (response) => {
-          let resp = {};
-          try {
-            resp = await response.json();
-          } catch (error) {
-            throw new Error("Unexpected server response. Marks were not saved.");
+      }).then(async (response) => {
+        let resp = {};
+        try {
+          resp = await response.json();
+        } catch (error) {
+          throw new Error("Unexpected server response. Marks were not saved.");
+        }
+        if (!response.ok || !resp.success) {
+          throw new Error(resp.error || "Failed to save marks to the database.");
+        }
+        return resp;
+      });
+    }
+
+    function filenameFromDisposition(header, fallback) {
+      if (!header) return fallback;
+      const match = header.match(/filename\*?=(?:UTF-8'')?["']?([^"';]+)/i);
+      if (!match || !match[1]) return fallback;
+      try {
+        return decodeURIComponent(match[1]);
+      } catch (error) {
+        return match[1];
+      }
+    }
+
+    function downloadLearnerReportPdf() {
+      const studentId = parseInt(learnerSelect.value, 10);
+      if (!branchSelect.value || !gradeSelect.value || !studentId) {
+        return Promise.reject(new Error("Select a class and learner first."));
+      }
+
+      setBlockerLoading(
+        "Generating report card",
+        "Preparing this learner's PDF from the saved marks…"
+      );
+
+      return fetch("/admin/generate-reportcards-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: JSON.stringify({
+          exam_id: {{ exam.id }},
+          branch_id: branchSelect.value,
+          class_id: gradeSelect.value,
+          stream: streamSelect.value || null,
+          student_id: studentId,
+        }),
+      }).then(async (response) => {
+        const contentType = response.headers.get("Content-Type") || "";
+        if (
+          !response.ok ||
+          contentType.includes("application/json") ||
+          contentType.includes("text/html")
+        ) {
+          let message = "Failed to generate the report card.";
+          if (contentType.includes("application/json")) {
+            try {
+              const err = await response.json();
+              message = err.error || err.details || message;
+            } catch (error) {
+              /* keep default */
+            }
           }
-          if (!response.ok || !resp.success) {
-            throw new Error(resp.error || "Failed to save marks to the database.");
-          }
-          return resp;
-        })
+          throw new Error(message);
+        }
+
+        const blob = await response.blob();
+        const studentName = currentLearner.student?.full_name || "learner";
+        const filename = filenameFromDisposition(
+          response.headers.get("Content-Disposition"),
+          `${studentName}_assessment.pdf`
+        );
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    function learnerMarksSaveMessage(resp, fallbackCount) {
+      const saved = Number(resp?.saved);
+      const cleared = Number(resp?.cleared) || 0;
+      const savedCount = Number.isFinite(saved) ? saved : fallbackCount;
+      if (cleared > 0 && savedCount > 0) {
+        return `${savedCount} mark(s) saved and ${cleared} cleared for this learner.`;
+      }
+      if (cleared > 0) {
+        return `${cleared} mark(s) were cleared for this learner.`;
+      }
+      return `${savedCount} subject mark(s) were saved for this learner.`;
+    }
+
+    function collectAndSaveLearnerMarks({ generatePdf = false } = {}) {
+      if (isSaving) return;
+      const collected = collectLearnerMarksData();
+      if (collected.error) {
+        showSaveAlert("warning", collected.error);
+        return;
+      }
+
+      isSaving = true;
+      saveMarksBtn.disabled = true;
+      if (generateLearnerPdfBtn) generateLearnerPdfBtn.disabled = true;
+      saveMarksAlert.classList.add("d-none");
+      setBlockerLoading(
+        "Saving marks",
+        generatePdf
+          ? "Saving this learner's marks before generating the report card…"
+          : `Saving ${collected.marksData.length} subject mark(s) for this learner…`
+      );
+
+      saveLearnerMarksRequest(collected.marksData)
         .then((resp) => {
-          showBlockerResult(
-            "success",
-            "Marks saved successfully",
-            `${resp.saved || marksData.length} subject mark(s) were saved for this learner.`
-          );
+          if (!generatePdf) {
+            showBlockerResult(
+              "success",
+              "Marks saved successfully",
+              learnerMarksSaveMessage(resp, collected.marksData.length)
+            );
+            return null;
+          }
+          return downloadLearnerReportPdf().then(() => {
+            showBlockerResult(
+              "success",
+              "Report card downloaded",
+              "Marks were saved and this learner's report card is ready."
+            );
+          });
         })
         .catch((error) => {
           showBlockerResult(
             "error",
-            "Save failed",
+            generatePdf ? "Save or PDF failed" : "Save failed",
             error.message || "Marks could not be saved. Please try again."
           );
         })
@@ -1838,6 +2451,41 @@ render_flash_messages, sidebar %} {% block side_nav %}
           isSaving = false;
           updateMarksCount();
         });
+    }
+
+    function generateLearnerReportCard() {
+      if (isSaving) return;
+      if (!isLearnerMode() || !learnerSelect.value) {
+        showSaveAlert("warning", "Select a learner first.");
+        return;
+      }
+
+      if (marksEntryClosed) {
+        isSaving = true;
+        if (generateLearnerPdfBtn) generateLearnerPdfBtn.disabled = true;
+        downloadLearnerReportPdf()
+          .then(() => {
+            showBlockerResult(
+              "success",
+              "Report card downloaded",
+              "This learner's report card is ready."
+            );
+          })
+          .catch((error) => {
+            showBlockerResult(
+              "error",
+              "PDF failed",
+              error.message || "Could not generate the report card."
+            );
+          })
+          .finally(() => {
+            isSaving = false;
+            updateMarksCount();
+          });
+        return;
+      }
+
+      collectAndSaveLearnerMarks({ generatePdf: true });
     }
 
     function collectAndSaveMarks() {
@@ -1866,16 +2514,16 @@ render_flash_messages, sidebar %} {% block side_nav %}
         const input = row.querySelector(".marks-input");
         const studentId = row.dataset.studentId;
 
-        if (input && studentId && input.value !== "") {
+        if (input && studentId) {
           marksData.push({
             student_id: parseInt(studentId, 10),
-            marks: parseInt(input.value, 10),
+            marks: input.value === "" ? null : parseInt(input.value, 10),
           });
         }
       });
 
       if (!marksData.length) {
-        showSaveAlert("warning", "Enter at least one mark before saving.");
+        showSaveAlert("warning", "No students to save.");
         return;
       }
 
@@ -1915,12 +2563,19 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
           return resp;
         })
-        .then(() => {
-          showBlockerResult(
-            "success",
-            "Marks saved successfully",
-            `All ${marksData.length} mark(s) were saved to the database.`
-          );
+        .then((resp) => {
+          const saved = Number(resp?.saved);
+          const cleared = Number(resp?.cleared) || 0;
+          const savedCount = Number.isFinite(saved)
+            ? saved
+            : marksData.filter((row) => row.marks !== null).length;
+          let message = `${savedCount} mark(s) were saved to the database.`;
+          if (cleared > 0 && savedCount > 0) {
+            message = `${savedCount} mark(s) saved and ${cleared} cleared.`;
+          } else if (cleared > 0) {
+            message = `${cleared} mark(s) were cleared.`;
+          }
+          showBlockerResult("success", "Marks saved successfully", message);
         })
         .catch((error) => {
           showBlockerResult(
@@ -1998,7 +2653,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       if (this.value) {
         loadLearnerSubjects();
       } else {
-        currentLearner = { student: null, subjects: [], grading: null };
+        currentLearner = emptyLearnerState();
         resetStudents("Select a learner to load their subjects.");
         setSetupHint("Choose the learner to enter all subject marks.");
       }
@@ -2029,12 +2684,14 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
       if (value === "") {
         clearError(input);
+        updateLearnerGradeCell(input);
         updateMarksCount();
         return;
       }
 
       if (!/^\d+$/.test(value)) {
         input.value = value.replace(/\D/g, "");
+        updateLearnerGradeCell(input);
         updateMarksCount();
         return;
       }
@@ -2047,6 +2704,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
         );
       } else {
         clearError(input);
+        updateLearnerGradeCell(input);
         updateMarksCount();
       }
     });
@@ -2069,6 +2727,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
     });
 
     saveMarksBtn.addEventListener("click", collectAndSaveMarks);
+    generateLearnerPdfBtn?.addEventListener("click", generateLearnerReportCard);
 
     marksStudentSearch.addEventListener("input", () => {
       if (isLearnerMode()) return;

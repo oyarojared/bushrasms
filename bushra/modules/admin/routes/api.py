@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime
 from flask import current_app, jsonify, request
 from ....modals.branches_db import Branch, BranchClasses, db
@@ -27,7 +28,9 @@ from ..utils.exam_deadlines import is_deadline_passed
 
 from ..utils import resolve_grade, user_can_access_branch
 from ..services.grading_844 import (
+    AGGREGATE_POINT_SCALE,
     EIGHT_FOUR_FOUR_GRADING,
+    GRADE_POINTS,
     SUBJECT_COMMENT_BANDS,
     normalize_form_name,
     is_844_form,
@@ -441,6 +444,25 @@ def get_exam_students():
         return jsonify({"error": "Failed to load students"}), 500
     
     
+def _mark_is_cleared(marks):
+    if marks is None:
+        return True
+    if isinstance(marks, str) and marks.strip() == "":
+        return True
+    return False
+
+
+def _delete_student_exam_mark(paper_id, student_id):
+    record = StudentExamMark.query.filter_by(
+        exam_paper_id=paper_id,
+        student_id=student_id,
+    ).first()
+    if not record:
+        return False
+    db.session.delete(record)
+    return True
+
+
 @admin_bp.route("/api/save-exam-marks", methods=["POST"])
 @login_required
 def save_exam_marks():
@@ -476,6 +498,13 @@ def save_exam_marks():
         ).first()
 
         if not paper:
+            has_value = any(
+                not _mark_is_cleared(item.get("marks"))
+                for item in (marks_list or [])
+                if item.get("student_id") is not None
+            )
+            if not has_value:
+                return jsonify({"success": True, "saved": 0, "cleared": 0})
             paper = ExamPaper(
                 exam_id=exam_id,
                 branch_id=branch_id,
@@ -490,30 +519,47 @@ def save_exam_marks():
         # if paper.is_locked:
         #     return jsonify({"error": "Paper is locked"}), 403
 
-        # 2. Save marks
-        for item in marks_list:
-            student_id = item["student_id"]
-            marks = item["marks"]
+        # 2. Save or clear marks. Empty fields delete the existing row
+        # so a cleared cell does not come back on the next fetch.
+        saved = 0
+        cleared = 0
+        for item in marks_list or []:
+            student_id = item.get("student_id")
+            if student_id is None:
+                continue
+            marks = item.get("marks")
 
             record = StudentExamMark.query.filter_by(
                 exam_paper_id=paper.id,
                 student_id=student_id
             ).first()
 
+            if _mark_is_cleared(marks):
+                if record:
+                    db.session.delete(record)
+                    cleared += 1
+                continue
+
+            try:
+                marks_value = float(marks)
+            except (TypeError, ValueError):
+                continue
+
             if record:
-                record.marks = marks
+                record.marks = marks_value
             else:
                 db.session.add(
                     StudentExamMark(
                         exam_paper_id=paper.id,
                         student_id=student_id,
-                        marks=marks
+                        marks=marks_value
                     )
                 )
+            saved += 1
 
         db.session.commit()
 
-        return jsonify({"success": True})
+        return jsonify({"success": True, "saved": saved, "cleared": cleared})
 
     except Exception as e:
         db.session.rollback()
@@ -527,11 +573,105 @@ def _normalize_exam_stream(stream):
     return stream
 
 
+def _class_has_streams(class_obj):
+    streams = getattr(class_obj, "streams", None) or []
+    return isinstance(streams, (list, tuple)) and len(streams) > 0
+
+
+def _exam_class_rank_peers(branch_id, class_id, exam_id, is_844):
+    """Saved ranking scores for live stream/overall position previews."""
+    students = Student.query.filter_by(
+        branch_id=branch_id,
+        class_id=class_id,
+    ).all()
+    mark_rows = (
+        db.session.query(StudentExamMark, ExamPaper, Subject)
+        .join(ExamPaper, StudentExamMark.exam_paper_id == ExamPaper.id)
+        .join(Subject, ExamPaper.subject_id == Subject.id)
+        .filter(
+            ExamPaper.exam_id == exam_id,
+            ExamPaper.branch_id == branch_id,
+            ExamPaper.class_id == class_id,
+        )
+        .all()
+    )
+
+    marks_by_student = defaultdict(list)
+    for mark, paper, subject in mark_rows:
+        marks_by_student[mark.student_id].append(
+            {
+                "marks": mark.marks,
+                "category": subject.category,
+            }
+        )
+
+    peers = []
+    for student in students:
+        entries = marks_by_student.get(student.id, [])
+        if is_844:
+            point_rows = []
+            for entry in entries:
+                if entry["marks"] is None:
+                    continue
+                _, points = resolve_844_grade(entry["marks"], entry["category"])
+                point_rows.append(
+                    {
+                        "points": points,
+                        "category": entry["category"],
+                    }
+                )
+            score = None
+            complete = False
+            if point_rows:
+                agg = compute_844_aggregate(point_rows)
+                complete = bool(agg.get("complete"))
+                if complete:
+                    score = agg["total_points"]
+        else:
+            complete = True
+            score = sum(
+                float(entry["marks"] or 0)
+                for entry in entries
+                if entry["marks"] is not None
+            )
+        peers.append(
+            {
+                "id": student.id,
+                "stream": student.stream or "",
+                "score": score,
+                "complete": complete,
+            }
+        )
+    return peers
+
+
+def _learner_subject_payload(subject, paper_by_subject, marks_by_paper, lessons, paper_stream):
+    paper = paper_by_subject.get(subject.id)
+    return {
+        "id": subject.id,
+        "code": subject.code,
+        "name": subject.name,
+        "category": subject.category,
+        "teacher_initials": _subject_teacher_initials(
+            lessons, subject.id, paper_stream
+        ),
+        "marks_out_of": paper.marks_out_of if paper else 100,
+        "marks": marks_by_paper.get(paper.id) if paper else None,
+    }
+
+
 def _class_grading_payload(class_id):
     class_obj = BranchClasses.query.get(class_id)
     comments = [list(band) for band in SUBJECT_COMMENT_BANDS]
     if not class_obj:
-        return {"type": "cbc", "boundaries": [], "scales": {}, "comments": comments}
+        return {
+            "type": "cbc",
+            "boundaries": [],
+            "scales": {},
+            "comments": comments,
+            "grade_points": {},
+            "aggregate_scale": [],
+        }
 
     if is_844_form(normalize_form_name(class_obj.grade_form)):
         return {
@@ -542,6 +682,8 @@ def _class_grading_payload(class_id):
                 for category, bands in EIGHT_FOUR_FOUR_GRADING.items()
             },
             "comments": comments,
+            "grade_points": dict(GRADE_POINTS),
+            "aggregate_scale": [list(band) for band in AGGREGATE_POINT_SCALE],
         }
 
     mapping = (
@@ -560,6 +702,7 @@ def _class_grading_payload(class_id):
                 "min_score": row.min_score,
                 "max_score": row.max_score,
                 "performance_level": row.performance_level,
+                "points": row.points,
                 "descriptor": row.descriptor,
             }
             for row in GradingBoundary.query.filter_by(scheme_id=mapping.scheme_id)
@@ -571,6 +714,8 @@ def _class_grading_payload(class_id):
         "boundaries": boundaries,
         "scales": {},
         "comments": comments,
+        "grade_points": {},
+        "aggregate_scale": [],
     }
 
 
@@ -692,36 +837,52 @@ def api_exam_learner_subjects():
         allocations = StudentSubjectAllocation.query.filter_by(
             student_id=student.id
         ).all()
-        allocated_ids = [row.subject_id for row in allocations if row.subject_id]
+        all_allocated_ids = [row.subject_id for row in allocations if row.subject_id]
+        allocated_ids = list(all_allocated_ids)
         if not current_user.is_admin:
             allowed = _teacher_lesson_subject_ids(
                 branch_id, class_id, paper_stream, current_user.id
             )
             allocated_ids = [sid for sid in allocated_ids if sid in allowed]
 
+        class_obj = BranchClasses.query.get(class_id)
+        grading = _class_grading_payload(class_id)
+        is_844 = grading.get("type") == "844"
+        student_payload = {
+            "id": student.id,
+            "admission_number": student.admission_number,
+            "full_name": student.fullname,
+            "stream": student.stream or "",
+        }
+        rank_meta = {
+            "has_streams": _class_has_streams(class_obj),
+            "rank_peers": _exam_class_rank_peers(
+                branch_id, class_id, exam_id, is_844
+            ),
+        }
+
         if not allocated_ids:
             return jsonify({
-                "student": {
-                    "id": student.id,
-                    "admission_number": student.admission_number,
-                    "full_name": student.fullname,
-                    "stream": student.stream or "",
-                },
-                "grading": _class_grading_payload(class_id),
+                "student": student_payload,
+                "grading": grading,
                 "subjects": [],
+                "summary_subjects": [],
+                **rank_meta,
             })
 
+        subject_ids_for_papers = list(set(all_allocated_ids) | set(allocated_ids))
         subjects = (
-            Subject.query.filter(Subject.id.in_(allocated_ids))
+            Subject.query.filter(Subject.id.in_(subject_ids_for_papers))
             .order_by(Subject.name)
             .all()
         )
+        subject_by_id = {subject.id: subject for subject in subjects}
         papers = ExamPaper.query.filter_by(
             exam_id=exam_id,
             branch_id=branch_id,
             class_id=class_id,
             stream=paper_stream,
-        ).filter(ExamPaper.subject_id.in_(allocated_ids)).all()
+        ).filter(ExamPaper.subject_id.in_(subject_ids_for_papers)).all()
         paper_by_subject = {paper.subject_id: paper for paper in papers}
         marks_by_paper = {}
         if papers:
@@ -737,36 +898,33 @@ def api_exam_learner_subjects():
             .all()
         )
 
+        def subject_payload(subject_id):
+            subject = subject_by_id.get(subject_id)
+            if not subject:
+                return None
+            return _learner_subject_payload(
+                subject, paper_by_subject, marks_by_paper, lessons, paper_stream
+            )
+
+        table_subjects = [
+            payload
+            for sid in allocated_ids
+            if (payload := subject_payload(sid))
+        ]
+        table_subjects.sort(key=lambda row: (row.get("name") or "").lower())
+        summary_subjects = [
+            payload
+            for sid in all_allocated_ids
+            if (payload := subject_payload(sid))
+        ]
+        summary_subjects.sort(key=lambda row: (row.get("name") or "").lower())
+
         return jsonify({
-            "student": {
-                "id": student.id,
-                "admission_number": student.admission_number,
-                "full_name": student.fullname,
-                "stream": student.stream or "",
-            },
-            "grading": _class_grading_payload(class_id),
-            "subjects": [
-                {
-                    "id": subject.id,
-                    "code": subject.code,
-                    "name": subject.name,
-                    "category": subject.category,
-                    "teacher_initials": _subject_teacher_initials(
-                        lessons, subject.id, paper_stream
-                    ),
-                    "marks_out_of": (
-                        paper_by_subject[subject.id].marks_out_of
-                        if subject.id in paper_by_subject
-                        else 100
-                    ),
-                    "marks": (
-                        marks_by_paper.get(paper_by_subject[subject.id].id)
-                        if subject.id in paper_by_subject
-                        else None
-                    ),
-                }
-                for subject in subjects
-            ],
+            "student": student_payload,
+            "grading": grading,
+            "subjects": table_subjects,
+            "summary_subjects": summary_subjects,
+            **rank_meta,
         })
     except Exception as exc:
         current_app.logger.error(
@@ -817,14 +975,29 @@ def save_exam_learner_marks():
 
     try:
         saved = 0
+        cleared = 0
         for item in marks_list:
             subject_id = item.get("subject_id")
-            marks = item.get("marks")
-            if subject_id is None or marks is None or marks == "":
+            if subject_id is None:
                 continue
             subject_id = int(subject_id)
             if subject_id not in allocated_ids:
                 continue
+
+            marks = item.get("marks")
+            paper = ExamPaper.query.filter_by(
+                exam_id=exam_id,
+                branch_id=branch_id,
+                class_id=class_id,
+                stream=paper_stream,
+                subject_id=subject_id,
+            ).first()
+
+            if _mark_is_cleared(marks):
+                if paper and _delete_student_exam_mark(paper.id, student.id):
+                    cleared += 1
+                continue
+
             try:
                 marks_value = float(marks)
             except (TypeError, ValueError):
@@ -842,13 +1015,6 @@ def save_exam_learner_marks():
                     "error": f"Marks must be between 0 and {marks_out_of}."
                 }), 400
 
-            paper = ExamPaper.query.filter_by(
-                exam_id=exam_id,
-                branch_id=branch_id,
-                class_id=class_id,
-                stream=paper_stream,
-                subject_id=subject_id,
-            ).first()
             if not paper:
                 paper = ExamPaper(
                     exam_id=exam_id,
@@ -877,11 +1043,8 @@ def save_exam_learner_marks():
                 )
             saved += 1
 
-        if saved == 0:
-            return jsonify({"error": "Enter at least one mark before saving."}), 400
-
         db.session.commit()
-        return jsonify({"success": True, "saved": saved})
+        return jsonify({"success": True, "saved": saved, "cleared": cleared})
     except Exception as exc:
         db.session.rollback()
         current_app.logger.error(
