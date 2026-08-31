@@ -686,6 +686,15 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
 
             marks = marks_by_student_subject.get((s.id, subject.id))
             if marks is None:
+                student_data["subjects"].append({
+                    "subject_code": subject.code,
+                    "subject_name": subject.name,
+                    "teacher_initials": teacher_initials,
+                    "marks": None,
+                    "performance_level": None,
+                    "points": None,
+                    "descriptor": None,
+                })
                 continue
 
             student_data["total_marks"] += marks
