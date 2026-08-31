@@ -50,12 +50,17 @@ render_flash_messages, sidebar %} {% block side_nav %}
       {% if exam.exam_branches|length > 1 %}
       <div class="marks-setup-field">
         <label class="marks-setup-label" for="branchSelect">School</label>
-        <select id="branchSelect" class="form-select form-select-sm marks-setup-control">
-          <option value="">Select school</option>
-          {% for eb in exam.exam_branches %}
-          <option value="{{ eb.branch.id }}">{{ eb.branch.branch_name }}</option>
-          {% endfor %}
-        </select>
+        <div class="input-group">
+          <span class="input-group-text marks-setup-icon" aria-hidden="true">
+            <i class="bi bi-house"></i>
+          </span>
+          <select id="branchSelect" class="form-select form-select-sm marks-setup-control">
+            <option value="">Select school</option>
+            {% for eb in exam.exam_branches %}
+            <option value="{{ eb.branch.id }}">{{ eb.branch.branch_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
       {% else %}
       <input
@@ -67,49 +72,73 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
       <div class="marks-setup-field">
         <label class="marks-setup-label" for="gradeSelect">Class</label>
-        <select id="gradeSelect" class="form-select form-select-sm marks-setup-control" disabled>
-          <option value="">Select class</option>
-        </select>
+        <div class="input-group">
+          <span class="input-group-text marks-setup-icon" aria-hidden="true">
+            <i class="bi bi-building"></i>
+          </span>
+          <select id="gradeSelect" class="form-select form-select-sm marks-setup-control" disabled>
+            <option value="">Select class</option>
+          </select>
+        </div>
       </div>
 
       <div class="marks-setup-field d-none" id="streamWrapper">
         <label class="marks-setup-label" for="streamSelect">Stream</label>
-        <select id="streamSelect" class="form-select form-select-sm marks-setup-control">
-          <option value="">Select stream</option>
-        </select>
+        <div class="input-group">
+          <span class="input-group-text marks-setup-icon" aria-hidden="true">
+            <i class="bi bi-list-ul"></i>
+          </span>
+          <select id="streamSelect" class="form-select form-select-sm marks-setup-control">
+            <option value="">Select stream</option>
+          </select>
+        </div>
       </div>
 
       <div class="marks-setup-field" id="subjectField">
         <label class="marks-setup-label" for="subjectSelect">Subject</label>
-        <select id="subjectSelect" class="form-select form-select-sm marks-setup-control" disabled>
-          <option value="">Select subject</option>
-        </select>
+        <div class="input-group">
+          <span class="input-group-text marks-setup-icon" aria-hidden="true">
+            <i class="bi bi-book"></i>
+          </span>
+          <select id="subjectSelect" class="form-select form-select-sm marks-setup-control" disabled>
+            <option value="">Select subject</option>
+          </select>
+        </div>
       </div>
 
       <div class="marks-setup-field d-none" id="learnerField">
         <label class="marks-setup-label" for="learnerSelect">Learner</label>
-        <select id="learnerSelect" class="form-select form-select-sm marks-setup-control" disabled>
-          <option value="">Select learner</option>
-        </select>
+        <div class="input-group">
+          <span class="input-group-text marks-setup-icon" aria-hidden="true">
+            <i class="bi bi-person"></i>
+          </span>
+          <select id="learnerSelect" class="form-select form-select-sm marks-setup-control" disabled>
+            <option value="">Select learner</option>
+          </select>
+        </div>
       </div>
 
       <div class="marks-setup-field marks-setup-field-outof" id="outOfField">
         <label class="marks-setup-label" for="marksOutOf">Out of</label>
-        <input
-          type="number"
-          id="marksOutOf"
-          class="form-control form-control-sm marks-setup-control"
-          min="1"
-          max="100"
-          value="100"
-          disabled
-        />
+        <div class="input-group">
+          <span class="input-group-text marks-setup-icon" aria-hidden="true">
+            <i class="bi bi-123"></i>
+          </span>
+          <input
+            type="number"
+            id="marksOutOf"
+            class="form-control form-control-sm marks-setup-control"
+            min="1"
+            max="100"
+            value="100"
+            disabled
+          />
+        </div>
       </div>
     </div>
   </div>
 
-  <p id="marksSetupHint" class="marks-setup-hint text-muted mb-2">
-  </p>
+  <p id="marksSetupHint" class="marks-setup-hint text-muted mb-2 d-none"></p>
 
   <div id="marksSearchBar" class="marks-search-bar d-none mb-2">
     <input
@@ -334,9 +363,9 @@ render_flash_messages, sidebar %} {% block side_nav %}
   }
 
   .marks-setup-field-outof {
-    min-width: 88px;
-    max-width: 110px;
-    flex: 0 0 88px;
+    min-width: 118px;
+    max-width: 140px;
+    flex: 0 0 118px;
   }
 
   #learnerField {
@@ -357,6 +386,19 @@ render_flash_messages, sidebar %} {% block side_nav %}
     font-size: 0.82rem;
     border-color: #dee2e6;
     background: #fff;
+  }
+
+  .marks-setup-icon {
+    background: #fff;
+    border-color: #dee2e6;
+    color: #ff7979;
+    padding: 0 0.55rem;
+    font-size: 0.85rem;
+  }
+
+  .marks-setup-field .input-group:focus-within .marks-setup-icon,
+  .marks-setup-field .input-group:focus-within .marks-setup-control {
+    border-color: rgba(255, 121, 121, 0.55);
   }
 
   .marks-setup-control:focus {
@@ -1252,10 +1294,13 @@ render_flash_messages, sidebar %} {% block side_nav %}
     }
 
     function setSetupHint(message) {
-      marksSetupHint.textContent = message || "";
+      const text = (message || "").trim();
+      marksSetupHint.textContent = text;
+      marksSetupHint.classList.toggle("d-none", !text);
     }
 
     function showEmptyState(title, message) {
+      setSetupHint("");
       marksSaveBar.classList.add("d-none");
       marksSearchBar.classList.add("d-none");
       saveMarksBtn.disabled = true;
@@ -1268,7 +1313,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       `;
     }
 
-    function resetStudents(message = "Select class and subject to load students.") {
+    function resetStudents(message = "Choose a class, then a subject.") {
       currentStudents = { students: [] };
       marksOutOf.disabled = true;
       showEmptyState("No students to show yet", message);
@@ -1279,8 +1324,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       gradeSelect.disabled = true;
       resetStreams();
       resetSubjects();
-      setSetupHint("Select a class to continue.");
-      resetStudents("Select class and subject to load students.");
+      resetStudents("Choose a class, then a subject.");
     }
 
     function resetStreams() {
@@ -1293,7 +1337,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       subjectSelect.disabled = true;
       marksOutOf.disabled = true;
       if (!isLearnerMode()) {
-        resetStudents("Select class and subject to load students.");
+        resetStudents("Choose a class, then a subject.");
       }
     }
 
@@ -1334,10 +1378,8 @@ render_flash_messages, sidebar %} {% block side_nav %}
         if (classSelectionReady()) {
           loadLearners();
         } else if (!gradeSelect.value) {
-          setSetupHint("Select a class, then a learner.");
           resetStudents("Select a class, then a learner.");
         } else {
-          setSetupHint("Select a stream, then a learner.");
           resetStudents("Select a stream, then a learner.");
         }
       } else {
@@ -1349,8 +1391,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
             streamSelect.value || null
           );
         } else {
-          setSetupHint("Select class and subject to load students.");
-          resetStudents("Select class and subject to load students.");
+          resetStudents("Choose a class, then a subject.");
         }
       }
     }
@@ -1358,12 +1399,11 @@ render_flash_messages, sidebar %} {% block side_nav %}
     function loadLearners() {
       resetLearners();
       if (!classSelectionReady()) {
-        setSetupHint(
+        resetStudents(
           streamWrapper.classList.contains("d-none")
             ? "Select a class, then a learner."
             : "Select a stream, then a learner."
         );
-        resetStudents("Select a class, then a learner.");
         return;
       }
 
@@ -1373,7 +1413,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       });
       if (streamSelect.value) params.append("stream", streamSelect.value);
 
-      setSetupHint("Loading learners…");
+      showEmptyState("Loading learners…", "Please wait.");
       fetch(`/admin/api/exam-class-learners?${params}`)
         .then((r) => r.json())
         .then((data) => {
@@ -1387,10 +1427,8 @@ render_flash_messages, sidebar %} {% block side_nav %}
           learnerSelect.disabled = students.length === 0;
           if (!students.length) {
             resetStudents("No learners found for this class.");
-            setSetupHint("No learners found for this class.");
             return;
           }
-          setSetupHint("Choose the learner to enter all subject marks.");
           resetStudents("Select a learner to load their subjects.");
         })
         .catch(() => {
@@ -1408,7 +1446,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
       currentLearner = emptyLearnerState();
       studentsContainer.innerHTML = "";
-      setSetupHint("Loading subjects…");
+      showEmptyState("Loading subjects…", "Please wait.");
       saveMarksBtn.disabled = true;
 
       const params = new URLSearchParams({
@@ -1436,7 +1474,6 @@ render_flash_messages, sidebar %} {% block side_nav %}
         })
         .catch(() => {
           resetStudents("Could not load this learner's subjects. Please try again.");
-          setSetupHint("Failed to load subjects.");
         });
     }
 
@@ -1800,7 +1837,6 @@ render_flash_messages, sidebar %} {% block side_nav %}
       const subjects = currentLearner.subjects || [];
       if (!subjects.length) {
         resetStudents("This learner has no allocated subjects.");
-        setSetupHint("This learner has no allocated subjects to enter marks for.");
         return;
       }
 
@@ -1917,12 +1953,6 @@ render_flash_messages, sidebar %} {% block side_nav %}
       marksSaveBar.classList.remove("d-none");
       marksSearchBar.classList.add("d-none");
 
-      if (marksEntryClosed) {
-        setSetupHint("Teachers can no longer save marks. You can view marks but cannot save.");
-      } else {
-        setSetupHint("Enter marks for this learner, then tap Save Marks.");
-      }
-
       updateMarksCount();
     }
 
@@ -2019,7 +2049,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
             gradeSelect.appendChild(opt);
           });
           gradeSelect.disabled = false;
-          setSetupHint("Choose the class, then subject.");
+          resetStudents("Choose a class, then a subject.");
         });
     }
 
@@ -2043,7 +2073,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
             subjectSelect.appendChild(opt);
           });
           subjectSelect.disabled = false;
-          setSetupHint("Choose the subject to load students.");
+          resetStudents("Choose a subject to load students.");
         });
     }
 
@@ -2065,8 +2095,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       marksStudentSearch.value = "";
       marksSearchClear.classList.add("d-none");
       currentStudents = { students: [] };
-      studentsContainer.innerHTML = "";
-      setSetupHint("Loading students…");
+      showEmptyState("Loading students…", "Please wait.");
       marksOutOf.disabled = true;
       saveMarksBtn.disabled = true;
 
@@ -2081,16 +2110,10 @@ render_flash_messages, sidebar %} {% block side_nav %}
           }
           marksOutOf.disabled = marksEntryClosed;
           renderStudents(subjectText, { preserveTypedMarks: false });
-          setSetupHint(
-            marksEntryClosed
-              ? "Teachers can no longer save marks. You can view marks but cannot save."
-              : "Enter marks, then tap Save Marks."
-          );
           scrollStudentsIntoView();
         })
         .catch(() => {
           resetStudents("Could not load students. Please try again.");
-          setSetupHint("Failed to load students.");
         });
     }
 
@@ -2101,7 +2124,6 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
       if (!currentStudents.students || !currentStudents.students.length) {
         resetStudents("No students found for this class and subject.");
-        setSetupHint("No students found for the selected class and subject.");
         return;
       }
 
@@ -2238,7 +2260,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       } else if (query) {
         setSetupHint(`${matchCount} student(s) matched. Matches are shown at the top.`);
       } else {
-        setSetupHint("Enter marks, then tap Save Marks.");
+        setSetupHint("");
       }
 
       updateMarksCount();
@@ -2605,8 +2627,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
     if (branchSelect && branchSelect.value) {
       loadGrades(branchSelect.value);
     } else {
-      setSetupHint("Select a school to continue.");
-      resetStudents();
+      resetStudents("Select a school to continue.");
     }
 
     gradeSelect.addEventListener("change", function () {
@@ -2625,14 +2646,11 @@ render_flash_messages, sidebar %} {% block side_nav %}
           streamSelect.appendChild(opt);
         });
         streamWrapper.classList.remove("d-none");
-        setSetupHint(
+        resetStudents(
           isLearnerMode()
             ? "Select a stream, then a learner."
-            : "Select a stream, then subject."
+            : "Select a stream, then a subject."
         );
-        if (isLearnerMode()) {
-          resetStudents("Select a stream, then a learner.");
-        }
       } else if (isLearnerMode()) {
         loadLearners();
       } else {
@@ -2652,8 +2670,7 @@ render_flash_messages, sidebar %} {% block side_nav %}
       if (this.value) {
         loadStudents();
       } else {
-        resetStudents();
-        setSetupHint("Choose the subject to load students.");
+        resetStudents("Choose a subject to load students.");
       }
     });
 
@@ -2663,7 +2680,6 @@ render_flash_messages, sidebar %} {% block side_nav %}
       } else {
         currentLearner = emptyLearnerState();
         resetStudents("Select a learner to load their subjects.");
-        setSetupHint("Choose the learner to enter all subject marks.");
       }
     });
 

@@ -1167,6 +1167,19 @@
   color: #6b7280;
 }
 
+.mc-perf-watch {
+  margin-top: 0.7rem;
+  padding: 0.55rem 0.6rem 0.6rem;
+  background: rgba(255, 121, 121, 0.08);
+  border: 1px solid rgba(255, 121, 121, 0.22);
+  border-radius: 10px;
+}
+
+.mc-perf-watch .mc-perf-subhead {
+  margin: 0 0 0.4rem;
+  color: #c94f4f;
+}
+
 .mc-perf-weak {
   list-style: none;
   margin: 0;
@@ -1176,14 +1189,22 @@
 .mc-perf-weak li {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 0.6rem;
-  padding: 0.28rem 0;
+  padding: 0.4rem 0.5rem;
   font-size: 0.82rem;
+  background: rgba(255, 121, 121, 0.12);
+  border-radius: 8px;
+  color: #7a2e2e;
+}
+
+.mc-perf-weak li + li {
+  margin-top: 0.3rem;
 }
 
 .mc-perf-weak strong {
   font-variant-numeric: tabular-nums;
-  color: #111827;
+  color: #c94f4f;
 }
 
 .mc-perf-missing {

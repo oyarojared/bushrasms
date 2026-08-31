@@ -336,15 +336,17 @@
           </div>
         </dl>
         {% if performance.weakest_subjects %}
-        <h4 class="mc-perf-subhead">Subjects to watch</h4>
-        <ul class="mc-perf-weak">
-          {% for subject in performance.weakest_subjects %}
-          <li>
-            <span>{{ subject.label }}</span>
-            <strong>{{ subject.mean }}</strong>
-          </li>
-          {% endfor %}
-        </ul>
+        <div class="mc-perf-watch">
+          <h4 class="mc-perf-subhead">Subjects to watch</h4>
+          <ul class="mc-perf-weak">
+            {% for subject in performance.weakest_subjects %}
+            <li>
+              <span>{{ subject.label }}</span>
+              <strong>{{ subject.mean }}</strong>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
         {% endif %}
       </div>
     </div>
