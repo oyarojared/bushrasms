@@ -5,41 +5,24 @@ render_flash_messages, sidebar %} {% block side_nav %}
 
 <div class="marks-entry-page">
   <!-- Header -->
-  <div class="marks-entry-header d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
-    <div>
-      <a
-        href="{{ url_for('admin.assessment_dash') }}"
-        class="btn btn-light btn-sm marks-entry-back mb-2"
-      >
-        <i class="bi bi-arrow-left me-1"></i>Back to Exams
-      </a>
-      <h6 class="fw-bold mb-0">
-        <i class="bi bi-pencil-square me-2"></i>Marks Entry
-      </h6>
-      <small class="text-muted">
-        {{ exam.name }} · {{ exam.year }} · Term {{ exam.term }}
-      </small>
-      {% if marks_deadline and marks_deadline.has_deadline %}
-      <div class="marks-deadline-note{% if marks_entry_closed %} is-closed{% endif %}">
-        {% if marks_entry_closed %}
-        Marks entry is closed for teachers (since {{ marks_deadline.due_label }}). You can view marks but cannot save.
-        {% else %}
-        Teachers must enter marks by {{ marks_deadline.due_label }} (Nairobi time).
-        {% endif %}
-      </div>
+  <div class="marks-entry-header mb-2">
+    <a
+      href="{{ url_for('admin.assessment_dash') }}"
+      class="btn btn-light btn-sm marks-entry-back mb-2"
+    >
+      <i class="bi bi-arrow-left me-1"></i>Back to Exams
+    </a>
+    <h6 class="fw-bold mb-0">{{ exam.name }}</h6>
+    {% if marks_deadline and marks_deadline.has_deadline %}
+    <div class="marks-deadline-note{% if marks_entry_closed %} is-closed{% endif %}">
+      {% if marks_entry_closed %}
+      Marks entry is closed for teachers (since {{ marks_deadline.due_label }}). You can view marks but cannot save.
+      {% else %}
+      Enter marks by {{ marks_deadline.due_label }} (Nairobi time).
       {% endif %}
-      <input id="examId" type="hidden" value="{{ exam.id }}" />
     </div>
-
-    {% if marks_entry_closed %}
-    <span class="badge bg-secondary marks-entry-status-badge">
-      <i class="bi bi-clock-history me-1"></i>Entry closed
-    </span>
-    {% else %}
-    <span class="badge bg-success marks-entry-status-badge">
-      <i class="bi bi-unlock-fill me-1"></i>Open
-    </span>
     {% endif %}
+    <input id="examId" type="hidden" value="{{ exam.id }}" />
   </div>
 
   <!-- Setup toolbar -->
@@ -298,11 +281,6 @@ render_flash_messages, sidebar %} {% block side_nav %}
   .marks-entry-back {
     border: 1px solid #dee2e6;
     font-size: 0.8rem;
-    font-weight: 600;
-  }
-
-  .marks-entry-status-badge {
-    font-size: 0.75rem;
     font-weight: 600;
   }
 
@@ -1058,11 +1036,24 @@ render_flash_messages, sidebar %} {% block side_nav %}
   }
 
   @media (max-width: 767.98px) {
+    .marks-setup-filters {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.7rem;
+    }
+
     .marks-setup-field,
-    .marks-setup-field-outof {
-      flex: 1 1 calc(50% - 0.5rem);
+    .marks-setup-field-outof,
+    #learnerField {
+      flex: 1 1 auto;
       min-width: 0;
       max-width: none;
+      width: 100%;
+    }
+
+    .marks-setup-control {
+      min-height: 38px;
+      font-size: 0.9rem;
     }
 
     .marks-students-card-header {

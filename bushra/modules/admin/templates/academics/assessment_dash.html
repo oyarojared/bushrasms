@@ -137,6 +137,7 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
           {% endif %}
 
           {% if exams_list %}
+          {% if current_user.is_admin %}
           <div class="exam-setup-toolbar mb-2">
             <div class="exam-setup-toolbar-filters">
               <div class="exam-setup-filter-inline">
@@ -160,7 +161,6 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
                 </select>
               </div>
 
-              {% if current_user.is_admin %}
               <div class="exam-setup-filter-inline exam-setup-filter-archived">
                 <div class="form-check form-switch exam-setup-archived-check mb-0">
                   <input
@@ -174,10 +174,8 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
                   </label>
                 </div>
               </div>
-              {% endif %}
             </div>
 
-            {% if current_user.is_admin %}
             <button
               class="btn btn-sm exam-setup-create-btn"
               data-bs-toggle="modal"
@@ -185,20 +183,20 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
             >
               <i class="bi bi-journal-plus me-1"></i> Create New Exam/Assessment
             </button>
-            {% endif %}
           </div>
+          {% endif %}
 
           <p id="examSetupArchiveHint" class="exam-setup-archive-hint d-none mb-2" role="status">
             <span id="examSetupArchiveHintText"></span>
           </p>
 
-          <div class="exam-setup-table-wrap">
+          <div class="exam-setup-table-wrap{% if not current_user.is_admin %} exam-setup-teacher-list{% endif %}">
             <table class="table table-hover align-middle exam-setup-table mb-0">
               <thead>
                 <tr>
                   <th scope="col">Exam</th>
-                  <th scope="col" class="text-nowrap">Term</th>
-                  <th scope="col" class="d-none d-md-table-cell">Schools</th>
+                  <th scope="col" class="text-nowrap{% if not current_user.is_admin %} d-none{% endif %}">Term</th>
+                  <th scope="col" class="{% if current_user.is_admin %}d-none d-md-table-cell{% else %}d-none{% endif %}">Schools</th>
                   <th scope="col" class="text-nowrap">Status</th>
                   <th scope="col" class="text-end text-nowrap">Actions</th>
                 </tr>
@@ -212,13 +210,20 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
                   data-exam-id="{{ exam.id }}"
                   data-locked="{{ 'true' if exam.is_locked else 'false' }}"
                 >
-                  <td>
+                  <td class="exam-setup-name-cell">
                     <span class="exam-setup-name fw-semibold">{{ exam.name }}</span>
+                    {% if not current_user.is_admin %}
+                    <div class="exam-setup-sitting text-muted">
+                      {{ exam.year }} · Term {{ exam.term }}
+                    </div>
+                    {% endif %}
                   </td>
 
-                  <td class="text-muted text-nowrap">Term {{ exam.term }}</td>
+                  <td class="exam-setup-term-cell text-muted text-nowrap{% if not current_user.is_admin %} d-none{% endif %}">
+                    Term {{ exam.term }} · {{ exam.year }}
+                  </td>
 
-                  <td class="d-none d-md-table-cell">
+                  <td class="exam-setup-schools-cell {% if current_user.is_admin %}d-none d-md-table-cell{% else %}d-none{% endif %}">
                     <span class="exam-setup-schools text-muted">
                       {% for eb in exam.exam_branches %}{{
                       eb.branch.branch_name }}{% if not loop.last %}, {% endif
@@ -226,7 +231,7 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
                     </span>
                   </td>
 
-                  <td>
+                  <td class="exam-setup-status-cell">
                     {% set dl = (exam_deadlines or {}).get(exam.id) %}
                     {% if exam.is_locked %}
                     <span class="badge exam-setup-status exam-setup-status-locked">
@@ -255,7 +260,7 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
                     >
                       <a
                         href="{{ url_for('admin.marks_entry', exam_id=exam.id) }}"
-                        class="btn btn-sm btn-exam-enter text-nowrap"
+                        class="btn btn-sm btn-exam-enter"
                       >
                         <i class="bi bi-table me-1"></i>Enter Marks
                       </a>
@@ -363,7 +368,7 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
               const tableWrap = document.querySelector(".exam-setup-table-wrap");
               const archiveHint = document.getElementById("examSetupArchiveHint");
 
-              if (!yearFilter || rows.length === 0 || !tbody) return;
+              if (rows.length === 0 || !tbody) return;
 
               const termRank = (term) => ({ I: 1, II: 2, III: 3 }[term] || 0);
 
@@ -404,6 +409,8 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
 
               sortExamRows();
               initExamSetupDropdowns();
+
+              if (!yearFilter || !termFilter) return;
 
               const currentYear = new Date().getFullYear();
               const years = [
@@ -1977,6 +1984,12 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     font-size: 0.9rem;
   }
 
+  .exam-setup-sitting {
+    margin-top: 0.15rem;
+    font-size: 0.74rem;
+    line-height: 1.3;
+  }
+
   .exam-setup-schools {
     display: inline-block;
     max-width: 220px;
@@ -2023,6 +2036,10 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     color: #fff;
     font-size: 0.8rem;
     font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
   }
 
   .btn-exam-enter:hover,
@@ -2054,28 +2071,136 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     font-size: 0.84rem;
   }
 
-  @media (max-width: 767.98px) {
-    .exam-setup-table-wrap {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+  /* Teachers pick an open exam — keep Enter Marks on screen, no sideways scroll */
+  .exam-setup-teacher-list {
+    overflow: visible;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .exam-setup-teacher-list .exam-setup-table thead {
+    display: none;
+  }
+
+  .exam-setup-teacher-list .exam-setup-table,
+  .exam-setup-teacher-list .exam-setup-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .exam-setup-teacher-list .exam-setup-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name action"
+      "status action";
+    column-gap: 0.75rem;
+    row-gap: 0.35rem;
+    align-items: center;
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .exam-setup-teacher-list .exam-setup-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .exam-setup-teacher-list .exam-setup-table tbody td {
+    padding: 0;
+    border: 0;
+    width: auto;
+    max-width: 100%;
+  }
+
+  .exam-setup-teacher-list .exam-setup-name-cell {
+    grid-area: name;
+    min-width: 0;
+  }
+
+  .exam-setup-teacher-list .exam-setup-status-cell {
+    grid-area: status;
+    min-width: 0;
+  }
+
+  .exam-setup-teacher-list .exam-setup-actions-cell {
+    grid-area: action;
+  }
+
+  .exam-setup-teacher-list .exam-setup-due-label {
+    max-width: none;
+  }
+
+  .exam-setup-teacher-list .btn-exam-enter {
+    min-height: 36px;
+    padding: 0.4rem 0.8rem;
+  }
+
+  @media (max-width: 575.98px) {
+    .exam-setup-teacher-list .exam-setup-table tbody tr {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "name"
+        "status"
+        "action";
     }
 
-    .exam-setup-table thead th,
-    .exam-setup-table tbody td {
-      padding: 0.7rem 0.75rem;
+    .exam-setup-teacher-list .exam-setup-actions {
+      width: 100%;
+    }
+
+    .exam-setup-teacher-list .btn-exam-enter {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .exam-setup-table-wrap:not(.exam-setup-teacher-list) {
+      overflow-x: visible;
+    }
+
+    .exam-setup-table-wrap:not(.exam-setup-teacher-list) .exam-setup-table thead {
+      display: none;
+    }
+
+    .exam-setup-table-wrap:not(.exam-setup-teacher-list) .exam-setup-table,
+    .exam-setup-table-wrap:not(.exam-setup-teacher-list) .exam-setup-table tbody {
+      display: block;
+      width: 100%;
+    }
+
+    .exam-setup-table-wrap:not(.exam-setup-teacher-list) .exam-setup-table tbody tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.35rem 0;
+      padding: 0.9rem 0.85rem 1rem;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .exam-setup-table-wrap:not(.exam-setup-teacher-list) .exam-setup-table tbody td {
+      padding: 0;
+      border: 0;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .exam-setup-table-wrap:not(.exam-setup-teacher-list) .exam-setup-actions-cell {
+      margin-top: 0.45rem;
+    }
+
+    .exam-setup-table-wrap:not(.exam-setup-teacher-list) .exam-setup-actions {
+      width: 100%;
+    }
+
+    .exam-setup-table-wrap:not(.exam-setup-teacher-list) .btn-exam-enter {
+      flex: 1;
+    }
+
+    .exam-setup-due-label {
+      max-width: none;
     }
 
     .exam-setup-name {
       font-size: 0.86rem;
-    }
-
-    .btn-exam-enter {
-      font-size: 0.76rem;
-      padding: 0.3rem 0.55rem;
-    }
-
-    .exam-setup-actions {
-      gap: 0.35rem !important;
     }
   }
 
