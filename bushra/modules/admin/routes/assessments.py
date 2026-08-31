@@ -1,6 +1,6 @@
 from .. import admin_bp
 from flask import render_template, flash, redirect, url_for, jsonify, request, current_app
-from ..forms.assessment_forms import ExamCreateForm, ExamDeadlineForm
+from ..forms.assessment_forms import ExamCreateForm, ExamDeadlineForm, ExamEditForm
 from ....modals.branches_db import Branch, BranchClasses 
 from ....modals.assessment_db import GradingSystem, GradingScheme, GradeGradingScheme, GradingBoundary
 from ....modals.assessment_db import Exam, ExamBranch, ExamPaper, db
@@ -12,7 +12,9 @@ from ...admin.utils.exam_deadlines import (
 )
 from ...admin.services.report import get_report_card_data
 from ...admin.services.assessment_services import (
+    apply_exam_edits,
     branch_has_locked_exams,
+    exam_edit_snapshot,
     get_exams_for_user,
 )
 
@@ -43,6 +45,52 @@ from ..utils import get_accessible_branches_query, user_can_access_branch
 DEVELOPER_ID = 11
 
 
+def _wants_json():
+    accept = request.headers.get("Accept") or ""
+    return request.is_json or "application/json" in accept
+
+
+def _set_exam_form_choices(form, extra_years=None):
+    if current_user.is_super_admin:
+        branches = (
+            get_accessible_branches_query()
+            .order_by(Branch.branch_name)
+            .all()
+        )
+        form.branch_id.choices = [(b.id, b.branch_name) for b in branches]
+    else:
+        branch = Branch.query.get(current_user.branch_id)
+        form.branch_id.choices = (
+            [(branch.id, branch.branch_name)] if branch else []
+        )
+
+    years = set(range(2026, 2036))
+    if extra_years:
+        for year in extra_years:
+            try:
+                years.add(int(year))
+            except (TypeError, ValueError):
+                continue
+    form.year.choices = [(str(year), str(year)) for year in sorted(years)]
+
+
+def _exam_json_error(message, status, field_errors=None):
+    payload = {"success": False, "error": message}
+    if field_errors:
+        payload["field_errors"] = field_errors
+    return jsonify(payload), status
+
+
+def _load_exam_for_edit(exam_id):
+    return (
+        Exam.query.options(
+            joinedload(Exam.exam_branches).joinedload(ExamBranch.branch)
+        )
+        .filter(Exam.id == exam_id, Exam.is_inactive == False)
+        .first()
+    )
+
+
 @admin_bp.route("assessments/dash", methods=["GET", "POST"])
 @login_required
 def assessment_dash():
@@ -50,25 +98,13 @@ def assessment_dash():
 
     query = get_exams_for_user(current_user)
     exams_list = query.all()
+    extra_years = {exam.year for exam in exams_list}
 
-    # Branch choices
-    if current_user.is_super_admin:
-        branches = (
-            get_accessible_branches_query()
-            .order_by(Branch.branch_name)
-            .all()
-        ) 
-        exam_form.branch_id.choices = [(b.id, b.branch_name) for b in branches]
-    else:
-        branch = Branch.query.get(current_user.branch_id)
-        if branch:
-            exam_form.branch_id.choices = [(branch.id, branch.branch_name)]
-        else:
-            exam_form.branch_id.choices = []
-
-    exam_form.year.choices = [
-        (str(y), str(y)) for y in list(range(2026, 2036))
-    ]
+    _set_exam_form_choices(exam_form, extra_years=extra_years)
+    exam_edit_form = None
+    if current_user.is_admin:
+        exam_edit_form = ExamEditForm(prefix="edit")
+        _set_exam_form_choices(exam_edit_form, extra_years=extra_years)
 
     if exam_form.validate_on_submit():
 
@@ -143,6 +179,7 @@ def assessment_dash():
     return render_template(
         "academics/assessment_dash.html",
         exam_form=exam_form,
+        exam_edit_form=exam_edit_form,
         exams_list=exams_list,
         grades=grades,
         exam_deadlines=exam_deadlines,
@@ -266,6 +303,94 @@ def _admin_can_manage_exam(exam):
     if current_user.is_super_admin:
         return True
     return any(user_can_access_branch(eb.branch_id) for eb in exam.exam_branches)
+
+
+@admin_bp.route("/exams/<int:exam_id>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def edit_exam(exam_id):
+    exam = _load_exam_for_edit(exam_id)
+    if not exam:
+        if _wants_json():
+            return _exam_json_error("Exam not found.", 404)
+        flash("Exam not found.", "danger")
+        return redirect(url_for("admin.assessment_dash"))
+
+    if not _admin_can_manage_exam(exam):
+        if _wants_json():
+            return _exam_json_error("You cannot edit this exam.", 403)
+        flash("You cannot edit this exam.", "warning")
+        return redirect(url_for("admin.assessment_dash"))
+
+    if request.method == "GET":
+        if _wants_json():
+            return jsonify(success=True, exam=exam_edit_snapshot(exam))
+        return redirect(url_for("admin.assessment_dash"))
+
+    form = ExamEditForm(prefix="edit")
+    _set_exam_form_choices(form, extra_years={exam.year})
+    if not form.validate():
+        if _wants_json():
+            return _exam_json_error(
+                "Could not save the exam. Check the highlighted fields.",
+                400,
+                field_errors=form.errors,
+            )
+        flash("Could not save the exam. Check the form and try again.", "danger")
+        return redirect(url_for("admin.assessment_dash"))
+
+    try:
+        result = apply_exam_edits(
+            exam,
+            name=form.name.data,
+            year=form.year.data,
+            term=form.term.data,
+            branch_id=form.branch_id.data,
+            user=current_user,
+        )
+        if not result.get("ok"):
+            db.session.rollback()
+            error = result.get("error") or "Could not update the exam."
+            status = result.get("status") or 400
+            if _wants_json():
+                return _exam_json_error(error, status)
+            flash(error, "danger")
+            return redirect(url_for("admin.assessment_dash"))
+
+        if result.get("unchanged"):
+            db.session.rollback()
+            payload = {
+                "success": True,
+                "unchanged": True,
+                "message": "No changes were made.",
+                "changes": [],
+                "exam": exam_edit_snapshot(exam),
+            }
+            if _wants_json():
+                return jsonify(payload)
+            flash("No changes were made.", "info")
+            return redirect(url_for("admin.assessment_dash"))
+
+        db.session.commit()
+        exam = _load_exam_for_edit(exam_id) or exam
+        payload = {
+            "success": True,
+            "unchanged": False,
+            "message": "Exam updated successfully.",
+            "changes": result.get("changes") or [],
+            "exam": exam_edit_snapshot(exam),
+        }
+        if _wants_json():
+            return jsonify(payload)
+        flash("Exam updated successfully.", "success")
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Failed to update exam %s", exam_id)
+        if _wants_json():
+            return _exam_json_error("Failed to update the exam. Please try again.", 500)
+        flash("Failed to update the exam. Please try again.", "danger")
+
+    return redirect(url_for("admin.assessment_dash"))
 
 
 @admin_bp.route("/exams/<int:exam_id>/deadline", methods=["POST"])

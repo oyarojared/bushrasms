@@ -275,7 +275,11 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
 
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm exam-setup-dropdown-menu">
                           <li>
-                            <button class="dropdown-item" type="button" disabled>
+                            <button
+                              class="dropdown-item edit-exam-btn"
+                              type="button"
+                              data-edit-url="{{ url_for('admin.edit_exam', exam_id=exam.id) }}"
+                            >
                               <i class="bi bi-pencil me-2"></i>Edit
                             </button>
                           </li>
@@ -1351,6 +1355,250 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
 </script>
 {% endif %}
 
+{% if current_user.is_admin and exam_edit_form %}
+<!-- ================= EDIT EXAM MODAL ================= -->
+<div
+  class="modal fade"
+  id="editExamModal"
+  tabindex="-1"
+  aria-labelledby="editExamModalLabel"
+  aria-hidden="true"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+>
+  <div class="modal-dialog modal-dialog-centered create-exam-modal-dialog">
+    <div class="modal-content create-exam-modal">
+      <form
+        method="post"
+        id="editExamForm"
+        action=""
+        data-prefix="edit"
+        autocomplete="off"
+      >
+        {{ exam_edit_form.hidden_tag() }}
+
+        <div class="modal-header create-exam-modal-header">
+          <h6 class="modal-title" id="editExamModalLabel">
+            <i class="bi bi-pencil-square me-2"></i>Edit Exam/Assessment
+          </h6>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+
+        <div class="modal-body create-exam-modal-body">
+          <div id="editExamFormError" class="alert alert-danger d-none py-2 px-3" role="alert"></div>
+          <div id="editExamFormInfo" class="alert alert-light border d-none py-2 px-3" role="status"></div>
+
+          {% if current_user.is_admin and not current_user.is_super_admin %}
+          <div class="d-none">
+            {{ form_input(
+              exam_edit_form.branch_id,
+              wrapper_class="mb-0",
+              select_class="form-select form-select-sm",
+              input_class="form-select form-select-sm",
+              icon_class="bi bi-house"
+            ) }}
+          </div>
+          {% else %}
+          <div class="mb-3" id="editExamBranchWrap">
+            {{ form_input(
+              exam_edit_form.branch_id,
+              wrapper_class="mb-0",
+              select_class="form-select form-select-sm",
+              input_class="form-select form-select-sm",
+              icon_class="bi bi-house",
+              help_text="School can be changed only before papers or marks exist"
+            ) }}
+          </div>
+          {% endif %}
+
+          <div class="row g-3">
+            <div class="col-sm-6">
+              {{ form_input(
+                exam_edit_form.year,
+                wrapper_class="mb-0",
+                select_class="form-select form-select-sm",
+                input_class="form-select form-select-sm",
+                icon_class="bi bi-calendar3"
+              ) }}
+            </div>
+
+            <div class="col-sm-6">
+              {{ form_input(
+                exam_edit_form.term,
+                wrapper_class="mb-0",
+                select_class="form-select form-select-sm",
+                input_class="form-select form-select-sm",
+                icon_class="bi bi-bookmark"
+              ) }}
+            </div>
+
+            <div class="col-12">
+              {{ form_input(
+                exam_edit_form.name,
+                wrapper_class="mb-0",
+                input_class="form-control form-control-sm",
+                icon_class="bi bi-pencil-square",
+                placeholder="e.g. Mid Term Exam"
+              ) }}
+              <div class="create-exam-name-hint">
+                Do not include the year in the exam name.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer create-exam-modal-footer">
+          <button
+            type="button"
+            class="btn btn-sm btn-light create-exam-cancel-btn"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-sm create-exam-submit-btn">
+            Review changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EDIT EXAM WARNING MODAL ================= -->
+<div
+  class="modal fade"
+  id="editExamWarningModal"
+  tabindex="-1"
+  aria-labelledby="editExamWarningModalLabel"
+  aria-hidden="true"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+>
+  <div class="modal-dialog modal-dialog-centered delete-exam-modal-dialog">
+    <div class="modal-content delete-exam-modal edit-exam-warning-modal">
+      <div class="delete-exam-modal-header edit-exam-warning-header">
+        <div class="delete-exam-modal-title-group">
+          <div class="delete-exam-modal-icon edit-exam-warning-icon-wrap" aria-hidden="true">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+          <div class="delete-exam-modal-heading">
+            <h6 class="delete-exam-modal-title" id="editExamWarningModalLabel">
+              Review exam changes
+            </h6>
+            <p class="delete-exam-modal-subtitle">
+              These details update reports and teacher views
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn-close delete-exam-modal-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div class="modal-body delete-exam-modal-body">
+        <p class="delete-exam-lead">You are about to apply these changes:</p>
+        <ul class="edit-exam-change-list" id="editExamWarningChanges"></ul>
+
+        <div class="delete-exam-warning edit-exam-warning-note" role="alert">
+          <div class="delete-exam-warning-icon edit-exam-warning-note-icon" aria-hidden="true">
+            <i class="bi bi-info-circle"></i>
+          </div>
+          <div class="delete-exam-warning-content">
+            <strong id="editExamWarningTitle">Marks stay on this exam</strong>
+            <p id="editExamWarningCopy">
+              Existing papers and marks remain attached. The new name, year,
+              term, or school will appear on reports, class views, and marks
+              entry.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer delete-exam-modal-footer">
+        <button
+          type="button"
+          class="btn delete-exam-btn-cancel"
+          id="editExamWarningBackBtn"
+        >
+          <i class="bi bi-arrow-left-circle me-1"></i>
+          Go back
+        </button>
+        <button
+          type="button"
+          class="btn delete-exam-btn-confirm edit-exam-warning-confirm"
+          id="editExamWarningConfirmBtn"
+        >
+          <i class="bi bi-check2-circle me-1"></i>
+          Apply changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EDIT EXAM SUCCESS MODAL ================= -->
+<div
+  class="modal fade"
+  id="editExamSuccessModal"
+  tabindex="-1"
+  aria-labelledby="editExamSuccessModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered delete-exam-modal-dialog">
+    <div class="modal-content delete-exam-modal edit-exam-success-modal">
+      <div class="delete-exam-modal-header edit-exam-success-header">
+        <div class="delete-exam-modal-title-group">
+          <div class="delete-exam-modal-icon edit-exam-success-icon-wrap" aria-hidden="true">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+          <div class="delete-exam-modal-heading">
+            <h6 class="delete-exam-modal-title" id="editExamSuccessModalLabel">
+              Exam updated
+            </h6>
+            <p class="delete-exam-modal-subtitle">
+              The changes are now in effect
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn-close delete-exam-modal-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <div class="modal-body delete-exam-modal-body">
+        <p class="delete-exam-lead mb-2" id="editExamSuccessMessage">
+          Exam updated successfully.
+        </p>
+        <ul class="edit-exam-change-list" id="editExamSuccessChanges"></ul>
+      </div>
+
+      <div class="modal-footer delete-exam-modal-footer">
+        <button
+          type="button"
+          class="btn delete-exam-btn-confirm edit-exam-success-done"
+          data-bs-dismiss="modal"
+        >
+          <i class="bi bi-check2 me-1"></i>
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="{{ url_for('admin.static', filename='js/assessment/exam_edit.js') }}"></script>
+{% endif %}
+
 {% include "academics/_cbe_report_options_modal.html" %}
 <script src="{{ url_for('admin.static', filename='js/assessment/report_card_download.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/assessment/cbe_report_options.js') }}"></script>
@@ -1463,7 +1711,8 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     background: #fff;
   }
 
-  #createExamModal .create-exam-modal-header {
+  #createExamModal .create-exam-modal-header,
+  #editExamModal .create-exam-modal-header {
     background: #ff7979;
   }
 
@@ -1474,7 +1723,9 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
   }
 
   #createExamModal .create-exam-modal-header .modal-title,
-  #createExamModal .create-exam-modal-header .modal-title i {
+  #createExamModal .create-exam-modal-header .modal-title i,
+  #editExamModal .create-exam-modal-header .modal-title,
+  #editExamModal .create-exam-modal-header .modal-title i {
     color: #fff;
   }
 
@@ -1495,7 +1746,8 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     color: #6c757d;
   }
 
-  #createExamModal .create-exam-modal-body .input-group-text {
+  #createExamModal .create-exam-modal-body .input-group-text,
+  #editExamModal .create-exam-modal-body .input-group-text {
     color: #ff7979;
   }
 
@@ -2078,6 +2330,127 @@ render_flash_messages, sidebar, form_input %} {% block side_nav %}
     .delete-exam-warning-content p {
       font-size: 0.74rem;
     }
+  }
+
+  /* =========================================================
+   EDIT EXAM WARNING / SUCCESS MODALS
+   ========================================================= */
+
+  .edit-exam-change-list {
+    list-style: none;
+    margin: 0 0 1rem;
+    padding: 0;
+    border: 1px solid #edf0f3;
+    border-radius: 10px;
+    background: #fafbfc;
+    overflow: hidden;
+  }
+
+  .edit-exam-change-list li {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 0.4rem 0.75rem;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    border-top: 1px solid #edf0f3;
+  }
+
+  .edit-exam-change-list li:first-child {
+    border-top: 0;
+  }
+
+  .edit-exam-change-list .edit-exam-change-label {
+    font-weight: 700;
+    color: #6c757d;
+  }
+
+  .edit-exam-change-list .edit-exam-change-from,
+  .edit-exam-change-list .edit-exam-change-to {
+    color: #252a2f;
+  }
+
+  .edit-exam-change-list .edit-exam-change-from {
+    color: #8b939c;
+    text-decoration: line-through;
+  }
+
+  .edit-exam-warning-header {
+    background: linear-gradient(
+      180deg,
+      rgba(224, 168, 0, 0.1) 0%,
+      #ffffff 100%
+    );
+  }
+
+  .edit-exam-warning-icon-wrap {
+    background: rgba(224, 168, 0, 0.12);
+    color: #c79200;
+    border-color: rgba(224, 168, 0, 0.2);
+  }
+
+  .edit-exam-warning-note {
+    background: rgba(224, 168, 0, 0.06);
+    border-color: rgba(224, 168, 0, 0.22);
+  }
+
+  .edit-exam-warning-note-icon {
+    background: rgba(224, 168, 0, 0.14);
+    color: #c79200;
+  }
+
+  .edit-exam-warning-note .delete-exam-warning-content strong {
+    color: #9a6b00;
+  }
+
+  .edit-exam-warning-confirm {
+    flex: 1;
+    background: #e0a800;
+    border-color: #e0a800;
+    box-shadow: 0 4px 14px rgba(224, 168, 0, 0.28);
+  }
+
+  .edit-exam-warning-confirm:hover,
+  .edit-exam-warning-confirm:focus {
+    background: #c79200;
+    border-color: #c79200;
+    box-shadow: 0 6px 18px rgba(224, 168, 0, 0.34);
+  }
+
+  .edit-exam-success-header {
+    background: linear-gradient(
+      180deg,
+      rgba(25, 135, 84, 0.1) 0%,
+      #ffffff 100%
+    );
+  }
+
+  .edit-exam-success-icon-wrap {
+    background: rgba(25, 135, 84, 0.12);
+    color: #198754;
+    border-color: rgba(25, 135, 84, 0.2);
+  }
+
+  .edit-exam-success-done {
+    background: #198754;
+    border-color: #198754;
+    box-shadow: 0 4px 14px rgba(25, 135, 84, 0.28);
+  }
+
+  .edit-exam-success-done:hover,
+  .edit-exam-success-done:focus {
+    background: #157347;
+    border-color: #157347;
+    color: #ffffff;
+    box-shadow: 0 6px 18px rgba(25, 135, 84, 0.34);
+  }
+
+  .edit-exam-success-modal .delete-exam-modal-footer {
+    justify-content: stretch;
+  }
+
+  .edit-exam-success-modal .edit-exam-success-done {
+    width: 100%;
   }
 
   /* =========================================================

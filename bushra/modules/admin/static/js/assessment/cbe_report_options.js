@@ -5,6 +5,8 @@ function syncCbeReportOptionChoices(root) {
   });
 }
 
+// Look at the modal pop read and return the user's choices.
+// in form of a small object.
 function readCbeReportCardOptions(root) {
   const ranking = root.querySelector('input[name="cbeIncludeRanking"]:checked');
   const includeOpening = root.querySelector("#cbeIncludeOpeningDate");
@@ -22,6 +24,7 @@ function readCbeReportCardOptions(root) {
     opening_date: includeOpeningChecked ? dateValue : "",
   };
 }
+
 
 function resetCbeReportCardOptions(root) {
   const yes = root.querySelector("#cbeIncludeRankingYes");
