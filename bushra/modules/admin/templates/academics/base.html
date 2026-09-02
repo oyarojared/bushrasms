@@ -92,7 +92,11 @@
                 Add learning area / subject
               </h6>
               <p class="sub-form-copy">
+                {% if subject_catalog_scoped %}
+                Shown for this school's classes only.
+                {% else %}
                 Subjects apply across all school branches.
+                {% endif %}
               </p>
             </div>
             <button
@@ -256,7 +260,7 @@
         </thead>
         <tbody>
           {% for subject in subjects %}
-          {% set subject_grades = subject.eligibility | map(attribute="grade_form") | list %}
+          {% set subject_grades = subject.visible_grades if subject.visible_grades is defined else subject.eligibility | map(attribute="grade_form") | list %}
           <tr
             class="sub-row"
             data-category="{{ subject.category }}"
@@ -333,7 +337,13 @@
         <i class="bi bi-journal-x"></i>
       </div>
       <h6>No subjects yet</h6>
-      <p>Add a learning area or subject to get started.</p>
+      <p>
+        {% if subject_catalog_scoped %}
+        No learning areas are assigned to this school's classes yet.
+        {% else %}
+        Add a learning area or subject to get started.
+        {% endif %}
+      </p>
     </div>
     {% endif %}
   </div>

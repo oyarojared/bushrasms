@@ -12,6 +12,7 @@ from ....modals.assessment_db import ExamPaper, StudentExamMark
 
 from .grades import live_class_name
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 
 FORM_3_4_DEFAULT_SUBJECTS = frozenset(
@@ -40,23 +41,71 @@ FORM_3_4_REPORT_SUBJECT_ORDER = {
 }
 
 
-def get_subjects():
-    try:
-        subjects = (
-            Subject.query
-            .order_by(Subject.created_at.desc())
-            .all()
-        )
+def _grade_key(name):
+    return live_class_name(name).strip().lower()
 
+
+def apply_visible_grades(subjects, grade_names=None):
+    """
+    Attach visible_grades for the subjects table.
+
+    Super admin (grade_names is None) sees every eligible class.
+    School admins only see classes their school actually runs.
+    """
+    allowed_keys = None
+    if grade_names is not None:
+        allowed_keys = {
+            _grade_key(name) for name in grade_names if (name or "").strip()
+        }
+
+    for subject in subjects:
+        grades = [e.grade_form for e in (subject.eligibility or [])]
+        if allowed_keys is None:
+            subject.visible_grades = grades
+        else:
+            subject.visible_grades = [
+                grade for grade in grades if _grade_key(grade) in allowed_keys
+            ]
+    return subjects
+
+
+def get_subjects(grade_names=None):
+    """
+    Load the subject catalog.
+
+    grade_names=None: full catalog (super admin).
+    grade_names=[]: nothing (school with no classes).
+    otherwise: subjects eligible for at least one of those classes.
+    """
+    try:
+        query = Subject.query.options(joinedload(Subject.eligibility))
+
+        if grade_names is not None:
+            keys = sorted(
+                {
+                    _grade_key(name)
+                    for name in grade_names
+                    if (name or "").strip()
+                }
+            )
+            if not keys:
+                return [], None
+
+            matching_ids = db.session.query(SubjectEligibility.subject_id).filter(
+                func.lower(SubjectEligibility.grade_form).in_(keys)
+            )
+            query = query.filter(Subject.id.in_(matching_ids))
+
+        subjects = query.order_by(Subject.created_at.desc()).all()
         return subjects, None
 
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         current_app.logger.exception(
             "Database error while fetching subjects"
         )
         return [], "Database error occurred"
 
-    except Exception as e:
+    except Exception:
         current_app.logger.exception(
             "Unexpected error while fetching subjects"
         )
@@ -113,8 +162,24 @@ def delete_subject_service(subject_id):
 
         return False, "Delete failed"
 
-def add_subject(form, selected_grades):
+def _filter_selected_grades(selected_grades, allowed_grade_names=None):
+    if allowed_grade_names is None:
+        return list(selected_grades or [])
+    allowed_keys = {
+        _grade_key(name) for name in allowed_grade_names if (name or "").strip()
+    }
+    return [
+        grade
+        for grade in (selected_grades or [])
+        if _grade_key(grade) in allowed_keys
+    ]
+
+
+def add_subject(form, selected_grades, allowed_grade_names=None):
     # Expect form validated data
+    selected_grades = _filter_selected_grades(
+        selected_grades, allowed_grade_names
+    )
     if not selected_grades:
         return False, "NO_GRADES"
 
@@ -191,7 +256,9 @@ def remove_subject_from_grade(grade_form, subject_id):
     db.session.commit()
 
 
-def update_subject_service(subject_id, form, selected_grades):
+def update_subject_service(
+    subject_id, form, selected_grades, mutable_grade_names=None
+):
     subject = Subject.query.get(subject_id)
 
     if not subject:
@@ -210,13 +277,44 @@ def update_subject_service(subject_id, form, selected_grades):
         existing = SubjectEligibility.query.filter_by(
             subject_id=subject.id
         ).all()
-        
 
-        existing_grades = {e.grade_form for e in existing}
-        new_grades = set(selected_grades)
+        existing_by_key = {}
+        for row in existing:
+            existing_by_key.setdefault(_grade_key(row.grade_form), row.grade_form)
 
-        removed_grades = existing_grades - new_grades
-        added_grades = new_grades - existing_grades 
+        if mutable_grade_names is not None:
+            mutable_keys = {
+                _grade_key(name)
+                for name in mutable_grade_names
+                if (name or "").strip()
+            }
+            selected_by_key = {
+                _grade_key(grade): grade
+                for grade in (selected_grades or [])
+                if _grade_key(grade) in mutable_keys
+            }
+            removed_grades = [
+                original
+                for key, original in existing_by_key.items()
+                if key in mutable_keys and key not in selected_by_key
+            ]
+        else:
+            selected_by_key = {
+                _grade_key(grade): grade
+                for grade in (selected_grades or [])
+                if _grade_key(grade)
+            }
+            removed_grades = [
+                original
+                for key, original in existing_by_key.items()
+                if key not in selected_by_key
+            ]
+
+        added_grades = [
+            selected
+            for key, selected in selected_by_key.items()
+            if key not in existing_by_key
+        ]
 
         # 3️⃣ Remove only what was removed
         for grade in removed_grades:

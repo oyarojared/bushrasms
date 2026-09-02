@@ -3,16 +3,37 @@ from ...admin import admin_bp
 
 from ..forms.branches_forms import GradeSelectForm
 from ..forms.subject_forms import SubjectForm, DeleteSubjectForm, BranchGradeSelectionForm
-from ..services.grades import load_grades
-from ..utils import load_branch_choices 
+from ..services.grades import grade_is_offered_by_branch, get_branch_grade_names, load_grades
+from ..utils import load_branch_choices, locked_branch_id, user_can_select_branch
 from ....modals.branches_db import BranchClasses, db
 from ....modals.subjects_db import Lesson
 
-from ..services.subs import get_subjects, delete_subject_service, add_subject, update_subject_service,get_subjects_by_grade
+from ..services.subs import (
+    apply_visible_grades,
+    get_subjects,
+    delete_subject_service,
+    add_subject,
+    update_subject_service,
+    get_subjects_by_grade,
+)
 from flask_login import login_required
 
 from ..utils.route_protect import admin_required
 from flask_login import current_user
+
+
+def _subject_catalog_scope():
+    """
+    Super admins manage the shared catalog.
+    School admins only see subjects and grades offered at their school.
+    """
+    if user_can_select_branch():
+        return None, load_grades()
+    branch_id = locked_branch_id()
+    if not branch_id:
+        return [], [("", "--- Select a Grade / Form ---")]
+    return get_branch_grade_names(branch_id), load_grades(branch_id=branch_id)
+
 
 @admin_bp.route("/subjects_dash", methods=["GET", "POST"])
 @login_required
@@ -22,13 +43,16 @@ def subjects_dash():
     grade_form = GradeSelectForm()
     subject_form = SubjectForm()
     branch_grade_selection_form = BranchGradeSelectionForm()
+
+    scoped_grade_names, grade_choices = _subject_catalog_scope()
     
-    grade_form.grade_select.choices = load_grades()
+    grade_form.grade_select.choices = grade_choices
     branch_grade_selection_form.branches.choices = load_branch_choices()
-    branch_grade_selection_form.grades.choices = load_grades()
+    branch_grade_selection_form.grades.choices = grade_choices
     
     # Load subject data for display.
-    subjects, error_sms = get_subjects() 
+    subjects, error_sms = get_subjects(grade_names=scoped_grade_names)
+    apply_visible_grades(subjects, scoped_grade_names)
     if error_sms: flash (error_sms, "danger")
     
     subject_id_flag = request.form.get("subject_id")
@@ -40,13 +64,18 @@ def subjects_dash():
             updated, msg = update_subject_service(
                 subject_id=int(subject_id_flag),
                 form=subject_form,
-                selected_grades=selected_grades
+                selected_grades=selected_grades,
+                mutable_grade_names=scoped_grade_names,
             )
             
             flash(msg, "success" if updated else "danger")
             return redirect(url_for("admin.subjects_dash"))
 
-        success, err = add_subject(subject_form, selected_grades)
+        success, err = add_subject(
+            subject_form,
+            selected_grades,
+            allowed_grade_names=scoped_grade_names,
+        )
 
         if success:
             flash("Subject added successfully.", "success")
@@ -72,10 +101,11 @@ def subjects_dash():
         form_has_errors=form_has_errors,
         grade_form=grade_form,
         subject_form=subject_form,
-        grades=load_grades()[1:],
+        grades=grade_choices[1:],
         subjects=subjects,
         del_subject_form=del_subject_form,
         branch_grade_selection_form=branch_grade_selection_form,
+        subject_catalog_scoped=scoped_grade_names is not None,
         active_page="subjects",
     )
 
@@ -97,6 +127,12 @@ def delete_subject(subject_id):
     return redirect(url_for("admin.subjects_dash"))
 
 
+def _grade_visible_to_current_user(grade_form):
+    if user_can_select_branch():
+        return True
+    return grade_is_offered_by_branch(grade_form, locked_branch_id())
+
+
 @admin_bp.route("/subjects/by-grade")
 @login_required
 def subjects_by_grade():
@@ -104,6 +140,9 @@ def subjects_by_grade():
 
     if not grade_form:
         return "", 400
+
+    if not _grade_visible_to_current_user(grade_form):
+        return "", 403
 
     subjects = get_subjects_by_grade(grade_form)
 
@@ -121,6 +160,9 @@ def subjects_by_grade_json():
 
     if not grade_form:
         return jsonify([])  # return empty list if no grade
+
+    if not _grade_visible_to_current_user(grade_form):
+        return jsonify([])
 
     subjects = get_subjects_by_grade(grade_form)
 

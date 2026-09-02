@@ -114,19 +114,40 @@ def sort_grade_records(records):
     return result
 
 
-def load_grades(reverse=False):
+def load_grades(reverse=False, branch_id=None):
     try:
-        rows = BranchClasses.query.with_entities(
+        query = BranchClasses.query.with_entities(
             BranchClasses.id,
             BranchClasses.grade_form
-        ).order_by(BranchClasses.created_at.desc()).all()
+        )
+        if branch_id is not None:
+            query = query.filter(BranchClasses.branch_id == branch_id)
+        rows = query.order_by(BranchClasses.created_at.desc()).all()
         rows = [(row_id, name) for row_id, name in rows if not is_archived_class_name(name)]
         sorted_rows = sort_grade_list(rows, reverse=reverse)
         return [("", "--- Select a Grade / Form ---")] + [
             (r[1], r[1]) for r in sorted_rows
-        ]    
-    except Exception as e:
+        ]
+    except Exception:
        return [("", "--- No loaded data yet ---")]
+
+
+def get_branch_grade_names(branch_id):
+    """Distinct live class names offered at a school, in display order."""
+    if not branch_id:
+        return []
+    return [
+        name
+        for value, name in load_grades(branch_id=branch_id)[1:]
+        if value
+    ]
+
+
+def grade_is_offered_by_branch(grade_form, branch_id):
+    if not grade_form or not branch_id:
+        return False
+    key = str(grade_form).strip().lower()
+    return any(name.strip().lower() == key for name in get_branch_grade_names(branch_id))
 
    
 
