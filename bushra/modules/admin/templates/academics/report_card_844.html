@@ -61,31 +61,37 @@ body {
     margin-bottom: 10px;
 }
 
-.rc-logo-wrap,
-.rc-passport-wrap {
+.rc-logo-wrap {
     width: 86px;
     flex-shrink: 0;
 }
 
-.rc-logo,
-.rc-passport {
+.rc-passport-wrap {
+    width: 102px;
+    flex-shrink: 0;
+}
+
+.rc-logo {
     width: 86px;
     height: 86px;
     object-fit: contain;
+    display: block;
+    border: none;
+    background: transparent;
+}
+
+.rc-passport {
+    width: 102px;
+    height: 102px;
+    object-fit: cover;
     display: block;
     border: 1px solid #d9c4b8;
     border-radius: 3px;
     background: #fff;
 }
 
-.rc-passport {
-    object-fit: cover;
-}
-
 .rc-logo-placeholder,
 .rc-passport-placeholder {
-    width: 86px;
-    height: 86px;
     border: 1px dashed #b5a090;
     border-radius: 3px;
     display: flex;
@@ -94,6 +100,16 @@ body {
     font-size: 9.5px;
     color: #8a7a70;
     background: rgba(250, 247, 245, 0.75);
+}
+
+.rc-logo-placeholder {
+    width: 86px;
+    height: 86px;
+}
+
+.rc-passport-placeholder {
+    width: 102px;
+    height: 102px;
 }
 
 .rc-school {
