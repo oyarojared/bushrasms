@@ -499,12 +499,17 @@
 
                 <!-- ✅ COMPUTE OVERALL PERFORMANCE -->
                 {% set percentage = (totals.marks / max_marks * 100) if max_marks > 0 else 0 %}
+                {# Integer bands (30-39, 40-49) leave 1-point gaps. Round the mean so 39.6% still matches. #}
+                {% set overall_score = percentage|round|int %}
                 {% set overall = namespace(grade='—', points='—', remark='—') %}
 
                 {% for g in data.grading_boundaries %}
-                {% if percentage >= g.min_score and percentage <= g.max_score %} {% set
-                    overall.grade=g.performance_level %} {% set overall.points=g.points %} {% set
-                    overall.remark=g.descriptor %} {% endif %} {% endfor %}
+                {% if overall_score >= g.min_score and overall_score <= g.max_score %}
+                    {% set overall.grade = g.performance_level %}
+                    {% set overall.points = g.points %}
+                    {% set overall.remark = g.descriptor %}
+                {% endif %}
+                {% endfor %}
                     <!-- ADD TEACHER COMMENT -->
                     {% set missing_exams = student.subjects | selectattr("marks", "equalto", None) | list %}
                     {% set teacher_comment = '' %}

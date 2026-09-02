@@ -4,7 +4,8 @@ from werkzeug.security import check_password_hash
 from ..bushra.modules.admin.utils import (allowed_file,
                                           generate_initial_password,
                                           generate_username,
-                                          next_available_username)
+                                          next_available_username,
+                                          score_for_boundary_lookup)
 
 # ---------- allowed_file Tests ---------- #
 
@@ -92,3 +93,11 @@ def test_generate_initial_password_correct_raw_digits():
     """Ensure the last 4 digits of the phone are the raw password."""
     pw = generate_initial_password("0712345678")
     assert check_password_hash(pw, "5678")
+
+
+def test_score_for_boundary_lookup_rounds_gap_percentages():
+    """39.6% sits between 39 and 40; round so integer bands can match."""
+    assert score_for_boundary_lookup(39.6) == 40
+    assert score_for_boundary_lookup(39.4) == 39
+    assert score_for_boundary_lookup(40) == 40
+    assert score_for_boundary_lookup(None) is None

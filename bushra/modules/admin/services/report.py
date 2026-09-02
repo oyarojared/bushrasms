@@ -4,7 +4,7 @@ from ....modals.branches_db import Branch, BranchClasses
 from ....modals.staff_db import ClassTeacher, Teacher
 from ....modals.students_db import Student
 from ....modals.subjects_db import *
-from ..utils import resolve_grade
+from ..utils import resolve_grade, resolve_overall_grade
 from ....modals.students_db import StudentSubjectAllocation
 
 from pathlib import Path
@@ -1459,8 +1459,8 @@ def _broadsheet_student_summary(marks_per_subject, subjects, is_844, class_id):
 
     mean_grade = None
     if numeric:
-        mean = int(round(sum(numeric) / len(numeric)))
-        grade_info = resolve_grade(class_id, mean)
+        mean = sum(numeric) / len(numeric)
+        grade_info = resolve_overall_grade(class_id, mean)
         mean_grade = grade_info.get("performance_level") if grade_info else None
 
     return (points_total if has_points else None), mean_grade

@@ -45,6 +45,21 @@ def validate_fullname(name: str) -> bool:
 
 
 
+def score_for_boundary_lookup(score):
+    """Round a mean/percentage so it can match integer grading bands.
+
+    Subject marks are whole numbers and sit inside bands like 30-39 / 40-49.
+    Overall means such as 39.6% fall in the 1-point gap between those bands
+    and would otherwise get no performance level.
+    """
+    if score is None:
+        return None
+    try:
+        return int(round(float(score)))
+    except (TypeError, ValueError):
+        return None
+
+
 def resolve_grade(grade_id, score):
     """
     Given a grade (BranchClasses.id) and a score, return the grading outcome.
@@ -97,6 +112,11 @@ def resolve_grade(grade_id, score):
 
     # 4️⃣ Score outside all boundaries
     return empty_result
+
+
+def resolve_overall_grade(grade_id, score):
+    """Resolve overall/mean performance against integer grading bands."""
+    return resolve_grade(grade_id, score_for_boundary_lookup(score))
 
 
 

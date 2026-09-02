@@ -1,12 +1,12 @@
 from ....modals import db
 from ....modals.students_db import Student
-from ....modals.assessment_db import StudentExamMark, ExamPaper, Exam, GradeGradingScheme
+from ....modals.assessment_db import StudentExamMark, ExamPaper, Exam
 from ....modals.subjects_db import Subject, Lesson
 from ....modals.branches_db import BranchClasses
 from sqlalchemy import func
 from collections import defaultdict
 
-from ..utils.general_utils import resolve_grade
+from ..utils.general_utils import resolve_grade, resolve_overall_grade
 from ..services.grades import live_class_name
 from ..services.grading_844 import (
     normalize_form_name,
@@ -52,28 +52,7 @@ def _cbe_overall_grade(class_id, raw_total, subjects):
         }
 
     percentage = (raw_total / total_out_of) * 100
-    scheme_link = GradeGradingScheme.query.filter_by(grade_id=class_id).first()
-
-    if not scheme_link or not scheme_link.scheme:
-        return {
-            "performance_level": None,
-            "points": None,
-            "descriptor": None,
-        }
-
-    for boundary in scheme_link.scheme.boundaries:
-        if boundary.min_score <= percentage <= boundary.max_score:
-            return {
-                "performance_level": boundary.performance_level,
-                "points": boundary.points,
-                "descriptor": boundary.descriptor,
-            }
-
-    return {
-        "performance_level": None,
-        "points": None,
-        "descriptor": None,
-    }
+    return resolve_overall_grade(class_id, percentage)
 
 
 def _subject_teacher_initials(branch_id, class_id, stream, subject_id):
