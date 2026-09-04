@@ -20,6 +20,10 @@ from ..utils import (can_reset_teacher_password, check_unique_teacher_fields,
                      generate_username, hash_staff_password,
                      is_phone_correct_format, last_four_phone_digits,
                      load_branch_choices, preprocess_image, apply_locked_branch)
+from ..utils.class_teacher import (
+    normalize_class_stream,
+    upsert_class_teacher_assignment,
+)
 from ..utils.route_protect import admin_required
 
 from flask_login import login_required, current_user
@@ -521,59 +525,38 @@ def update_teacher(teacher_id):
 @admin_bp.route("/api/save-class-teacher", methods=["POST"])
 @login_required
 def save_class_teacher():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
 
-    # Extract data
-    branch_id = data.get("branch_id")
-    class_id = data.get("class_id")
-    stream = data.get("stream")
-    teacher_id = data.get("teacher_id")
-
-    # --- Validation ---
-    if not branch_id or not class_id or not teacher_id:
+    try:
+        branch_id = int(data.get("branch_id"))
+        class_id = int(data.get("class_id"))
+        teacher_id = int(data.get("teacher_id"))
+    except (TypeError, ValueError):
         return jsonify({"success": False, "message": "Branch, class, and teacher are required"}), 400
 
-    # Check if branch exists
-    branch = Branch.query.get(branch_id)
+    stream = normalize_class_stream(data.get("stream"))
+
+    branch = db.session.get(Branch, branch_id)
     if not branch:
         return jsonify({"success": False, "message": "Invalid branch"}), 404
 
-    # Check if class exists
     class_obj = BranchClasses.query.filter_by(id=class_id, branch_id=branch_id).first()
     if not class_obj:
         return jsonify({"success": False, "message": "Class does not exist in this branch"}), 404
 
-    # Check if teacher exists
-    teacher = Teacher.query.get(teacher_id)
+    teacher = db.session.get(Teacher, teacher_id)
     if not teacher:
         return jsonify({"success": False, "message": "Teacher does not exist"}), 404
 
-    # Optional: Check if stream exists for this class
     if stream:
-        if stream not in class_obj.streams:  # assuming class_obj.streams is a list/JSON column
+        streams = class_obj.streams or []
+        if stream not in streams:
             return jsonify({"success": False, "message": "Invalid stream for this class"}), 400
 
-    # --- Save / Update ---
     try:
-        class_teacher = ClassTeacher.query.filter_by(
-            branch_id=branch_id, class_id=class_id, stream=stream
-        ).first()
-
-        if class_teacher:
-            class_teacher.teacher_id = teacher_id
-        else:
-            class_teacher = ClassTeacher(
-                branch_id=branch_id,
-                class_id=class_id,
-                stream=stream,
-                teacher_id=teacher_id
-            )
-            db.session.add(class_teacher)
-
+        upsert_class_teacher_assignment(branch_id, class_id, stream, teacher)
         db.session.commit()
-
-        return jsonify({"success": True, "teacher_name": f"{teacher.fullname}"})
-
-    except SQLAlchemyError as e:
+        return jsonify({"success": True, "teacher_name": teacher.fullname})
+    except SQLAlchemyError:
         db.session.rollback()
         return jsonify({"success": False, "message": "Database error occurred"}), 500

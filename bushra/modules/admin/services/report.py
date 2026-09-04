@@ -547,15 +547,9 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
     # ------------------------------------------------------------------
     # Class teacher
     # ------------------------------------------------------------------
-    class_teacher_query = ClassTeacher.query.filter_by(
-        branch_id=branch_id,
-        class_id=class_id
-    )
+    from ..utils.class_teacher import find_class_teacher_assignment
 
-    if stream:
-        class_teacher_query = class_teacher_query.filter_by(stream=stream)
-
-    class_teacher_obj = class_teacher_query.first()
+    class_teacher_obj = find_class_teacher_assignment(branch_id, class_id, stream)
 
     class_teacher_name = (
         class_teacher_obj.teacher.fullname
@@ -928,11 +922,10 @@ def build_broadsheet_data(branch_id, class_id, exam_id, stream=None):
         teacher_map = {t.id: t for t in teachers}
 
         # -------------------- 6B. Class Teacher --------------------
+        from ..utils.class_teacher import find_class_teacher_assignment
+
         class_teacher = None
-        class_teacher_obj = ClassTeacher.query.filter_by(
-            class_id=class_id,
-            branch_id=branch_id
-        ).first()
+        class_teacher_obj = find_class_teacher_assignment(branch_id, class_id, stream)
 
         if class_teacher_obj:
             teacher = teacher_map.get(class_teacher_obj.teacher_id) or db.session.get(Teacher, class_teacher_obj.teacher_id)

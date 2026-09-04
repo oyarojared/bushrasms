@@ -10,6 +10,7 @@ from ....modals.branches_db import BranchClasses
 from ....modals.students_db import Student, StudentSubjectAllocation
 from ....modals.subjects_db import Subject, SubjectEligibility, Lesson
 from ....modals.staff_db import Teacher, ClassTeacher
+from ..utils.class_teacher import find_class_teacher_assignment, normalize_class_stream
 from ..services.report import (
     build_broadsheet_data,
     build_broadsheet_excel,
@@ -283,21 +284,16 @@ def api_class_context():
 def class_teacher_context():
     branch_id = request.args.get("branch_id", type=int)
     class_id = request.args.get("class_id", type=int)
-    stream = request.args.get("stream", default=None, type=str)
+    stream = normalize_class_stream(request.args.get("stream", default=None, type=str))
 
     if not branch_id or not class_id:
         return jsonify({"error": "branch_id and class_id are required"}), 400
 
-    # Get current class teacher
-    current_assignment = ClassTeacher.query.filter_by(
-        branch_id=branch_id,
-        class_id=class_id,
-        stream=stream
-    ).first()
+    current_assignment = find_class_teacher_assignment(branch_id, class_id, stream)
 
     current_teacher = None
     if current_assignment and current_assignment.teacher_id:
-        teacher = Teacher.query.get(current_assignment.teacher_id)
+        teacher = db.session.get(Teacher, current_assignment.teacher_id)
         if teacher:
             current_teacher = {"id": teacher.id, "name": f"{teacher.title} {teacher.fullname}"}
 

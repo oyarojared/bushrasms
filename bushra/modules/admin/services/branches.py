@@ -200,15 +200,20 @@ def get_branch_academic_population(branch_id: int):
     # Fetch all students for the branch
     students = Student.query.filter_by(branch_id=branch_id).all()
 
-    # Fetch all class teachers for this branch
-    class_teachers = ClassTeacher.query.filter_by(branch_id=branch_id).all()
+    # Fetch all class teachers for this branch. Later rows overwrite so a
+    # newer assignment wins when duplicates exist for the same slot.
+    class_teachers = (
+        ClassTeacher.query.filter_by(branch_id=branch_id)
+        .order_by(ClassTeacher.id.asc())
+        .all()
+    )
 
-    # Map teachers by (class_id, stream) for quick lookup
-    # stream can be None for a whole-class teacher
-    class_teacher_map = {
-        (ct.class_id, ct.stream or None): ct.teacher
-        for ct in class_teachers if ct.teacher
-    }
+    class_teacher_map = {}
+    for ct in class_teachers:
+        if not ct.teacher:
+            continue
+        stream_key = (ct.stream or "").strip() or None
+        class_teacher_map[(ct.class_id, stream_key)] = ct.teacher
 
     # Index students by class_id
     students_by_class = defaultdict(list)
@@ -258,8 +263,8 @@ def get_branch_academic_population(branch_id: int):
             for stream_name, stream_students in stream_map.items():
                 stream_totals = gender_counts(stream_students)
 
-                # Stream-level teacher, fallback to class teacher if none
-                teacher = class_teacher_map.get((cls.id, stream_name)) or class_teacher
+                stream_key = (stream_name or "").strip() or None
+                teacher = class_teacher_map.get((cls.id, stream_key)) or class_teacher
                 teacher_info = {
                     "id": teacher.id,
                     "name": f"{teacher.title} {teacher.fullname}"

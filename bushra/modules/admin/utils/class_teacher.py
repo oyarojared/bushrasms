@@ -3,11 +3,116 @@
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 
+from ....modals import db
 from ....modals.assessment_db import Exam, ExamPaper
 from ....modals.staff_db import ClassTeacher
 from ....modals.students_db import Student
 from ..services.grades import live_class_name
 from ..services.report import build_broadsheet_data, compute_full_analysis
+
+
+_BLANK_STREAMS = ("", "null", "None", "All")
+
+
+def normalize_class_stream(stream):
+    """Treat missing / empty stream values as class-level (None)."""
+    if stream is None:
+        return None
+    if not isinstance(stream, str):
+        stream = str(stream)
+    stream = stream.strip()
+    if stream in _BLANK_STREAMS:
+        return None
+    return stream
+
+
+def _row_sort_key(row):
+    return (row.updated_at is not None, row.updated_at, row.id or 0)
+
+
+def _matching_rows(rows, stream):
+    target = normalize_class_stream(stream)
+    return [
+        row for row in rows if normalize_class_stream(row.stream) == target
+    ]
+
+
+def _class_teacher_rows(branch_id, class_id):
+    return ClassTeacher.query.filter_by(
+        branch_id=branch_id,
+        class_id=class_id,
+    ).all()
+
+
+def find_class_teacher_assignment(branch_id, class_id, stream=None):
+    """
+    Return the assignment that save/read should use for this class + stream.
+
+    Prefers an exact stream match. If none exists, falls back to a class-level
+    row (NULL/empty stream) so an older assignment is updated instead of
+    leaving a stale teacher in place.
+    """
+    rows = _class_teacher_rows(branch_id, class_id)
+    if not rows:
+        return None
+
+    exact = _matching_rows(rows, stream)
+    if exact:
+        return max(exact, key=_row_sort_key)
+
+    if normalize_class_stream(stream) is not None:
+        class_level = _matching_rows(rows, None)
+        if class_level:
+            return max(class_level, key=_row_sort_key)
+
+    return None
+
+
+def upsert_class_teacher_assignment(branch_id, class_id, stream, teacher):
+    """
+    Assign `teacher` as class teacher for this class/stream.
+
+    Updates the existing row when one is found (including a class-level
+    leftover), collapses duplicate rows for the same slot, and always sets
+    both teacher_id and the teacher relationship so SQLAlchemy does not keep
+    the previous teacher loaded.
+    """
+    stream = normalize_class_stream(stream)
+    rows = _class_teacher_rows(branch_id, class_id)
+    exact = _matching_rows(rows, stream)
+    class_level = _matching_rows(rows, None)
+
+    extras = []
+    if exact:
+        keeper = max(exact, key=_row_sort_key)
+        extras.extend(row for row in exact if row.id != keeper.id)
+        # Class-level leftovers make `.first()` lookups keep returning the old
+        # teacher after a stream-specific assignment is saved.
+        if stream is not None:
+            extras.extend(row for row in class_level if row.id != keeper.id)
+    elif stream is not None and class_level:
+        keeper = max(class_level, key=_row_sort_key)
+        keeper.stream = stream
+        extras.extend(row for row in class_level if row.id != keeper.id)
+    elif class_level:
+        keeper = max(class_level, key=_row_sort_key)
+        extras.extend(row for row in class_level if row.id != keeper.id)
+    else:
+        keeper = ClassTeacher(
+            branch_id=branch_id,
+            class_id=class_id,
+            stream=stream,
+            teacher_id=teacher.id,
+        )
+        db.session.add(keeper)
+
+    keeper.teacher = teacher
+    keeper.teacher_id = teacher.id
+
+    for extra in extras:
+        db.session.delete(extra)
+
+    return keeper
 
 
 def list_class_teacher_assignments(teacher):
