@@ -17,7 +17,9 @@ from .general_utils import (
     validate_fullname,
 )
 from .inject import inject_global_context
-from .teacher_utils import (check_unique_teacher_fields,
+from .teacher_utils import (can_reset_teacher_password,
+                            check_unique_teacher_fields,
                             generate_initial_password, generate_username,
+                            hash_staff_password, last_four_phone_digits,
                             build_username_stem, next_available_username,
                             load_teacher_choices)

@@ -110,6 +110,20 @@ def generate_username(fullname: str, phone: str, existing_usernames=None):
     return next_available_username(stem, existing_usernames)
 
 
+def last_four_phone_digits(phone: str):
+    """Return the last 4 digits of a phone number, or None if not usable."""
+    if not isinstance(phone, str):
+        return None
+    digits = _phone_digits(phone)
+    if len(digits) < 4:
+        return None
+    return digits[-4:]
+
+
+def hash_staff_password(raw: str) -> str:
+    return generate_password_hash(raw, method="pbkdf2:sha256", salt_length=16)
+
+
 def generate_initial_password(phone: str):
     if not isinstance(phone, str):
         raise TypeError(
@@ -117,7 +131,22 @@ def generate_initial_password(phone: str):
         )
     digits = re.sub(r"\D", "", phone)
     raw = digits[-4:]
-    return generate_password_hash(raw, method="pbkdf2:sha256", salt_length=16)
+    return hash_staff_password(raw)
+
+
+def can_reset_teacher_password(actor, target) -> bool:
+    """School admins reset staff in their school. Super admins reset anyone but themselves."""
+    if actor is None or target is None:
+        return False
+    if getattr(actor, "id", None) == getattr(target, "id", None):
+        return False
+    if getattr(actor, "is_super_admin", False):
+        return True
+    if not getattr(actor, "is_admin", False):
+        return False
+    if getattr(target, "is_super_admin", False):
+        return False
+    return actor.branch_id == target.branch_id
 
 
 def load_teacher_choices():

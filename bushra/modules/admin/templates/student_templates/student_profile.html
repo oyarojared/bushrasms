@@ -12,88 +12,81 @@
   <!-- Profile header -->
   <div class="stu-identity-card">
     <div class="stu-identity-bar">
-      <div class="stu-identity-main">
-        <div class="stu-identity-photo-col">
-          <div class="stu-identity-photo-frame">
-            {% set passport = student.passport or "default.jpg" %}
-            <img
-              src="{{ url_for('admin.serve_passport', filename=passport) }}"
-              alt="{{ student.fullname }} passport photo"
-              class="stu-identity-photo"
-            />
-          </div>
-
-          <form
-            id="photoUploadForm"
-            action="{{ url_for('admin.student_profile', student_id=student.id) }}"
-            method="POST"
-            enctype="multipart/form-data"
-            class="d-none"
-          >
-            {{ passport_form.hidden_tag() }}
-            {{ passport_form.passport(id="passportInput") }}
-          </form>
-
-          <button
-            type="button"
-            id="triggerPassportUpload"
-            class="stu-btn stu-btn-primary stu-btn-sm stu-identity-photo-upload"
-          >
-            <i class="bi bi-camera"></i> Update photo
-          </button>
-
-          {% if passport_form.passport.errors %}
-          <div class="stu-identity-photo-error">
-            {% for error in passport_form.passport.errors %}{{ error }}{% endfor %}
-          </div>
-          {% endif %}
+      <div class="stu-identity-photo-col">
+        <div class="stu-identity-photo-frame">
+          {% set passport = student.passport or "default.jpg" %}
+          <img
+            src="{{ url_for('admin.serve_passport', filename=passport) }}"
+            alt="{{ student.fullname }} passport photo"
+            class="stu-identity-photo"
+          />
         </div>
 
-        <div class="stu-identity-details">
-          <h1 class="stu-identity-name">{{ student.fullname }}</h1>
-          <p class="stu-identity-school">{{ student_branch.branch_name }}</p>
-          <p class="stu-identity-class">
-            {{ student_class.grade_form if student_class else "---" }}
-            {% if student.stream %}<span class="stu-identity-sep">·</span>{{ student.stream }}{% endif %}
-          </p>
+        <form
+          id="photoUploadForm"
+          action="{{ url_for('admin.student_profile', student_id=student.id) }}"
+          method="POST"
+          enctype="multipart/form-data"
+          class="d-none"
+        >
+          {{ passport_form.hidden_tag() }}
+          {{ passport_form.passport(id="passportInput") }}
+        </form>
 
-          <div class="stu-identity-meta">
-            {% if student.gender %}
-            <span class="stu-identity-meta-item">
-              <i class="bi bi-gender-ambiguous" aria-hidden="true"></i>
-              {{ student.gender }}
-            </span>
-            {% endif %}
-            {% if student.boarding_status %}
-            <span class="stu-identity-meta-item">
-              <i class="bi bi-house-door" aria-hidden="true"></i>
-              {{ student.boarding_status }}
-            </span>
-            {% endif %}
-          </div>
+        <button
+          type="button"
+          id="triggerPassportUpload"
+          class="stu-btn stu-btn-primary stu-btn-sm stu-identity-photo-upload"
+        >
+          Update passport
+        </button>
+
+        {% if passport_form.passport.errors %}
+        <div class="stu-identity-photo-error">
+          {% for error in passport_form.passport.errors %}{{ error }}{% endfor %}
         </div>
+        {% endif %}
       </div>
 
-      <div class="stu-identity-actions">
-        <button type="button" class="stu-btn stu-btn-outline stu-btn-sm" id="editStudentBtn">
-          <i class="bi bi-pencil"></i> Edit
-        </button>
-        <button
-          type="button"
-          class="stu-btn stu-btn-outline stu-btn-sm"
-          data-bs-toggle="modal"
-          data-bs-target="#moveStudentModal"
-        >
-          <i class="bi bi-arrow-left-right"></i> Move
-        </button>
-        <button
-          type="button"
-          class="stu-btn stu-btn-outline stu-btn-sm stu-btn-danger-outline js-delete-student"
-          data-student-name="{{ student.fullname }}"
-          data-delete-url="{{ url_for('admin.delete_student', student_id=student.id) }}"
-        >
-          <i class="bi bi-trash"></i> Delete
-        </button>
+      <div class="stu-identity-details">
+        <h1 class="stu-identity-name">{{ student.fullname | upper }}</h1>
+        <p class="stu-identity-sub">
+          {{ student_branch.branch_name }}
+          <span class="stu-identity-sep">·</span>
+          {{ student_class.grade_form if student_class else "—" }}
+          {% if student.stream %}<span class="stu-identity-sep">·</span>{{ student.stream }}{% endif %}
+        </p>
+
+        {% if student.boarding_status %}
+        <div class="stu-identity-meta">
+          <span class="stu-identity-meta-item">
+            <i class="bi bi-house-door" aria-hidden="true"></i>
+            {{ student.boarding_status }}
+          </span>
+        </div>
+        {% endif %}
+
+        <div class="stu-identity-actions">
+          <button type="button" class="stu-btn stu-btn-outline stu-btn-sm" id="editStudentBtn">
+            <i class="bi bi-pencil"></i> Edit
+          </button>
+          <button
+            type="button"
+            class="stu-btn stu-btn-outline stu-btn-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#moveStudentModal"
+          >
+            <i class="bi bi-arrow-left-right"></i> Move
+          </button>
+          <button
+            type="button"
+            class="stu-btn stu-btn-outline stu-btn-sm stu-btn-danger-outline js-delete-student"
+            data-student-name="{{ student.fullname }}"
+            data-delete-url="{{ url_for('admin.delete_student', student_id=student.id) }}"
+          >
+            <i class="bi bi-trash"></i> Delete
+          </button>
+        </div>
       </div>
     </div>
 
@@ -747,35 +740,26 @@
 
   .stu-identity-bar {
     display: flex;
+    flex-direction: row;
     align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.8rem 1.5rem 0.55rem 1.65rem;
-  }
-
-  .stu-identity-main {
-    display: flex;
-    align-items: flex-start;
-    gap: 1.15rem;
-    min-width: 0;
-    flex: 1;
-    padding-left: 0.2rem;
+    gap: 1.25rem;
+    padding: 0.9rem 1.35rem 0.85rem calc(2.7rem + 20px);
   }
 
   .stu-identity-photo-col {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
+    align-items: stretch;
+    gap: 0.45rem;
     flex-shrink: 0;
-    width: 130px;
+    width: 112px;
   }
 
   .stu-identity-photo-frame {
-    width: 118px;
+    width: 112px;
     height: 118px;
     padding: 2px;
-    border-radius: 14px;
+    border-radius: 10px;
     background: #fff;
     border: 1px solid #ff7979;
     box-shadow: 0 2px 10px rgba(255, 121, 121, 0.12);
@@ -786,14 +770,14 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    border-radius: 10px;
+    border-radius: 8px;
   }
 
   .stu-identity-photo-upload {
     width: 100%;
     justify-content: center;
     font-size: 0.7rem;
-    padding: 0.28rem 0.55rem;
+    padding: 0.28rem 0.4rem;
     min-height: 28px;
     white-space: nowrap;
     color: #fff !important;
@@ -813,75 +797,74 @@
   .stu-identity-details {
     min-width: 0;
     flex: 1;
-    padding-top: 0.15rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    padding-top: 0.1rem;
   }
 
   .stu-identity-name {
-    margin: 0 0 0.35rem;
-    font-size: 1.32rem;
+    margin: 0 0 0.2rem;
+    font-size: 1.22rem;
     font-weight: 700;
     color: #1f2937;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.02em;
     line-height: 1.2;
+    text-transform: uppercase;
   }
 
-  .stu-identity-school {
-    margin: 0 0 0.2rem;
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: #4b5563;
-    line-height: 1.35;
-  }
-
-  .stu-identity-class {
-    margin: 0 0 0.55rem;
+  .stu-identity-sub {
+    margin: 0 0 0.45rem;
     font-size: 0.84rem;
-    font-weight: 500;
+    font-weight: 550;
     color: #6b7280;
-    line-height: 1.35;
+    line-height: 1.4;
   }
 
   .stu-identity-sep {
-    margin: 0 0.25rem;
+    margin: 0 0.28rem;
     opacity: 0.45;
   }
 
   .stu-identity-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
+    justify-content: flex-start;
+    gap: 0.35rem;
   }
 
   .stu-identity-meta-item {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    padding: 0.22rem 0.55rem;
+    padding: 0.18rem 0.5rem;
     border-radius: 999px;
     background: rgba(255, 121, 121, 0.07);
     border: 1px solid rgba(255, 121, 121, 0.18);
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     font-weight: 600;
     color: #4b5563;
   }
 
   .stu-identity-meta-item i {
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     color: #ff7979;
   }
 
   .stu-identity-actions {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.35rem;
-    flex-shrink: 0;
-    margin-right: 0.25rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: auto;
+    padding-top: 0.7rem;
   }
 
   .stu-identity-actions .stu-btn {
     justify-content: center;
-    min-width: 88px;
+    min-width: 5.25rem;
   }
 
   .stu-identity-academics {
@@ -1946,12 +1929,22 @@
   @media (max-width: 767.98px) {
     .stu-identity-bar {
       flex-direction: column;
-      padding-left: 1.15rem;
-      padding-right: 1.15rem;
+      align-items: stretch;
+      padding: 0.9rem 1.15rem 0.75rem;
     }
 
-    .stu-identity-main {
-      padding-left: 0;
+    .stu-identity-photo-col {
+      width: 112px;
+      align-self: center;
+    }
+
+    .stu-identity-details {
+      align-items: center;
+      text-align: center;
+    }
+
+    .stu-identity-meta {
+      justify-content: center;
     }
 
     .stu-identity-name {
@@ -1969,10 +1962,8 @@
     }
 
     .stu-identity-actions {
-      flex-direction: row;
-      flex-wrap: wrap;
       width: 100%;
-      margin-right: 0;
+      justify-content: center;
     }
 
     .stu-identity-actions .stu-btn {

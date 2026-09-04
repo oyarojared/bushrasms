@@ -3,6 +3,7 @@ import re
 from flask import (current_app, flash, redirect, render_template, request,
                    send_file, session, url_for, jsonify)
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from werkzeug.security import check_password_hash
 
 from ....modals import db
 from ....modals.branches_db import Branch, BranchClasses
@@ -12,11 +13,14 @@ from .. import admin_bp
 
 from ..data import lessons_data
 from ..forms.branches_forms import BranchesList
-from ..forms.staff_forms import AddTeacherForm, TeacherPassportUploadForm
-from ..utils import (check_unique_teacher_fields, generate_excel_file,
-                     generate_initial_password, generate_username,
-                     is_phone_correct_format, load_branch_choices,
-                     preprocess_image, apply_locked_branch)
+from ..forms.staff_forms import (AddTeacherForm, ChangePasswordForm,
+                                 ResetPasswordForm, TeacherPassportUploadForm)
+from ..utils import (can_reset_teacher_password, check_unique_teacher_fields,
+                     generate_excel_file, generate_initial_password,
+                     generate_username, hash_staff_password,
+                     is_phone_correct_format, last_four_phone_digits,
+                     load_branch_choices, preprocess_image, apply_locked_branch)
+from ..utils.route_protect import admin_required
 
 from flask_login import login_required, current_user
 
@@ -205,8 +209,93 @@ def teacher_profile(teacher_id):
         branch_name=branch.branch_name,
         lessons=lessons_data,
         move_form=move_form,
+        reset_form=ResetPasswordForm(),
+        can_reset_password=can_reset_teacher_password(current_user, teacher),
+        temp_password_hint=last_four_phone_digits(teacher.phone),
         active_page="school_staff",
     )
+
+
+@admin_bp.route("/change_password", methods=["GET", "POST"])
+@login_required
+def change_password():
+    form = ChangePasswordForm()
+
+    if form.validate_on_submit():
+        current_password = (form.current_password.data or "").strip()
+        new_password = (form.new_password.data or "").strip()
+
+        if not check_password_hash(current_user.password_hash, current_password):
+            flash("Current password is incorrect.", "danger")
+        elif check_password_hash(current_user.password_hash, new_password):
+            flash("Choose a password that is different from your current one.", "warning")
+        else:
+            try:
+                current_user.password_hash = hash_staff_password(new_password)
+                db.session.commit()
+                flash(
+                    "Password updated. Use your new password the next time you sign in.",
+                    "success",
+                )
+                return redirect(url_for("admin.change_password"))
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f"[CHANGE_PASSWORD_ERROR] {e}")
+                flash("Could not update your password. Please try again.", "danger")
+
+    return render_template(
+        "staff_templates/change_password.html",
+        password_form=form,
+        title="Change password",
+    )
+
+
+@admin_bp.route("/reset_teacher_password/<int:teacher_id>", methods=["POST"])
+@login_required
+@admin_required
+def reset_teacher_password(teacher_id):
+    form = ResetPasswordForm()
+    prev_url = request.headers.get("Referer") or url_for(
+        "admin.teacher_profile", teacher_id=teacher_id
+    )
+
+    if not form.validate_on_submit():
+        flash("Invalid submission. Please try again.", "danger")
+        return redirect(prev_url)
+
+    teacher = Teacher.query.get(teacher_id)
+    if not teacher:
+        flash("Teacher not found.", "warning")
+        return redirect(url_for("admin.school_staff"))
+
+    if not can_reset_teacher_password(current_user, teacher):
+        flash("You cannot reset this account's password.", "danger")
+        return redirect(prev_url)
+
+    raw = last_four_phone_digits(teacher.phone)
+    if not raw:
+        flash(
+            "This teacher needs a valid phone number (at least 4 digits) before you can reset their password.",
+            "warning",
+        )
+        return redirect(prev_url)
+
+    try:
+        teacher.password_hash = generate_initial_password(teacher.phone)
+        db.session.commit()
+        flash(
+            f"Password reset for {teacher.fullname}. Temporary password: {raw} "
+            f"(last 4 digits of their phone). Ask them to sign in and change it.",
+            "success",
+        )
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(
+            f"[RESET_PASSWORD_ERROR] teacher_id={teacher_id}: {e}"
+        )
+        flash("Could not reset the password. Please try again.", "danger")
+
+    return redirect(prev_url)
 
 
 @admin_bp.route("/upload_teacher_passport", methods=["POST"])

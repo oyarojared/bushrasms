@@ -119,6 +119,22 @@
             <td>{{ role_label }}</td>
             <td class="acc-col-action">
               <div class="acc-actions">
+                {% if teacher.id in resettable_ids %}
+                <form
+                  method="POST"
+                  action="{{ url_for('admin.reset_teacher_password', teacher_id=teacher.id) }}"
+                >
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button
+                    type="submit"
+                    class="sa-btn sa-btn-outline"
+                    onclick="return confirm('Reset this password to the last 4 digits of their phone?');"
+                  >
+                    Reset password
+                  </button>
+                </form>
+                {% endif %}
+
                 <form
                   method="POST"
                   action="{{ url_for('admin.toggle_admin', teacher_id=teacher.id) }}"

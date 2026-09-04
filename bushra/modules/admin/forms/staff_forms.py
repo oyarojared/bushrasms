@@ -1,8 +1,8 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed, FileField, FileRequired
-from wtforms import (HiddenField, IntegerField, SelectField, StringField,
-                     SubmitField)
-from wtforms.validators import DataRequired, Email, Length, Optional
+from wtforms import (HiddenField, IntegerField, PasswordField, SelectField,
+                     StringField, SubmitField)
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
 
 
 class AddTeacherForm(FlaskForm):
@@ -84,6 +84,48 @@ class AddTeacherForm(FlaskForm):
     )
 
     submit = SubmitField("Add Teacher")
+
+
+class ChangePasswordForm(FlaskForm):
+    current_password = PasswordField(
+        "Current password",
+        validators=[DataRequired(message="Enter your current password.")],
+        render_kw={
+            "autocomplete": "current-password",
+            "placeholder": "Current password",
+        },
+    )
+    new_password = PasswordField(
+        "New password",
+        validators=[
+            DataRequired(message="Enter a new password."),
+            Length(
+                min=6,
+                max=64,
+                message="Password must be 6 to 64 characters.",
+            ),
+        ],
+        render_kw={
+            "autocomplete": "new-password",
+            "placeholder": "At least 6 characters",
+        },
+    )
+    confirm_password = PasswordField(
+        "Confirm new password",
+        validators=[
+            DataRequired(message="Confirm your new password."),
+            EqualTo("new_password", message="New passwords must match."),
+        ],
+        render_kw={
+            "autocomplete": "new-password",
+            "placeholder": "Re-enter new password",
+        },
+    )
+    submit = SubmitField("Update password")
+
+
+class ResetPasswordForm(FlaskForm):
+    submit = SubmitField("Reset password")
 
 
 class TeacherPassportUploadForm(FlaskForm):

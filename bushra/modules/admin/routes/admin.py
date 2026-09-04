@@ -12,6 +12,7 @@ from sqlalchemy.orm import aliased
 
 from ..utils.route_protect import admin_required
 from ..utils.class_teacher import dashboard_class_performance
+from ..utils.teacher_utils import can_reset_teacher_password
 from ..services.grades import live_class_name, sort_grade_list
 from ....modals.subjects_db import Lesson
 
@@ -184,6 +185,11 @@ def admin_dash():
 def manage_accounts():
 
     teachers = Teacher.query.all()
+    resettable_ids = {
+        teacher.id
+        for teacher in teachers
+        if can_reset_teacher_password(current_user, teacher)
+    }
 
     # allow BOTH admin and super admin
     if current_user.is_admin or current_user.is_super_admin:
@@ -191,6 +197,7 @@ def manage_accounts():
         return render_template(
             "admin_templates/accounts.html",
             teachers=teachers,
+            resettable_ids=resettable_ids,
         )
 
     flash(
