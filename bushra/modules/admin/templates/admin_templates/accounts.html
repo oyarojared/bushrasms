@@ -124,7 +124,6 @@
                   method="POST"
                   action="{{ url_for('admin.reset_teacher_password', teacher_id=teacher.id) }}"
                 >
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                   <button
                     type="submit"
                     class="sa-btn sa-btn-outline"
