@@ -1,0 +1,129 @@
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('admin.static', filename='sms.css') }}" />
+{% endblock %}
+
+{% block side_nav %}
+{{ sidebar("Messages", current_user) }}
+{% endblock %}
+
+{% block main_content %}
+<div class="sms-page">
+  <a class="sms-back" href="{{ url_for('admin.messages', branch_id=message.branch_id) }}">
+    <i class="bi bi-arrow-left"></i> Back to messages
+  </a>
+
+  <div class="app-page-title">
+    <div class="app-page-title-icon">
+      <i class="bi {{ 'bi-person-badge' if message.audience_type == 'teachers' else 'bi-people' }}"></i>
+    </div>
+    <div class="app-page-title-content">
+      <h6 class="app-page-title-heading">{{ message.audience_label }}</h6>
+      <span class="app-page-title-subtitle">
+        {{ message.created_at.strftime("%d %b %Y, %H:%M") if message.created_at else "" }}
+        · {{ purpose_labels.get(message.purpose, message.purpose) }}
+      </span>
+    </div>
+    <span class="sms-status sms-status-{{ message.status }}">{{ status_label(message.status) }}</span>
+  </div>
+
+  {{ render_flash_messages() }}
+
+  {% if message.status == "logged" or (message.provider == "log" and not provider_ready) %}
+  <p class="sms-banner">
+    <i class="bi bi-info-circle"></i>
+    This was saved in the school log. It was not delivered to phones.
+  </p>
+  {% endif %}
+
+  <div class="sms-stats">
+    <div class="sms-stat">
+      <span class="sms-tile-icon"><i class="bi bi-check2-circle"></i></span>
+      <div><span>Reached</span><strong>{{ message.sent_count }}</strong></div>
+    </div>
+    <div class="sms-stat">
+      <span class="sms-tile-icon"><i class="bi bi-dash-circle"></i></span>
+      <div><span>Skipped</span><strong>{{ message.skipped_count }}</strong></div>
+    </div>
+    <div class="sms-stat">
+      <span class="sms-tile-icon"><i class="bi bi-exclamation-octagon"></i></span>
+      <div><span>Failed</span><strong>{{ message.failed_count }}</strong></div>
+    </div>
+    <div class="sms-stat">
+      <span class="sms-tile-icon"><i class="bi bi-wallet2"></i></span>
+      <div><span>Credit used</span><strong>{{ message.credits_used }}</strong></div>
+    </div>
+  </div>
+
+  <div class="sms-detail-grid">
+    <div class="sms-workbench">
+      <div class="sms-panel">
+        <div class="sms-section-title">
+          <span class="sms-section-icon"><i class="bi bi-chat-text"></i></span>
+          <div>
+            <h6>Message sent</h6>
+            {% if message.sender %}<p>By {{ message.sender.fullname }}</p>{% endif %}
+          </div>
+        </div>
+        <p class="sms-body-copy">{{ message.body }}</p>
+      </div>
+    </div>
+
+    <div class="sms-workbench">
+      <div class="sms-panel">
+        <div class="sms-section-title">
+          <span class="sms-section-icon"><i class="bi bi-list-check"></i></span>
+          <div>
+            <h6>Recipients</h6>
+            <p>{{ message.recipients|length }} people in this send</p>
+          </div>
+          {% if message.failed_count %}
+          <form method="post" action="{{ url_for('admin.sms_resend', message_id=message.id) }}">
+            <button type="submit" class="sa-btn sa-btn-outline">
+              <i class="bi bi-arrow-repeat"></i> Resend failed
+            </button>
+          </form>
+          {% endif %}
+        </div>
+        <div class="table-responsive">
+          <table class="sms-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in message.recipients %}
+              <tr>
+                <td>
+                  <div class="sms-person-cell">
+                    <span class="sms-tile-icon">
+                      <i class="bi {{ 'bi-person-badge' if row.recipient_type == 'teacher' else 'bi-person' }}"></i>
+                    </span>
+                    <span>
+                      <strong>{{ row.display_name }}</strong>
+                      {% if row.detail %}<small class="sms-muted d-block">{{ row.detail }}</small>{% endif %}
+                    </span>
+                  </div>
+                </td>
+                <td>{{ display_phone(row.phone) or row.phone_raw or "—" }}</td>
+                <td>
+                  <span class="sms-status sms-status-{{ row.status }}">{{ status_label(row.status) }}</span>
+                  {% if row.skip_reason %}<div class="sms-muted">{{ row.skip_reason }}</div>{% endif %}
+                  {% if row.error %}<div class="sms-muted">{{ row.error }}</div>{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

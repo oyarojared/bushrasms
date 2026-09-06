@@ -1,0 +1,285 @@
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('admin.static', filename='sms.css') }}" />
+{% endblock %}
+
+{% block side_nav %}
+{{ sidebar("Messages", current_user) }}
+{% endblock %}
+
+{% block main_content %}
+<div class="sms-page">
+  <a class="sms-back" href="{{ url_for('admin.messages', branch_id=branch.id if branch else none) }}">
+    <i class="bi bi-arrow-left"></i> Back to messages
+  </a>
+
+  <div class="app-page-title">
+    <div class="app-page-title-icon">
+      <i class="bi bi-pencil-square"></i>
+    </div>
+    <div class="app-page-title-content">
+      <h6 class="app-page-title-heading">Send SMS</h6>
+      <span class="app-page-title-subtitle">{{ branch.branch_name if branch else "" }}</span>
+    </div>
+  </div>
+
+  {{ render_flash_messages() }}
+
+  {% if settings %}
+  <div class="sms-credit-top{% if settings.credits <= 0 %} is-empty{% endif %}">
+    <span class="sms-tile-icon"><i class="bi bi-wallet2"></i></span>
+    <div>
+      <strong>{{ settings.credits }} SMS credit remaining</strong>
+      <span>
+        {% if settings.credits <= 0 %}
+          {% if current_user.is_admin %}
+          Add credit before you send.
+          {% else %}
+          Ask an admin to add SMS credit.
+          {% endif %}
+        {% else %}
+          This is what this school can still send.
+        {% endif %}
+      </span>
+    </div>
+    {% if current_user.is_admin %}
+    <a class="sa-btn sa-btn-outline" href="{{ url_for('admin.sms_settings', branch_id=branch.id) }}">Add credit</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if not can_send %}
+  <div class="sms-workbench">
+    <div class="sms-panel">
+      <p class="mb-0"><i class="bi bi-lock me-1"></i> You cannot send SMS at this school yet. Ask an admin to allow class teachers in Settings.</p>
+    </div>
+  </div>
+  {% else %}
+
+  <form id="smsComposeForm" class="sms-compose sms-workbench" novalidate>
+    <input type="hidden" name="branch_id" id="smsBranchId" value="{{ branch.id }}" />
+    <input type="hidden" name="assignment_id" id="smsAssignmentId" value="{{ assignment.id if assignment else '' }}" />
+    <input type="hidden" name="student_id" id="smsStudentId" value="{{ student.id if student else '' }}" />
+    <input type="hidden" name="audience_type" id="smsAudienceType" value="{{ audience }}" />
+
+    <ul class="nav nav-tabs exam-tabs" id="smsComposeTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="sms-who-tab" data-bs-toggle="tab" data-bs-target="#sms-tab-who" type="button" role="tab">
+          <i class="bi bi-people"></i> Who
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link disabled" id="sms-people-tab" data-bs-toggle="tab" data-bs-target="#sms-tab-people" type="button" role="tab" tabindex="-1" aria-disabled="true">
+          <i class="bi bi-person-check"></i> Recipients
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link disabled" id="sms-write-tab" data-bs-toggle="tab" data-bs-target="#sms-tab-write" type="button" role="tab" tabindex="-1" aria-disabled="true">
+          <i class="bi bi-chat-text"></i> Write SMS
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content sms-panel">
+      <div class="tab-pane fade show active" id="sms-tab-who" role="tabpanel">
+        <h6 class="sms-tab-heading">Select who to send the message to</h6>
+
+        {% if student %}
+        <div class="sms-locked-audience">
+          <span class="sms-tile-icon"><i class="bi bi-person"></i></span>
+          <span>
+            <strong>Parent of {{ student.fullname }}</strong>
+            <small>Only this learner</small>
+          </span>
+        </div>
+        {% elif is_admin %}
+        <label class="sms-field">
+          <span>Send to</span>
+          <div class="input-group sms-input">
+            <span class="input-group-text"><i class="bi bi-people"></i></span>
+            <select id="smsWho" class="form-select">
+              <option value="">Select who</option>
+              <option value="parents_class" {% if audience == "parents_class" %}selected{% endif %}>Grade</option>
+              <option value="parents_school" {% if audience == "parents_school" %}selected{% endif %}>Parents</option>
+              <option value="teachers" {% if audience == "teachers" %}selected{% endif %}>Teachers</option>
+            </select>
+          </div>
+        </label>
+
+        <div id="smsClassFields" class="sms-class-fields{% if audience != 'parents_class' %} d-none{% endif %}">
+          <label class="sms-field">
+            <span>Grade</span>
+            <div class="input-group sms-input">
+              <span class="input-group-text"><i class="bi bi-mortarboard"></i></span>
+              <select id="smsClassId" name="class_id" class="form-select">
+                <option value="">Select grade</option>
+                {% for item in classes %}
+                <option
+                  value="{{ item.id }}"
+                  data-streams='{{ item.streams | tojson }}'
+                  {% if default_class_id == item.id %}selected{% endif %}
+                >
+                  {{ item.grade_form }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </label>
+          <label class="sms-field d-none" id="smsStreamWrap">
+            <span>Stream</span>
+            <div class="input-group sms-input">
+              <span class="input-group-text"><i class="bi bi-diagram-3"></i></span>
+              <select id="smsStream" name="stream" class="form-select">
+                <option value="">All</option>
+              </select>
+            </div>
+          </label>
+        </div>
+        {% else %}
+        {% if assignments|length > 1 %}
+        <label class="sms-field">
+          <span>Your class</span>
+          <div class="input-group sms-input">
+            <span class="input-group-text"><i class="bi bi-collection"></i></span>
+            <select id="smsAssignmentSelect" class="form-select">
+              {% for item in assignments %}
+              <option
+                value="{{ item.id }}"
+                data-class-id="{{ item.class_id }}"
+                data-stream="{{ item.stream }}"
+                data-branch-id="{{ item.branch_id }}"
+                {% if assignment and item.id == assignment.id %}selected{% endif %}
+              >
+                {{ item.label }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </label>
+        {% else %}
+        <div class="sms-locked-audience">
+          <span class="sms-tile-icon"><i class="bi bi-people"></i></span>
+          <span>
+            <strong>Parents of your class</strong>
+            <small>{% if assignment %}{{ assignment.class_.grade_form if assignment.class_ else "" }} {{ assignment.stream or "" }}{% else %}Your assigned class{% endif %}</small>
+          </span>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <p class="sms-muted mt-3 mb-2" id="smsWhoHint">Choose a group, then recipients open automatically.</p>
+        <button type="button" class="sa-btn sa-btn-primary" id="smsToPeople" disabled>
+          See recipients
+        </button>
+      </div>
+
+      <div class="tab-pane fade" id="sms-tab-people" role="tabpanel">
+        <h6 class="sms-tab-heading">Who will get this SMS</h6>
+        <div class="sms-audience-summary">
+          <p class="sms-summary-label" id="smsAudienceLabel">—</p>
+          <div class="sms-summary-stats">
+            <div>
+              <strong id="smsReadyCount">0</strong>
+              <span>can receive</span>
+            </div>
+            <div>
+              <strong id="smsSkippedCount">0</strong>
+              <span>skipped</span>
+            </div>
+          </div>
+          <p class="sms-muted mb-0" id="smsAudienceHint">Select who this is for first.</p>
+        </div>
+        <button type="button" class="sa-btn sa-btn-primary mt-3" id="smsToWrite" disabled>
+          Write the SMS
+        </button>
+      </div>
+
+      <div class="tab-pane fade" id="sms-tab-write" role="tabpanel">
+        <h6 class="sms-tab-heading">Write the SMS</h6>
+
+        <label class="sms-field">
+          <span>SMS category</span>
+          <div class="input-group sms-input">
+            <span class="input-group-text"><i class="bi bi-tag"></i></span>
+            <select id="smsPurpose" name="purpose" class="form-select">
+              <option value="">Optional</option>
+              {% for key, label in purpose_labels.items() %}
+              <option value="{{ key }}" {% if purpose == key %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </label>
+
+        {% if templates %}
+        <label class="sms-field">
+          <span>Use template</span>
+          <div class="input-group sms-input">
+            <span class="input-group-text"><i class="bi bi-file-earmark-text"></i></span>
+            <select id="smsTemplate" class="form-select">
+              <option value="">Write your own</option>
+              {% for item in templates %}
+              <option
+                value="{{ item.id }}"
+                data-body="{{ item.body }}"
+                data-purpose="{{ item.purpose }}"
+                data-teachers="{{ '1' if item.for_teachers else '0' }}"
+              >
+                {{ item.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </label>
+        {% endif %}
+
+        <div class="sms-chips" id="smsChips">
+          <span class="sms-chips-label">Insert</span>
+          <button type="button" class="sms-chip" data-insert="parent" data-token="{student_name}"><i class="bi bi-person"></i> Learner</button>
+          <button type="button" class="sms-chip" data-insert="parent" data-token="{parent_name}"><i class="bi bi-person-heart"></i> Parent</button>
+          <button type="button" class="sms-chip" data-insert="parent" data-token="{class}"><i class="bi bi-mortarboard"></i> Class</button>
+          <button type="button" class="sms-chip d-none" data-insert="teacher" data-token="{teacher_name}"><i class="bi bi-person-badge"></i> Teacher</button>
+          <button type="button" class="sms-chip" data-insert="shared" data-token="{school}"><i class="bi bi-building"></i> School</button>
+          <button type="button" class="sms-chip" data-insert="shared" data-token="{date}"><i class="bi bi-calendar-event"></i> Date</button>
+        </div>
+
+        <textarea
+          id="smsBody"
+          name="body"
+          rows="6"
+          maxlength="480"
+          class="form-control sms-textarea"
+          placeholder="Example: school opens on Monday. Please send your child on time."
+        ></textarea>
+        <div class="sms-counter" id="smsCounter">
+          <i class="bi bi-text-paragraph"></i> 0 characters · 0 SMS each
+        </div>
+        <div class="sms-send-row" id="smsCostBar">
+          <div class="sms-cost-copy">
+            <i class="bi bi-calculator"></i>
+            <div>
+              <strong id="smsCostText">Write a message to see the cost</strong>
+            </div>
+          </div>
+          <button type="button" class="sa-btn sa-btn-primary" id="smsSendBtn" disabled>
+            <i class="bi bi-send-fill"></i> Send SMS
+          </button>
+        </div>
+        <p class="text-danger small mt-2 mb-0 d-none" id="smsSendError"></p>
+      </div>
+    </div>
+  </form>
+  {% endif %}
+</div>
+
+<script>
+  window.SMS_COMPOSE = {
+    defaultStream: {{ (default_stream or "") | tojson }},
+    credits: {{ (settings.credits if settings else 0) | int }},
+    maxParts: {{ max_parts }},
+  };
+</script>
+<script src="{{ url_for('admin.static', filename='js/sms_compose.js') }}"></script>
+{% endblock %}

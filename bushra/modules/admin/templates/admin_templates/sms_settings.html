@@ -1,0 +1,116 @@
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('admin.static', filename='sms.css') }}" />
+{% endblock %}
+
+{% block side_nav %}
+{{ sidebar("Messages", current_user) }}
+{% endblock %}
+
+{% block main_content %}
+<div class="sms-page">
+  <a class="sms-back" href="{{ url_for('admin.messages', branch_id=branch.id) }}">
+    <i class="bi bi-arrow-left"></i> Back to messages
+  </a>
+
+  <div class="app-page-title">
+    <div class="app-page-title-icon">
+      <i class="bi bi-gear"></i>
+    </div>
+    <div class="app-page-title-content">
+      <h6 class="app-page-title-heading">SMS settings</h6>
+      <span class="app-page-title-subtitle">{{ branch.branch_name }}</span>
+    </div>
+  </div>
+
+  {{ render_flash_messages() }}
+
+  <div class="sms-stats">
+    <div class="sms-stat">
+      <span class="sms-tile-icon"><i class="bi bi-wallet2"></i></span>
+      <div>
+        <span>SMS credit</span>
+        <strong>{{ settings.credits }}</strong>
+      </div>
+    </div>
+    <div class="sms-stat">
+      <span class="sms-tile-icon"><i class="bi bi-broadcast"></i></span>
+      <div>
+        <span>Delivery</span>
+        <strong>{% if provider_ready %}To phones{% else %}School log only{% endif %}</strong>
+      </div>
+    </div>
+  </div>
+
+  {% if not provider_ready %}
+  <p class="sms-banner">
+    <i class="bi bi-info-circle"></i>
+    No SMS provider is connected yet. You can still write messages, add credit, and practise the flow.
+  </p>
+  {% endif %}
+
+  <div class="sms-settings-grid">
+    <form method="post" class="sms-workbench">
+      <div class="sms-panel">
+        <div class="sms-section-title">
+          <span class="sms-section-icon"><i class="bi bi-toggles"></i></span>
+          <div>
+            <h6>Who can send</h6>
+            <p>Control SMS for this school.</p>
+          </div>
+        </div>
+        <label class="sms-check">
+          <input type="checkbox" name="enabled" value="1" {% if settings.enabled %}checked{% endif %} />
+          <span><i class="bi bi-check2-circle me-1"></i>SMS is on for this school</span>
+        </label>
+        <label class="sms-check">
+          <input type="checkbox" name="allow_class_teachers" value="1" {% if settings.allow_class_teachers %}checked{% endif %} />
+          <span><i class="bi bi-people me-1"></i>Class teachers may message their own parents</span>
+        </label>
+        <label class="sms-field">
+          <span><i class="bi bi-phone me-1"></i>Name on the parent’s phone (optional)</span>
+          <input
+            class="form-control"
+            name="sender_name"
+            value="{{ settings.sender_name or '' }}"
+            maxlength="11"
+            placeholder="e.g. BUSHRA"
+            autocomplete="off"
+          />
+          <small class="sms-muted">Up to 11 letters or numbers. The network must approve this name for live SMS.</small>
+        </label>
+        <button type="submit" name="action" value="save" class="sa-btn sa-btn-primary">
+          <i class="bi bi-check2"></i> Save settings
+        </button>
+      </div>
+    </form>
+
+    <form method="post" class="sms-workbench">
+      <div class="sms-panel">
+        <div class="sms-section-title">
+          <span class="sms-section-icon"><i class="bi bi-plus-circle"></i></span>
+          <div>
+            <h6>Add SMS credit</h6>
+            <p>1 credit = 1 SMS part. A short English message is usually 1 credit per person.</p>
+          </div>
+        </div>
+        <div class="sms-credit-row">
+          <input
+            class="form-control"
+            type="number"
+            name="credit_amount"
+            placeholder="e.g. 200"
+            required
+          />
+          <button type="submit" name="action" value="credits" class="sa-btn sa-btn-outline">
+            <i class="bi bi-plus-lg"></i> Update credit
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
