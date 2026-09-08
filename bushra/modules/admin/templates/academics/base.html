@@ -15,7 +15,7 @@
 
 {% block main_content %}
 {% set categories = subjects | map(attribute="category") | reject("none") | unique | sort | list if subjects else [] %}
-{% set can_delete = current_user.is_super_admin %}
+{% set can_delete = current_user.is_system_admin %}
 
 <div class="sub-page">
   <div class="app-page-title">

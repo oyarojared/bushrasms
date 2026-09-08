@@ -113,7 +113,8 @@ sidebar("Dashboard", current_user)}} {% endblock %} {% block main_content %}
       </span>
 
       <span class="dashboard-context-title">
-        {% if current_user.is_super_admin %} Across All Branches {% elif
+        {% if current_user.is_system_admin %} Across all schools {% elif
+        current_user.is_super_admin %} Assigned schools {% elif
         branches %} Data at a Glance {% else %} --- {% endif %}
       </span>
     </div>

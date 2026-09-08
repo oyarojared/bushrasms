@@ -27,7 +27,12 @@ from ....modals.assessment_db import (StudentExamMark, Exam, ExamPaper, GradeGra
                                     GradingBoundary, GradingScheme, GradingSystem)
 from ..utils.exam_deadlines import is_deadline_passed
 
-from ..utils import resolve_grade, user_can_access_branch
+from ..utils import (
+    get_accessible_branches_query,
+    resolve_grade,
+    teachable_teachers_for_branch,
+    user_can_access_branch,
+)
 from ..services.grading_844 import (
     AGGREGATE_POINT_SCALE,
     EIGHT_FOUR_FOUR_GRADING,
@@ -45,8 +50,6 @@ from sqlalchemy.orm import joinedload
 from ..utils.route_protect import admin_required
 from flask import render_template, make_response, send_file
 from weasyprint import HTML, CSS
-from ..utils import get_accessible_branches_query
-
 from flask_login import current_user
 from sqlalchemy import distinct
 
@@ -198,7 +201,7 @@ def api_class_context():
         # ----------------------------
         # FETCH TEACHERS FOR BRANCH
         # ----------------------------
-        teachers = Teacher.query.filter_by(branch_id=branch_id).all()
+        teachers = teachable_teachers_for_branch(branch_id)
 
         # ----------------------------
         # COUNT STUDENTS PER SUBJECT
@@ -297,8 +300,7 @@ def class_teacher_context():
         if teacher:
             current_teacher = {"id": teacher.id, "name": f"{teacher.title} {teacher.fullname}"}
 
-    # Get all teachers in this branch
-    teachers_query = Teacher.query.filter_by(branch_id=branch_id).all()
+    teachers_query = teachable_teachers_for_branch(branch_id)
     teachers = [{"id": t.id, "name": f"{t.title} {t.fullname}"} for t in teachers_query]
 
     return jsonify({

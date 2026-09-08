@@ -1,9 +1,10 @@
 
 from ....modals.assessment_db import Exam, ExamBranch, ExamPaper, StudentExamMark, db
 from ....modals.branches_db import Branch
+from sqlalchemy import false
 from sqlalchemy.orm import joinedload
 
-from ..utils.branch_utils import user_can_access_branch
+from ..utils.branch_utils import user_can_access_branch, accessible_branch_ids, is_system_admin
 
 
 def get_exams_for_user(user):
@@ -14,8 +15,14 @@ def get_exams_for_user(user):
         .filter(Exam.is_inactive == False)
     )
 
-    if user.is_super_admin:
-        pass  # no extra filter
+    if is_system_admin(user):
+        pass
+    elif user.is_super_admin:
+        ids = accessible_branch_ids(user)
+        if not ids:
+            query = query.filter(false())
+        else:
+            query = query.filter(ExamBranch.branch_id.in_(ids))
 
     elif user.is_admin:
         query = query.filter(ExamBranch.branch_id == user.branch_id)

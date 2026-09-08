@@ -135,16 +135,25 @@ def generate_initial_password(phone: str):
 
 
 def can_reset_teacher_password(actor, target) -> bool:
-    """School admins reset staff in their school. Super admins reset anyone but themselves."""
+    """School admins reset staff in their school. Super admins reset assigned schools only."""
+    from .branch_utils import accessible_branch_ids, is_system_admin
+
     if actor is None or target is None:
         return False
     if getattr(actor, "id", None) == getattr(target, "id", None):
         return False
-    if getattr(actor, "is_super_admin", False):
+    if is_system_admin(actor):
         return True
+    if is_system_admin(target):
+        return False
+    if getattr(actor, "is_super_admin", False):
+        ids = accessible_branch_ids(actor)
+        if not ids:
+            return False
+        return getattr(target, "branch_id", None) in ids
     if not getattr(actor, "is_admin", False):
         return False
-    if getattr(target, "is_super_admin", False):
+    if getattr(target, "is_super_admin", False) or is_system_admin(target):
         return False
     return actor.branch_id == target.branch_id
 

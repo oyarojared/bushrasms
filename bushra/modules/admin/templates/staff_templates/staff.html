@@ -97,7 +97,7 @@ render_flash_messages, sidebar, form_input %} {% block head %} {{ super() }}
           <form
             method="GET"
             id="filter-branches-form"
-            class="sf-school{% if not current_user.is_super_admin %} d-none{% endif %}"
+            class="sf-school{% if not current_user.is_super_admin and not current_user.is_system_admin %} d-none{% endif %}"
           >
             {{ filter_branches_form.hidden_tag() }}
             <label class="visually-hidden" for="selected-branch">School</label>

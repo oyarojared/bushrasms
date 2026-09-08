@@ -5,7 +5,9 @@ from ..forms.branches_forms import GradeSelectForm
 from ..forms.subject_forms import SubjectForm, DeleteSubjectForm, BranchGradeSelectionForm
 from ..services.grades import grade_is_offered_by_branch, get_branch_grade_names, load_grades
 from ..utils import load_branch_choices, locked_branch_id, user_can_select_branch
+from ..utils.branch_utils import is_system_admin, user_can_access_branch
 from ....modals.branches_db import BranchClasses, db
+from ....modals.staff_db import Teacher
 from ....modals.subjects_db import Lesson
 
 from ..services.subs import (
@@ -113,8 +115,8 @@ def subjects_dash():
 @login_required
 @admin_required
 def delete_subject(subject_id): 
-    if not (current_user.is_super_admin and current_user.id == 11):
-        flash("You do not have permission to delete subjects. Please contact the Super Admin.", "warning")
+    if not is_system_admin():
+        flash("You do not have permission to delete subjects. Please contact the system admin.", "warning")
         return redirect(url_for("admin.subjects_dash"))
 
     success, error = delete_subject_service(subject_id)
@@ -187,10 +189,20 @@ def save_teacher_assignments():
     if not branch_id or not class_id or not assignments:
         return jsonify({"success": False, "error": "Missing required data"}), 400
 
+    if not user_can_access_branch(branch_id):
+        return jsonify({"success": False, "error": "You cannot change this school"}), 403
+
     try:
+        from ..utils.branch_utils import can_teach
+
         for a in assignments:
             subject_id = a.get("subject_id")
             teacher_id = a.get("teacher_id")  # can be None
+
+            if teacher_id:
+                assigned = Teacher.query.get(teacher_id)
+                if assigned and not can_teach(assigned):
+                    continue
                 
             # Find existing lesson
             lesson = Lesson.query.filter_by(

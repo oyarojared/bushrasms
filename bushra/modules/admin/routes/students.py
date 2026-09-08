@@ -33,8 +33,7 @@ from ..services.studs import (
     build_student_academic_analysis,
 )
 from flask_login import current_user
-
-UNRESTRICTED_SUPER_ADMIN_ID = 11
+from sqlalchemy import false
 
 @admin_bp.route("/student_dash", methods=["GET", "POST"])
 @login_required
@@ -417,6 +416,10 @@ def add_student():
         return redirect(url_for("admin.student_dash"))
 
     branch_id = form.branches.data
+    if not user_can_access_branch(branch_id):
+        flash("You cannot add a student to that school.", "danger")
+        return redirect(url_for("admin.student_dash"))
+
     admission_no =  form.admission_number.data
 
     # ---- UNIQUE CHECK per branch ----
@@ -659,20 +662,15 @@ def serialize_students(student_list):
 
 
 def apply_student_branch_restrictions(query):
-    """
-        Restrict student queries based on the current user's permissions.
+    """Restrict student queries to schools the current user may see."""
+    from ..utils.branch_utils import accessible_branch_ids, is_system_admin
 
-        - Regular admins: own branch only.
-        - Super admins (except user 11): branches 1–10.
-        - User 11: unrestricted.
-    """
-    if not current_user.is_super_admin:
-        return query.filter_by(branch_id=current_user.branch_id)
-
-    if current_user.id != UNRESTRICTED_SUPER_ADMIN_ID:
-        return query.filter(Student.branch_id.between(1, 10))
-
-    return query
+    if is_system_admin():
+        return query
+    ids = accessible_branch_ids()
+    if not ids:
+        return query.filter(false())
+    return query.filter(Student.branch_id.in_(ids))
 
 @admin_bp.route("/fetch_searched_student", methods=["POST"])
 @login_required

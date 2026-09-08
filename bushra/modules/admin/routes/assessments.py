@@ -40,9 +40,12 @@ from sqlalchemy.orm import joinedload
 from flask import render_template, make_response
 import weasyprint
 
-from ..utils import get_accessible_branches_query, user_can_access_branch
-
-DEVELOPER_ID = 11
+from ..utils import (
+    accessible_branch_ids,
+    get_accessible_branches_query,
+    is_system_admin,
+    user_can_access_branch,
+)
 
 
 def _wants_json():
@@ -157,8 +160,16 @@ def assessment_dash():
     
     # Display grades based on the current user's branch
     if current_user.is_admin:
-        if current_user.id == DEVELOPER_ID:
+        if is_system_admin():
             grades = filter_active_classes(BranchClasses.query.all())
+        elif current_user.is_super_admin:
+            ids = accessible_branch_ids()
+            if not ids:
+                grades = []
+            else:
+                grades = filter_active_classes(
+                    BranchClasses.query.filter(BranchClasses.branch_id.in_(ids)).all()
+                )
         else:
             grades = filter_active_classes(
                 BranchClasses.query.filter_by(
@@ -300,8 +311,10 @@ def unlock_exam(exam_id):
 def _admin_can_manage_exam(exam):
     if not exam or not current_user.is_authenticated or not current_user.is_admin:
         return False
-    if current_user.is_super_admin:
+    if is_system_admin():
         return True
+    if current_user.is_super_admin:
+        return any(user_can_access_branch(eb.branch_id) for eb in exam.exam_branches)
     return any(user_can_access_branch(eb.branch_id) for eb in exam.exam_branches)
 
 
@@ -658,8 +671,12 @@ def save_grading_config():
 
             query = BranchClasses.query.filter_by(grade_form=grade_form)
 
-            # Branch 11 can manage all branches
-            if current_user.id != DEVELOPER_ID:
+            if is_system_admin():
+                pass
+            elif current_user.is_super_admin:
+                ids = accessible_branch_ids()
+                query = query.filter(BranchClasses.branch_id.in_(ids or [-1]))
+            else:
                 query = query.filter_by(branch_id=current_user.branch_id)
 
             classes = query.all()

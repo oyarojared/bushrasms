@@ -19,7 +19,8 @@ from ..utils import (can_reset_teacher_password, check_unique_teacher_fields,
                      generate_excel_file, generate_initial_password,
                      generate_username, hash_staff_password,
                      is_phone_correct_format, last_four_phone_digits,
-                     load_branch_choices, preprocess_image, apply_locked_branch)
+                     load_branch_choices, preprocess_image, apply_locked_branch,
+                     get_accessible_branches_query, user_can_access_branch)
 from ..utils.class_teacher import (
     normalize_class_stream,
     upsert_class_teacher_assignment,
@@ -146,30 +147,36 @@ def school_staff():
     branch_filter = request.args.get("branches", "")
 
     if branch_filter and branch_filter.isdigit():
-        teachers = (
-            Teacher.query
-            .filter(
-                Teacher.branch_id == int(branch_filter), 
+        branch_id = int(branch_filter)
+        if not user_can_access_branch(branch_id):
+            teachers = []
+        else:
+            teachers = (
+                Teacher.query
+                .filter(Teacher.branch_id == branch_id)
+                .order_by(Teacher.created_at.desc())
+                .all()
             )
-            .order_by(Teacher.created_at.desc())
-            .all()
-        )
         filter_branches_form.branches.data = branch_filter
 
     else:
         query = Teacher.query
-        # Load only teachers who belong to admin's branch
-        if current_user.is_admin and not current_user.is_super_admin:
+        if current_user.is_super_admin or current_user.is_system_admin:
+            ids = {b.id for b in get_accessible_branches_query().all()}
+            if not ids:
+                teachers = []
+            else:
+                teachers = (
+                    query.filter(Teacher.branch_id.in_(ids))
+                    .order_by(Teacher.created_at.desc())
+                    .all()
+                )
+        else:
             teachers = (
-                query.filter(current_user.branch_id==Teacher.branch_id)
+                query.filter(current_user.branch_id == Teacher.branch_id)
                 .order_by(Teacher.created_at.desc())
                 .all()
             )
-        else: 
-            if current_user.id != 11:
-                query = query.filter(Teacher.branch_id.between(1, 10))
-
-            teachers = query.order_by(Teacher.created_at.desc()).all()
             
     # -------------------------------------------------
     # RENDER PAGE
@@ -547,6 +554,14 @@ def save_class_teacher():
     teacher = db.session.get(Teacher, teacher_id)
     if not teacher:
         return jsonify({"success": False, "message": "Teacher does not exist"}), 404
+
+    from ..utils.branch_utils import can_teach, user_can_access_branch
+
+    if not user_can_access_branch(branch_id):
+        return jsonify({"success": False, "message": "You cannot change this school"}), 403
+
+    if not can_teach(teacher):
+        return jsonify({"success": False, "message": "Super admins cannot be class teachers"}), 400
 
     if stream:
         streams = class_obj.streams or []

@@ -26,7 +26,15 @@ class Teacher(db.Model, UserMixin):
     password_hash = db.Column(db.String(250), nullable=False)
     passport_url = db.Column(db.String(250))
     is_admin = db.Column(db.Boolean, default=False)
-    is_super_admin = db.Column(db.Boolean, default=False, nullable=False) 
+    is_super_admin = db.Column(db.Boolean, default=False, nullable=False)
+    is_system_admin = db.Column(db.Boolean, default=False, nullable=False)
+
+    school_access = db.relationship(
+        "SuperAdminBranch",
+        backref="teacher",
+        cascade="all, delete-orphan",
+        lazy="select",
+    ) 
 
     # Timestamps
     created_at = db.Column(db.DateTime, server_default=db.func.now())
@@ -59,6 +67,33 @@ class Teacher(db.Model, UserMixin):
 
     def __repr__(self):
         return f"<Teacher {self.fullname} ({self.branch_id})>"
+
+
+class SuperAdminBranch(db.Model):
+    __tablename__ = "super_admin_branches"
+
+    id = db.Column(db.Integer, primary_key=True)
+    teacher_id = db.Column(
+        db.Integer,
+        db.ForeignKey("teachers.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    branch_id = db.Column(
+        db.Integer,
+        db.ForeignKey("branches.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("teacher_id", "branch_id", name="uq_super_admin_branch"),
+    )
+
+    branch = db.relationship("Branch")
+
+    def __repr__(self):
+        return f"<SuperAdminBranch teacher={self.teacher_id} branch={self.branch_id}>"
 
 
 class ClassTeacher(db.Model):

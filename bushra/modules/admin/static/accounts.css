@@ -207,8 +207,9 @@
 
 .acc-col-action {
   width: 1%;
-  white-space: nowrap;
+  white-space: normal;
   text-align: right;
+  min-width: 220px;
 }
 
 .acc-actions {
@@ -226,6 +227,47 @@
 
 .acc-actions form {
   display: inline;
+  margin: 0;
+}
+
+.acc-schools {
+  margin-top: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed #eceff3;
+  text-align: left;
+}
+
+.acc-schools-label {
+  margin: 0 0 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.acc-schools-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.45rem;
+}
+
+.acc-school-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #f8fafc;
+  font-size: 0.7rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.acc-school-chip input {
   margin: 0;
 }
 

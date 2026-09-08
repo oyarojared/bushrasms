@@ -16,6 +16,7 @@ from ..services.branches import (get_branch_classes,
                                 get_branch_data, delete_branch_service,
                                 get_first_branch_id, update_branch_service, get_branch_academic_population)
 from ..utils import load_branch_choices, load_teacher_choices, apply_locked_branch, locked_branch_id
+from ..utils.branch_utils import is_system_admin, user_can_access_branch
 from ..services.subs import get_subjects_by_grade
 from flask_login import login_required
 from ..utils.file_utils import preprocess_image
@@ -161,8 +162,8 @@ def grades_forms():
 @admin_bp.route("/delete_branch/<int:branch_id>", methods=["POST"])
 @login_required
 def delete_branch(branch_id):
-    if not getattr(current_user, "is_super_admin", False):
-        flash("Only Super Admin can delete a branch!", "danger")
+    if not is_system_admin():
+        flash("Only a system admin can delete a school.", "danger")
         fallback_id = get_first_branch_id()
         return redirect(
             url_for("admin.branch_profile", branch_id=fallback_id)
@@ -252,9 +253,7 @@ def branch_academic_data(branch_id):
 def _user_can_manage_branch(branch_id):
     if not getattr(current_user, "is_admin", False):
         return False
-    if current_user.is_super_admin:
-        return True
-    return current_user.branch_id == int(branch_id)
+    return user_can_access_branch(branch_id)
 
 
 def _class_student_count(class_id, stream=None):

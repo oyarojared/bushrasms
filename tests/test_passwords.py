@@ -114,10 +114,18 @@ def test_can_reset_teacher_password_rules():
         id=4, is_admin=False, is_super_admin=False, branch_id=20
     )
     super_admin = SimpleNamespace(
-        id=5, is_admin=True, is_super_admin=True, branch_id=10
+        id=5,
+        is_admin=True,
+        is_super_admin=True,
+        is_system_admin=False,
+        branch_id=10,
+        school_access=[SimpleNamespace(branch_id=20)],
     )
     plain_teacher = SimpleNamespace(
-        id=6, is_admin=False, is_super_admin=False, branch_id=10
+        id=6, is_admin=False, is_super_admin=False, is_system_admin=False, branch_id=10
+    )
+    system_admin = SimpleNamespace(
+        id=7, is_admin=True, is_super_admin=True, is_system_admin=True, branch_id=10
     )
 
     assert can_reset_teacher_password(school_admin, teacher_same) is True
@@ -128,6 +136,8 @@ def test_can_reset_teacher_password_rules():
     assert can_reset_teacher_password(super_admin, teacher_other) is True
     assert can_reset_teacher_password(super_admin, other_admin) is True
     assert can_reset_teacher_password(super_admin, super_admin) is False
+    assert can_reset_teacher_password(system_admin, teacher_other) is True
+    assert can_reset_teacher_password(super_admin, system_admin) is False
 
 
 def test_change_password_page_renders_for_admin(client, db):

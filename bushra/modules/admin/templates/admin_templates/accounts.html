@@ -13,11 +13,13 @@
 
 {% block main_content %}
 {% set total = teachers | length if teachers else 0 %}
-{% set admin_count = teachers | selectattr("is_admin") | list | length if teachers else 0 %}
-{% set super_count = teachers | selectattr("is_super_admin") | list | length if teachers else 0 %}
+{% set admin_count = teachers | selectattr("is_admin") | rejectattr("is_super_admin") | rejectattr("is_system_admin") | list | length if teachers else 0 %}
+{% set super_count = teachers | selectattr("is_super_admin") | rejectattr("is_system_admin") | list | length if teachers else 0 %}
+{% set system_count = teachers | selectattr("is_system_admin") | list | length if teachers else 0 %}
 {% set teacher_count = teachers
   | rejectattr("is_admin")
   | rejectattr("is_super_admin")
+  | rejectattr("is_system_admin")
   | list
   | length if teachers else 0 %}
 
@@ -71,6 +73,12 @@
         Super admin
         <span class="acc-nav-count">{{ super_count }}</span>
       </button>
+      {% if current_user.is_system_admin %}
+      <button type="button" class="acc-nav-btn" data-role="system" aria-pressed="false">
+        System admin
+        <span class="acc-nav-count">{{ system_count }}</span>
+      </button>
+      {% endif %}
       <button type="button" class="acc-nav-btn" data-role="teacher" aria-pressed="false">
         Teacher
         <span class="acc-nav-count">{{ teacher_count }}</span>
@@ -93,8 +101,20 @@
         <tbody>
           {% for teacher in teachers %}
           {% set school_name = teacher.branch.branch_name if teacher.branch else "" %}
-          {% set role_key = "super" if teacher.is_super_admin else ("admin" if teacher.is_admin else "teacher") %}
-          {% set role_label = "Super admin" if teacher.is_super_admin else ("Admin" if teacher.is_admin else "Teacher") %}
+          {% if teacher.is_system_admin %}
+            {% set role_key = "system" %}
+            {% set role_label = "System admin" %}
+          {% elif teacher.is_super_admin %}
+            {% set role_key = "super" %}
+            {% set role_label = "Super admin" %}
+          {% elif teacher.is_admin %}
+            {% set role_key = "admin" %}
+            {% set role_label = "Admin" %}
+          {% else %}
+            {% set role_key = "teacher" %}
+            {% set role_label = "Teacher" %}
+          {% endif %}
+          {% set assigned_ids = assigned_schools.get(teacher.id, []) if assigned_schools else [] %}
           <tr
             class="acc-row"
             data-role="{{ role_key }}"
@@ -134,6 +154,7 @@
                 </form>
                 {% endif %}
 
+                {% if not teacher.is_system_admin and not teacher.is_super_admin %}
                 <form
                   method="POST"
                   action="{{ url_for('admin.toggle_admin', teacher_id=teacher.id) }}"
@@ -156,8 +177,9 @@
                   </button>
                   {% endif %}
                 </form>
+                {% endif %}
 
-                {% if current_user.is_super_admin and teacher.id != current_user.id %}
+                {% if current_user.is_system_admin and teacher.id != current_user.id and not teacher.is_system_admin %}
                 <form
                   method="POST"
                   action="{{ url_for('admin.toggle_super_admin', teacher_id=teacher.id) }}"
@@ -174,7 +196,7 @@
                   <button
                     type="submit"
                     class="sa-btn sa-btn-outline"
-                    onclick="return confirm('Make this user a super admin?');"
+                    onclick="return confirm('Make this user a super admin? They will not see any school until you assign schools.');"
                   >
                     Make super
                   </button>
@@ -182,6 +204,29 @@
                 </form>
                 {% endif %}
               </div>
+              {% if current_user.is_system_admin and teacher.is_super_admin and not teacher.is_system_admin %}
+              <form
+                method="POST"
+                class="acc-schools"
+                action="{{ url_for('admin.assign_super_admin_schools', teacher_id=teacher.id) }}"
+              >
+                <p class="acc-schools-label">Schools this super admin can open</p>
+                <div class="acc-schools-list">
+                  {% for branch in all_branches %}
+                  <label class="acc-school-chip">
+                    <input
+                      type="checkbox"
+                      name="branch_ids"
+                      value="{{ branch.id }}"
+                      {% if branch.id in assigned_ids %}checked{% endif %}
+                    />
+                    {{ branch.branch_name }}
+                  </label>
+                  {% endfor %}
+                </div>
+                <button type="submit" class="sa-btn sa-btn-outline">Save schools</button>
+              </form>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}
@@ -226,10 +271,7 @@
       rows.forEach((row) => {
         const role = row.dataset.role || "";
         const haystack = row.dataset.search || "";
-        const roleOk =
-          activeRole === "all" ||
-          (activeRole === "admin" && (role === "admin" || role === "super")) ||
-          role === activeRole;
+        const roleOk = activeRole === "all" || role === activeRole;
         const queryOk = !query || haystack.includes(query);
         const show = roleOk && queryOk;
         row.classList.toggle("d-none", !show);

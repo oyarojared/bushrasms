@@ -1,9 +1,9 @@
-from flask import flash, render_template, url_for, redirect
+from flask import flash, render_template, request, url_for, redirect
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 
 from ....modals.branches_db import Branch, BranchClasses, db
-from ....modals.staff_db import Teacher
+from ....modals.staff_db import ClassTeacher, SuperAdminBranch, Teacher
 from ....modals.students_db import Student
 from .. import admin_bp
 
@@ -13,6 +13,13 @@ from sqlalchemy.orm import aliased
 from ..utils.route_protect import admin_required
 from ..utils.class_teacher import dashboard_class_performance
 from ..utils.teacher_utils import can_reset_teacher_password
+from ..utils.branch_utils import (
+    accessible_branch_ids,
+    get_accessible_branches_query,
+    is_system_admin,
+    user_can_access_branch,
+    user_can_select_branch,
+)
 from ..services.grades import live_class_name, sort_grade_list
 from ....modals.subjects_db import Lesson
 
@@ -77,11 +84,10 @@ def admin_dash():
 
     teacher_count_map = {r.branch_id: r.teacher_count for r in teacher_counts}
 
-    total_teachers = None
-    if current_user.is_super_admin:
-        total_teachers = sum(teacher_count_map.values())
-    else:
-        total_teachers = teacher_count_map[current_user.branch_id]
+    accessible_ids = {b.id for b in get_accessible_branches_query().all()}
+    total_teachers = sum(
+        teacher_count_map.get(branch_id, 0) for branch_id in accessible_ids
+    )
 
     # ==========================================================
     # 4. STUDENTS PER CLASS
@@ -115,24 +121,9 @@ def admin_dash():
     # ==========================================================
     # 5. FINAL BRANCH STRUCTURE
     # ==========================================================
-    is_developer = (
-        current_user.username == "omongare782"
-        and current_user.phone == "0701948782"
-        and current_user.is_super_admin
-    )
-
-    is_just_admin = (
-        current_user.is_admin
-        and not current_user.is_super_admin
-    )
-    
     branches_list = []
     for b in branches_meta:
-        # Load all schools if user is super admin
-
-        if is_just_admin:
-            pass
-        elif not is_developer and b.id > 10:
+        if b.id not in accessible_ids:
             continue
 
         branches_list.append(
@@ -156,81 +147,159 @@ def admin_dash():
             }
         )
 
-    total_students = None
-    single_branch = [] 
-
-    if current_user.is_super_admin:
-        # Return all students across all branches
-        total_students = sum(b["population"] for b in branches_list)
-    else:
+    total_students = sum(b["population"] for b in branches_list)
+    show_all_accessible = user_can_select_branch()
+    single_branch = []
+    if not show_all_accessible:
         for b in branches_list:
             if b["id"] == current_user.branch_id:
-                total_students = b["population"] # Only students of the user branch
-                single_branch.append(b) 
+                single_branch.append(b)
+        total_students = single_branch[0]["population"] if single_branch else 0
 
     # ==========================================================
     # 6. RENDER
     # ==========================================================
     return render_template(
         "admin_templates/admin_dash.html",
-        branches=branches_list if current_user.is_super_admin else single_branch,
+        branches=branches_list if show_all_accessible else single_branch,
         tot_students=total_students,
         total_teachers=total_teachers, 
     )
+
+
+def _clear_teaching_duties(teacher):
+    Lesson.query.filter_by(teacher_id=teacher.id).delete(synchronize_session=False)
+    ClassTeacher.query.filter_by(teacher_id=teacher.id).update(
+        {ClassTeacher.teacher_id: None}, synchronize_session=False
+    )
+
+
+def _accounts_teacher_query():
+    query = Teacher.query
+    if is_system_admin():
+        return query
+    ids = accessible_branch_ids()
+    if not ids:
+        return query.filter(Teacher.id == -1)
+    return query.filter(Teacher.branch_id.in_(ids))
+
+
+def _can_toggle_admin(actor, target):
+    if target.id == actor.id:
+        return False
+    if is_system_admin(target) or getattr(target, "is_super_admin", False):
+        return False
+    if is_system_admin(actor):
+        return True
+    if getattr(actor, "is_super_admin", False):
+        return user_can_access_branch(target.branch_id, actor)
+    if getattr(actor, "is_admin", False):
+        return actor.branch_id == target.branch_id
+    return False
 
 
 @admin_bp.route("/manage_accounts")
 @login_required
 @admin_required
 def manage_accounts():
+    if not (current_user.is_admin or current_user.is_super_admin or is_system_admin()):
+        flash("Access denied: Admin or Super Admin only", "danger")
+        return redirect(url_for("admin.admin_dash"))
 
-    teachers = Teacher.query.all()
+    teachers = _accounts_teacher_query().order_by(Teacher.fullname.asc()).all()
     resettable_ids = {
         teacher.id
         for teacher in teachers
         if can_reset_teacher_password(current_user, teacher)
     }
+    assigned_schools = {
+        teacher.id: {row.branch_id for row in teacher.school_access}
+        for teacher in teachers
+        if teacher.is_super_admin and not teacher.is_system_admin
+    }
+    all_branches = []
+    if is_system_admin():
+        all_branches = Branch.query.order_by(Branch.branch_name.asc()).all()
 
-    # allow BOTH admin and super admin
-    if current_user.is_admin or current_user.is_super_admin:
-
-        return render_template(
-            "admin_templates/accounts.html",
-            teachers=teachers,
-            resettable_ids=resettable_ids,
-        )
-
-    flash(
-        "Access denied: Admin or Super Admin only",
-        "danger"
+    return render_template(
+        "admin_templates/accounts.html",
+        teachers=teachers,
+        resettable_ids=resettable_ids,
+        all_branches=all_branches,
+        assigned_schools=assigned_schools,
     )
-    return redirect(url_for("admin.admin_dash"))
 
 
 @admin_bp.route("/toggle-super-admin/<int:teacher_id>", methods=["POST"])
 @login_required
 @admin_required
 def toggle_super_admin(teacher_id):
-
-    # ONLY SUPER ADMIN CAN ASSIGN SUPER ADMIN PREVILLAGES
-    if not current_user.is_super_admin:
-        flash("Only Super Admin can modify super admin status", "danger")
+    if not is_system_admin():
+        flash("Only a system admin can change super admin status.", "danger")
         return redirect(url_for("admin.manage_accounts"))
 
     teacher = Teacher.query.get_or_404(teacher_id)
 
-    # OPTIONAL SAFETY: prevent self-lockout mistakes
-    if teacher.id == current_user.id:
-        flash("You cannot modify your own super admin status", "warning")
+    if teacher.id == current_user.id or teacher.is_system_admin:
+        flash("You cannot change this account's super admin status.", "warning")
         return redirect(url_for("admin.manage_accounts"))
 
     teacher.is_super_admin = not teacher.is_super_admin
-    # Toggle admin previlleges for super admin.
-    if not teacher.is_admin and teacher.is_super_admin:
+    if teacher.is_super_admin:
         teacher.is_admin = True
+        _clear_teaching_duties(teacher)
+        flash(
+            f"{teacher.fullname} is now a super admin. Assign schools before they can open any.",
+            "success",
+        )
+    else:
+        SuperAdminBranch.query.filter_by(teacher_id=teacher.id).delete(
+            synchronize_session=False
+        )
+        flash(f"Super admin rights removed from {teacher.fullname}.", "warning")
+
+    db.session.commit()
+    return redirect(url_for("admin.manage_accounts"))
+
+
+@admin_bp.route("/teachers/<int:teacher_id>/schools", methods=["POST"])
+@login_required
+@admin_required
+def assign_super_admin_schools(teacher_id):
+    if not is_system_admin():
+        flash("Only a system admin can assign schools to a super admin.", "danger")
+        return redirect(url_for("admin.manage_accounts"))
+
+    teacher = Teacher.query.get_or_404(teacher_id)
+    if teacher.is_system_admin or not teacher.is_super_admin:
+        flash("Schools can only be assigned to a super admin.", "warning")
+        return redirect(url_for("admin.manage_accounts"))
+
+    selected = set()
+    for raw in request.form.getlist("branch_ids"):
+        try:
+            selected.add(int(raw))
+        except (TypeError, ValueError):
+            continue
+
+    valid_ids = {
+        branch.id
+        for branch in Branch.query.filter(Branch.id.in_(selected or [-1])).all()
+    }
+    SuperAdminBranch.query.filter_by(teacher_id=teacher.id).delete(
+        synchronize_session=False
+    )
+    for branch_id in sorted(valid_ids):
+        db.session.add(SuperAdminBranch(teacher_id=teacher.id, branch_id=branch_id))
     db.session.commit()
 
-    flash("Super admin status updated", "success")
+    if valid_ids:
+        flash(f"Updated school access for {teacher.fullname}.", "success")
+    else:
+        flash(
+            f"{teacher.fullname} has no schools assigned and cannot see school data.",
+            "warning",
+        )
     return redirect(url_for("admin.manage_accounts"))
 
 
@@ -239,9 +308,11 @@ def toggle_super_admin(teacher_id):
 def toggle_admin(teacher_id):
     teacher = Teacher.query.get_or_404(teacher_id)
 
-    # Prevent accidental lockout logic (optional later)
-    teacher.is_admin = not teacher.is_admin
+    if not _can_toggle_admin(current_user, teacher):
+        flash("You cannot change admin rights for this user.", "danger")
+        return redirect(url_for("admin.manage_accounts"))
 
+    teacher.is_admin = not teacher.is_admin
     db.session.commit()
 
     if teacher.is_admin:

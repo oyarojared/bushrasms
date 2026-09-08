@@ -8,7 +8,7 @@ from ....modals.branches_db import Branch
 from ....modals.staff_db import Teacher
 from ....modals.students_db import Student
 from .. import admin_bp
-from ..utils import generate_excel_file, user_can_access_branch
+from ..utils import generate_excel_file, get_accessible_branches_query, user_can_access_branch
 from ..utils.route_protect import admin_required
 
 student_fields = [
@@ -159,7 +159,11 @@ def dowload_teachers_excel_file():
     ]
       
     try: 
-        teachers = Teacher.query.all()
+        ids = {b.id for b in get_accessible_branches_query().all()}
+        if not ids:
+            teachers = []
+        else:
+            teachers = Teacher.query.filter(Teacher.branch_id.in_(ids)).all()
         if not teachers:
             flash("No teachers in the system yet.", "warning")
             return redirect(url_for("admin.school_staff")) 

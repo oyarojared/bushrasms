@@ -291,11 +291,26 @@
      ========================================================= -->
   <div class="dashboard-context-bar">
     <div class="dashboard-context-inner">
-      {% if current_user.is_super_admin %}
+      {% if current_user.is_system_admin %}
 
-      <!-- ============================
-             SUPER ADMIN NOTICE
-             ============================ -->
+      <div class="super-admin-notice">
+        <div class="context-icon super-admin-icon">
+          <i class="bi bi-shield-lock"></i>
+        </div>
+
+        <div class="context-info">
+          <div class="context-title">System Administrator</div>
+
+          <div class="context-subtitle">
+            You have access to every school and every user
+          </div>
+        </div>
+
+        <span class="access-badge"> Full Access </span>
+      </div>
+
+      {% elif current_user.is_super_admin %}
+
       <div class="super-admin-notice">
         <div class="context-icon super-admin-icon">
           <i class="bi bi-shield-check"></i>
@@ -305,11 +320,11 @@
           <div class="context-title">Super Administrator</div>
 
           <div class="context-subtitle">
-            You have full access to all branches
+            You can only open schools assigned by the system admin
           </div>
         </div>
 
-        <span class="access-badge"> Full Access </span>
+        <span class="access-badge"> Assigned Schools </span>
       </div>
 
       {% else %}

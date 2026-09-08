@@ -57,13 +57,14 @@ def create_app():
     @app.context_processor
     def inject_branch_data():
         from .modules.admin.utils.subscription import subscription_for_branch
+        from .modules.admin.utils.branch_utils import user_can_select_branch
 
         if not has_request_context() or not getattr(
             current_user, "is_authenticated", False
         ):
             return {}
 
-        if current_user.is_super_admin:
+        if user_can_select_branch():
             return {"target_branch_info": None, "subscription": None}
 
         branch = Branch.query.get(current_user.branch_id)

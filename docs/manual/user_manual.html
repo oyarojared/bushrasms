@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Shuleka User Manual</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 16mm 20mm 16mm;
+      @bottom-center {
+        content: "Shuleka User Manual  ·  " counter(page);
+        font-size: 9px;
+        color: #6b7280;
+        font-family: "Segoe UI", Calibri, Arial, sans-serif;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", Calibri, Arial, sans-serif;
+      color: #1f2937;
+      font-size: 11pt;
+      line-height: 1.45;
+      margin: 0;
+    }
+    h1, h2, h3 { color: #111827; page-break-after: avoid; }
+    h1 { font-size: 26pt; margin: 0 0 8px; }
+    h2 {
+      font-size: 16pt;
+      margin: 28px 0 10px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #e11d48;
+    }
+    h3 { font-size: 12.5pt; margin: 18px 0 8px; color: #be123c; }
+    p { margin: 0 0 10px; }
+    ul, ol { margin: 0 0 12px; padding-left: 22px; }
+    li { margin-bottom: 4px; }
+    .cover {
+      min-height: 240mm;
+      padding-top: 28mm;
+      page-break-after: always;
+    }
+    .eyebrow {
+      color: #e11d48;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 10pt;
+      margin-bottom: 10px;
+    }
+    .subtitle { font-size: 14pt; color: #4b5563; margin-bottom: 28px; }
+    .cover-box {
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-top: 28px;
+    }
+    .muted { color: #6b7280; }
+    .toc a { color: #111827; text-decoration: none; }
+    .toc li { margin-bottom: 6px; }
+    figure {
+      margin: 12px 0 18px;
+      page-break-inside: avoid;
+    }
+    figure img {
+      width: 100%;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+    figcaption {
+      font-size: 9.5pt;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+    .callout {
+      background: #fff7ed;
+      border-left: 4px solid #f97316;
+      padding: 10px 12px;
+      margin: 12px 0;
+      border-radius: 0 8px 8px 0;
+      page-break-inside: avoid;
+    }
+    .tip {
+      background: #f0fdf4;
+      border-left: 4px solid #16a34a;
+      padding: 10px 12px;
+      margin: 12px 0;
+      border-radius: 0 8px 8px 0;
+      page-break-inside: avoid;
+    }
+    .warn {
+      background: #fef2f2;
+      border-left: 4px solid #dc2626;
+      padding: 10px 12px;
+      margin: 12px 0;
+      border-radius: 0 8px 8px 0;
+      page-break-inside: avoid;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 16px;
+      font-size: 10.5pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 7px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #f8fafc; }
+    .role { font-weight: 700; color: #be123c; }
+    .btn {
+      display: inline-block;
+      background: #fff1f2;
+      color: #9f1239;
+      border: 1px solid #fecdd3;
+      border-radius: 4px;
+      padding: 0 6px;
+      font-weight: 600;
+      font-size: 10pt;
+    }
+    .keep { page-break-inside: avoid; }
+  </style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="eyebrow">Shuleka Tech</div>
+  <h1>Shuleka User Manual</h1>
+  <p class="subtitle">CBE Assessment &amp; School Management</p>
+  <p>A step-by-step guide for teachers, school administrators, and office staff who are using Shuleka for the first time.</p>
+  <div class="cover-box">
+    <p><strong>Who this book is for</strong></p>
+    <p>If you can open a website and type, you can use this guide. Every chapter uses the same words you see on screen: <span class="btn">Sign in</span>, <span class="btn">Add student</span>, <span class="btn">Load students</span>, <span class="btn">Enter Marks</span>.</p>
+    <p class="muted" style="margin-bottom:0">Version for schools · September 2026<br>
+    Need help? Call Shuleka Tech on 0701 948 782 or 0782 811 403, or email info@shuleka.com</p>
+  </div>
+</section>
+
+<h2>Contents</h2>
+<ol class="toc">
+  <li>What Shuleka is, and who can do what</li>
+  <li>Open the website and sign in</li>
+  <li>Find your way around</li>
+  <li>Dashboard</li>
+  <li>Students: add, import, load a class, open a profile</li>
+  <li>School staff: add a teacher</li>
+  <li>Subjects &amp; learning areas</li>
+  <li>Class setup: grades, streams, and who teaches what</li>
+  <li>Exams: create, enter marks, print reports</li>
+  <li>If you are a teacher (not an admin)</li>
+  <li>My class (class teachers)</li>
+  <li>Your password and photo</li>
+  <li>Messages</li>
+  <li>Schools and Accounts (super admin / system admin)</li>
+  <li>If something goes wrong</li>
+</ol>
+
+<h2>1. What Shuleka is, and who can do what</h2>
+<p>Shuleka is the system your school uses to keep class lists, staff records, assessments, marks, and CBE report cards in one place. You do not install anything. You open it in a web browser (Chrome, Edge, or similar) on a computer, laptop, or phone.</p>
+<p>Your school is set up for you. There is no self-signup. A school admin (or Shuleka Tech) creates your account, then you sign in.</p>
+
+<h3>The four kinds of account</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Role</th>
+      <th>What you see</th>
+      <th>Typical jobs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="role">Teacher</td>
+      <td>Dashboard, Exams, and <strong>My class</strong> if you are a class teacher. You do not see Students, Staff, Subjects, or Class Setup.</td>
+      <td>Enter marks for the classes you teach. Class teachers also view their learners.</td>
+    </tr>
+    <tr>
+      <td class="role">School admin</td>
+      <td>The full school menu, locked to <em>your</em> school. School name appears at the top of every page.</td>
+      <td>Students, staff, subjects, class setup, exams, reports, and password resets for staff in that school.</td>
+    </tr>
+    <tr>
+      <td class="role">Super admin</td>
+      <td>Extra items: <strong>Schools</strong> and <strong>Accounts</strong>. You only see schools the system admin ticked for you. Super admins cannot teach.</td>
+      <td>Work across assigned schools. Promote a teacher to school admin. Cannot make another super admin.</td>
+    </tr>
+    <tr>
+      <td class="role">System admin</td>
+      <td>Every school and every user. Banner says “System Administrator” / Full Access.</td>
+      <td>Add schools, delete a school or a subject, make or remove super admins, and tick which schools each super may open.</td>
+    </tr>
+  </tbody>
+</table>
+<div class="tip"><strong>Tip.</strong> If a button is missing, you are probably on a teacher account. Ask your school admin to do that job, or to make you an admin if that is your role.</div>
+
+<h2>2. Open the website and sign in</h2>
+<ol>
+  <li>Open your browser and go to the Shuleka address your school gave you (the public site looks like the page below).</li>
+  <li>Click <span class="btn">Sign in</span> at the top right, or the Sign in button in the middle of the page.</li>
+</ol>
+<figure>
+  <img src="../manual_screenshots/01-website.png" alt="Shuleka website with Sign in" />
+  <figcaption>Figure 1. The Shuleka website. Use Sign in if you already have an account. New schools click Talk to us.</figcaption>
+</figure>
+<ol start="3">
+  <li>On <strong>Welcome to Shuleka</strong>, type your <strong>Username</strong> and <strong>Password</strong>.</li>
+  <li>Optional: tick <strong>Remember me</strong> on a computer only you use.</li>
+  <li>Click the red <span class="btn">Sign in</span> button.</li>
+</ol>
+<figure>
+  <img src="../manual_screenshots/02-sign-in.png" alt="Sign in form" />
+  <figcaption>Figure 2. Sign-in page. Username and password are given by your school. Click the eye icon to check you typed the password correctly.</figcaption>
+</figure>
+
+<h3>Your first username and password</h3>
+<ul>
+  <li>When a school admin adds you under <strong>School Staff</strong>, Shuleka creates a username from your name and the last four digits of your phone.</li>
+  <li>Your <strong>first password</strong> is usually those same <strong>last four digits of your phone number</strong> (for example, if your phone is 0712 345 678, try <strong>5678</strong>).</li>
+  <li>Change that password the first time you sign in (see chapter 12).</li>
+</ul>
+<div class="callout"><strong>Forgot password?</strong> Click <span class="btn">Forgot password?</span> on the sign-in page. Shuleka will tell you to ask your school admin to reset it, or to call Shuleka Tech. There is no email reset link.</div>
+<div class="warn"><strong>Wrong password.</strong> The page says “Invalid username or password”. Check caps lock, try the last four phone digits, then ask admin to use <strong>Reset password</strong> on Accounts or on your staff profile.</div>
+
+<h2>3. Find your way around</h2>
+<p>After you sign in you always see the same frame: coral sidebar on the left, search at the top (admins), your school name in a dark bar, then the page in the middle.</p>
+<figure>
+  <img src="../manual_screenshots/03-admin-dashboard.png" alt="School admin dashboard" />
+  <figcaption>Figure 3. After sign-in as a school admin. Use the left menu to move around. The dark bar shows your school name.</figcaption>
+</figure>
+
+<h3>The left menu (school admin)</h3>
+<table>
+  <thead><tr><th>Menu</th><th>Use it to</th></tr></thead>
+  <tbody>
+    <tr><td>Dashboard</td><td>See counts of students and staff, and a welcome screen.</td></tr>
+    <tr><td>Exams</td><td>Create assessments, enter marks, print reports, set grading.</td></tr>
+    <tr><td>My class</td><td>Only if you are a class teacher (and not a super admin).</td></tr>
+    <tr><td>Students</td><td>Class lists, add or import learners, open a profile.</td></tr>
+    <tr><td>School Staff</td><td>Teachers and support staff.</td></tr>
+    <tr><td>Subjects</td><td>Learning areas offered in the school.</td></tr>
+    <tr><td>Class Setup</td><td>Grades, streams, who teaches each subject, class teachers.</td></tr>
+    <tr><td>Messages</td><td>Parent/teacher messaging (coming soon).</td></tr>
+    <tr><td>Schools / Accounts</td><td>Only super admin and system admin.</td></tr>
+  </tbody>
+</table>
+<p>On a phone the same items sit in a compact bar. Look for the same names.</p>
+
+<h3>Search for a student (admins)</h3>
+<ol>
+  <li>Click the long search box at the top: <em>Search by name, admission number, or assessment number.</em></li>
+  <li>Type part of the name, the admission number, or the KNEC assessment number, then press Enter or click the arrow.</li>
+  <li>A <strong>Student Search</strong> window lists matches. Open the student you want.</li>
+  <li>Press <strong>Esc</strong> or <strong>Close</strong> to dismiss the window.</li>
+</ol>
+<div class="tip"><strong>Shortcut.</strong> On a computer you can jump to search with Ctrl+K (Windows) or ⌘K (Mac).</div>
+
+<h3>Your account menu</h3>
+<p>Click your name or photo at the top right. You can <strong>Update Photo</strong>, <strong>Change password</strong>, or <strong>Sign Out</strong>. Use <strong>Logout</strong> at the bottom of the sidebar for the same sign-out.</p>
+<figure>
+  <img src="../manual_screenshots/18-account-menu.png" alt="Account menu and change password" />
+  <figcaption>Figure 4. Account menu (right) and Change password. Sign out when you finish, especially on a shared computer.</figcaption>
+</figure>
+
+<h2>4. Dashboard</h2>
+<p>School admins land on <strong>Dashboard</strong> — “Overview &amp; system activity”. Teachers land on <strong>Teacher Portal</strong> instead (chapter 10).</p>
+<ul>
+  <li>The welcome line uses your full name.</li>
+  <li>Cards show how many <strong>Students</strong>, <strong>Teachers</strong>, <strong>Staff</strong>, and (for some accounts) branches.</li>
+  <li>Your school motto appears under the school name.</li>
+  <li>A coloured badge next to the school name may show subscription status (Active, Due soon, or Overdue). You can still work; the office uses it for billing.</li>
+</ul>
+
+<h2>5. Students</h2>
+<p>Click <strong>Students</strong> in the sidebar. The first time, the list is empty until you load a class.</p>
+<figure>
+  <img src="../manual_screenshots/04-students.png" alt="Students page before loading a class" />
+  <figcaption>Figure 5. Students. Choose Grade / Form, then Load students. Add student, Import list, and Export list sit on the right.</figcaption>
+</figure>
+
+<h3>Load a class list</h3>
+<ol>
+  <li>Under <strong>Load class list</strong>, open <strong>Grade / Form</strong> and pick the class (for example GRADE 7).</li>
+  <li>If that class has streams, a <strong>Stream</strong> box appears. Pick A, B, and so on.</li>
+  <li>School admins do not pick a school — you already belong to one. Super/system admins also choose <strong>School</strong> first.</li>
+  <li>Click <span class="btn">Load students</span>.</li>
+</ol>
+<p>The table shows admission number, name, gender, assessment number, date of birth, and parent phone. Use <strong>Search this class</strong> to filter the table without leaving the page.</p>
+<div class="keep">
+<h3>Add one student</h3>
+<ol>
+  <li>Click <span class="btn">Add student</span>.</li>
+  <li>Choose <strong>Grade / Form</strong> (and stream if asked).</li>
+  <li><strong>Admission No.</strong> is usually filled with the next free number. Change it only if your school uses a different sequence.</li>
+  <li>Fill <strong>Full Name</strong> and <strong>Gender</strong>. Add date of birth, parent name, and parent phone when you have them.</li>
+  <li>Optional fields (NEMIS, KNEC, KCPE, boarding, pathway) can wait.</li>
+  <li>Click <span class="btn">Add student</span> at the bottom of the window, or <strong>Cancel</strong> to close without saving.</li>
+</ol>
+<figure>
+  <img src="../manual_screenshots/05-add-student.png" alt="Add student form" />
+  <figcaption>Figure 6. Add student. Required items are grade, admission number, name, and gender. Parent phone is used later for messaging.</figcaption>
+</figure>
+</div>
+
+<div class="keep">
+<h3>Import many students from Excel</h3>
+<ol>
+  <li>Click <span class="btn">Import list</span>.</li>
+  <li>Read the two panels. Column A header must be <strong>Adm No</strong>, column B <strong>Fullname</strong>.</li>
+  <li>Click <span class="btn">Download sample spreadsheet</span> if you want a ready file.</li>
+  <li>Start admission numbers at the <strong>Next admission number</strong> shown (duplicates are skipped).</li>
+  <li>Choose <strong>Grade / Form</strong>, click <strong>Choose File</strong>, pick an .xls or .xlsx file, then <span class="btn">Upload students</span>.</li>
+</ol>
+<figure>
+  <img src="../manual_screenshots/06-import-students.png" alt="Upload multiple students" />
+  <figcaption>Figure 7. Import list. Use the sample spreadsheet so column headings match exactly.</figcaption>
+</figure>
+</div>
+
+<h3>Export the class you loaded</h3>
+<p>After a class is on screen, click <span class="btn">Export list</span> to download that class as Excel.</p>
+
+<h3>Move several students to another class</h3>
+<ol>
+  <li>Tick the boxes next to the learners (or Select all).</li>
+  <li>Click <span class="btn">Move selected</span> (wording: the bar says how many are selected, then open Move).</li>
+  <li>Choose the destination class. Admission numbers do not change. This cannot be undone from that screen.</li>
+</ol>
+
+<h3>Open a student profile</h3>
+<p>In the class table, open the row menu (three dots) and choose <strong>Profile</strong>, or use top search. You can also click through from search results.</p>
+<figure>
+  <img src="../manual_screenshots/08-student-profile.png" alt="Student profile" />
+  <figcaption>Figure 8. Student profile. Use Edit, Move, or Delete. Student Info holds personal data. Academics holds exam history and report cards.</figcaption>
+</figure>
+<ul>
+  <li><span class="btn">Update passport</span> — photo.</li>
+  <li><span class="btn">Edit</span> then <span class="btn">Save Changes</span> — name, contacts, KCPE, and similar.</li>
+  <li><span class="btn">Move</span> — send this one learner to another grade or stream.</li>
+  <li><span class="btn">Delete</span> — permanent. Confirm only if you are sure.</li>
+  <li><strong>Academics</strong> tab — exam results and options to print a report card (with or without class position; CBE often prints without positions).</li>
+</ul>
+
+<h2>6. School staff</h2>
+<p>Click <strong>School Staff</strong>. The <strong>Teachers</strong> tab lists teaching staff. <strong>ADMIN</strong> on a name means that person can open the admin menus. <strong>Support staff</strong> is a separate tab.</p>
+<figure>
+  <img src="../manual_screenshots/09-school-staff.png" alt="School Staff list" />
+  <figcaption>Figure 9. School Staff · Teachers. Search by name, code, TSC, or phone. Use the row menu for Profile, Edit, or Delete.</figcaption>
+</figure>
+<ol>
+  <li>Click <span class="btn">Add teacher</span>.</li>
+  <li>Choose employer prefix if you use a teacher code (TSC/BOM), then optional code such as T12.</li>
+  <li>Set <strong>Gender</strong>, title (Mr., Mrs., …), and <strong>Fullname</strong>.</li>
+  <li><strong>Phone number</strong> is required (0712345678 or +254712345678). This drives the first password.</li>
+  <li>Optional: National ID, TSC number, email.</li>
+  <li>Click <span class="btn">Save teacher</span>.</li>
+</ol>
+<figure>
+  <img src="../manual_screenshots/10-add-teacher.png" alt="Add teacher form" />
+  <figcaption>Figure 10. Add teacher. After save, tell the teacher their username and that the first password is the last four digits of this phone number.</figcaption>
+</figure>
+<p>Use <span class="btn">Export list</span> to download staff as Excel. Open <strong>Profile</strong> on a row to see details, reset a password (if you are allowed), or upload a photo.</p>
+<div class="warn"><strong>Do not click Make super</strong> on a real class teacher unless you mean it. Promoting to super admin removes their teaching load and class-teacher assignments.</div>
+
+<h2>7. Subjects &amp; learning areas</h2>
+<p>Click <strong>Subjects</strong>. You see codes, names, categories, which classes take the subject, and whether it is compulsory.</p>
+<figure>
+  <img src="../manual_screenshots/11-subjects.png" alt="Subjects list" />
+  <figcaption>Figure 11. Subjects &amp; Learning Areas. Filter by All, Humanities, Languages, or Sciences.</figcaption>
+</figure>
+<ol>
+  <li>Click <span class="btn">Add subject</span>.</li>
+  <li>Enter name (for example English), code (for example 121), and category.</li>
+  <li>Tick Examinable / Compulsory as your school requires.</li>
+  <li>Tick the grades that offer this learning area, or All classes.</li>
+  <li>Save. Use the pencil to edit later.</li>
+</ol>
+<p><span class="btn">View by grade</span> shows which learning areas sit on each grade. <strong>Deleting a subject</strong> is allowed only for a system admin.</p>
+
+<h2>8. Class setup</h2>
+<p>Click <strong>Class Setup</strong>. This is where the school structure lives. Do this before a busy exam week: grades first, then subjects on students, then teachers.</p>
+<figure>
+  <img src="../manual_screenshots/12-class-setup.png" alt="Class Setup overview" />
+  <figcaption>Figure 12. Class Setup · Overview. Unassigned in orange means that stream still needs a class teacher.</figcaption>
+</figure>
+
+<h3>Overview — add a grade or form</h3>
+<ol>
+  <li>Click <span class="btn">Add grade / form</span>.</li>
+  <li>Set class year (for example 2026), grade/form name (Grade 7 or Form 2), and optional streams separated by commas (A, B).</li>
+  <li>Save. Use <strong>Edit</strong> to rename; <strong>Delete</strong> only if the class is empty or you accept the warning.</li>
+</ol>
+
+<h3>Student subjects</h3>
+<p>Open the <strong>Student subjects</strong> tab. Choose a class (and subject). Tick the learners who take that subject. Compulsory subjects are usually already ticked. Save when the ticks are right. Senior school (for example Grade 10) may need this more often because of pathways.</p>
+
+<h3>Assign teachers</h3>
+<p>Open <strong>Assign teachers</strong>. Choose the grade. For each subject and stream, pick a teacher from the list. Super admins do not appear as teachers. Click save when the page confirms “Teachers for this class have been updated.”</p>
+
+<h3>Manage class teachers</h3>
+<p>Open <strong>Manage class teachers</strong>. Choose the grade, then pick one teacher per stream. That person gets <strong>My class</strong> in their sidebar. A stream marked Unassigned on Overview still needs this step.</p>
+
+<h2>9. Exams: create, enter marks, print reports</h2>
+<p>Click <strong>Exams</strong>. Admins see five tabs. Teachers see a shorter page: pick an open exam and enter marks.</p>
+<figure>
+  <img src="../manual_screenshots/13-exams.png" alt="Exam Setup" />
+  <figcaption>Figure 13. Exams &amp; Assessments · Exam Setup. Status Open means teachers can still type marks. Use Year and Term to filter the table.</figcaption>
+</figure>
+
+<h3>Create an exam (admin)</h3>
+<ol>
+  <li>On <strong>Exam Setup</strong>, click <span class="btn">Create New Exam/Assessment</span> (or the + button on the right).</li>
+  <li>Choose school (if you can see more than one), academic year, term (I, II, or III), and exam name (for example Mid Term Assessment).</li>
+  <li>Optional: set <strong>Teachers' marks entry deadline</strong> so a banner reminds teachers.</li>
+  <li>Save. The exam appears with status <strong>Open</strong>.</li>
+</ol>
+<p>On the exam row:</p>
+<ul>
+  <li><span class="btn">Enter Marks</span> — open the mark sheet.</li>
+  <li>⋮ menu — <strong>Edit</strong>, <strong>Set teachers' marks entry deadline</strong>, <span class="btn">Lock Exam</span>, or <strong>Delete Exam</strong>.</li>
+</ul>
+<div class="warn"><strong>Lock Exam</strong> stops all further mark entry. Unlock later with <strong>Unlock Exam</strong> if you must correct a paper. <strong>Delete Exam</strong> wipes every mark for that exam. There is no undo.</div>
+<p>Tick <strong>Show archived</strong> if you need old exams that were put away.</p>
+
+<h3>Enter marks</h3>
+<ol>
+  <li>Click <span class="btn">Enter Marks</span> on the exam, or open Exams as a teacher and pick the exam.</li>
+  <li>Stay on <strong>By subject</strong> (class markbook) or switch to <strong>By learner</strong> (one student, all papers).</li>
+  <li>Choose <strong>Class</strong>, then <strong>Stream</strong> if asked, then <strong>Subject</strong>.</li>
+  <li>Type scores in <strong>MARKS / 100</strong> (or whatever “out of” is set). Marks save as you work when the page allows saving.</li>
+  <li>Use <strong>Back to Exams</strong> when finished.</li>
+</ol>
+<figure>
+  <img src="../manual_screenshots/15-marks-entry.png" alt="Marks entry" />
+  <figcaption>Figure 14. Marks entry for Mid Term Assessment, Grade 7 A, English. Type in the marks column. Search by admission number or name to jump down the list.</figcaption>
+</figure>
+<div class="callout">If the exam is locked, or the deadline has passed, teachers see a closed message. Admins may still view marks but teachers cannot save.</div>
+<p>Subjects in the list are those assigned in Class Setup → Assign teachers. If English is missing, the teacher was not assigned that lesson.</p>
+
+<h3>Results &amp; reports</h3>
+<figure>
+  <img src="../manual_screenshots/14-results.png" alt="Results and Reports tab" />
+  <figcaption>Figure 15. Results &amp; Reports. Choose grade, stream, and exam, then Fetch Results.</figcaption>
+</figure>
+<ol>
+  <li>Open the <strong>Results &amp; Reports</strong> tab.</li>
+  <li>Select Grade / Class, Stream (or All), and Exam.</li>
+  <li>Click <span class="btn">Fetch Results</span>.</li>
+  <li>From there you can open class ranking and generate report cards. When asked about positions, CBE schools often choose <strong>No — Print without positions (CBE Recommended)</strong>.</li>
+  <li>Optional: tick <strong>Include opening date</strong> and set the date so reports print “School opens on …”.</li>
+</ol>
+
+<h3>Grading &amp; rules</h3>
+<p>Open <strong>Grading &amp; Rules</strong>. Assign the right scheme to each grade: 4-band rubric (primary), 8-point KJSEA scale (junior secondary), senior school scale, or 8-4-4. Without a scheme, reports may show scores without performance levels (EE1, ME1, and so on).</p>
+
+<h3>Marksheets &amp; classlists / Broadsheets</h3>
+<p>Use <strong>Marksheets &amp; Classlists</strong> to print blank or filled mark sheets. Use <strong>Broadsheets &amp; Analytics</strong> for whole-class analysis and Excel/PDF downloads after marks are in.</p>
+
+<h2>10. If you are a teacher (not an admin)</h2>
+<p>Sign in the same way. Shuleka sends you to <strong>Teacher Portal</strong>, not the admin dashboard.</p>
+<ul>
+  <li>The sidebar is short: <strong>Dashboard</strong>, <strong>Exams</strong>, and <strong>My class</strong> if you are a class teacher.</li>
+  <li>The welcome card lists how many classes you teach. Click <span class="btn">Enter Marks</span>.</li>
+  <li><strong>Classes &amp; Subjects</strong> shows your teaching load (class, stream, subject, headcount).</li>
+  <li>You cannot add students or create exams. Ask your school admin.</li>
+</ul>
+<p>On Exams you only see exams that are still <strong>Open</strong>. If the list is empty, either no exam exists yet, or the last one was locked.</p>
+
+<h2>11. My class (class teachers)</h2>
+<p>You see <strong>My class</strong> only after an admin assigns you under Class Setup → Manage class teachers. Super admins never get this menu.</p>
+<ol>
+  <li>Click <strong>My class</strong>.</li>
+  <li>If you have more than one stream, pick the chip for that class.</li>
+  <li><strong>Learners</strong> — register: names, contacts, missing parent phones.</li>
+  <li>Open a learner for a simple profile and <strong>Back to my class</strong>.</li>
+  <li><strong>Exam results</strong> — pick an exam to see marks for your class.</li>
+  <li>Other tabs cover class performance for that exam.</li>
+</ol>
+<div class="tip">If you see “You are not assigned as a class teacher”, ask admin to set you on Class Setup → Manage class teachers.</div>
+
+<h2>12. Your password and photo</h2>
+<ol>
+  <li>Open the account menu (your name, top right) → <span class="btn">Change password</span>.</li>
+  <li>Type current password, new password (at least 6 characters), and confirm.</li>
+  <li>Click <span class="btn">Update password</span>.</li>
+</ol>
+<figure>
+  <img src="../manual_screenshots/17-change-password.png" alt="Change password form" />
+  <figcaption>Figure 16. Change password. Use the eye icons to check spelling. Do not share the new password.</figcaption>
+</figure>
+<p><strong>Update Photo</strong> in the same menu uploads a passport picture. Admins can also reset another person’s password from Accounts or the teacher profile, within their school. Nobody can reset their own password that way (use this page instead). School admins cannot reset a super admin or system admin.</p>
+
+<h2>13. Messages</h2>
+<figure>
+  <img src="../manual_screenshots/16-messages.png" alt="Messages coming soon" />
+  <figcaption>Figure 17. Messages. Parent and teacher SMS is not available yet. Use phone calls or your usual school channel until this page opens.</figcaption>
+</figure>
+
+<h2>14. Schools and Accounts (super admin / system admin)</h2>
+<p>These two sidebar items appear only if you are a super admin or system admin.</p>
+
+<h3>Schools</h3>
+<ol>
+  <li>Click <strong>Schools</strong>.</li>
+  <li>Choose a school in <strong>Select branch / school to view details</strong>.</li>
+  <li>Use <span class="btn">Add</span> to register a new school, <span class="btn">Edit</span> to change name, motto, logo, manager, and similar, and <span class="btn">Delete</span> only if you are a <strong>system admin</strong> and you understand that school data will go.</li>
+</ol>
+
+<h3>Accounts</h3>
+<p>Click <strong>Accounts</strong>. Filter by All, Admin, Super admin, Teacher (and System admin if you are one). Search by name, username, phone, or school.</p>
+<table>
+  <thead><tr><th>Button</th><th>Who can use it</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td>Make admin / Remove admin</td><td>Super admin, system admin</td><td>Lets a teacher use Students, Staff, Exams setup, and the rest of the school menu — still in their school.</td></tr>
+    <tr><td>Make super / Remove super</td><td>System admin only</td><td>Creates a super admin with <strong>no schools ticked</strong> until you save schools. Teaching assignments are cleared.</td></tr>
+    <tr><td>Save schools</td><td>System admin</td><td>Ticks which schools that super may open. If none are ticked, that super sees nothing.</td></tr>
+    <tr><td>Reset password</td><td>Admins, within their reach</td><td>Sets the password back to the last four digits of the phone. Cannot be used on yourself or on a system admin (unless you are system admin).</td></tr>
+  </tbody>
+</table>
+<div class="warn">A super admin with no schools ticked is not a bug. The system admin must open Accounts, tick schools, and click <span class="btn">Save schools</span>.</div>
+
+<h2>15. If something goes wrong</h2>
+<table>
+  <thead><tr><th>What you see</th><th>What to try</th></tr></thead>
+  <tbody>
+    <tr><td>Invalid username or password</td><td>Last four digits of phone; ask admin to Reset password; confirm username spelling.</td></tr>
+    <tr><td>Sent to Teacher Portal but you expected admin menus</td><td>Your account is not a school admin. Ask to be made admin on Accounts.</td></tr>
+    <tr><td>No students loaded</td><td>Pick grade (and stream) then Load students.</td></tr>
+    <tr><td>No exam open for marks entry</td><td>Admin must create an exam, or Unlock a locked one.</td></tr>
+    <tr><td>Subject missing on marks entry</td><td>Class Setup → Assign teachers for that class and stream.</td></tr>
+    <tr><td>My class missing</td><td>You are not a class teacher, or you are a super admin (super admins cannot teach).</td></tr>
+    <tr><td>Super admin sees an empty system</td><td>System admin has not ticked schools on Accounts.</td></tr>
+    <tr><td>Delete subject / delete school missing</td><td>Only a system admin can do that.</td></tr>
+    <tr><td>Page looks tiny on a phone</td><td>Turn the phone sideways, or use a computer for Excel import and broadsheets.</td></tr>
+  </tbody>
+</table>
+
+<div class="cover-box">
+  <p><strong>A simple weekly rhythm</strong></p>
+  <ol style="margin-bottom:0">
+    <li>Keep Class Setup and student lists accurate (moves, new admissions).</li>
+    <li>Create the term’s exam and tell teachers the deadline.</li>
+    <li>Teachers enter marks. Admin checks missing marks, then Lock Exam.</li>
+    <li>Fetch Results, print report cards, share with class teachers.</li>
+    <li>Sign out.</li>
+  </ol>
+</div>
+
+<p class="muted" style="margin-top:24px">Shuleka Tech · CBE Assessment &amp; School Management · Developed for Kenyan schools.<br>
+Contact: 0701 948 782 · 0782 811 403 · info@shuleka.com</p>
+
+</body>
+</html>
