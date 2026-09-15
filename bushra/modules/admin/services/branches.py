@@ -128,7 +128,7 @@ def delete_branch_service(branch_id):
         return False, "Error occurred while deleting branch."
 
 
-def update_branch_service(form, branch_id):  
+def update_branch_service(form, branch_id, allow_rename=True):
     branch = Branch.query.get(branch_id)
     if not branch:
         return None, "Invalid branch selected."
@@ -140,7 +140,8 @@ def update_branch_service(form, branch_id):
 
     try:
         # Update text fields
-        branch.branch_name = form.branch_name.data.strip()
+        if allow_rename:
+            branch.branch_name = form.branch_name.data.strip()
         branch.school_code = form.school_code.data  
         branch.branch_manager = form.branch_manager.data.strip()
         branch.branch_level = form.branch_level.data      

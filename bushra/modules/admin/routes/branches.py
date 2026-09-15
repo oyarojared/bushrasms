@@ -31,21 +31,30 @@ from ....modals.staff_db import ClassTeacher
 from flask_login import current_user
 
 
+def _schools_fallback_url(branch_id=None):
+    if branch_id and db.session.get(Branch, branch_id):
+        return url_for("admin.branch_profile", branch_id=branch_id)
+    fallback_id = get_first_branch_id()
+    if fallback_id:
+        return url_for("admin.branch_profile", branch_id=fallback_id)
+    return url_for("admin.admin_dash")
+
+
 @admin_bp.route("/add_school", methods=["POST"])
 @login_required
 def add_school():
     """
     Handle creation of a new school (branch).
     """
+    fallback_id = get_first_branch_id()
+    target = _schools_fallback_url(fallback_id)
+
+    if not is_system_admin():
+        flash("Only a system admin can add a school.", "danger")
+        return redirect(target)
+
     form = AddBranchForm()
     form.branch_head.choices = load_teacher_choices()
-
-    fallback_id = get_first_branch_id()
-
-    target = (
-        url_for("admin.branch_profile", branch_id=fallback_id)
-        if fallback_id else url_for("admin.admin_dash")
-    )
  
     if form.validate_on_submit():
         try:
@@ -196,22 +205,33 @@ def delete_branch(branch_id):
 @admin_bp.route("/update_branch/<int:branch_id>", methods=["POST"])
 @login_required
 def update_branch(branch_id):
-    form = AddBranchForm()
+    target = _schools_fallback_url(branch_id)
 
+    if not _user_can_manage_branch(branch_id):
+        flash("You cannot update this school.", "danger")
+        return redirect(target)
+
+    branch = db.session.get(Branch, branch_id)
+    form = AddBranchForm()
     form.branch_head.choices = load_teacher_choices()
     form.branch_id = branch_id
-    fallback_id = get_first_branch_id()
+
+    # Super admins and school admins may edit details, but not the official name.
+    if not is_system_admin() and branch:
+        form.branch_name.data = branch.branch_name
 
     # ---- If form is valid → proceed to update ----
     if form.validate_on_submit():
-        updated, message = update_branch_service(form, branch_id)
+        updated, message = update_branch_service(
+            form, branch_id, allow_rename=is_system_admin()
+        )
 
         if updated:
             flash(message, "success")
             return redirect(url_for("admin.branch_profile", branch_id=updated.id))
 
         flash(message, "warning")
-        return redirect(url_for("admin.branch_profile", branch_id=fallback_id))
+        return redirect(target)
 
     # ---- If form has validation errors → flash them ----
     if form.errors:
@@ -219,7 +239,7 @@ def update_branch(branch_id):
             for error in errors:   
                 flash(f"{field.replace('_', ' ').title()}: {error}", "danger")
 
-    return redirect(url_for("admin.branch_profile", branch_id=fallback_id))
+    return redirect(target)
 
 
 
@@ -251,7 +271,13 @@ def branch_academic_data(branch_id):
 
 
 def _user_can_manage_branch(branch_id):
-    if not getattr(current_user, "is_admin", False):
+    if not getattr(current_user, "is_authenticated", False):
+        return False
+    if not (
+        getattr(current_user, "is_admin", False)
+        or getattr(current_user, "is_super_admin", False)
+        or is_system_admin()
+    ):
         return False
     return user_can_access_branch(branch_id)
 

@@ -217,3 +217,87 @@ def test_password_reset_scope_for_new_roles():
     assert can_reset_teacher_password(super_admin, teacher_other) is False
     assert can_reset_teacher_password(empty_super, teacher_assigned) is False
     assert can_reset_teacher_password(super_admin, system_admin) is False
+
+
+def _school_form(name, code, manager="Updated Manager"):
+    return {
+        "branch_name": name,
+        "school_code": code,
+        "branch_manager": manager,
+        "branch_level": "Secondary",
+        "school_gender": "Mixed",
+        "school_type": "Day School",
+    }
+
+
+def _login(client, teacher_id):
+    with client.session_transaction() as sess:
+        sess["_user_id"] = str(teacher_id)
+        sess["_fresh"] = True
+
+
+def test_super_admin_cannot_add_school(app, db):
+    branch = _branch(db, "Alpha", "AL010")
+    super_admin = _teacher(
+        db, branch, "0700000010", is_admin=True, is_super_admin=True
+    )
+    db.session.add(SuperAdminBranch(teacher_id=super_admin.id, branch_id=branch.id))
+    db.session.commit()
+
+    client = app.test_client()
+    _login(client, super_admin.id)
+    before = Branch.query.count()
+    response = client.post(
+        "/admin/add_school",
+        data=_school_form("Rogue School", "RG001"),
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert Branch.query.count() == before
+    assert Branch.query.filter_by(branch_name="Rogue School").first() is None
+
+
+def test_system_admin_can_add_school(app, db):
+    home = _branch(db, "Alpha", "AL011")
+    owner = _teacher(
+        db,
+        home,
+        "0700000011",
+        is_admin=True,
+        is_super_admin=True,
+        is_system_admin=True,
+    )
+    db.session.commit()
+
+    client = app.test_client()
+    _login(client, owner.id)
+    response = client.post(
+        "/admin/add_school",
+        data=_school_form("New Campus", "NC001", "Campus Manager"),
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    created = Branch.query.filter_by(branch_name="New Campus").first()
+    assert created is not None
+    assert created.branch_manager == "Campus Manager"
+
+
+def test_super_admin_can_edit_school_but_not_rename(app, db):
+    branch = _branch(db, "Alpha", "AL012")
+    super_admin = _teacher(
+        db, branch, "0700000012", is_admin=True, is_super_admin=True
+    )
+    db.session.add(SuperAdminBranch(teacher_id=super_admin.id, branch_id=branch.id))
+    db.session.commit()
+
+    client = app.test_client()
+    _login(client, super_admin.id)
+    response = client.post(
+        f"/admin/update_branch/{branch.id}",
+        data=_school_form("Renamed Alpha", "AL012", "New Manager"),
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    db.session.refresh(branch)
+    assert branch.branch_name == "Alpha"
+    assert branch.branch_manager == "New Manager"

@@ -25,19 +25,35 @@ document.addEventListener("DOMContentLoaded", function () {
   if (!addModalEl || !form) return;
 
   const addModal = new bootstrap.Modal(addModalEl);
+  const headerIcon = document.getElementById("modal-header-icon");
 
   addModalEl.addEventListener("hidden.bs.modal", () => {
     document.querySelectorAll("#addBranchForm .form-control, #addBranchForm .form-select")
-      .forEach((input) => (input.style.backgroundColor = ""));
+      .forEach((input) => input.removeAttribute("style"));
   });
 
+  function setNameEditable(canEdit) {
+    const nameInput = form.querySelector("[name='branch_name']");
+    if (!nameInput) return;
+    nameInput.readOnly = !canEdit;
+  }
+
+  function setHeader(title, copy, iconClass, submitHtml) {
+    if (modalHeaderTitle) modalHeaderTitle.textContent = title;
+    if (formHeader) formHeader.textContent = copy;
+    if (headerIcon) headerIcon.className = iconClass;
+    if (submitBtn) submitBtn.innerHTML = submitHtml;
+  }
+
   addBtn?.addEventListener("click", function () {
-    modalHeaderTitle.innerHTML = "ADD BRANCH / SCHOOL";
-    formHeader.innerHTML = "Branch / School Data Entry";
-    submitBtn.innerHTML = `<i class="bi bi-plus-circle me-1"></i> Add`;
+    setHeader(
+      "Add school",
+      "Create a new school on the platform.",
+      "bi bi-building-add",
+      `<i class="bi bi-plus-lg"></i> Add school`
+    );
     form.reset();
-    document.querySelectorAll("#addBranchForm .form-control, #addBranchForm .form-select")
-      .forEach((input) => (input.style.backgroundColor = ""));
+    setNameEditable(true);
     form.action = add_branch_url;
   });
 
@@ -63,15 +79,14 @@ document.addEventListener("DOMContentLoaded", function () {
   editBtn?.addEventListener("click", function () {
     if (typeof data === "undefined" || !data) return;
 
-    modalHeaderTitle.innerHTML = "UPDATE BRANCH / SCHOOL INFO";
-    formHeader.innerHTML = "Branch / School Info Update";
-    submitBtn.innerHTML = `<i class="bi bi-arrow-repeat me-1"></i> Update`;
+    setHeader(
+      "Edit school",
+      "Update details for this school.",
+      "bi bi-pencil-square",
+      `<i class="bi bi-check-lg"></i> Save changes`
+    );
 
-    document.querySelectorAll("#addBranchForm .form-control, #addBranchForm .form-select")
-      .forEach((input) => {
-        input.style.backgroundColor = "rgb(241 240 236)";
-      });
-
+    setNameEditable(typeof canRenameSchool === "undefined" ? false : canRenameSchool);
     form.querySelector("[name='branch_name']").value = data.branch_name || "";
     form.querySelector("[name='school_code']").value = data.school_code || "";
     form.querySelector("[name='branch_manager']").value = data.branch_manager || "";

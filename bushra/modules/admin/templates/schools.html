@@ -33,114 +33,97 @@ render_flash_messages, sidebar %} {% block head %} {{ super() }}
           <span class="sch-select-icon" aria-hidden="true">
             <i class="bi bi-building"></i>
           </span>
-          {{ select_branch_form.branches(class="form-select", id="branchSelect") }}
+          {{ select_branch_form.branches(class="form-select form-select-sm", id="branchSelect") }}
         </div>
       </form>
 
       <div class="sch-actions">
+        {% if current_user.is_system_admin %}
         <a
           href="#"
-          class="btn btn-sm btn-danger"
+          class="sa-btn sa-btn-primary"
           data-bs-toggle="modal"
           data-bs-target="#addModal"
           id="add-branch-link"
         >
-          <i class="bi bi-plus-circle-dotted"></i> Add
+          <i class="bi bi-plus-lg"></i> Add
         </a>
-        <button type="button" id="editBranchBtn" class="btn btn-sm btn-danger">
+        {% endif %}
+        <button type="button" id="editBranchBtn" class="sa-btn sa-btn-outline"{% if branch_id == 0 %} disabled{% endif %}>
           <i class="bi bi-pencil"></i> Edit
         </button>
+        {% if current_user.is_system_admin %}
         <button
           type="button"
-          class="btn btn-sm btn-danger"
+          class="sa-btn sa-btn-danger"
           data-bs-toggle="modal"
           data-bs-target="#deleteBranchModal"
           {% if branch_id == 0 %}disabled{% endif %}
         >
           <i class="bi bi-trash"></i> Delete
         </button>
+        {% endif %}
       </div>
     </div>
   </div>
 
   {% if branch_id != 0 and data and data.branch %}
   <div class="sch-card sch-profile-card">
-    <div class="d-flex flex-column flex-md-row align-items-center gap-3 mb-2">
+    <div class="sch-profile-head">
       {% if data.branch.logo %}
       <img
         src="{{ url_for('admin.serve_passport', filename=data.branch.logo) }}"
         alt="Logo"
-        class="img-fluid sch-logo-img"
+        class="sch-logo-img"
       />
       {% endif %}
-      <div class="text-center text-md-start">
-        <h5 class="mb-0 fw-bold">{{ data.branch.branch_name }}</h5>
+      <div>
+        <h5 class="sch-profile-name">{{ data.branch.branch_name }}</h5>
         {% if data.branch.motto %}
-        <small class="text-muted">{{ data.branch.motto }}</small>
+        <span class="sch-profile-motto">{{ data.branch.motto }}</span>
         {% endif %}
       </div>
     </div>
 
-    <div class="floating-box">
-      <span class="floating-label h4">
-        <i class="bi bi-house-fill me-2"></i>{{ data.branch.branch_name | upper }}
-      </span>
-      <div class="floating-content">
-        <div class="row">
-          <div class="col-md-4">
-            <h6>
-              School Code:
-              <span class="fw-light">{{ data.branch.school_code or "---" }}</span>
-            </h6>
-            <h6>
-              School Gender:
-              <span class="fw-light">{{ data.branch.school_gender or "---" }}</span>
-            </h6>
-          </div>
-          <div class="col-md-4">
-            <h6>
-              School Type:
-              <span class="fw-light">{{ data.branch.school_type or "---" }}</span>
-            </h6>
-            <h6>
-              School Manager:
-              <span class="fw-light">{{ data.branch.branch_manager or "---" }}</span>
-            </h6>
-          </div>
-          <div class="col-md-4">
-            <h6>
-              School Head:
-              <span class="fw-light">{{ data.branch.branch_head or "---" }}</span>
-            </h6>
-            <h6>
-              Email:
-              <span class="fw-light small text-primary fw-bold"
-                >{{ data.branch.email or "---" }}</span
-              >
-            </h6>
-          </div>
-        </div>
+    <dl class="sch-facts">
+      <div class="sch-fact">
+        <dt>Address</dt>
+        <dd>{{ data.branch.school_code or "—" }}</dd>
+      </div>
+      <div class="sch-fact">
+        <dt>Gender</dt>
+        <dd>{{ data.branch.school_gender or "—" }}</dd>
+      </div>
+      <div class="sch-fact">
+        <dt>Type</dt>
+        <dd>{{ data.branch.school_type or "—" }}</dd>
+      </div>
+      <div class="sch-fact">
+        <dt>Manager</dt>
+        <dd>{{ data.branch.branch_manager or "—" }}</dd>
+      </div>
+      <div class="sch-fact">
+        <dt>Head</dt>
+        <dd>{{ data.branch.branch_head or "—" }}</dd>
+      </div>
+      <div class="sch-fact">
+        <dt>Email</dt>
+        <dd>{{ data.branch.email or "—" }}</dd>
+      </div>
+    </dl>
 
-        <div class="row g-3 d-flex justify-content-center mt-2">
-          <div class="col-md-3 p-3 d-flex justify-content-center info-card-bg-success border rounded-2">
-            <div>
-              <h5 class="text-center">{{ data.total_students }}</h5>
-              <span>Students</span>
-            </div>
-          </div>
-          <div class="col-md-3 p-3 rounded-2 d-flex justify-content-center info-card-bg-warning">
-            <div class="info-card">
-              <h5 class="text-center">{{ data.total_teachers }}</h5>
-              <span>Teachers</span>
-            </div>
-          </div>
-          <div class="col-md-3 p-3 rounded-2 d-flex justify-content-center info-card-bg-danger">
-            <div class="info-card">
-              <h5 class="text-center">0</h5>
-              <span>Support Staff</span>
-            </div>
-          </div>
-        </div>
+    <div class="sch-counts">
+      <div class="sch-count is-students">
+        <strong>{{ data.total_students }}</strong>
+        <span>Students</span>
+      </div>
+      <div class="sch-count is-teachers">
+        <strong>{{ data.total_teachers }}</strong>
+        <span>Teachers</span>
+      </div>
+      <div class="sch-count is-support">
+        <strong>0</strong>
+        <span>Support staff</span>
       </div>
     </div>
   </div>
@@ -181,7 +164,7 @@ render_flash_messages, sidebar %} {% block head %} {{ super() }}
         role="tabpanel"
         aria-labelledby="stats-tab"
       >
-        <h5 class="fw-bold mb-3">Student Statistics</h5>
+        <h6 class="sch-stats-title">Student statistics</h6>
         <div class="row g-4">
           <div class="col-md-4 col-12">
             <div class="p-3 shadow-sm rounded bg-light sch-chart-box">
@@ -210,15 +193,15 @@ render_flash_messages, sidebar %} {% block head %} {{ super() }}
         role="tabpanel"
         aria-labelledby="academics-tab"
       >
-        <h5 class="fw-bold">Academic Performance</h5>
-        <p>Coming soon...</p>
+        <h6 class="sch-stats-title">Academic performance</h6>
+        <p class="sch-stats-copy">Coming soon.</p>
       </div>
     </div>
   </div>
 </div>
 
 <!-- =========================
-     Add Branch Modal
+     Add / Edit school modal
 ========================= -->
 <div
   class="modal fade"
@@ -228,275 +211,218 @@ render_flash_messages, sidebar %} {% block head %} {{ super() }}
   data-bs-backdrop="static"
   data-bs-keyboard="false"
 >
-  <div
-    class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered"
-  >
-    <div class="modal-content">
-      <!-- Modal Header -->
-      <div class="modal-header bg-danger text-white pt-2 pb-2 px-4">
-        <h6 class="modal-title">
-          <i class="bi bi-plus-circle me-1"></i>
-          <span id="modal-header-title">ADD BRANCH / SCHOOL</span>
-        </h6>
+  <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
+    <div class="modal-content at-modal sch-modal">
+      <div class="at-modal-header">
+        <div>
+          <h6 class="at-modal-title">
+            <i class="bi bi-building-add" id="modal-header-icon"></i>
+            <span id="modal-header-title">Add school</span>
+          </h6>
+          <p class="at-modal-copy" id="form-header">Enter the school details.</p>
+        </div>
         <button
           type="button"
           class="btn-close btn-close-white"
           data-bs-dismiss="modal"
+          aria-label="Close"
         ></button>
       </div>
 
-      <!-- Modal Body -->
-      <div class="modal-body">
-        <h5
-          id="form-header"
-          class="text-center bg-light fw-light border-bottom p-3"
-        >
-          Branch / School Data Entry
-        </h5>
-        <form
-          id="addBranchForm"
-          method="POST"
-          enctype="multipart/form-data"
-          class="px-4 border p-2"
-        >
-          {{ add_branch_form.hidden_tag() }}
-          <!-- Row 1: Branch Name & School Code -->
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-light">Branch Name</label>
-              <div class="input-group">
-                <span class="input-group-text bg-secondary text-white"
-                  ><i class="bi bi-bank"></i
-                ></span>
-                {{ add_branch_form.branch_name(class="form-control",
-                placeholder="Branch name") }}
+      <form
+        id="addBranchForm"
+        method="POST"
+        enctype="multipart/form-data"
+        class="sch-modal-form"
+      >
+        {{ add_branch_form.hidden_tag() }}
+        <div class="at-modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="cls-add-label">School name</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-bank"></i></span>
+                {% if current_user.is_system_admin %}
+                {{ add_branch_form.branch_name(class="form-control form-control-sm", placeholder="School name") }}
+                {% else %}
+                {{ add_branch_form.branch_name(class="form-control form-control-sm", placeholder="School name", readonly=true) }}
+                {% endif %}
               </div>
+              {% if not current_user.is_system_admin %}
+              <p class="sch-modal-hint" id="branch-name-lock-hint">Only the system admin can change the school name.</p>
+              {% endif %}
               {% if add_branch_form.branch_name.errors %}
-              <div class="text-danger small mt-1">
-                {{ add_branch_form.branch_name.errors[0] }}
-              </div>
+              <p class="sch-modal-hint text-danger">{{ add_branch_form.branch_name.errors[0] }}</p>
               {% endif %}
             </div>
 
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-light">School Address</label>
-              <div class="input-group">
-                <span class="input-group-text bg-secondary text-white"
-                  ><i class="bi bi-hash"></i
-                ></span>
-                {{ add_branch_form.school_code(class="form-control",
-                placeholder="P.O Box 382") }}
+            <div class="col-md-6">
+              <label class="cls-add-label">Address</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                {{ add_branch_form.school_code(class="form-control form-control-sm", placeholder="P.O Box 382") }}
               </div>
               {% if add_branch_form.school_code.errors %}
-              <div class="text-danger small mt-1">
-                {{ add_branch_form.school_code.errors[0] }}
-              </div>
+              <p class="sch-modal-hint text-danger">{{ add_branch_form.school_code.errors[0] }}</p>
               {% endif %}
             </div>
-          </div>
 
-          <!-- Row 2: Branch Manager & Branch Level -->
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-light">Branch Manager</label>
-              <div class="input-group">
-                <span class="input-group-text bg-secondary text-white"
-                  ><i class="bi bi-person-workspace"></i
-                ></span>
-                {{ add_branch_form.branch_manager(class="form-control",
-                placeholder="Manager name") }}
+            <div class="col-md-6">
+              <label class="cls-add-label">Manager</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-person-workspace"></i></span>
+                {{ add_branch_form.branch_manager(class="form-control form-control-sm", placeholder="Manager name") }}
               </div>
               {% if add_branch_form.branch_manager.errors %}
-              <div class="text-danger small mt-1">
-                {{ add_branch_form.branch_manager.errors[0] }}
-              </div>
+              <p class="sch-modal-hint text-danger">{{ add_branch_form.branch_manager.errors[0] }}</p>
               {% endif %}
             </div>
 
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-light">Branch Level</label>
-              <div class="input-group">
-                <span class="input-group-text bg-secondary text-white"
-                  ><i class="bi bi-layers"></i
-                ></span>
-                {{ add_branch_form.branch_level(class="form-select") }}
+            <div class="col-md-6">
+              <label class="cls-add-label">Level</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-layers"></i></span>
+                {{ add_branch_form.branch_level(class="form-select form-select-sm") }}
               </div>
               {% if add_branch_form.branch_level.errors %}
-              <div class="text-danger small mt-1">
-                {{ add_branch_form.branch_level.errors[0] }}
-              </div>
+              <p class="sch-modal-hint text-danger">{{ add_branch_form.branch_level.errors[0] }}</p>
               {% endif %}
             </div>
-          </div>
 
-          <!-- Row 3: Branch Head & School Gender -->
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-light">Branch Head</label>
-              <div class="input-group">
-                <span class="input-group-text bg-secondary text-white"
-                  ><i class="bi bi-person-badge"></i
-                ></span>
-                {{ add_branch_form.branch_head(class="form-select") }}
+            <div class="col-md-6">
+              <label class="cls-add-label">School head</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+                {{ add_branch_form.branch_head(class="form-select form-select-sm") }}
               </div>
               {% if add_branch_form.branch_head.errors %}
-              <div class="text-danger small mt-1">
-                {{ add_branch_form.branch_head.errors[0] }}
-              </div>
+              <p class="sch-modal-hint text-danger">{{ add_branch_form.branch_head.errors[0] }}</p>
               {% endif %}
             </div>
 
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-light">School Gender</label>
-              <div class="input-group">
-                <span class="input-group-text bg-secondary text-white"
-                  ><i class="bi bi-people"></i
-                ></span>
-                {{ add_branch_form.school_gender(class="form-select") }}
+            <div class="col-md-6">
+              <label class="cls-add-label">Gender</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-people"></i></span>
+                {{ add_branch_form.school_gender(class="form-select form-select-sm") }}
               </div>
               {% if add_branch_form.school_gender.errors %}
-              <div class="text-danger small mt-1">
-                {{ add_branch_form.school_gender.errors[0] }}
-              </div>
+              <p class="sch-modal-hint text-danger">{{ add_branch_form.school_gender.errors[0] }}</p>
               {% endif %}
             </div>
-          </div>
 
-          <!-- Row 4: School Type & Email -->
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-light">School Type</label>
-              <div class="input-group">
-                <span class="input-group-text bg-secondary text-white"
-                  ><i class="bi bi-building"></i
-                ></span>
-                {{ add_branch_form.school_type(class="form-select") }}
+            <div class="col-md-6">
+              <label class="cls-add-label">School type</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-building"></i></span>
+                {{ add_branch_form.school_type(class="form-select form-select-sm") }}
               </div>
               {% if add_branch_form.school_type.errors %}
-              <div class="text-danger small mt-1">
-                {{ add_branch_form.school_type.errors[0] }}
-              </div>
+              <p class="sch-modal-hint text-danger">{{ add_branch_form.school_type.errors[0] }}</p>
               {% endif %}
             </div>
 
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-light">Branch Email (optional)</label>
-              <div class="input-group">
-                <span class="input-group-text bg-secondary text-white"
-                  ><i class="bi bi-envelope"></i
-                ></span>
-                {{ add_branch_form.email(class="form-control",
-                placeholder="example@school.com") }}
+            <div class="col-md-6">
+              <label class="cls-add-label">Email <span class="fw-normal text-muted">(optional)</span></label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                {{ add_branch_form.email(class="form-control form-control-sm", placeholder="example@school.com") }}
               </div>
               {% if add_branch_form.email.errors %}
-              <div class="text-danger small mt-1">
-                {{ add_branch_form.email.errors[0] }}
-              </div>
+              <p class="sch-modal-hint text-danger">{{ add_branch_form.email.errors[0] }}</p>
               {% endif %}
             </div>
-          </div>
 
-          <!-- Row 5: School motto & Logo -->
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-light">School motto</label>
-              <div class="input-group">
-                <span class="input-group-text bg-secondary text-white"
-                  ><i class="bi bi-building"></i
-                ></span>
-                {{ add_branch_form.motto(class="form-control",
-                placeholder="School Motto") }}
+            <div class="col-md-6">
+              <label class="cls-add-label">Motto</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-chat-quote"></i></span>
+                {{ add_branch_form.motto(class="form-control form-control-sm", placeholder="School motto") }}
               </div>
               {% if add_branch_form.motto.errors %}
-              <div class="text-danger small mt-1">
-                {{ add_branch_form.motto.errors[0] }}
-              </div>
+              <p class="sch-modal-hint text-danger">{{ add_branch_form.motto.errors[0] }}</p>
               {% endif %}
             </div>
 
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-light">School Logo</label>
-              <div class="input-group">
-                <span class="input-group-text bg-secondary text-white"
-                  ><i class="bi bi-building"></i
-                ></span>
-                {{ add_branch_form.logo(class="form-control") }}
+            <div class="col-md-6">
+              <label class="cls-add-label">Logo</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-image"></i></span>
+                {{ add_branch_form.logo(class="form-control form-control-sm") }}
               </div>
               {% if add_branch_form.logo.errors %}
-              <div class="text-danger small mt-1">
-                {{ add_branch_form.logo.errors[0] }}
-              </div>
+              <p class="sch-modal-hint text-danger">{{ add_branch_form.logo.errors[0] }}</p>
               {% endif %}
             </div>
           </div>
+        </div>
 
-          <div class="d-flex justify-content-end">
-            <button
-              id="submit-btn"
-              type="submit"
-              class="btn btn-sm btn-danger px-3"
-            >
-              <i class="bi bi-send-plus me-2"></i> Submit
+        <div class="at-modal-footer">
+          <div class="at-modal-actions">
+            <button type="button" class="sa-btn sa-btn-outline" data-bs-dismiss="modal">
+              Cancel
+            </button>
+            <button id="submit-btn" type="submit" class="sa-btn sa-btn-primary">
+              <i class="bi bi-plus-lg"></i> Add school
             </button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   </div>
 </div>
 
 {% if branch_id == 0 %} {% else %}
-<!-- CONFIRM DELETE MODAL -->
 <div class="modal fade" id="deleteBranchModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header bg-danger text-white pt-2 pb-2 px-4">
-        <h6 class="modal-title">CONFIRM DELETE BRANCH / SCHOOL</h6>
+    <div class="modal-content at-modal">
+      <div class="at-modal-header sch-delete-head">
+        <div>
+          <h6 class="at-modal-title">
+            <i class="bi bi-exclamation-triangle"></i>
+            Delete school
+          </h6>
+          <p class="at-modal-copy">This cannot be undone if the school is empty.</p>
+        </div>
         <button
           type="button"
-          class="btn-close"
+          class="btn-close btn-close-white"
           data-bs-dismiss="modal"
+          aria-label="Close"
         ></button>
       </div>
 
-      <div class="modal-body">
-        <div class="d-flex justify-content-center">
-          <h5 class="text-danger">
-            <i class="bi bi-exclamation-triangle display-6"></i>
-          </h5>
+      <div class="sch-delete-body">
+        <div class="sch-delete-icon" aria-hidden="true">
+          <i class="bi bi-trash3"></i>
         </div>
-        <p class="text-muted small">
-          Are you sure you want to delete
-          <strong>{{ data.branch.branch_name | upper }}</strong>? <br /><strong
-            >NB: </strong
-          >You must move all students before deletion.
+        <p>
+          Delete <strong>{{ data.branch.branch_name }}</strong>?
+          Move all students to another school first.
         </p>
       </div>
 
-      <div class="modal-footer">
-        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
-          <i class="bi bi-slash-circle-fill me-2"></i>Cancel
-        </button>
-
-        <form
-          method="POST"
-          action="{{ url_for('admin.delete_branch', branch_id=data.branch.id) }}"
-        >
-          <button type="submit" class="btn btn-sm btn-danger">
-            <i class="bi bi-x-octagon-fill me-1"></i> Yes, Delete
+      <div class="at-modal-footer">
+        <div class="at-modal-actions">
+          <button type="button" class="sa-btn sa-btn-outline" data-bs-dismiss="modal">
+            Cancel
           </button>
-        </form>
+          <form
+            method="POST"
+            action="{{ url_for('admin.delete_branch', branch_id=data.branch.id) }}"
+          >
+            <button type="submit" class="sa-btn sch-delete-confirm">
+              <i class="bi bi-trash"></i> Delete
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
 </div>
 <script>
   const data = {{ data.branch|tojson }}
-
-  // URLs
   const update_branch_url = "{{ url_for('admin.update_branch', branch_id=data.branch.id if data.branch else 0) }}";
-
-  // CHART.JS GRAPHS TO SHOW DATA.
   const studentGender = {{ data["gender_counts"] | tojson }};
   const teacherGender = {{ data["teacher_gender_counts"] | tojson }};
   const studentsPerClass = {{ data["students_per_class"] | tojson }};
@@ -505,6 +431,7 @@ render_flash_messages, sidebar %} {% block head %} {{ super() }}
 <script>
   const add_branch_url = "{{ url_for('admin.add_school') }}";
   const baseUrl = "{{ url_for('admin.branch_profile', branch_id=1) }}";
+  const canRenameSchool = {{ current_user.is_system_admin | tojson }};
 </script>
 <script src="{{ url_for('admin.static', filename='js/branch.js')}}"></script>
 {% endblock %}
