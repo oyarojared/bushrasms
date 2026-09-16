@@ -2,8 +2,8 @@ import re
 from datetime import datetime
 from zipfile import BadZipFile
 
-from flask import (current_app, flash, jsonify, redirect, render_template,
-                   request, url_for)
+from flask import (current_app, flash, jsonify, make_response, redirect,
+                   render_template, request, url_for)
 from openpyxl import load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 from sqlalchemy import func
@@ -16,11 +16,12 @@ from .. import admin_bp
 from ..forms import AddStudentForm, StudentSearchForm
 from ..forms.branches_forms import BranchesList, BranchGradeStreamForm
 from ..forms.students_forms import (MuiltapleStudentsUploadForm,
-                                    PassportUploadForm)
+                                    PassportUploadForm, TransferLetterForm)
 from ..utils import (load_branch_choices, preprocess_image, 
                      safe_date, validate_fullname, 
                      get_accessible_branches_query, apply_locked_branch,
-                     locked_branch_id, user_can_access_branch)
+                     locked_branch_id, user_can_access_branch,
+                     can_issue_official_letters)
 from ..utils.route_protect import admin_required
 from flask_login import login_required 
 
@@ -32,6 +33,13 @@ from ..services.studs import (
     get_student_academic_history,
     build_student_academic_analysis,
 )
+from ..services.transfer_letter import (
+    is_transfer_letter_eligible,
+    letter_filename,
+    render_transfer_letter_pdf,
+    transfer_letter_context,
+)
+from ..services.report_pdf import pdf_http_headers
 from flask_login import current_user
 from sqlalchemy import false
 
@@ -492,7 +500,7 @@ def student_profile(student_id):
     transfer_form = BranchesList()
     transfer_form.branches.choices = load_branch_choices()
     apply_locked_branch(transfer_form.branches)
-    
+    transfer_letter_form = TransferLetterForm(formdata=None, obj=student)
 
     # Initialize WTForm for passport upload
     passport_form = PassportUploadForm() 
@@ -547,9 +555,73 @@ def student_profile(student_id):
         student_class=student_class,
         passport_form=passport_form,
         transfer_form=transfer_form,
+        transfer_letter_form=transfer_letter_form,
+        can_issue_transfer_letter=(
+            can_issue_official_letters() and is_transfer_letter_eligible(student)
+        ),
         academic_history=academic_history,
         academic_analysis=academic_analysis,
     )
+
+
+@admin_bp.route("/student/<int:student_id>/transfer-letter", methods=["POST"])
+@login_required
+def student_transfer_letter(student_id):
+    if not can_issue_official_letters():
+        flash("Only an admin can issue a transfer letter.", "danger")
+        return redirect(url_for("admin.teacher_dash"))
+
+    student = _get_accessible_student(student_id)
+    if not student:
+        return _deny_student_access()
+
+    if not is_transfer_letter_eligible(student):
+        flash(
+            "Transfer letters are not issued for Form 3 and Form 4 (8-4-4) students.",
+            "warning",
+        )
+        return redirect(url_for("admin.student_profile", student_id=student.id))
+
+    form = TransferLetterForm()
+    assessment_no = (form.knec_assessment_no.data or "").strip()
+    if not form.validate_on_submit() or not assessment_no:
+        flash(
+            "Enter the assessment number before generating the transfer letter.",
+            "warning",
+        )
+        return redirect(url_for("admin.student_profile", student_id=student.id))
+
+    student.knec_assessment_no = assessment_no
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Could not save assessment number for student %s", student.id
+        )
+        flash("Could not save the assessment number. Please try again.", "danger")
+        return redirect(url_for("admin.student_profile", student_id=student.id))
+
+    branch = Branch.query.get(student.branch_id)
+    if not branch:
+        flash("School details were not found for this student.", "danger")
+        return redirect(url_for("admin.student_profile", student_id=student.id))
+
+    context = transfer_letter_context(student, branch, form.reason.data)
+    try:
+        pdf = render_transfer_letter_pdf(context)
+    except Exception:
+        current_app.logger.exception(
+            "Transfer letter PDF failed for student %s", student.id
+        )
+        flash("The transfer letter could not be generated. Please try again.", "danger")
+        return redirect(url_for("admin.student_profile", student_id=student.id))
+
+    response = make_response(pdf)
+    headers = pdf_http_headers(letter_filename(student))
+    for key, value in headers.items():
+        response.headers[key] = value
+    return response
 
 
 @admin_bp.route("/update_student/<int:student_id>", methods=["POST"])

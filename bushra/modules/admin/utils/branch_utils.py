@@ -16,6 +16,18 @@ def is_system_admin(user=None):
     return bool(getattr(person, "is_system_admin", False))
 
 
+def can_issue_official_letters(user=None):
+    """School admin, super admin, or system/platform admin."""
+    person = _user(user)
+    if not getattr(person, "is_authenticated", False):
+        return False
+    return bool(
+        getattr(person, "is_admin", False)
+        or getattr(person, "is_super_admin", False)
+        or is_system_admin(person)
+    )
+
+
 def is_super_admin_role(user=None):
     """True super admin, including a system admin who also carries that flag."""
     person = _user(user)

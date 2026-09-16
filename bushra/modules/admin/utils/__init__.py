@@ -1,6 +1,7 @@
 from .branch_utils import (
     accessible_branch_ids,
     apply_locked_branch,
+    can_issue_official_letters,
     can_teach,
     get_accessible_branches_query,
     is_system_admin,

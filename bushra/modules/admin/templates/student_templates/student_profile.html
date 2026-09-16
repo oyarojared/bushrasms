@@ -78,6 +78,16 @@
           >
             <i class="bi bi-arrow-left-right"></i> Move
           </button>
+          {% if can_issue_transfer_letter %}
+          <button
+            type="button"
+            class="stu-btn stu-btn-outline stu-btn-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#transferLetterModal"
+          >
+            <i class="bi bi-file-earmark-text"></i> Transfer letter
+          </button>
+          {% endif %}
           <button
             type="button"
             class="stu-btn stu-btn-outline stu-btn-sm stu-btn-danger-outline js-delete-student"
@@ -580,6 +590,77 @@
 </div>
 
 {% include "academics/_cbe_report_options_modal.html" %}
+
+{% if can_issue_transfer_letter %}
+<div
+  class="modal fade"
+  id="transferLetterModal"
+  tabindex="-1"
+  aria-labelledby="transferLetterModalLabel"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content stu-modal stu-modal-compact">
+      <div class="modal-header stu-modal-header">
+        <h6 class="stu-modal-title" id="transferLetterModalLabel">
+          <i class="bi bi-file-earmark-text"></i> Transfer letter
+        </h6>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body stu-modal-body">
+        <p class="stu-transfer-lead">Download official school transfer letter.</p>
+        <form
+          id="transferLetterForm"
+          action="{{ url_for('admin.student_transfer_letter', student_id=student.id) }}"
+          method="post"
+        >
+          {{ transfer_letter_form.hidden_tag() }}
+          <div class="mb-3">
+            <label class="stu-label stu-label-required" for="transferAssessmentNo">
+              Assessment number
+            </label>
+            {{ transfer_letter_form.knec_assessment_no(
+              class="form-control form-control-sm stu-control",
+              id="transferAssessmentNo",
+              required=true,
+              placeholder="Required"
+            ) }}
+            <p class="stu-transfer-hint" id="transferAssessmentHint">
+              Assessment number is required in the transfer letter.
+            </p>
+          </div>
+          <div class="mb-1">
+            <label class="stu-label" for="transferReason">Reason for transfer</label>
+            {{ transfer_letter_form.reason(
+              class="form-control form-control-sm stu-control",
+              id="transferReason"
+            ) }}
+          </div>
+          <div class="stu-modal-footer">
+            <button
+              type="button"
+              class="stu-btn stu-btn-outline"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="stu-btn stu-btn-primary" id="transferLetterSubmit">
+              <i class="bi bi-download"></i> Download PDF
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <!-- Move Student Modal -->
 <div
@@ -1852,6 +1933,23 @@
     color: #9ca3af;
   }
 
+  .stu-transfer-lead {
+    margin: 0 0 0.85rem;
+    font-size: 0.84rem;
+    color: #4b5563;
+  }
+
+  .stu-transfer-hint {
+    margin: 0.35rem 0 0;
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+
+  .stu-transfer-hint.is-error {
+    color: #b42318;
+    font-weight: 600;
+  }
+
   .stu-delete-dialog {
     max-width: 380px;
   }
@@ -1993,6 +2091,27 @@
     document
       .getElementById("studentInfoForm")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  const transferLetterForm = document.getElementById("transferLetterForm");
+  transferLetterForm?.addEventListener("submit", (event) => {
+    const input = document.getElementById("transferAssessmentNo");
+    const hint = document.getElementById("transferAssessmentHint");
+    const value = (input?.value || "").trim();
+    if (value) {
+      if (input) input.classList.remove("is-invalid");
+      if (hint) hint.classList.remove("is-error");
+      return;
+    }
+    event.preventDefault();
+    if (input) {
+      input.classList.add("is-invalid");
+      input.focus();
+    }
+    if (hint) {
+      hint.classList.add("is-error");
+      hint.textContent = "Assessment number is required in the transfer letter.";
+    }
   });
 
   function scrollToProfileCard() {

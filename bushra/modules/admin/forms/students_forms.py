@@ -3,7 +3,7 @@ from datetime import date
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed, FileField, FileRequired
 from wtforms import (DateField, IntegerField, SearchField, SelectField,
-                     StringField, SubmitField)
+                     StringField, SubmitField, TextAreaField)
 from wtforms.validators import DataRequired, Email, Length, Optional, Regexp
 from wtforms.validators import ValidationError
 import re 
@@ -154,6 +154,24 @@ class AddStudentForm(FlaskForm):
 
 
     submit = SubmitField("Save Student")
+
+
+class TransferLetterForm(FlaskForm):
+    knec_assessment_no = StringField(
+        "Assessment number",
+        validators=[
+            DataRequired(message="Enter the assessment number before generating the letter."),
+            Length(max=50),
+        ],
+    )
+    reason = TextAreaField(
+        "Reason for transfer",
+        validators=[Optional(), Length(max=600)],
+        render_kw={
+            "rows": 3,
+            "placeholder": "Optional",
+        },
+    )
 
 
 class PassportUploadForm(FlaskForm):
