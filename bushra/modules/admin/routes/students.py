@@ -15,7 +15,8 @@ from ....modals.students_db import Student, StudentSubjectAllocation
 from .. import admin_bp
 from ..forms import AddStudentForm, StudentSearchForm
 from ..forms.branches_forms import BranchesList, BranchGradeStreamForm
-from ..forms.students_forms import (MuiltapleStudentsUploadForm,
+from ..forms.students_forms import (LeavingCertificateForm,
+                                    MuiltapleStudentsUploadForm,
                                     PassportUploadForm, TransferLetterForm)
 from ..utils import (load_branch_choices, preprocess_image, 
                      safe_date, validate_fullname, 
@@ -32,6 +33,16 @@ from ..services.studs import (
     get_next_adm_no,
     get_student_academic_history,
     build_student_academic_analysis,
+)
+from ..services.leaving_certificate import (
+    HEADTEACHER_REPORTS,
+    REPORT_MAX_WORDS,
+    branch_form_defaults,
+    certificate_filename,
+    context_from_form,
+    is_leaving_certificate_eligible,
+    render_leaving_certificate_pdf,
+    student_form_defaults,
 )
 from ..services.transfer_letter import (
     is_transfer_letter_eligible,
@@ -559,6 +570,9 @@ def student_profile(student_id):
         can_issue_transfer_letter=(
             can_issue_official_letters() and is_transfer_letter_eligible(student)
         ),
+        can_issue_leaving_certificate=(
+            can_issue_official_letters() and is_leaving_certificate_eligible(student)
+        ),
         academic_history=academic_history,
         academic_analysis=academic_analysis,
     )
@@ -622,6 +636,92 @@ def student_transfer_letter(student_id):
     for key, value in headers.items():
         response.headers[key] = value
     return response
+
+
+def _default_certificate_branch():
+    branch_id = locked_branch_id() or getattr(current_user, "branch_id", None)
+    if not branch_id or not user_can_access_branch(branch_id):
+        return None
+    return Branch.query.get(branch_id)
+
+
+def _leaving_certificate_flow(student=None):
+    if not can_issue_official_letters():
+        flash("Only an admin can issue a leaving certificate.", "danger")
+        return redirect(url_for("admin.teacher_dash"))
+
+    if student is not None and not is_leaving_certificate_eligible(student):
+        flash("Leaving certificates are issued for Form 4 students only.", "warning")
+        return redirect(url_for("admin.student_profile", student_id=student.id))
+
+    branch = None
+    if student is not None:
+        branch = Branch.query.get(student.branch_id)
+        if not branch:
+            flash("School details were not found for this student.", "danger")
+            return redirect(url_for("admin.student_profile", student_id=student.id))
+        defaults = student_form_defaults(student, branch)
+        form_action = url_for("admin.student_leaving_certificate", student_id=student.id)
+        source_student_id = student.id
+    else:
+        branch = _default_certificate_branch()
+        defaults = branch_form_defaults(branch)
+        form_action = url_for("admin.leaving_certificate")
+        source_student_id = None
+
+    if request.method == "GET":
+        form = LeavingCertificateForm(formdata=None, data=defaults)
+    else:
+        form = LeavingCertificateForm()
+
+    if form.validate_on_submit():
+        context = context_from_form(form)
+        try:
+            pdf = render_leaving_certificate_pdf(context)
+        except Exception:
+            current_app.logger.exception("Leaving certificate PDF failed")
+            flash(
+                "The leaving certificate could not be generated. Please try again.",
+                "danger",
+            )
+            return render_template(
+                "student_templates/leaving_certificate_form.html",
+                certificate_form=form,
+                reports=HEADTEACHER_REPORTS,
+                report_max_words=REPORT_MAX_WORDS,
+                source_student_id=source_student_id,
+                form_action=form_action,
+            )
+
+        response = make_response(pdf)
+        headers = pdf_http_headers(certificate_filename(context["student_name"]))
+        for key, value in headers.items():
+            response.headers[key] = value
+        return response
+
+    return render_template(
+        "student_templates/leaving_certificate_form.html",
+        certificate_form=form,
+        reports=HEADTEACHER_REPORTS,
+        report_max_words=REPORT_MAX_WORDS,
+        source_student_id=source_student_id,
+        form_action=form_action,
+    )
+
+
+@admin_bp.route("/leaving-certificate", methods=["GET", "POST"])
+@login_required
+def leaving_certificate():
+    return _leaving_certificate_flow()
+
+
+@admin_bp.route("/student/<int:student_id>/leaving-certificate", methods=["GET", "POST"])
+@login_required
+def student_leaving_certificate(student_id):
+    student = _get_accessible_student(student_id)
+    if not student:
+        return _deny_student_access()
+    return _leaving_certificate_flow(student)
 
 
 @admin_bp.route("/update_student/<int:student_id>", methods=["POST"])

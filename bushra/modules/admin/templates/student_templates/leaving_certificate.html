@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Leaving certificate — {{ student_name }}</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 16mm 20mm 18mm;
+        @bottom-center {
+          content: element(page-footer);
+          width: 100%;
+        }
+      }
+      * { box-sizing: border-box; }
+      html { color-scheme: light; background: #fff; }
+      body {
+        margin: 0;
+        color: #111;
+        background: #fff;
+        font-family: "Times New Roman", Times, serif;
+        font-size: 12.5pt;
+        line-height: 1.45;
+      }
+      .top {
+        position: relative;
+        text-align: center;
+        margin: 0 0 2px;
+      }
+      .form-code {
+        position: absolute;
+        top: 11mm;
+        right: 0;
+        margin: 0;
+        font-size: 11.5pt;
+      }
+      .arms {
+        width: 34mm;
+        height: auto;
+        display: inline-block;
+      }
+      .republic {
+        margin: 4px 0 0;
+        text-align: center;
+        font-size: 12.5pt;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .rule {
+        border: 0;
+        border-top: 0.9pt solid #111;
+        margin: 2px auto 8px;
+      }
+      .rule-sm { width: 54mm; }
+      .ministry {
+        margin: 0 0 12px;
+        text-align: center;
+        font-size: 11pt;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .doc-title {
+        margin: 0;
+        text-align: center;
+        font-size: 14.5pt;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        line-height: 1.22;
+        text-transform: uppercase;
+      }
+      .doc-title-cert {
+        margin: 0 0 14px;
+      }
+      .doc-title-cert span {
+        display: inline-block;
+        border-bottom: 0.9pt solid #111;
+        padding-bottom: 2px;
+      }
+      .school-block {
+        display: table;
+        width: auto;
+        min-width: 70mm;
+        max-width: 58%;
+        margin: 0 0 7px auto;
+        text-align: right;
+      }
+      .school-block .dotted {
+        display: block;
+        text-align: right;
+        min-height: 1.12em;
+        margin: 0 0 2px;
+        padding: 0 2px 1px;
+      }
+      .school-name {
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+      .dotted {
+        border-bottom: 1pt dotted #111;
+        min-height: 1.35em;
+        margin: 0 0 6px;
+        padding: 0 2px 2px;
+      }
+      table.line {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 7px 0 0;
+      }
+      table.line td {
+        padding: 0;
+        vertical-align: bottom;
+      }
+      table.line td.words {
+        width: 1%;
+        white-space: nowrap;
+        padding: 0 2.2mm 2px 0;
+      }
+      table.line td.words.after {
+        padding: 0 0 2px 2.2mm;
+      }
+      table.line td.words.comma {
+        padding: 0 2.2mm 2px 0;
+      }
+      table.line td.fill,
+      .written {
+        font-size: 11pt;
+      }
+      table.line td.fill {
+        border-bottom: 1pt dotted #111;
+        padding: 0 2px 2px;
+        white-space: nowrap;
+      }
+      table.line td.gap {
+        width: 38%;
+      }
+      table.line td.mid {
+        width: 28%;
+      }
+      .pad-left { padding-left: 12mm; }
+      .report-block {
+        margin-top: 8px;
+      }
+      .report-block .line {
+        margin-top: 4px;
+      }
+      .report-block .line:first-child {
+        margin-top: 0;
+      }
+      .report-block td.fill {
+        white-space: normal;
+        font-size: 12.5pt;
+        font-weight: 600;
+        color: #000;
+      }
+      .sign-block {
+        margin-top: 6px;
+      }
+      .sign-block .line {
+        margin-top: 4px;
+      }
+      .sign-block .line:first-child {
+        margin-top: 0;
+      }
+      .sign-block td.fill {
+        width: 48mm;
+        max-width: 48mm;
+      }
+      .headteacher-sign {
+        width: 68mm;
+        margin-top: 12px;
+        margin-left: auto;
+      }
+      .headteacher-sign .line {
+        width: 100%;
+      }
+      .headteacher-sign td.fill {
+        width: 38mm;
+        max-width: 38mm;
+      }
+      .headteacher-label {
+        margin: 3px 0 0;
+        text-align: center;
+      }
+      .legal {
+        margin: 22px 0 0;
+        text-align: center;
+        font-size: 11.5pt;
+        font-weight: 700;
+      }
+      .gpk {
+        margin: 16px 0 0;
+        font-size: 10.5pt;
+        font-weight: 700;
+      }
+      .page-footer {
+        position: running(page-footer);
+        border-top: 0.75pt solid #d0d0d0;
+        width: 100%;
+        height: 4px;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-footer" aria-hidden="true"></div>
+    <div class="top">
+      {% if coat_of_arms_uri %}
+      <img
+        class="arms"
+        src="{{ coat_of_arms_uri }}"
+        alt="Coat of arms of Kenya"
+      />
+      {% endif %}
+      <p class="form-code">ED/B 100 (Rev.)</p>
+    </div>
+    <p class="republic">Republic of Kenya</p>
+    <hr class="rule rule-sm" />
+    <p class="ministry">Ministry of Education, Science and Technology</p>
+    <p class="doc-title">Kenya Secondary School Leaving</p>
+    <p class="doc-title doc-title-cert"><span>Certificate</span></p>
+
+    <div class="school-block">
+      <p class="dotted school-name"><span class="written">{{ school_name }}</span> SCHOOL</p>
+      <p class="dotted"><span class="written">{{ school_address }}</span></p>
+    </div>
+
+    <table class="line">
+      <tr>
+        <td class="words">Admission/Serial No</td>
+        <td class="fill">{{ admission_number }}</td>
+        <td class="gap"></td>
+      </tr>
+    </table>
+
+    <div class="pad-left">
+      <table class="line">
+        <tr>
+          <td class="words">THIS IS TO CERTIFY THAT</td>
+          <td class="fill">{{ student_name }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <table class="line">
+      <tr>
+        <td class="words">entered this school on</td>
+        <td class="fill">{{ date_of_admission }}</td>
+        <td class="words after">and was enrolled in</td>
+      </tr>
+    </table>
+    <table class="line">
+      <tr>
+        <td class="words">Form</td>
+        <td class="fill">{{ form_enrolled }}</td>
+        <td class="words comma">, and left on</td>
+        <td class="fill">{{ date_of_leaving }}</td>
+        <td class="words after">from</td>
+      </tr>
+    </table>
+    <table class="line">
+      <tr>
+        <td class="words">Form</td>
+        <td class="fill">{{ form_left }}</td>
+        <td class="words after">having satisfactorily completed the approved</td>
+      </tr>
+    </table>
+    <table class="line">
+      <tr>
+        <td class="words">course for Form</td>
+        <td class="fill mid">{{ form_course }}</td>
+        <td></td>
+      </tr>
+    </table>
+    <table class="line">
+      <tr>
+        <td class="words">Date of Birth (in Admission Register)</td>
+        <td class="fill">{{ date_of_birth }}</td>
+      </tr>
+    </table>
+
+    <div class="report-block">
+      <table class="line">
+        <tr>
+          <td class="words report-label">Headteacher's report on the pupil's ability, industry and conduct</td>
+          <td class="fill">{{ report_first }}</td>
+        </tr>
+      </table>
+      {% for line in report_more %}
+      <table class="line">
+        <tr>
+          <td class="fill">{{ line }}</td>
+        </tr>
+      </table>
+      {% endfor %}
+      {% for _ in range(report_blanks) %}
+      <table class="line">
+        <tr>
+          <td class="fill">&nbsp;</td>
+        </tr>
+      </table>
+      {% endfor %}
+    </div>
+
+    <div class="sign-block">
+      <table class="line">
+        <tr>
+          <td class="words">Pupil's signature</td>
+          <td class="fill">&nbsp;</td>
+          <td></td>
+        </tr>
+      </table>
+      <table class="line">
+        <tr>
+          <td class="words">Date of Issue</td>
+          <td class="fill">{{ issue_date }}</td>
+          <td></td>
+        </tr>
+      </table>
+    </div>
+    <div class="headteacher-sign">
+      <table class="line">
+        <tr>
+          <td class="words">Signature</td>
+          <td class="fill">&nbsp;</td>
+        </tr>
+      </table>
+      <p class="headteacher-label">Headteacher</p>
+    </div>
+
+    <p class="legal">
+      This certificate was issued without any erasure or alteration whatsoever.
+    </p>
+    <p class="gpk">GPK(L)</p>
+  </body>
+</html>

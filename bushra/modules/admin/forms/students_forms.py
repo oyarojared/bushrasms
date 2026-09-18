@@ -6,7 +6,13 @@ from wtforms import (DateField, IntegerField, SearchField, SelectField,
                      StringField, SubmitField, TextAreaField)
 from wtforms.validators import DataRequired, Email, Length, Optional, Regexp
 from wtforms.validators import ValidationError
-import re 
+import re
+
+from ..services.leaving_certificate import (
+    REPORT_MAX_WORDS,
+    headteacher_report_fits,
+)
+
 
 class StudentSearchForm(FlaskForm):
     query = SearchField(
@@ -172,6 +178,77 @@ class TransferLetterForm(FlaskForm):
             "placeholder": "Optional",
         },
     )
+
+
+class LeavingCertificateForm(FlaskForm):
+    school_name = StringField(
+        "School",
+        validators=[DataRequired(), Length(max=150)],
+        render_kw={"aria-describedby": "lcSchoolHint"},
+    )
+    school_address = StringField(
+        "School address",
+        validators=[Optional(), Length(max=250)],
+    )
+    student_name = StringField(
+        "Full name",
+        validators=[DataRequired(), Length(min=2, max=80)],
+    )
+    admission_number = StringField(
+        "Admission/Serial No",
+        validators=[DataRequired(), Length(max=20)],
+    )
+    date_of_birth = DateField(
+        "Date of birth (in admission register, optional)",
+        validators=[Optional()],
+        render_kw={"type": "date"},
+    )
+    date_of_admission = DateField(
+        "Entered this school on",
+        validators=[DataRequired()],
+        render_kw={"type": "date"},
+    )
+    form_enrolled = StringField(
+        "Enrolled in Form",
+        validators=[DataRequired(), Length(max=20)],
+    )
+    date_of_leaving = DateField(
+        "Left on",
+        validators=[
+            DataRequired(message="Enter the date the pupil left school."),
+        ],
+        render_kw={"type": "date"},
+    )
+    issue_date = DateField(
+        "Date of issue",
+        validators=[DataRequired()],
+        render_kw={"type": "date"},
+    )
+    headteacher_report = TextAreaField(
+        "Headteacher's report",
+        validators=[DataRequired(), Length(max=400)],
+        render_kw={
+            "rows": 4,
+            "data-max-words": REPORT_MAX_WORDS,
+        },
+    )
+
+    def validate_date_of_leaving(self, field):
+        admitted = self.date_of_admission.data
+        if admitted and field.data and field.data < admitted:
+            raise ValidationError("Date of leaving cannot be before admission.")
+
+    def validate_date_of_birth(self, field):
+        admitted = self.date_of_admission.data
+        if admitted and field.data and field.data >= admitted:
+            raise ValidationError("Date of birth must be before admission.")
+
+    def validate_headteacher_report(self, field):
+        if not headteacher_report_fits(field.data):
+            raise ValidationError(
+                f"Keep the comment to {REPORT_MAX_WORDS} words so it fits "
+                "the three lines on the certificate."
+            )
 
 
 class PassportUploadForm(FlaskForm):

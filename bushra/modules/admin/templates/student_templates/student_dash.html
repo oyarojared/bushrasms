@@ -45,6 +45,15 @@
       <i class="bi bi-download"></i>
       <span>Export list</span>
     </button>
+
+    <a
+      href="{{ url_for('admin.leaving_certificate') }}"
+      class="stu-btn stu-btn-outline"
+      title="Issue a Form 4 leaving certificate, including former students"
+    >
+      <i class="bi bi-award"></i>
+      <span>Leaving certificate</span>
+    </a>
   </div>
 </div>
 <!-- Filter -->
@@ -2183,7 +2192,7 @@
     }
 
     .stu-page-actions .stu-btn {
-      flex: 1 1 calc(33.33% - 0.3rem);
+      flex: 1 1 calc(50% - 0.3rem);
     }
 
     .stu-page-actions .stu-btn span {

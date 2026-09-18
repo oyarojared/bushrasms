@@ -88,6 +88,14 @@
             <i class="bi bi-file-earmark-text"></i> Transfer letter
           </button>
           {% endif %}
+          {% if can_issue_leaving_certificate %}
+          <a
+            href="{{ url_for('admin.student_leaving_certificate', student_id=student.id) }}"
+            class="stu-btn stu-btn-outline stu-btn-sm"
+          >
+            <i class="bi bi-award"></i> Leaving certificate
+          </a>
+          {% endif %}
           <button
             type="button"
             class="stu-btn stu-btn-outline stu-btn-sm stu-btn-danger-outline js-delete-student"
@@ -1804,6 +1812,7 @@
     font-size: 0.8rem;
     font-weight: 600;
     line-height: 1.2;
+    text-decoration: none;
     cursor: pointer;
     transition:
       background 0.15s ease,

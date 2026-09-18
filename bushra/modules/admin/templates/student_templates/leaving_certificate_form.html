@@ -1,0 +1,327 @@
+{% extends "student_templates/student_dash_layout.html" %}
+
+{% block body %}
+<div class="app-page-title stu-page">
+  <div class="app-page-title-icon">
+    <i class="bi bi-award"></i>
+  </div>
+  <div class="app-page-title-content">
+    <h6 class="app-page-title-heading">Leaving certificate</h6>
+    <span class="app-page-title-subtitle">
+      {% if source_student_id %}
+      Review and edit the Form 4 details, then download the PDF.
+      {% else %}
+      Enter a former Form 4 student’s details, then download the PDF.
+      {% endif %}
+    </span>
+  </div>
+</div>
+
+<a
+  href="{% if source_student_id %}{{ url_for('admin.student_profile', student_id=source_student_id) }}{% else %}{{ url_for('admin.student_dash') }}{% endif %}"
+  class="stu-back-link"
+>
+  <i class="bi bi-arrow-left"></i>
+  {% if source_student_id %}Back to profile{% else %}Back to students{% endif %}
+</a>
+
+<div class="lc-card">
+  <p class="lc-lead">Edit the printed details. Changes are not saved to the student record.</p>
+  <form method="post" action="{{ form_action }}" id="leavingCertificateForm" class="lc-form">
+    {{ certificate_form.hidden_tag() }}
+    <div class="lc-grid">
+      <div>
+        <label class="stu-label stu-label-required" for="lcSchoolName">School</label>
+        {{ certificate_form.school_name(class="form-control form-control-sm stu-control", id="lcSchoolName") }}
+        <p class="lc-field-hint" id="lcSchoolHint">Don't include SCHOOL. It's already printed.</p>
+        {% for error in certificate_form.school_name.errors %}<p class="lc-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="stu-label" for="lcSchoolAddress">School address</label>
+        {{ certificate_form.school_address(class="form-control form-control-sm stu-control", id="lcSchoolAddress") }}
+        {% for error in certificate_form.school_address.errors %}<p class="lc-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="stu-label stu-label-required" for="lcAdmission">Admission/Serial No</label>
+        {{ certificate_form.admission_number(class="form-control form-control-sm stu-control", id="lcAdmission") }}
+        {% for error in certificate_form.admission_number.errors %}<p class="lc-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="stu-label stu-label-required" for="lcStudentName">Full name</label>
+        {{ certificate_form.student_name(class="form-control form-control-sm stu-control", id="lcStudentName") }}
+        {% for error in certificate_form.student_name.errors %}<p class="lc-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="stu-label" for="lcDob">Date of birth (in admission register) <span class="fw-normal text-muted">(optional)</span></label>
+        {{ certificate_form.date_of_birth(class="form-control form-control-sm stu-control", id="lcDob") }}
+        {% for error in certificate_form.date_of_birth.errors %}<p class="lc-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="stu-label stu-label-required" for="lcAdmitted">Entered this school on</label>
+        {{ certificate_form.date_of_admission(class="form-control form-control-sm stu-control", id="lcAdmitted") }}
+        {% for error in certificate_form.date_of_admission.errors %}<p class="lc-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="stu-label stu-label-required" for="lcFormEnrolled">Enrolled in Form</label>
+        {{ certificate_form.form_enrolled(class="form-control form-control-sm stu-control", id="lcFormEnrolled") }}
+        {% for error in certificate_form.form_enrolled.errors %}<p class="lc-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="stu-label stu-label-required" for="lcLeft">Left on</label>
+        {{ certificate_form.date_of_leaving(class="form-control form-control-sm stu-control", id="lcLeft") }}
+        <p class="lc-field-note">The date the pupil left, not today.</p>
+        {% for error in certificate_form.date_of_leaving.errors %}<p class="lc-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div>
+        <label class="stu-label" for="lcFormLeft">Left from / course for Form</label>
+        <input class="form-control form-control-sm stu-control" id="lcFormLeft" value="FOUR" readonly>
+      </div>
+      <div>
+        <label class="stu-label stu-label-required" for="lcIssued">Date of issue</label>
+        {{ certificate_form.issue_date(class="form-control form-control-sm stu-control", id="lcIssued") }}
+        {% for error in certificate_form.issue_date.errors %}<p class="lc-error">{{ error }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <div class="lc-report">
+      <div class="lc-report-head">
+        <label class="stu-label stu-label-required" for="lcReport">
+          Headteacher’s comment
+        </label>
+        <button type="button" class="stu-btn stu-btn-outline stu-btn-sm" id="shuffleLeavingReport">
+          Another report
+        </button>
+      </div>
+      <div class="lc-report-meta">
+        <p class="lc-hint">
+          Uses a random system report. Edit it, or click Another report.
+          Keep to {{ report_max_words }} words so it fits the three lines on the certificate.
+        </p>
+        <p class="lc-word-count" id="lcReportCount" aria-live="polite"></p>
+      </div>
+      {{ certificate_form.headteacher_report(class="form-control form-control-sm stu-control", id="lcReport") }}
+      {% for error in certificate_form.headteacher_report.errors %}<p class="lc-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="lc-actions">
+      <button type="submit" class="stu-btn stu-btn-primary" id="leavingCertificateSubmit">
+        <i class="bi bi-download"></i> Download PDF
+      </button>
+    </div>
+  </form>
+</div>
+
+<script id="leaving-reports-data" type="application/json">{{ reports | tojson }}</script>
+<style>
+  .stu-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0 0 0.85rem;
+    color: #4b5563;
+    text-decoration: none;
+    font-size: 0.88rem;
+  }
+  .stu-back-link:hover { color: #111827; }
+  .lc-card {
+    background: #fff;
+    border: 1px solid #e8ecef;
+    border-top: 3px solid #ff7979;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    padding: 1.05rem 1.15rem 1.2rem;
+  }
+  .lc-lead {
+    margin: 0 0 1rem;
+    color: #4b5563;
+    font-size: 0.9rem;
+  }
+  .lc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem 0.9rem;
+  }
+  .stu-label {
+    display: block;
+    margin-bottom: 0.28rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #4b5563;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .stu-label-required::after {
+    content: " *";
+    color: #ff7979;
+  }
+  .stu-control {
+    border-color: #dde3ea;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    color: #1f2937;
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+  }
+  .stu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 34px;
+    padding: 0.42rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .stu-btn-sm {
+    min-height: 30px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.76rem;
+  }
+  .stu-btn-primary {
+    background: #ff7979;
+    border-color: #ff7979;
+    color: #fff;
+  }
+  .stu-btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .stu-btn-outline {
+    background: transparent;
+    border-color: #ff7979;
+    color: #ff7979;
+  }
+  .lc-error {
+    margin: 0.2rem 0 0;
+    color: #b42318;
+    font-size: 0.78rem;
+  }
+  .lc-hint {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.78rem;
+  }
+  .lc-field-hint {
+    display: none;
+    margin: 0.2rem 0 0;
+    color: #6b7280;
+    font-size: 0.75rem;
+  }
+  .lc-field-hint.is-on {
+    display: block;
+  }
+  .lc-field-note {
+    margin: 0.2rem 0 0;
+    color: #6b7280;
+    font-size: 0.75rem;
+  }
+  .lc-report-meta {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0 0 0.4rem;
+  }
+  .lc-word-count {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .lc-word-count.is-over,
+  .stu-control.is-over {
+    color: #b42318;
+  }
+  .stu-control.is-over {
+    border-color: #b42318;
+  }
+  .lc-report { margin-top: 1rem; }
+  .lc-report-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    margin-bottom: 0.35rem;
+  }
+  .lc-report-head .stu-label { margin-bottom: 0; }
+  .lc-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+  }
+  @media (max-width: 767.98px) {
+    .lc-grid { grid-template-columns: 1fr; }
+    .lc-report-head,
+    .lc-report-meta { flex-wrap: wrap; }
+  }
+</style>
+<script>
+  (function () {
+    const reports = JSON.parse(
+      document.getElementById("leaving-reports-data").textContent || "[]"
+    );
+    const reportField = document.getElementById("lcReport");
+    const countEl = document.getElementById("lcReportCount");
+    const submitBtn = document.getElementById("leavingCertificateSubmit");
+    const form = document.getElementById("leavingCertificateForm");
+    const maxWords = Number(reportField?.dataset.maxWords) || 25;
+
+    function wordCount(text) {
+      return (text || "").trim().split(/\s+/).filter(Boolean).length;
+    }
+
+    function updateCount() {
+      if (!reportField || !countEl) return;
+      const count = wordCount(reportField.value);
+      const over = count > maxWords;
+      countEl.textContent = count + " / " + maxWords + " words";
+      countEl.classList.toggle("is-over", over);
+      reportField.classList.toggle("is-over", over);
+      if (submitBtn) submitBtn.disabled = over;
+    }
+
+    document.getElementById("shuffleLeavingReport")?.addEventListener("click", () => {
+      if (!reports.length || !reportField) return;
+      const current = (reportField.value || "").trim();
+      const options = reports.filter((text) => text !== current);
+      const pool = options.length ? options : reports;
+      reportField.value = pool[Math.floor(Math.random() * pool.length)];
+      updateCount();
+    });
+    reportField?.addEventListener("input", updateCount);
+    form?.addEventListener("submit", (event) => {
+      stripSchoolName();
+      updateCount();
+      if (wordCount(reportField?.value) > maxWords) event.preventDefault();
+    });
+    updateCount();
+
+    const schoolField = document.getElementById("lcSchoolName");
+    const schoolHint = document.getElementById("lcSchoolHint");
+
+    function withoutTrailingSchool(value) {
+      const raw = value || "";
+      if (/^\s*school\s*$/i.test(raw)) return "";
+      return raw.replace(/(?:\s+school)+\s*$/i, "");
+    }
+
+    function stripSchoolName() {
+      if (!schoolField) return;
+      const next = withoutTrailingSchool(schoolField.value);
+      if (next !== schoolField.value) schoolField.value = next;
+    }
+
+    schoolField?.addEventListener("focus", () => schoolHint?.classList.add("is-on"));
+    schoolField?.addEventListener("blur", () => {
+      stripSchoolName();
+      schoolHint?.classList.remove("is-on");
+    });
+  })();
+</script>
+{% endblock %}
