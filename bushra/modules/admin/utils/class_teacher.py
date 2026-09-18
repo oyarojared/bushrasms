@@ -8,7 +8,11 @@ from ....modals.assessment_db import Exam, ExamPaper
 from ....modals.staff_db import ClassTeacher
 from ....modals.students_db import Student
 from ..services.grades import live_class_name
-from ..services.report import build_broadsheet_data, compute_full_analysis
+from ..services.report import (
+    build_broadsheet_data,
+    compute_full_analysis,
+    exam_rank_sort_key,
+)
 
 
 _BLANK_STREAMS = ("", "null", "None", "All")
@@ -544,7 +548,11 @@ def _learner_rank_rows(data, missing_marks):
             }
         )
 
-    ranked.sort(key=lambda row: (-row["rank_score"], row["name"] or ""))
+    ranked.sort(
+        key=lambda row: exam_rank_sort_key(
+            row["rank_score"], row.get("name"), row.get("id")
+        )
+    )
     for position, row in enumerate(ranked, start=1):
         row["position"] = position
     return ranked

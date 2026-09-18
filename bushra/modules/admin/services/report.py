@@ -444,6 +444,19 @@ def _lesson_for_subject(lessons_by_stream_subject, stream_key, subject_id):
     return None
 
 
+def exam_rank_sort_key(score, name, student_id=0):
+    """Higher score first; equal scores keep A-Z name order, then student id."""
+    try:
+        numeric_score = float(score)
+    except (TypeError, ValueError):
+        numeric_score = 0.0
+    return (
+        -numeric_score,
+        (name or "").strip().lower(),
+        int(student_id or 0),
+    )
+
+
 def compute_cbe_exam_rankings(branch_id, class_id, exam_id, include_student_id=None):
     """
     Lightweight class rankings for CBE exams.
@@ -479,6 +492,7 @@ def compute_cbe_exam_rankings(branch_id, class_id, exam_id, include_student_id=N
     student_rows = [
         {
             "id": student.id,
+            "name": student.fullname or "",
             "stream": sitting_streams.get(student.id, "")
             if include_student_id
             else student.stream,
@@ -489,8 +503,9 @@ def compute_cbe_exam_rankings(branch_id, class_id, exam_id, include_student_id=N
 
     overall_students = sorted(
         student_rows,
-        key=lambda row: row["total_marks"],
-        reverse=True,
+        key=lambda row: exam_rank_sort_key(
+            row["total_marks"], row.get("name"), row["id"]
+        ),
     )
     class_total = len(overall_students)
     ranking_map = {}
@@ -508,7 +523,11 @@ def compute_cbe_exam_rankings(branch_id, class_id, exam_id, include_student_id=N
         stream_groups[row["stream"]].append(row)
 
     for group in stream_groups.values():
-        group.sort(key=lambda row: row["total_marks"], reverse=True)
+        group.sort(
+            key=lambda row: exam_rank_sort_key(
+                row["total_marks"], row.get("name"), row["id"]
+            )
+        )
         stream_total = len(group)
         for position, row in enumerate(group, start=1):
             ranking_map[row["id"]]["stream_position"] = position
@@ -712,8 +731,9 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
     # ==================================================================
     overall_students = sorted(
         student_list,
-        key=lambda x: x["total_marks"],
-        reverse=True
+        key=lambda x: exam_rank_sort_key(
+            x["total_marks"], x.get("fullname"), x.get("id")
+        ),
     )
 
     class_total = len(overall_students)
@@ -732,8 +752,9 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
 
     for group in stream_groups.values():
         group.sort(
-            key=lambda x: x["total_marks"],
-            reverse=True
+            key=lambda x: exam_rank_sort_key(
+                x["total_marks"], x.get("fullname"), x.get("id")
+            )
         )
 
         stream_total = len(group)
@@ -1534,8 +1555,9 @@ def compute_full_analysis(data):
         })
 
     ranked_students.sort(
-        key=lambda row: (row["score"], row["name"]),
-        reverse=True,
+        key=lambda row: exam_rank_sort_key(
+            row["score"], row.get("name"), row.get("id")
+        ),
     )
 
     top_students = []

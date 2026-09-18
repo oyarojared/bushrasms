@@ -11,6 +11,7 @@ from .report import (
     build_passport_path,
     build_static_image_path,
     build_pdf_image_data_uri,
+    exam_rank_sort_key,
     load_class_students_for_report,
     sitting_stream_by_student,
     _lesson_for_subject,
@@ -821,7 +822,11 @@ def generate_class_reports(branch_id, class_id, stream, exam_id, include_student
     # -----------------------------
     # General ranking (across all streams)
     # -----------------------------
-    all_reports.sort(key=lambda r: r["summary"]["total_points"], reverse=True)
+    all_reports.sort(
+        key=lambda r: exam_rank_sort_key(
+            r["summary"]["total_points"], r.get("name"), r.get("student_id")
+        )
+    )
     for idx, r in enumerate(all_reports, start=1):
         r["summary"]["general_position"] = idx
         r["summary"]["general_out_of"] = len(all_reports)
@@ -837,7 +842,11 @@ def generate_class_reports(branch_id, class_id, stream, exam_id, include_student
         stream_reports.extend(
             r for r in all_reports if r["student_id"] == include_id
         )
-    stream_reports.sort(key=lambda r: r["summary"]["total_points"], reverse=True)
+    stream_reports.sort(
+        key=lambda r: exam_rank_sort_key(
+            r["summary"]["total_points"], r.get("name"), r.get("student_id")
+        )
+    )
     for idx, r in enumerate(stream_reports, start=1):
         r["summary"]["position"] = idx
         r["summary"]["out_of"] = len(stream_reports)
@@ -920,6 +929,7 @@ def compute_class_exam_rankings(branch_id, class_id, exam_id, include_student_id
         summaries.append(
             {
                 "student_id": student.id,
+                "name": student.fullname or "",
                 "stream": sitting_streams.get(student.id, "")
                 if include_student_id
                 else student.stream,
@@ -927,7 +937,11 @@ def compute_class_exam_rankings(branch_id, class_id, exam_id, include_student_id
             }
         )
 
-    summaries.sort(key=lambda row: row["total_points"], reverse=True)
+    summaries.sort(
+        key=lambda row: exam_rank_sort_key(
+            row["total_points"], row.get("name"), row["student_id"]
+        )
+    )
     ranking_map = {}
     class_total = len(summaries)
 
@@ -944,7 +958,11 @@ def compute_class_exam_rankings(branch_id, class_id, exam_id, include_student_id
         stream_groups[row["stream"]].append(row)
 
     for group in stream_groups.values():
-        group.sort(key=lambda item: item["total_points"], reverse=True)
+        group.sort(
+            key=lambda item: exam_rank_sort_key(
+                item["total_points"], item.get("name"), item["student_id"]
+            )
+        )
         stream_total = len(group)
         for position, row in enumerate(group, start=1):
             ranking_map[row["student_id"]]["stream_position"] = position
