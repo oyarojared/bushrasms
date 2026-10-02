@@ -294,11 +294,78 @@
       reportField.value = pool[Math.floor(Math.random() * pool.length)];
       updateCount();
     });
+    function filenameFromDisposition(header, fallback) {
+      if (!header) return fallback;
+      const match = header.match(/filename\*?=(?:UTF-8'')?["']?([^"';]+)/i);
+      if (!match || !match[1]) return fallback;
+      try {
+        return decodeURIComponent(match[1]);
+      } catch (error) {
+        return match[1];
+      }
+    }
+
+    function triggerPdfDownload(blob, filename) {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename || "leaving_certificate.pdf";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    }
+
+    async function downloadLeavingCertificate() {
+      if (!form) return;
+      if (submitBtn) submitBtn.disabled = true;
+      if (typeof blockUI === "function") {
+        blockUI("Generating leaving certificate", "Preparing the PDF…");
+      }
+
+      let replacedPage = false;
+      try {
+        const response = await fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+          credentials: "same-origin",
+        });
+        const type = (response.headers.get("Content-Type") || "").toLowerCase();
+        if (type.includes("application/pdf")) {
+          const blob = await response.blob();
+          triggerPdfDownload(
+            blob,
+            filenameFromDisposition(
+              response.headers.get("Content-Disposition"),
+              "leaving_certificate.pdf"
+            )
+          );
+          return;
+        }
+
+        const html = await response.text();
+        replacedPage = true;
+        document.open();
+        document.write(html);
+        document.close();
+      } catch (error) {
+        console.error(error);
+        alert("The leaving certificate could not be generated. Please try again.");
+      } finally {
+        if (replacedPage) return;
+        if (submitBtn) updateCount();
+        if (typeof unblockUI === "function") unblockUI();
+      }
+    }
+
     reportField?.addEventListener("input", updateCount);
     form?.addEventListener("submit", (event) => {
       stripSchoolName();
       updateCount();
-      if (wordCount(reportField?.value) > maxWords) event.preventDefault();
+      event.preventDefault();
+      if (wordCount(reportField?.value) > maxWords) return;
+      downloadLeavingCertificate();
     });
     updateCount();
 

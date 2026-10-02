@@ -1,0 +1,60 @@
+id=0 author=Sairah Rees date=2026-09-18T10:35:00Z
+Subject - ‘degree’ - this makes no sense, what’s the subject of the degree? 
+
+id=1 author=Sairah Rees date=2026-09-18T10:35:00Z
+More info needed - when was it, where was it awarded, who was the awarding body?
+
+id=2 author=Sairah Rees date=2026-09-18T10:37:00Z
+Don’t name students, but be precise in how many you supported e.g. ‘2 students with disabilities’, ‘7 students with disabilities’. If you are ‘Head of Science’ why do you only state the Job Title as ‘incentive teacher’. You need to phrase things with more impact - think about the STAR method (situation, task, action, result) e.g. ‘In [year, month] I noticed that there was a low number of learners with disabilities in the school despite seeing many in the community. Therefore I took the initiative to crosscheck the roll call against community numbers of people with disabilities to identify gaps. As a result, I was able to identify [X] number of children with disabilities who were out of school. I held follow up discussions with these families and found that stigma was the primary reason keeping them away. Through a Master’s in Inclusive Education, I will be able to design effective inclusion programmes to overcome this barrier and ensure more children with disabilities attend school in Hagadera. 
+
+id=3 author=Unknown Author date=2026-09-08T00:32:00Z
+The emphasis is more on the description of the future scholarship benefits. The responsibilities, the achievements and the impact of the employment are not demonstrated. Stating that ‘there is no single student with disability…because they fear to be intimidated by society’ sounds more of a definite conclusion without clear evidences. 
+
+id=4 author=Unknown Author date=2026-09-08T00:31:00Z
+There is a lack of clear evidence of impact, and professional wording. Numbers of achieved, and conducted activities would make it clearly evidenced. 
+
+id=5 author=Unknown Author date=2026-09-08T00:30:00Z
+A part from the quality education, the rest of the SDGs are not aligned with the employment history, the educational exclusion and access to schooling for people with disabilities 
+
+id=8 author=Unknown Author date=2026-09-08T00:35:00Z
+The development is to broad.  The  “inequality” is generally referred to, and then poverty, gender, disability, displacement, education, employment and decision-making are listed. There is no community identified, no evidence of the scale of the problem stated, no description of the affected or targeted group. The writing has several grammatical and clarity issues.
+
+id=7 author=Sairah Rees date=2026-09-18T10:42:00Z
+‘undermines’ doesn’t make sense here
+
+id=9 author=Unknown Author date=2026-09-11T11:38:00Z
+The approach to implementation is still quite informal and lacks development. The response fails to clearly illustrate how particular skills, methods, or knowledge acquired from the proposed Master’s degree will be utilised. 
+
+id=10 author=Sairah Rees date=2026-09-18T10:45:00Z
+This is good. 
+
+id=11 author=Sairah Rees date=2026-09-18T10:52:00Z
+Check for grammar - some sentence fragments. 
+
+id=12 author=Sairah Rees date=2026-09-18T10:55:00Z
+‘stay in education’ is vague - state the role you will seek. Be consistent - is it an MA or MSc. ‘Establish the project’ is vague - join it to the next sentence e.g. ‘I will begin to establish the project by….’ Same with ‘implement the plan’ - just state the specific things you will do for implementation.  I would also argue that intead of only being Head of Science, you could argue for the role of Head of Inclusion to be established in the school.  Also, don’t say ‘one or two further schools’ - choose a specific target. 
+
+id=13 author=Sairah Rees date=2026-09-18T11:05:00Z
+Would be good to make these a bit more tangible e.g. ‘senior education practice’ - what role, what organisation/ministry? Don’t say ‘small’ inclusion resource centre, and give it a name so it seems like a more true ambition. Say where you will establish it. Then when you talk about policy and sharing with education authorities/humanitarian partners - in what capacity will you be working to affect policy, how will you affect it - through writing research papers, who exactly will you share them with? Do you have specific schools, bodies, NGOs in mind? And finally when you say ‘senior responsibility’ - again you need to be specific about what this means. 
+
+id=14 author=Sairah Rees date=2026-09-18T10:44:00Z
+This is a very challenging course to get into and they have a high bar for language testing, have you checked that you can meet the language requirements? If not, I would thing about putting another university as first choice. 
+
+id=16 author=Unknown Author date=2026-09-11T11:41:00Z
+There is a bit of understanding of theme inequality and social science, however, identifying key areas such as social research, data analysis, and evidence-based practices  till need to be improved. The proposed study is largely consistent with the candidate's developmental objectives. However, the response tends to be repetitive, lacks a clearly defined structure for the study or research focus, and provides scant program-specific information. The inconsistent usage of the program title also raises an issue regarding accuracy. 
+
+id=15 author=Sairah Rees date=2026-09-18T11:20:00Z
+I’ve looked up the course and this oversimplifies what it teaches - it’s a lot more theoretical I think. 
+
+id=17 author=Sairah Rees date=2026-09-18T11:24:00Z
+I suggest you carefully read the descriptions of the modules you are mentioning so that you can understand what they offer. For example, here is the description for ‘Inclusive Pedagogy’ and it does not say anything about seating, extra time, adapted materials - it seems more advanced and in depth than that: “Sessions will enable students to learn about the development of inclusive education, and examine the current evidence base that has informed understandings of how and why inclusive education systems can and should be possible.
+Students will explore principles relevant to understandings of teaching and learning that do not rely on determinist notions of ability, or conformity in terms of attainment. Particular attention will be given to identifying how to critically engage with evidence of practice in ways that reveal how practice might inadvertently (as well as intentionally) stigmatise or marginalise diverse groups of young people. This will reflect national and international commitments to the education of all children and young people together, within communities.
+This knowledge and understanding will provide the context for exploration of relevant practical and political pedagogical realities such as: the phenomena of the widening attainment gap; the correlation between poverty and underachievement; how schools identify and support children recognised as having additional support needs; the need for specialist expertise, and how to access it. Attention will be paid to curriculum and assessment, as well as functional and strategic methods for inclusive pedagogy.
+
+Students on the course who are also practitioners will be given the opportunity to reflect on their own practice, as well as consider that of others. Full time students will be provided with the opportunity to study practice in schools, as well as re-consider practice they may be familiar with in other contexts. “
+
+id=18 author=Sairah Rees date=2026-09-18T11:25:00Z
+Dissertation needs to be much more defined - still quite vague and broad. AI may be able to help you make it more specific, but don’t use it to write the whole answer. 
+
+id=19 author=Sairah Rees date=2026-09-18T11:27:00Z
+Lots of good stuff here but your word count must be 500 and some grammar needs checking. Use something like Grammarly to check the whole application. 

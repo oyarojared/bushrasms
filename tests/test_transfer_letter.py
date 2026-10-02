@@ -207,6 +207,21 @@ def test_admin_can_download_letter_and_saves_assessment_number(app, db):
     assert student.knec_assessment_no == "KNEC-7788"
 
 
+def test_profile_transfer_letter_uses_block_ui(app, db):
+    branch = _branch(db)
+    cls = _class(db, branch)
+    admin = _teacher(db, branch, "0700000106", is_admin=True)
+    student = _student(db, branch, cls, knec_assessment_no="ASS400")
+
+    client = app.test_client()
+    _login(client, admin.id)
+    response = client.get(f"/admin/student_profile/{student.id}")
+    assert response.status_code == 200
+    assert b'id="transferLetterForm"' in response.data
+    assert b'id="uiBlocker"' in response.data
+    assert b'blockUI("Generating transfer letter"' in response.data
+
+
 def test_letter_table_uses_grade_not_class(app, db):
     branch = _branch(db)
     cls = _class(db, branch)

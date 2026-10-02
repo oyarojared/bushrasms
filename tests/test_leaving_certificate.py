@@ -346,6 +346,8 @@ def test_admin_can_prefill_and_customize_without_changing_student(app, db):
     assert worksheet.status_code == 200
     assert b"Amina Hassan" in worksheet.data
     assert b"id=\"leavingCertificateForm\"" in worksheet.data
+    assert b'id="uiBlocker"' in worksheet.data
+    assert b'blockUI("Generating leaving certificate"' in worksheet.data
     assert b'id="lcReportCount"' in worksheet.data
     assert f"Keep to {REPORT_MAX_WORDS} words".encode() in worksheet.data
     assert f'data-max-words="{REPORT_MAX_WORDS}"'.encode() in worksheet.data
@@ -379,6 +381,7 @@ def test_former_student_certificate_does_not_create_a_student(app, db):
     worksheet = client.get("/admin/leaving-certificate")
     assert worksheet.status_code == 200
     assert b"former Form 4" in worksheet.data
+    assert b'blockUI("Generating leaving certificate"' in worksheet.data
     assert b"The date the pupil left, not today." in worksheet.data
     left_input = re.search(
         rb"<input[^>]*id=\"lcLeft\"[^>]*>|<input[^>]*id='lcLeft'[^>]*>",

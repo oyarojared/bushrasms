@@ -137,8 +137,8 @@ def user_can_access_branch(branch_id, user=None):
 def teachable_teachers_for_branch(branch_id):
     return (
         Teacher.query.filter_by(branch_id=branch_id)
-        .filter(Teacher.is_super_admin.is_(False))
-        .filter(Teacher.is_system_admin.is_(False))
+        # .filter(Teacher.is_super_admin.is_(False))
+        # .filter(Teacher.is_system_admin.is_(False))
         .order_by(Teacher.fullname.asc())
         .all()
     )

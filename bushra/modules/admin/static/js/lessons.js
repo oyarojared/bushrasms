@@ -306,7 +306,7 @@ function fetchClassSubjectsTeachers(data) {
         body: JSON.stringify(data)
     })
         .then(res => {
-            if (!res.ok) throw new Error();
+            if (!res.ok) throw new Error(); 
             return res.json();
         })
         .then(renderAssignTeachersModal)

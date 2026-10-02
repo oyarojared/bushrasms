@@ -2103,24 +2103,99 @@
   });
 
   const transferLetterForm = document.getElementById("transferLetterForm");
+  const transferLetterSubmit = document.getElementById("transferLetterSubmit");
+
+  function filenameFromDisposition(header, fallback) {
+    if (!header) return fallback;
+    const match = header.match(/filename\*?=(?:UTF-8'')?["']?([^"';]+)/i);
+    if (!match || !match[1]) return fallback;
+    try {
+      return decodeURIComponent(match[1]);
+    } catch (error) {
+      return match[1];
+    }
+  }
+
+  function triggerPdfDownload(blob, filename) {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename || "transfer_letter.pdf";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
+  function closeTransferLetterModal() {
+    const modalEl = document.getElementById("transferLetterModal");
+    if (!modalEl || typeof bootstrap === "undefined") return;
+    bootstrap.Modal.getInstance(modalEl)?.hide();
+  }
+
+  async function downloadTransferLetter() {
+    if (!transferLetterForm) return;
+    if (transferLetterSubmit) transferLetterSubmit.disabled = true;
+    if (typeof blockUI === "function") {
+      blockUI("Generating transfer letter", "Preparing the PDF…");
+    }
+
+    let replacedPage = false;
+    try {
+      const response = await fetch(transferLetterForm.action, {
+        method: "POST",
+        body: new FormData(transferLetterForm),
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        credentials: "same-origin",
+      });
+      const type = (response.headers.get("Content-Type") || "").toLowerCase();
+      if (type.includes("application/pdf")) {
+        const blob = await response.blob();
+        triggerPdfDownload(
+          blob,
+          filenameFromDisposition(
+            response.headers.get("Content-Disposition"),
+            "transfer_letter.pdf"
+          )
+        );
+        closeTransferLetterModal();
+        return;
+      }
+
+      const html = await response.text();
+      replacedPage = true;
+      document.open();
+      document.write(html);
+      document.close();
+    } catch (error) {
+      console.error(error);
+      alert("The transfer letter could not be generated. Please try again.");
+    } finally {
+      if (replacedPage) return;
+      if (transferLetterSubmit) transferLetterSubmit.disabled = false;
+      if (typeof unblockUI === "function") unblockUI();
+    }
+  }
+
   transferLetterForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
     const input = document.getElementById("transferAssessmentNo");
     const hint = document.getElementById("transferAssessmentHint");
     const value = (input?.value || "").trim();
-    if (value) {
-      if (input) input.classList.remove("is-invalid");
-      if (hint) hint.classList.remove("is-error");
+    if (!value) {
+      if (input) {
+        input.classList.add("is-invalid");
+        input.focus();
+      }
+      if (hint) {
+        hint.classList.add("is-error");
+        hint.textContent = "Assessment number is required in the transfer letter.";
+      }
       return;
     }
-    event.preventDefault();
-    if (input) {
-      input.classList.add("is-invalid");
-      input.focus();
-    }
-    if (hint) {
-      hint.classList.add("is-error");
-      hint.textContent = "Assessment number is required in the transfer letter.";
-    }
+    if (input) input.classList.remove("is-invalid");
+    if (hint) hint.classList.remove("is-error");
+    downloadTransferLetter();
   });
 
   function scrollToProfileCard() {
