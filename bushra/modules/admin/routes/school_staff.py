@@ -28,6 +28,7 @@ from ..utils.class_teacher import (
 from ..utils.route_protect import admin_required
 
 from flask_login import login_required, current_user
+from ..utils.branch_utils import can_teach, user_can_access_branch
 
 
 @admin_bp.route("/school_staff", methods=["GET", "POST"])
@@ -554,8 +555,6 @@ def save_class_teacher():
     teacher = db.session.get(Teacher, teacher_id)
     if not teacher:
         return jsonify({"success": False, "message": "Teacher does not exist"}), 404
-
-    from ..utils.branch_utils import can_teach, user_can_access_branch
 
     if not user_can_access_branch(branch_id):
         return jsonify({"success": False, "message": "You cannot change this school"}), 403
