@@ -1,0 +1,51 @@
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import sidebar %}
+{% block side_nav %}
+{{ sidebar("Messages", current_user) }}
+{% endblock %}
+{% block main_content %}
+<div class="msg-page">
+  <p><a href="{{ url_for('admin.messages', tab='sent') }}">Back to sent</a></p>
+  <article class="msg-detail">
+    <h2>{{ message.title }}</h2>
+    <div class="msg-meta">
+      {{ message.audience_label }}
+      · {{ message.created_at.strftime('%d %b %Y, %H:%M') }}
+      · {{ sent_count }} sent
+      · {{ opened_count }} opened
+    </div>
+    <p>{{ message.body }}</p>
+    <form
+      class="msg-delete-form"
+      method="post"
+      action="{{ url_for('admin.message_sent_delete', message_id=message.id) }}"
+      onsubmit="return confirm('Delete this message? It will disappear from every inbox.');"
+    >
+      <button type="submit" class="msg-delete-btn">Delete message</button>
+      <span>This removes it from Sent and from every inbox.</span>
+    </form>
+    <table class="msg-table">
+      <thead>
+        <tr>
+          <th>Teacher</th>
+          <th>Opened</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in message.recipients %}
+        <tr>
+          <td>{{ row.teacher.fullname }}</td>
+          <td>
+            {% if row.opened_at %}
+            <span class="msg-opened">{{ row.opened_at.strftime('%d %b %Y, %H:%M') }}</span>
+            {% else %}
+            <span class="msg-unopened">Not opened</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </article>
+</div>
+{% endblock %}

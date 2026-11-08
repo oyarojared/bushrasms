@@ -1,88 +1,328 @@
-{% extends "admin_dash_layout.html" %} {% from "_macros.html" import
-render_flash_messages, sidebar %} {% block side_nav %} {{ sidebar("Messages",
-current_user) }} {% endblock %} {% block main_content %}
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import render_flash_messages, sidebar %}
+{% block side_nav %}
+{{ sidebar("Messages", current_user) }}
+{% endblock %}
+{% block main_content %}
 <div class="msg-page">
+  {% macro msg_pager(listing, tab) %}
+  {% if listing.pages > 1 %}
+  <nav class="msg-pager" aria-label="Message pages">
+    <div class="msg-pager-bar">
+      {% if listing.has_prev %}
+      <a href="{{ url_for('admin.messages', tab=tab, page=listing.prev_num) }}">Previous</a>
+      {% else %}
+      <span class="is-disabled">Previous</span>
+      {% endif %}
+      {% for number in listing.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+        {% if number %}
+          {% if number == listing.page %}
+          <span class="is-current">{{ number }}</span>
+          {% else %}
+          <a href="{{ url_for('admin.messages', tab=tab, page=number) }}">{{ number }}</a>
+          {% endif %}
+        {% else %}
+        <span class="is-gap">…</span>
+        {% endif %}
+      {% endfor %}
+      {% if listing.has_next %}
+      <a href="{{ url_for('admin.messages', tab=tab, page=listing.next_num) }}">Next</a>
+      {% else %}
+      <span class="is-disabled">Next</span>
+      {% endif %}
+    </div>
+    <span class="msg-pager-count">{{ listing.total }} messages</span>
+  </nav>
+  {% endif %}
+  {% endmacro %}
   <div class="app-page-title">
     <div class="app-page-title-icon">
       <i class="bi bi-chat-dots"></i>
     </div>
-
     <div class="app-page-title-content">
       <h6 class="app-page-title-heading">Messages</h6>
       <span class="app-page-title-subtitle">
-        Send messages to teachers or parents
+        {% if can_send %}
+        Write a notice, then choose in-app or SMS.
+        {% else %}
+        Notices sent to you.
+        {% endif %}
       </span>
     </div>
   </div>
 
   {{ render_flash_messages() }}
 
-  <div class="coming-soon-panel">
-    <div class="coming-soon-icon">
-      <i class="bi bi-hourglass-split"></i>
+  {% if can_send %}
+  <nav class="msg-tabs" aria-label="Message views">
+    {% if can_send %}
+    <a
+      href="{{ url_for('admin.messages', tab='compose', branch_id=selected_branch_id) if selected_branch_id else url_for('admin.messages', tab='compose') }}"
+      class="{% if tab == 'compose' %}active{% endif %}"
+    >
+      <i class="bi bi-pencil-square"></i>
+      Compose
+    </a>
+    {% endif %}
+    <a
+      href="{{ url_for('admin.messages', tab='inbox') }}"
+      class="{% if tab == 'inbox' %}active{% endif %}"
+    >
+      <i class="bi bi-inbox"></i>
+      Inbox
+      {% if unread_message_count %}
+      <span class="msg-tab-count">{{ unread_message_count }}</span>
+      {% endif %}
+    </a>
+    <a
+      href="{{ url_for('admin.messages', tab='sent') }}"
+      class="{% if tab == 'sent' %}active{% endif %}"
+    >
+      <i class="bi bi-send"></i>
+      Sent
+    </a>
+  </nav>
+  {% endif %}
+
+  {% if can_send and tab == 'compose' %}
+  <form class="msg-form" method="post" action="{{ url_for('admin.messages') }}">
+    <h2 class="msg-compose-title">Compose a message</h2>
+    <p class="msg-meta">Choose how this notice should be delivered.</p>
+    <div class="msg-channels">
+      <label class="msg-channel">
+        <input type="radio" name="channel" value="in_app" checked />
+        <span>
+          In-app
+          <small>Shows in the teacher’s inbox. Free.</small>
+        </span>
+      </label>
+      <label class="msg-channel is-disabled">
+        <input type="radio" name="channel" value="sms" disabled />
+        <span>
+          SMS
+          <small>Not available yet. This will text parents and teachers.</small>
+        </span>
+      </label>
     </div>
-    <h6>Coming soon</h6>
-    <p>Messaging for teachers and parents is not available yet.</p>
-    <div class="coming-soon-ticker" data-typewriter>
-      <span data-typewriter-text></span
-      ><span class="coming-soon-caret" aria-hidden="true"></span>
+
+    <div class="msg-fields">
+      <div class="msg-field">
+        {% if can_select_branch %}
+        <label for="branch_id">School</label>
+        <select
+          class="form-select"
+          id="branch_id"
+          name="branch_id"
+          onchange="window.location='{{ url_for('admin.messages', tab='compose') }}&branch_id=' + this.value"
+        >
+          {% if can_message_everyone %}
+          <option value="all" {% if message_everyone %}selected{% endif %}>All users, every school</option>
+          {% endif %}
+          {% for value, label in branch_choices %}
+          <option value="{{ value }}" {% if not message_everyone and selected_branch_id|string == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        {% else %}
+        <label>School</label>
+        <input type="hidden" name="branch_id" value="{{ selected_branch_id or '' }}" />
+        <p class="msg-readonly">{{ branch_name }}</p>
+        {% endif %}
+      </div>
+
+      <div class="msg-field" id="audienceField">
+        <label for="audience">Send to</label>
+        <select class="form-select" id="audience" name="audience">
+          {% if message_everyone %}
+          <option value="all" {% if draft.audience == 'all' %}selected{% endif %}>All users</option>
+          <option value="admins" {% if draft.audience == 'admins' %}selected{% endif %}>Admins only</option>
+          <option value="super_admins" {% if draft.audience == 'super_admins' %}selected{% endif %}>Super admins only</option>
+          {% else %}
+          <option value="school" {% if draft.audience == 'school' %}selected{% endif %}>All teachers in this school</option>
+          <option value="class" {% if draft.audience == 'class' %}selected{% endif %}>Teachers of a class</option>
+          <option value="teacher" {% if draft.audience == 'teacher' %}selected{% endif %}>One teacher</option>
+          {% endif %}
+        </select>
+      </div>
+
+      <div class="msg-field" id="classField" {% if message_everyone %}hidden{% endif %}>
+        <label for="class_value">Class</label>
+        <select class="form-select" id="class_value" name="class_value">
+          <option value="">Choose a class</option>
+          {% for row in class_choices %}
+          <option value="{{ row.value }}" {% if draft.class_value == row.value %}selected{% endif %}>{{ row.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="msg-field" id="teacherField" {% if message_everyone %}hidden{% endif %}>
+        <label for="teacher_id">Teacher</label>
+        <select class="form-select" id="teacher_id" name="teacher_id">
+          <option value="">Choose a teacher</option>
+          {% for row in teacher_choices %}
+          <option value="{{ row.id }}" {% if draft.teacher_id|string == row.id|string %}selected{% endif %}>{{ row.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <p
+        class="msg-all-note msg-field-wide"
+        id="everyoneNote"
+        {% if not message_everyone %}hidden{% endif %}
+      >
+        {% if draft.audience == 'admins' %}
+        This goes to school admins only, in every school.
+        {% elif draft.audience == 'super_admins' %}
+        This goes to super admins only, in every school.
+        {% else %}
+        This goes to every staff account, in every school.
+        {% endif %}
+      </p>
+
+      <div class="msg-field msg-field-wide">
+        <label for="title">Title</label>
+        <input class="form-control" id="title" name="title" maxlength="160" value="{{ draft.title }}" required />
+      </div>
+
+      <div class="msg-field msg-field-wide">
+        <label for="body">Message</label>
+        <textarea class="form-control" id="body" name="body" rows="8" maxlength="2000" required>{{ draft.body }}</textarea>
+      </div>
     </div>
+
+    <div class="msg-compose-actions">
+      <button class="btn btn-danger" type="submit">Send in-app message</button>
+    </div>
+  </form>
+  {% elif tab == 'sent' %}
+  {% if sent.total %}
+  <div class="msg-table-wrap table-responsive">
+    <table class="table table-hover align-middle msg-sent-table mb-0">
+      <thead>
+        <tr>
+          <th class="msg-count">#</th>
+          <th>Title</th>
+          <th>Sent to</th>
+          <th class="text-end">Sent</th>
+          <th class="text-end">Opened</th>
+          <th>When</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in sent.items %}
+        <tr>
+          <td class="msg-count" data-label="#">{{ (sent.page - 1) * sent.per_page + loop.index }}</td>
+          <td data-label="Title">
+            <a href="{{ url_for('admin.message_sent', message_id=row.message.id) }}">{{ row.message.title }}</a>
+          </td>
+          <td data-label="Sent to">{{ row.message.audience_label }}</td>
+          <td class="text-end" data-label="Sent">{{ row.sent_count }}</td>
+          <td class="text-end" data-label="Opened">{{ row.opened_count }}</td>
+          <td class="text-nowrap" data-label="When">{{ row.message.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+          <td class="msg-action" data-label="Delete">
+            <form
+              class="msg-delete-form"
+              method="post"
+              action="{{ url_for('admin.message_sent_delete', message_id=row.message.id) }}"
+              onsubmit="return confirm('Delete this message? It will disappear from every inbox.');"
+            >
+              <button type="submit" class="msg-delete-btn">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
+  {{ msg_pager(sent, 'sent') }}
+  {% else %}
+  <div class="msg-empty">
+    <i class="bi bi-send"></i>
+    <p>You have not sent a message yet.</p>
+  </div>
+  {% endif %}
+  {% else %}
+  {% if inbox.total %}
+  <div class="msg-table-wrap table-responsive">
+    <table class="table table-hover msg-sent-table msg-inbox-table mb-0">
+      <colgroup>
+        <col class="msg-count" />
+        <col class="msg-subject" />
+        <col class="msg-from" />
+        <col class="msg-when" />
+        <col class="msg-status" />
+        <col class="msg-action" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th class="msg-count">#</th>
+          <th>Message</th>
+          <th>From</th>
+          <th>When</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in inbox.items %}
+        <tr class="{% if not item.opened_at %}msg-row-unread{% endif %}">
+          <td class="msg-count" data-label="#">{{ (inbox.page - 1) * inbox.per_page + loop.index }}</td>
+          <td class="msg-subject">
+            <div class="msg-title">{{ item.message.title }}</div>
+            <div class="msg-preview">{{ item.message.body|truncate(120, True) }}</div>
+          </td>
+          <td class="msg-from" data-label="From">{{ item.message.sender.fullname }}</td>
+          <td class="msg-when text-nowrap" data-label="When">{{ item.message.created_at.strftime('%d %b %Y, %H:%M') }}</td>
+          <td class="msg-status" data-label="Status">
+            {% if not item.opened_at %}
+            <span class="msg-unread-pill">New</span>
+            {% else %}
+            <span class="msg-opened">Opened</span>
+            {% endif %}
+          </td>
+          <td class="msg-action">
+            <a class="msg-view-btn" href="{{ url_for('admin.message_inbox_item', recipient_id=item.id) }}">View message</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ msg_pager(inbox, 'inbox') }}
+  {% else %}
+  <div class="msg-empty">
+    <i class="bi bi-inbox"></i>
+    <p>Your inbox is empty.</p>
+  </div>
+  {% endif %}
+  {% endif %}
 </div>
+{% if can_send and tab == 'compose' %}
 <script>
   (function () {
-    const root = document.querySelector("[data-typewriter]");
-    const textEl = root?.querySelector("[data-typewriter-text]");
-    if (!root || !textEl) return;
-
-    const lines = [
-      "Working on it...",
-      "Hang tight, Jared got you 👍",
-      "Hang tight...",
-      "Send notification & results to parents...",
-    ];
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      textEl.textContent = lines[0];
-      return;
-    }
-
-    let lineIndex = 0;
-    let charIndex = 0;
-    let deleting = false;
-
-    function chars(line) {
-      return Array.from(line);
-    }
-
-    function tick() {
-      const units = chars(lines[lineIndex]);
-
-      if (!deleting) {
-        charIndex += 1;
-        textEl.textContent = units.slice(0, charIndex).join("");
-        if (charIndex === units.length) {
-          deleting = true;
-          const hold = lineIndex === 1 ? 1800 : 1400;
-          setTimeout(tick, hold);
-          return;
-        }
-        setTimeout(tick, 64);
-        return;
+    const audience = document.getElementById("audience");
+    const branch = document.getElementById("branch_id");
+    const classField = document.getElementById("classField");
+    const teacherField = document.getElementById("teacherField");
+    const note = document.getElementById("everyoneNote");
+    const notes = {
+      all: "This goes to every staff account, in every school.",
+      admins: "This goes to school admins only, in every school.",
+      super_admins: "This goes to super admins only, in every school.",
+    };
+    function sync() {
+      const value = audience.value;
+      const everyone = branch && branch.value === "all";
+      if (note) {
+        note.hidden = !everyone;
+        if (everyone) note.textContent = notes[value] || notes.all;
       }
-
-      charIndex -= 1;
-      textEl.textContent = units.slice(0, charIndex).join("");
-      if (charIndex === 0) {
-        deleting = false;
-        lineIndex = (lineIndex + 1) % lines.length;
-        setTimeout(tick, 280);
-        return;
-      }
-      setTimeout(tick, 34);
+      classField.hidden = everyone || value !== "class";
+      teacherField.hidden = everyone || value !== "teacher";
     }
-
-    tick();
+    audience.addEventListener("change", sync);
+    sync();
   })();
 </script>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,21 @@
+{% extends "admin_dash_layout.html" %}
+{% from "_macros.html" import sidebar %}
+{% block side_nav %}
+{{ sidebar("Messages", current_user) }}
+{% endblock %}
+{% block main_content %}
+<div class="msg-page">
+  <a class="msg-back" href="{{ url_for('admin.messages', tab='inbox') }}">
+    <i class="bi bi-arrow-left"></i>
+    Messages
+  </a>
+  <article class="msg-detail">
+    <h2>{{ item.message.title }}</h2>
+    <p>{{ item.message.body }}</p>
+    <div class="msg-detail-meta">
+      <span><i class="bi bi-person"></i> {{ item.message.sender.fullname }}</span>
+      <span><i class="bi bi-clock"></i> {{ item.message.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+    </div>
+  </article>
+</div>
+{% endblock %}

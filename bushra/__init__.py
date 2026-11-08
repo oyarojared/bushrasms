@@ -30,6 +30,7 @@ def create_app():
     app = Flask(__name__, template_folder="templates")
 
     app.config.from_object(DevelopmentConfig)
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
 
     # register all blueprints
     app.register_blueprint(auth_bp)
@@ -53,6 +54,16 @@ def create_app():
             "can_select_branch": user_can_select_branch(),
             "locked_branch_id": locked_branch_id(),
         }
+
+    @app.context_processor
+    def inject_unread_messages():
+        from .modules.admin.services.staff_messages import unread_count
+
+        if not has_request_context() or not getattr(
+            current_user, "is_authenticated", False
+        ):
+            return {"unread_message_count": 0}
+        return {"unread_message_count": unread_count(current_user)}
 
     @app.context_processor
     def inject_branch_data():
@@ -105,5 +116,17 @@ def create_app():
 
     login_manager.init_app(app)
 
+    def nav_unread_count():
+        from flask_login import current_user
+
+        from .modules.admin.services.staff_messages import unread_count
+
+        if not has_request_context() or not getattr(
+            current_user, "is_authenticated", False
+        ):
+            return 0
+        return unread_count(current_user)
+
+    app.add_template_global(nav_unread_count)
 
     return app

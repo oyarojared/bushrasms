@@ -12,6 +12,10 @@
   rel="stylesheet"
   href="{{ url_for('admin.static', filename='admin_master.css') }}"
 />
+<link
+  rel="stylesheet"
+  href="{{ url_for('admin.static', filename='messages.css', v=24) }}"
+/>
 <script>
   window.BUSHRA_LOCKED_BRANCH_ID = {{ locked_branch_id | tojson }};
 </script>
@@ -95,6 +99,18 @@
         </div>
         {% endif %}
         </div>
+
+        <a
+          class="msg-bell{% if unread_message_count %} has-unread{% endif %}"
+          href="{{ url_for('admin.messages', tab='inbox') }}"
+          aria-label="Messages{% if unread_message_count %} ({{ unread_message_count }} unread){% endif %}"
+          title="{% if unread_message_count %}{{ unread_message_count }} unopened message{{ 's' if unread_message_count != 1 else '' }}{% else %}Messages{% endif %}"
+        >
+          <i class="bi bi-bell"></i>
+          {% if unread_message_count %}
+          <span class="msg-bell-count">{{ unread_message_count }}</span>
+          {% endif %}
+        </a>
 
         <div class="dropdown profile-wrapper">
           <a
@@ -403,6 +419,17 @@
       {% endif %}
     </div>
   </div>
+
+  {% if unread_message_count and not (request.endpoint == 'admin.messages' and request.args.get('tab', 'inbox') == 'inbox') %}
+  <a class="msg-attention" href="{{ url_for('admin.messages', tab='inbox') }}">
+    <i class="bi bi-envelope-exclamation" aria-hidden="true"></i>
+    <span>
+      <strong>{{ unread_message_count }} unopened message{{ 's' if unread_message_count != 1 else '' }}</strong>
+      in your inbox
+    </span>
+    <span class="msg-attention-go">Open</span>
+  </a>
+  {% endif %}
 
   {% block main_content %} {% endblock %}
   <div class="container" style="height: 50px; width: 100%"></div>
