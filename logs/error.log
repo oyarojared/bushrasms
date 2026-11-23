@@ -683,3 +683,19 @@ jinja2.exceptions.TemplateNotFound: pdf/broadsheet.html
 [SQL: UPDATE branches SET school_code=?, branch_head=?, updated_at=? WHERE branches.id = ?]
 [parameters: (None, '24', '2026-07-07 14:21:22.821976', 3)]
 (Background on this error at: https://sqlalche.me/e/20/gkpj) [in C:\Users\ADMIN\Desktop\bushra_sys\bushra\modules\admin\services\branches.py:162]
+2026-11-12 11:23:35,154 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-12 11:23:35,154 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable

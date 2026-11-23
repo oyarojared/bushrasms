@@ -176,7 +176,12 @@ def message_sent(message_id):
 @admin_bp.route("/messages/sent/<int:message_id>/delete", methods=["POST"])
 @login_required
 def message_sent_delete(message_id):
-    if delete_sent_message(current_user, message_id):
+    try:
+        deleted = delete_sent_message(current_user, message_id)
+    except MessageError as error:
+        flash(str(error), "danger")
+        return redirect(url_for("admin.messages", tab="sent"))
+    if deleted:
         flash("Message deleted.", "success")
     else:
         flash("That sent message was not found.", "warning")

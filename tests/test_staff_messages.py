@@ -1,4 +1,5 @@
 import pytest
+from sqlalchemy.exc import SQLAlchemyError
 
 from ..bushra import create_app
 from ..bushra import db as _db
@@ -150,6 +151,33 @@ def test_sender_can_delete_a_message_from_every_inbox(app, db):
     assert (
         StaffMessageRecipient.query.filter_by(message_id=message.id).count() == 0
     )
+
+
+def test_delete_sent_message_rolls_back_when_the_database_fails(app, db, monkeypatch):
+    school = _branch(db, "Rollback Academy", "RA01")
+    sender = _teacher(db, school, "0711000041", "Sender Admin", is_admin=True)
+    recipient = _teacher(db, school, "0711000042", "Inbox Teacher")
+    db.session.commit()
+
+    message = send_in_app(
+        sender,
+        branch_id=school.id,
+        audience="teacher",
+        title="Keep this",
+        body="The delete should not stick.",
+        teacher_id=recipient.id,
+    )
+
+    def fail_commit():
+        raise SQLAlchemyError("database unavailable")
+
+    monkeypatch.setattr(db.session, "commit", fail_commit)
+    with pytest.raises(MessageError, match="Could not delete"):
+        delete_sent_message(sender, message.id)
+
+    db.session.rollback()
+    assert StaffMessage.query.get(message.id) is not None
+    assert inbox_for(recipient)
 
 
 def test_sms_is_not_sent(app, db):

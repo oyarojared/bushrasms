@@ -2,7 +2,9 @@
 
 from datetime import datetime
 
+from flask import current_app
 from sqlalchemy import or_
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload, subqueryload
 
 from ....modals.branches_db import Branch, BranchClasses
@@ -217,11 +219,22 @@ def sent_detail(user, message_id):
 
 def delete_sent_message(user, message_id):
     """Remove a notice the user sent, including every recipient's copy."""
-    message = StaffMessage.query.filter_by(id=message_id, sender_id=user.id).first()
-    if message is None:
-        return False
-    db.session.delete(message)
-    db.session.commit()
+    try:
+        message = StaffMessage.query.filter_by(
+            id=message_id, sender_id=user.id
+        ).first()
+        if message is None:
+            return False
+        db.session.delete(message)
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Could not delete sent message %s for user %s",
+            message_id,
+            user.id,
+        )
+        raise MessageError("Could not delete that message. Please try again.")
     return True
 
 
