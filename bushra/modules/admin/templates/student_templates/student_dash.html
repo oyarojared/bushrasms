@@ -46,6 +46,7 @@
       <span>Export list</span>
     </button>
 
+    {% if config.PROMOTION_ENABLED %}
     <a
       href="{{ url_for('admin.promote_students') }}"
       class="stu-btn stu-btn-outline"
@@ -54,6 +55,7 @@
       <i class="bi bi-arrow-up-right-circle"></i>
       <span>Promote</span>
     </a>
+    {% endif %}
 
     <a
       href="{{ url_for('admin.leaving_certificate') }}"

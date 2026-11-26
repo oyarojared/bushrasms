@@ -5,6 +5,8 @@ basedir = os.path.abspath(os.path.dirname(__file__))  # points to bushra/
 
 class Config:
     SECRET_KEY = "my_secret_key"
+    # Set this to True when schools should be allowed to promote learners.
+    PROMOTION_ENABLED = False
 
 
 class DevelopmentConfig(Config):

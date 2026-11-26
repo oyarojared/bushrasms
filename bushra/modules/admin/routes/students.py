@@ -88,7 +88,7 @@ def student_dash():
     students = []
     selected_branch = selected_grade = selected_stream = None
     selected_year = None
-    enrollment_years = list(range(2035, 2024, -1))
+    enrollment_years = list(range(2035, 2025, -1))
 
     branches = (
         get_accessible_branches_query()

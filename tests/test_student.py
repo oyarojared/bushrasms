@@ -197,6 +197,31 @@ def test_school_admin_cannot_move_students_to_another_school(db, client):
     assert learner.admission_number == 3
 
 
+def test_promote_stays_hidden_until_it_is_enabled(db, client, app):
+    primary = _school(db, "Primary Closed", "PC001")
+    admin = Teacher(
+        branch_id=primary.id,
+        employer="TSC",
+        fullname="Closed Head",
+        gender="F",
+        title="Mrs.",
+        phone="0711000005",
+        username="closedpromo",
+        password_hash=hash_staff_password("secret12"),
+        is_admin=True,
+    )
+    db.session.add(admin)
+    db.session.commit()
+    _login(client, admin)
+    app.config["PROMOTION_ENABLED"] = False
+
+    page = client.get("/admin/student_dash")
+    assert b">Promote<" not in page.data
+
+    blocked = client.get("/admin/promote", follow_redirects=True)
+    assert b"Promotion is not open yet." in blocked.data
+
+
 def test_promote_tooltip_skips_form_4_for_a_primary_school(db, client):
     primary = _school(db, "Primary Tip", "PT001")
     _class(db, primary, "Grade 8")

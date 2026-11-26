@@ -1,4 +1,4 @@
-from flask import flash, redirect, render_template, request, url_for
+from flask import current_app, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 
 from .. import admin_bp
@@ -68,6 +68,10 @@ def _promotion_form():
 @login_required
 @admin_required
 def promote_students():
+    if not current_app.config.get("PROMOTION_ENABLED"):
+        flash("Promotion is not open yet.", "warning")
+        return redirect(url_for("admin.student_dash"))
+
     form = _promotion_form()
     plan = None
 

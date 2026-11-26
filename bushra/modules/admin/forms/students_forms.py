@@ -293,6 +293,6 @@ class PromotionForm(FlaskForm):
         "Year to close",
         validators=[DataRequired(message="Select the year to close.")],
         coerce=int,
-        choices=[(year, str(year)) for year in range(2035, 2024, -1)],
+        choices=[(year, str(year)) for year in range(2035, 2025, -1)],
         default=2026,
     )

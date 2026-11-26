@@ -31,10 +31,9 @@ class ExtendedBranchForm(BranchesList):
         ],
     )
 
-    # Calendar input with 2025 selected by default
     class_year = SelectField(
         "Class Year",
-        choices=[(str(y), str(y)) for y in range(2035, 2024, -1)],
+        choices=[(str(y), str(y)) for y in range(2035, 2025, -1)],
         default="2026",
         validators=[DataRequired()],
     )

@@ -14,6 +14,7 @@ from ..bushra.modals.students_db import Student
 class TestConfig(DevelopmentConfig):
     TESTING = True
     WTF_CSRF_ENABLED = False
+    PROMOTION_ENABLED = True
 
 
 @pytest.fixture()
