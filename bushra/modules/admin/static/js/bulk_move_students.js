@@ -22,7 +22,10 @@
   const warnFrom = document.getElementById("bulk-move-warn-from");
   const warnTo = document.getElementById("bulk-move-warn-to");
   const subtitleEl = document.getElementById("bulk-move-subtitle");
-  const selectSubtitle = "Choose the class these students should join.";
+  const schoolSelect = document.getElementById("bulk-move-school");
+  const selectSubtitle = schoolSelect
+    ? "Choose the school and class these students should join."
+    : "Choose the class these students should join.";
   const confirmSubtitle = "Confirm this class change.";
 
   if (!resultsCard || !openBtn || !modalEl || !form) return;
@@ -110,13 +113,32 @@
     streamContainer.appendChild(streamField.fragment);
   }
 
+  function destinationBranchId() {
+    if (schoolSelect && schoolSelect.value) return schoolSelect.value;
+    return resultsCard.dataset.branchId || "";
+  }
+
   function destinationLabel() {
     const gradeSelect = document.getElementById("bulk-move-grade");
     const streamSelect = document.getElementById("bulk-move-stream");
     const gradeName = gradeSelect?.selectedOptions[0]?.textContent || "";
     const streamName = streamSelect?.value || "";
-    if (streamName) return `${gradeName} · ${streamName}`;
-    return gradeName;
+    let label = streamName ? `${gradeName} · ${streamName}` : gradeName;
+    if (schoolSelect) {
+      const schoolName = schoolSelect.selectedOptions[0]?.textContent || "";
+      if (schoolName) label = `${label} at ${schoolName}`;
+    }
+    return label;
+  }
+
+  function syncAdmissionNote() {
+    const note = document.getElementById("bulk-move-adm-note");
+    if (!note) return;
+    const sourceId = resultsCard.dataset.branchId || "";
+    const leavingSchool = String(destinationBranchId()) !== String(sourceId);
+    note.textContent = leavingSchool
+      ? "They receive new admission numbers at the other school."
+      : "Admission numbers will not change.";
   }
 
   function showSelectStep() {
@@ -135,6 +157,7 @@
     if (warnCount) warnCount.textContent = String(selectedCount);
     if (warnFrom) warnFrom.textContent = fromText;
     if (warnTo) warnTo.textContent = toText;
+    syncAdmissionNote();
     stepSelect.classList.add("d-none");
     stepConfirm.classList.remove("d-none");
     continueBtn.classList.add("d-none");
@@ -158,7 +181,7 @@
   }
 
   async function loadDestinationClasses() {
-    const branchId = resultsCard.dataset.branchId;
+    const branchId = destinationBranchId();
     gradeContainer.innerHTML = "";
     streamContainer.innerHTML = "";
     if (!branchId) return;
@@ -232,6 +255,12 @@
       openMoveModal();
     });
   });
+
+  if (schoolSelect) {
+    schoolSelect.addEventListener("change", () => {
+      loadDestinationClasses();
+    });
+  }
 
   modalEl.addEventListener("show.bs.modal", () => {
     refreshSelection();

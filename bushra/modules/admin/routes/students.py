@@ -22,12 +22,21 @@ from ..utils import (load_branch_choices, preprocess_image,
                      safe_date, validate_fullname, 
                      get_accessible_branches_query, apply_locked_branch,
                      locked_branch_id, user_can_access_branch,
-                     can_issue_official_letters)
+                     accessible_branch_ids, can_issue_official_letters)
 from ..utils.route_protect import admin_required
 from flask_login import login_required 
 
 from ..services.subs import auto_allocate_subjects 
-from ..services.grades import filter_active_classes, is_archived_class_name 
+from ..services.grades import filter_active_classes, is_archived_class_name
+from ..services.promotion import (
+    ENROLLMENT_COMPLETED,
+    class_roster,
+    enrollment_history,
+    live_students_query,
+    not_completed_clause,
+    schools_have_form_4,
+    sync_current_enrollment,
+) 
 
 from ..services.studs import (
     get_next_adm_no,
@@ -78,6 +87,8 @@ def student_dash():
 
     students = []
     selected_branch = selected_grade = selected_stream = None
+    selected_year = None
+    enrollment_years = list(range(2035, 2024, -1))
 
     branches = (
         get_accessible_branches_query()
@@ -123,12 +134,10 @@ def student_dash():
         selected_grade = BranchClasses.query.get(grade_id)
         selected_stream = stream
 
-        # Build query
-        query = Student.query.filter_by(branch_id=branch_id, class_id=grade_id)
-        if selected_stream:
-            query = query.filter_by(stream=selected_stream)
-
-        students = query.order_by(Student.fullname.asc()).all()
+        selected_year = request.form.get("enrollment_year", type=int) or None
+        students, selected_year = class_roster(
+            branch_id, grade_id, stream=selected_stream, year=selected_year
+        )
        
     
     # Default / return-to-roster after a bulk move
@@ -136,6 +145,7 @@ def student_dash():
         branch_id = request.args.get("branch", type=int)
         grade_id = request.args.get("grade_form", type=int)
         stream = (request.args.get("stream") or "").strip() or None
+        selected_year = request.args.get("enrollment_year", type=int) or None
 
         if branch_id and grade_id and _can_access_branch(branch_id):
             selected_branch = Branch.query.get(branch_id)
@@ -146,7 +156,9 @@ def student_dash():
                 and selected_grade.branch_id == branch_id
             ):
                 selected_stream = stream
-                students = _class_students(branch_id, grade_id, stream)
+                students, selected_year = class_roster(
+                    branch_id, grade_id, stream=stream, year=selected_year
+                )
             else:
                 selected_branch = selected_grade = selected_stream = None
                 students = []
@@ -154,7 +166,7 @@ def student_dash():
             students = []
             selected_branch = selected_grade = selected_stream = None
         else:
-            students = Student.query.filter_by(branch_id=1, class_id=1).all()
+            students = live_students_query(1, 1).all()
             selected_branch = Branch.query.get(1)
             selected_grade = BranchClasses.query.get(1)
 
@@ -167,6 +179,13 @@ def student_dash():
         selected_grade=selected_grade,
         muiltable_students_upload_form=muiltable_students_upload_form,
         selected_stream=selected_stream,
+        selected_year=selected_year,
+        enrollment_years=enrollment_years,
+        promote_tooltip=(
+            "Close the year, move classes up, keep repeaters, and complete Form 4."
+            if schools_have_form_4(accessible_branch_ids())
+            else "Close the year, move classes up, and keep repeaters."
+        ),
     )
 
 
@@ -348,6 +367,7 @@ def muiltaple_students_upload():
             db.session.flush()  # get student.id immediately
 
             auto_allocate_subjects(student)
+            sync_current_enrollment(student)
 
             existing_adm_numbers.add(adm_no)
             added += 1
@@ -480,6 +500,7 @@ def add_student():
         db.session.flush()  # 🔥 ensures student.id is available
 
         auto_allocate_subjects(student)
+        sync_current_enrollment(student)
 
         db.session.commit()
         flash("Student added successfully!", "success")
@@ -511,6 +532,8 @@ def student_profile(student_id):
     transfer_form = BranchesList()
     transfer_form.branches.choices = load_branch_choices()
     apply_locked_branch(transfer_form.branches)
+    if transfer_form.branches.data in (None, ""):
+        transfer_form.branches.data = str(student.branch_id)
     transfer_letter_form = TransferLetterForm(formdata=None, obj=student)
 
     # Initialize WTForm for passport upload
@@ -553,7 +576,10 @@ def student_profile(student_id):
         "parent_fullname": student.parent_fullname or "",
         "parent_phone": student.parent_phone or "",
         "passport": student.passport, 
-        "subjects_taken": student.subjects_taken
+        "subjects_taken": student.subjects_taken,
+        "enrollment_status": student.enrollment_status,
+        "current_year": student.current_year,
+        "enrollment_history": enrollment_history(student),
     }
 
     academic_history = get_student_academic_history(student.id)
@@ -826,7 +852,11 @@ def serialize_students(student_list):
             "admission_number": s.admission_number,
             "assessment_number": s.knec_assessment_no,
             "branch": s.branch.branch_name,
-            "grade_form": s.class_info.grade_form,
+            "grade_form": (
+                f"{s.class_info.grade_form} (completed)"
+                if s.enrollment_status == ENROLLMENT_COMPLETED and s.class_info
+                else (s.class_info.grade_form if s.class_info else "")
+            ),
             "stream": s.stream,
         }
         for s in student_list
@@ -940,28 +970,51 @@ def _deny_student_access():
     return redirect(url_for("admin.student_dash"))
 
 
-def _class_students(branch_id, class_id, stream=None):
-    query = Student.query.filter_by(branch_id=branch_id, class_id=class_id)
-    if stream:
-        query = query.filter_by(stream=stream)
-    return query.order_by(Student.fullname.asc()).all()
+def _class_students(branch_id, class_id, stream=None, year=None):
+    students, _year = class_roster(branch_id, class_id, stream=stream, year=year)
+    return students
 
 
-def _move_student_within_school(student, dest_class, dest_stream):
+def _next_admission_numbers():
+    reserved = {}
+
+    def take(branch_id):
+        branch_id = int(branch_id)
+        if branch_id not in reserved:
+            largest = (
+                db.session.query(func.max(Student.admission_number))
+                .filter(Student.branch_id == branch_id)
+                .scalar()
+            )
+            reserved[branch_id] = int(largest or 0)
+        reserved[branch_id] += 1
+        return reserved[branch_id]
+
+    return take
+
+
+def _place_student(student, dest_class, dest_stream, take_admission):
+    """Move a learner into a class, including a school they may join."""
     dest_stream = dest_stream or None
     current_stream = student.stream or None
-    if student.branch_id != dest_class.branch_id:
-        return "wrong_school"
-    if student.class_id == dest_class.id and current_stream == dest_stream:
+    if (
+        student.branch_id == dest_class.branch_id
+        and student.class_id == dest_class.id
+        and current_stream == dest_stream
+    ):
         return "already_there"
 
     previous_class_id = student.class_id
+    if student.branch_id != dest_class.branch_id:
+        student.admission_number = take_admission(dest_class.branch_id)
+        student.branch_id = dest_class.branch_id
     student.class_id = dest_class.id
     student.stream = dest_stream
     db.session.flush()
     if dest_class.id != previous_class_id:
         db.session.expire(student, ["class_info"])
         auto_allocate_subjects(student, previous_class_id=previous_class_id)
+    sync_current_enrollment(student)
     return "moved"
 
 
@@ -998,7 +1051,6 @@ def move_student(student_id):
         current_branch_id = student.branch_id
         current_class_id = student.class_id
         current_stream = student.stream or None
-        previous_class_id = student.class_id
 
         # Prevent moving to SAME branch + SAME class + SAME stream
         if (
@@ -1022,30 +1074,7 @@ def move_student(student_id):
             flash("The selected class does not belong to that school.", "warning")
             return redirect(url_for("admin.student_profile", student_id=student.id))
 
-        # --- Only generate a new admission number if the branch is changing ---
-        if new_branch_id != current_branch_id:
-            largest_adm = (
-                db.session.query(db.func.max(Student.admission_number))
-                .filter(Student.branch_id == new_branch_id)
-                .scalar()
-            )
-            student.admission_number = (largest_adm or 0) + 1
-        # Else keep the current admission_number intact
-
-        # Apply updates
-        student.branch_id = new_branch_id
-        student.class_id = new_class_id
-        student.stream = new_stream or None
-
-        db.session.flush()
-
-        if new_class_id != current_class_id:
-            db.session.expire(student, ["class_info"])
-            auto_allocate_subjects(
-                student,
-                previous_class_id=previous_class_id,
-            )
-
+        _place_student(student, new_class, new_stream, _next_admission_numbers())
         db.session.commit()
 
         flash("Student successfully moved.", "success")
@@ -1066,6 +1095,7 @@ def bulk_move_students():
     source_class_id = request.form.get("source_class_id", type=int)
     source_stream = (request.form.get("source_stream") or "").strip() or None
     dest_class_id = request.form.get("grade_form", type=int)
+    dest_branch_id = request.form.get("dest_branch_id", type=int) or source_branch_id
     dest_stream = (request.form.get("stream") or "").strip() or None
     student_ids = []
     for raw_id in request.form.getlist("student_ids"):
@@ -1088,8 +1118,8 @@ def bulk_move_students():
         flash("Select a destination class for the students.", "warning")
         return back_to_roster()
 
-    if not _can_access_branch(source_branch_id):
-        flash("You cannot move students for this school.", "warning")
+    if not _can_access_branch(source_branch_id) or not _can_access_branch(dest_branch_id):
+        flash("You cannot move students to that school.", "warning")
         return redirect(url_for("admin.student_dash"))
 
     if not student_ids:
@@ -1098,10 +1128,10 @@ def bulk_move_students():
 
     dest_class = BranchClasses.query.filter_by(
         id=dest_class_id,
-        branch_id=source_branch_id,
+        branch_id=dest_branch_id,
     ).first()
     if not dest_class or is_archived_class_name(dest_class.grade_form):
-        flash("Choose a class in the same school.", "warning")
+        flash("Choose a class in a school you can open.", "warning")
         return back_to_roster()
 
     if dest_class.streams:
@@ -1124,12 +1154,17 @@ def bulk_move_students():
     dest_label = dest_class.grade_form
     if dest_stream:
         dest_label = f"{dest_label} · {dest_stream}"
+    if dest_branch_id != source_branch_id:
+        dest_school = db.session.get(Branch, dest_branch_id)
+        school_name = dest_school.branch_name if dest_school else "the other school"
+        dest_label = f"{dest_label} at {school_name}"
 
     try:
         moved = 0
         skipped = 0
+        take_admission = _next_admission_numbers()
         for student in students:
-            result = _move_student_within_school(student, dest_class, dest_stream)
+            result = _place_student(student, dest_class, dest_stream, take_admission)
             if result == "moved":
                 moved += 1
             else:
@@ -1191,10 +1226,11 @@ def students_by_class_subject():
     if not class_obj:
         return jsonify({"students": [], "allocated_count": 0})
 
-    students = Student.query.filter_by(
-        branch_id=int(branch_id),
-        class_id=class_obj.id
-    ).order_by(Student.fullname.asc()).all()
+    students = (
+        live_students_query(int(branch_id), class_obj.id)
+        .order_by(Student.fullname.asc())
+        .all()
+    )
 
     students_data = [
         {
@@ -1252,6 +1288,7 @@ def allocate_subjects():
         .join(Student)\
         .filter(Student.branch_id == int(branch_id))\
         .filter(Student.class_id == class_obj.id)\
+        .filter(not_completed_clause())\
         .filter(StudentSubjectAllocation.subject_id == subject_id)\
         .all()
 

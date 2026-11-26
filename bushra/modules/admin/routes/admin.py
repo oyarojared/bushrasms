@@ -1,5 +1,5 @@
 from flask import flash, render_template, request, url_for, redirect
-from sqlalchemy import func
+from sqlalchemy import and_, func, or_
 from sqlalchemy.exc import SQLAlchemyError
 
 from ....modals.branches_db import Branch, BranchClasses, db
@@ -101,7 +101,16 @@ def admin_dash():
             BranchClasses.streams.label("streams"),
             func.count(Student.id).label("population"),
         )
-        .outerjoin(Student, BranchClasses.id == Student.class_id)
+        .outerjoin(
+            Student,
+            and_(
+                BranchClasses.id == Student.class_id,
+                or_(
+                    Student.enrollment_status.is_(None),
+                    Student.enrollment_status != "completed",
+                ),
+            ),
+        )
         .group_by(BranchClasses.id)
         .all()
     )
@@ -374,6 +383,11 @@ def teacher_dash():
         query = Student.query.filter_by(
             branch_id=entry["branch_id"],
             class_id=entry["class_id"],
+        ).filter(
+            or_(
+                Student.enrollment_status.is_(None),
+                Student.enrollment_status != "completed",
+            )
         )
         if entry["streams"] and not entry["covers_whole_class"]:
             query = query.filter(Student.stream.in_(entry["streams"]))

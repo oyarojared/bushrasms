@@ -23,6 +23,13 @@ from ..services.grades import (
     live_class_name,
     sort_grade_records,
 )
+from ..services.promotion import (
+    class_year_has_enrollments,
+    cohort_for_exam,
+    enrolled_students_query,
+    live_students_query,
+    not_completed_clause,
+)
 from ....modals.assessment_db import (StudentExamMark, Exam, ExamPaper, GradeGradingScheme, 
                                     GradingBoundary, GradingScheme, GradingSystem)
 from ..utils.exam_deadlines import is_deadline_passed
@@ -206,13 +213,7 @@ def api_class_context():
         # ----------------------------
         # COUNT STUDENTS PER SUBJECT
         # ----------------------------
-        student_query = Student.query.filter_by(
-            branch_id=branch_id,
-            class_id=class_id
-        )
-
-        if stream:
-            student_query = student_query.filter_by(stream=stream)
+        student_query = live_students_query(branch_id, class_id, stream=stream)
 
         student_ids_subq = student_query.with_entities(Student.id)
 
@@ -387,21 +388,26 @@ def get_exam_students():
         return jsonify({"error": "Missing required parameters"}), 400
 
     try:
-        # -------------------- 3. Load students for this class/stream/subject --------------------
-        # Only students who are allocated to this subject
-        students_query = (
-            db.session.query(Student)
-            .join(StudentSubjectAllocation, Student.id == StudentSubjectAllocation.student_id)
-            .filter(
-                Student.branch_id == branch_id,
-                Student.class_id == class_id,
-                StudentSubjectAllocation.subject_id == subject_id
-            )
+        # A saved year lists whoever was in that class. The live year
+        # still lists only learners allocated to this subject.
+        exam = Exam.query.get(exam_id) if exam_id else None
+        historical = bool(
+            exam and class_year_has_enrollments(branch_id, class_id, exam.year)
         )
-        if stream:
-            students_query = students_query.filter(Student.stream == stream)
-
-        students = students_query.all()
+        if historical:
+            students = enrolled_students_query(
+                branch_id, class_id, exam.year, stream=stream
+            ).all()
+        else:
+            students_query = (
+                live_students_query(branch_id, class_id, stream=stream)
+                .join(
+                    StudentSubjectAllocation,
+                    Student.id == StudentSubjectAllocation.student_id,
+                )
+                .filter(StudentSubjectAllocation.subject_id == subject_id)
+            )
+            students = students_query.all()
 
         # -------------------- 4. Check if an ExamPaper exists --------------------
         paper = ExamPaper.query.filter_by(
@@ -578,10 +584,7 @@ def _class_has_streams(class_obj):
 
 def _exam_class_rank_peers(branch_id, class_id, exam_id, is_844):
     """Saved ranking scores for live stream/overall position previews."""
-    students = Student.query.filter_by(
-        branch_id=branch_id,
-        class_id=class_id,
-    ).all()
+    students, _historical = cohort_for_exam(branch_id, class_id, exam_id)
     mark_rows = (
         db.session.query(StudentExamMark, ExamPaper, Subject)
         .join(ExamPaper, StudentExamMark.exam_paper_id == ExamPaper.id)
@@ -778,14 +781,9 @@ def api_exam_class_learners():
         return jsonify({"error": "forbidden"}), 403
 
     try:
-        students_query = Student.query.filter_by(
-            branch_id=branch_id,
-            class_id=class_id,
-        ).order_by(Student.admission_number, Student.fullname)
-        if stream:
-            students_query = students_query.filter_by(stream=stream)
-
-        students = students_query.all()
+        students = live_students_query(
+            branch_id, class_id, stream=stream
+        ).order_by(Student.admission_number, Student.fullname).all()
         return jsonify({
             "students": [
                 {
@@ -1223,14 +1221,9 @@ def api_exam_students_with_grades_all_subjects():
         is_844 = grading_type == "844"
 
         # -------------------- Students --------------------
-        students_query = Student.query.filter_by(
-            branch_id=branch_id,
-            class_id=class_id
+        students, _historical = cohort_for_exam(
+            branch_id, class_id, exam_id, stream=stream
         )
-        if stream:
-            students_query = students_query.filter_by(stream=stream)
-
-        students = students_query.all()
         student_ids = [s.id for s in students]
 
         if not students:
@@ -1438,9 +1431,10 @@ def api_students_by_subject():
             .filter(
                 Student.branch_id == branch_id,
                 Student.class_id == class_id,
-                StudentSubjectAllocation.subject_id == subject_id
+                StudentSubjectAllocation.subject_id == subject_id,
+                not_completed_clause(),
             )
-            .order_by(Student.fullname)  # <-- sort alphabetically by fullname
+            .order_by(Student.fullname)
         )
 
         if stream:

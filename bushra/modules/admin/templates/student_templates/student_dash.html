@@ -47,6 +47,15 @@
     </button>
 
     <a
+      href="{{ url_for('admin.promote_students') }}"
+      class="stu-btn stu-btn-outline"
+      title="{{ promote_tooltip }}"
+    >
+      <i class="bi bi-arrow-up-right-circle"></i>
+      <span>Promote</span>
+    </a>
+
+    <a
       href="{{ url_for('admin.leaving_certificate') }}"
       class="stu-btn stu-btn-outline"
       title="Issue a Form 4 leaving certificate, including former students"
@@ -74,9 +83,9 @@
         <h6 class="stu-filter-title">Load class list</h6>
         <p class="stu-filter-subtitle">
           {% if can_select_branch %}
-          Choose school, grade, and stream
+          Choose school, grade, stream, and year
           {% else %}
-          Choose grade and stream
+          Choose grade, stream, and year
           {% endif %}
         </p>
       </div>
@@ -107,6 +116,25 @@
         </div>
       </div>
 
+      <div class="stu-filter-field">
+        <label class="stu-filter-label" for="enrollment_year">Year</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+          <select
+            name="enrollment_year"
+            id="enrollment_year"
+            class="form-select form-select-sm stu-control"
+          >
+            <option value="">Current class</option>
+            {% for year in enrollment_years %}
+            <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>
+              {{ year }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
       <div class="stu-filter-action">
         <button type="submit" class="stu-btn stu-btn-primary">
           <i class="bi bi-people"></i>
@@ -132,7 +160,12 @@
         selected_stream }} {% else %} {{ selected_grade.grade_form }} {% endif
         %}
       </h6>
-      <p class="stu-results-subtitle">{{ selected_branch.branch_name }}</p>
+      <p class="stu-results-subtitle">
+        {{ selected_branch.branch_name }}
+        {% if selected_year %}
+        · Saved {{ selected_year }} list. This is not the current class.
+        {% endif %}
+      </p>
     </div>
     <div class="stu-results-tools">
       <span class="stu-count-badge" id="stu-count-badge">
@@ -155,6 +188,9 @@
       hidden
     />
     <input type="text" name="gradeid" value="{{ selected_grade.id }}" hidden />
+    {% if selected_year %}
+    <input type="hidden" name="enrollment_year" value="{{ selected_year }}" />
+    {% endif %}
     <input
       type="text"
       name="stream"
@@ -177,7 +213,7 @@
         />
       </div>
     </div>
-    <div class="stu-select-bar" id="stu-select-bar">
+    <div class="stu-select-bar{% if selected_year %} d-none{% endif %}" id="stu-select-bar">
       <p class="stu-select-bar-copy">
         <strong id="stu-select-bar-count">0</strong>
         <span id="stu-select-bar-noun">students selected</span>
@@ -198,7 +234,7 @@
     <table class="stu-table">
       <thead>
         <tr class="sticky-header">
-          <th class="stu-col-select">
+          <th class="stu-col-select{% if selected_year %} d-none{% endif %}">
             <input
               type="checkbox"
               id="bulk-move-select-all"
@@ -231,13 +267,15 @@
             (student.parent_phone or '')
           ) | lower }}"
         >
-          <td class="stu-col-select">
+          <td class="stu-col-select{% if selected_year %} d-none{% endif %}">
+            {% if not selected_year %}
             <input
               type="checkbox"
               class="bulk-move-check"
               value="{{ student.id }}"
               aria-label="Select {{ student.fullname }}"
             />
+            {% endif %}
           </td>
           <td class="stu-col-index">{{ loop.index }}</td>
           <td class="stu-col-detail" data-label="Adm No">
@@ -245,6 +283,11 @@
           </td>
           <td class="stu-col-name">
             <span class="stu-name">{{ student.fullname | upper }}</span>
+            {% if student.roster_status == "completed" %}
+            <span class="badge text-bg-secondary">Completed</span>
+            {% elif student.roster_status == "repeating" %}
+            <span class="badge text-bg-secondary">Repeating</span>
+            {% endif %}
           </td>
           <td class="stu-col-detail" data-label="Gender">
             {{ student.gender or "—" }}
@@ -280,6 +323,7 @@
                     <i class="bi bi-person-badge"></i> Profile
                   </a>
                 </li>
+                {% if not selected_year %}
                 <li>
                   <button
                     type="button"
@@ -289,6 +333,7 @@
                     <i class="bi bi-arrow-left-right"></i> Move
                   </button>
                 </li>
+                {% endif %}
                 <li><hr class="dropdown-divider" /></li>
                 <li>
                   <button
@@ -332,7 +377,11 @@
             Move students
           </h6>
           <p class="at-modal-copy" id="bulk-move-subtitle">
+            {% if can_select_branch %}
+            Choose the school and class these students should join.
+            {% else %}
             Choose the class these students should join.
+            {% endif %}
           </p>
         </div>
         <button
@@ -381,6 +430,29 @@
           </div>
 
           <div id="bulk-move-step-select" class="stu-add-grid">
+            {% if can_select_branch %}
+            <div class="cls-add-field" id="bulk-move-school-field">
+              <label class="cls-add-label" for="bulk-move-school">School</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-building"></i></span>
+                <select
+                  class="form-select form-select-sm"
+                  name="dest_branch_id"
+                  id="bulk-move-school"
+                  required
+                >
+                  {% for value, label in select_branch_form.branch.choices %}
+                  {% if value %}
+                  <option
+                    value="{{ value }}"
+                    {% if selected_branch and value|string == selected_branch.id|string %}selected{% endif %}
+                  >{{ label }}</option>
+                  {% endif %}
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            {% endif %}
             <div id="bulk-move-grade-container" class="cls-add-field"></div>
             <div id="bulk-move-stream-container" class="cls-add-field"></div>
           </div>
@@ -397,7 +469,7 @@
                 <strong id="bulk-move-warn-to"></strong>.
               </p>
               <ul class="bulk-move-warn-list">
-                <li>Admission numbers will not change.</li>
+                <li id="bulk-move-adm-note">Admission numbers will not change.</li>
                 <li>They will no longer appear in the current class list.</li>
                 <li>This cannot be undone from this screen.</li>
               </ul>
@@ -456,14 +528,18 @@
   <div class="stu-empty-icon">
     <i class="bi bi-people"></i>
   </div>
-  <h6>No students loaded</h6>
+  <h6>{% if selected_year %}No saved class list for {{ selected_year }}{% else %}No students loaded{% endif %}</h6>
   <p>
-    {% if can_select_branch %}
+    {% if selected_year %}
+    That year is saved when you move the school to the next grade. Choose
+    <strong>Current class</strong> to see who is in the class now.
+    {% elif can_select_branch %}
     Choose school, grade, and stream above, then click
+    <strong>Load students</strong>.
     {% else %}
     Choose grade and stream above, then click
-    {% endif %}
     <strong>Load students</strong>.
+    {% endif %}
   </p>
 </div>
 {% endif %}

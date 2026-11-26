@@ -55,7 +55,18 @@
           <span class="stu-identity-sep">·</span>
           {{ student_class.grade_form if student_class else "—" }}
           {% if student.stream %}<span class="stu-identity-sep">·</span>{{ student.stream }}{% endif %}
+          {% if student.enrollment_status == "completed" %}
+          <span class="stu-identity-sep">·</span>Completed {{ student.current_year or "" }}
+          {% endif %}
         </p>
+        {% if student.enrollment_history %}
+        <p class="stu-identity-sub">
+          {% for row in student.enrollment_history %}
+          {{ row.year }} {{ row.grade_form }}{% if row.stream %} {{ row.stream }}{% endif %}
+          {% if row.status == "completed" %}(completed){% elif row.status == "repeating" %}(repeating){% endif %}{% if not loop.last %} · {% endif %}
+          {% endfor %}
+        </p>
+        {% endif %}
 
         {% if student.boarding_status %}
         <div class="stu-identity-meta">
@@ -699,6 +710,9 @@
           <span class="stu-move-label">Current class</span>
           <strong>{{ student_branch.branch_name }}</strong>
           <span>{{ student_class.grade_form }}{% if student.stream %} · {{ student.stream }}{% endif %}</span>
+          {% if can_select_branch %}
+          <span class="stu-move-hint">Choose another school you can open, then the class.</span>
+          {% endif %}
         </div>
 
         <form
@@ -1940,6 +1954,12 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: #9ca3af;
+  }
+
+  .stu-move-hint {
+    margin-top: 0.2rem;
+    font-size: 0.72rem;
+    color: #6b7280;
   }
 
   .stu-transfer-lead {

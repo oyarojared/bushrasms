@@ -274,3 +274,25 @@ class MuiltapleStudentsUploadForm(FlaskForm):
         "Choose Excel File",
         validators=[FileRequired(), FileAllowed(["xls", "xlsx"], "Excel files only!")],
     )
+
+
+def _optional_int(value):
+    if value in (None, ""):
+        return None
+    return int(value)
+
+
+class PromotionForm(FlaskForm):
+    branch_id = SelectField(
+        "School",
+        validators=[DataRequired(message="Select a school.")],
+        coerce=_optional_int,
+        choices=[],
+    )
+    from_year = SelectField(
+        "Year to close",
+        validators=[DataRequired(message="Select the year to close.")],
+        coerce=int,
+        choices=[(year, str(year)) for year in range(2035, 2024, -1)],
+        default=2026,
+    )

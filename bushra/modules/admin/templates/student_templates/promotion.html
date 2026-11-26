@@ -1,0 +1,1056 @@
+{% extends "student_templates/student_dash_layout.html" %}
+
+{% block body %}
+<div class="app-page-title stu-page">
+  <div class="app-page-title-icon">
+    <i class="bi bi-arrow-up-right-circle"></i>
+  </div>
+  <div class="app-page-title-content">
+    <h6 class="app-page-title-heading">Move to the next grade</h6>
+    <span class="app-page-title-subtitle">
+      Close one year for the whole school. Classes stay. Marks stay on the exams they were sat.
+    </span>
+  </div>
+</div>
+
+<a href="{{ url_for('admin.student_dash') }}" class="stu-back-link">
+  <i class="bi bi-arrow-left"></i>
+  Back to students
+</a>
+
+<form
+  method="POST"
+  action="{{ url_for('admin.promote_students') }}"
+  id="promotionForm"
+  class="promo-page"
+  data-loaded-year="{{ plan.from_year if plan else '' }}"
+  data-loaded-branch="{{ promotion_form.branch_id.data if plan else '' }}"
+>
+  {{ promotion_form.hidden_tag() }}
+
+  <div class="stu-filter-card">
+    <div class="stu-filter-bar">
+      <div class="stu-filter-intro">
+        <span class="stu-filter-intro-icon" aria-hidden="true">
+          <i class="bi bi-calendar3"></i>
+        </span>
+        <div>
+          <h6 class="stu-filter-title">Close one school year</h6>
+          <p class="stu-filter-subtitle">
+            Everyone in this school moves together. Tick Repeat for anyone who should stay.
+          </p>
+        </div>
+      </div>
+
+      <div class="stu-filter-fields">
+        <div class="stu-filter-field{% if not can_select_branch %} d-none{% endif %}">
+          <label class="stu-filter-label" for="branch_id">School</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="bi bi-building"></i></span>
+            {{ promotion_form.branch_id(class="form-select form-select-sm stu-control", id="branch_id") }}
+          </div>
+          {% for error in promotion_form.branch_id.errors %}
+          <p class="promo-error">{{ error }}</p>
+          {% endfor %}
+        </div>
+
+        <div class="stu-filter-field">
+          <label class="stu-filter-label" for="from_year">Year to close</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+            {{ promotion_form.from_year(class="form-select form-select-sm stu-control", id="from_year") }}
+          </div>
+          {% for error in promotion_form.from_year.errors %}
+          <p class="promo-error">{{ error }}</p>
+          {% endfor %}
+        </div>
+
+        <div class="stu-filter-action">
+          <button type="submit" name="action" value="preview" id="promo-preview" class="stu-btn stu-btn-primary">
+            <i class="bi bi-people"></i>
+            Preview list
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if plan %}
+    {% if plan.groups %}
+    <div class="promo-year">
+      <i class="bi bi-arrow-right-circle" aria-hidden="true"></i>
+      <p>
+        Closing <strong>{{ plan.from_year }}</strong> opens <strong>{{ plan.to_year }}</strong>.
+        Grade 2 goes to Grade 3.
+        {% if plan.counts.complete %}
+        Form 4 learners who are not repeating leave the live class and stay on record.
+        {% endif %}
+        {% if plan.groups | selectattr("can_continue") | list %}
+        A last class can move to the next grade at another school you can open. Choose it, then preview again.
+        {% endif %}
+      </p>
+    </div>
+
+    <div class="promo-stats">
+      <div class="promo-stat promo-stat-move">
+        <strong data-count="move">{{ plan.counts.move }}</strong>
+        <span>Move</span>
+      </div>
+      <div class="promo-stat promo-stat-repeat">
+        <strong data-count="repeat">{{ plan.counts.repeat }}</strong>
+        <span>Repeat</span>
+      </div>
+      <div class="promo-stat promo-stat-complete">
+        <strong data-count="complete">{{ plan.counts.complete }}</strong>
+        <span>Complete</span>
+      </div>
+      <div class="promo-stat promo-stat-stay">
+        <strong data-count="stay">{{ plan.counts.stay }}</strong>
+        <span>Stay</span>
+      </div>
+    </div>
+
+    <div class="promo-save">
+      <div>
+        <strong>Save this promotion</strong>
+        <p>
+          This updates the whole school for {{ plan.from_year }}. Exam marks stay on the year they were sat.
+        </p>
+        <p class="promo-stale" hidden>The school or year changed. Preview again before saving.</p>
+      </div>
+      <button type="button" class="stu-btn stu-btn-primary promo-save-open" data-bs-toggle="modal" data-bs-target="#promoSaveModal">
+        <i class="bi bi-check2-circle"></i>
+        Save promotion
+      </button>
+    </div>
+
+    <div class="promo-search-card">
+      <label class="visually-hidden" for="promo-search">Search this preview</label>
+      <div class="input-group input-group-sm">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input
+          type="search"
+          id="promo-search"
+          class="form-control"
+          placeholder="Search name or admission number"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+
+    <p class="promo-search-empty" id="promo-search-empty" hidden>No learner in this preview matches that search.</p>
+
+    {% for group in plan.groups %}
+      {% set stats = namespace(move=0, repeat=0, complete=0, stay=0) %}
+      {% for student in group.students %}
+        {% if student.kind == "move" %}{% set stats.move = stats.move + 1 %}{% endif %}
+        {% if student.kind == "repeat" %}{% set stats.repeat = stats.repeat + 1 %}{% endif %}
+        {% if student.kind == "complete" %}{% set stats.complete = stats.complete + 1 %}{% endif %}
+        {% if student.kind == "stay" %}{% set stats.stay = stats.stay + 1 %}{% endif %}
+      {% endfor %}
+    <details class="promo-class" {% if loop.first %}open{% endif %}>
+      <summary class="promo-class-summary">
+        <span class="promo-class-chevron" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+        <span class="promo-class-copy">
+          <span class="promo-class-title">{{ group.from_label }}</span>
+          <span class="promo-class-meta" data-class-meta>
+            {{ group.students|length }} learner{{ "s" if group.students|length != 1 else "" }}
+            {% if stats.move %} · {{ stats.move }} move{% endif %}
+            {% if stats.repeat %} · {{ stats.repeat }} repeat{% endif %}
+            {% if stats.complete %} · {{ stats.complete }} complete{% endif %}
+            {% if stats.stay %} · {{ stats.stay }} stay{% endif %}
+          </span>
+        </span>
+        <span class="promo-shown" data-shown hidden></span>
+      </summary>
+
+      {% if group.can_continue %}
+      <div class="promo-continue">
+        <label for="continue_branch_{{ group.class_id }}">
+          Send {{ group.from_label }} to {{ group.next_label }} at
+        </label>
+        <select
+          class="form-select form-select-sm promo-continue-select"
+          name="continue_branch_{{ group.class_id }}"
+          id="continue_branch_{{ group.class_id }}"
+        >
+          <option value="">This school — they stay</option>
+          {% for option in group.continue_options %}
+          <option value="{{ option.id }}" {% if group.continue_branch_id == option.id %}selected{% endif %}>
+            {{ option.name }}
+          </option>
+          {% endfor %}
+        </select>
+        <p>Leave this on the current school and they stay in {{ group.from_label }}. Tick Repeat for anyone who should stay behind after you choose a school.</p>
+      </div>
+      {% endif %}
+
+      <div class="stu-table-wrap">
+        <table class="stu-table">
+          <thead>
+            <tr>
+              <th class="stu-col-index">#</th>
+              <th class="promo-adm-col">Adm No</th>
+              <th>Student</th>
+              <th class="promo-stream-col">Stream</th>
+              <th>Next</th>
+              <th class="promo-repeat-col">Repeat</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for student in group.students %}
+            <tr
+              class="promo-row"
+              data-kind="{{ student.kind }}"
+              data-base-kind="{{ student.base_kind }}"
+              data-home-label="{{ group.from_label }}"
+              data-home-stream="{{ student.stream }}"
+              data-move-label="{{ student.base_dest_label }}"
+              data-move-stream="{{ student.base_dest_stream }}"
+              data-base-reason="{{ student.base_reason }}"
+              data-search="{{ ((student.fullname or '') ~ ' ' ~ (student.admission_number or '')) | lower }}"
+            >
+              <td class="stu-col-index">{{ loop.index }}</td>
+              <td><span class="stu-adm">{{ student.admission_number or "—" }}</span></td>
+              <td class="stu-col-name"><span class="stu-name">{{ student.fullname | upper }}</span></td>
+              <td>{{ student.stream or "—" }}</td>
+              <td class="promo-next">
+                <span class="promo-pill promo-pill-{{ student.kind }}" data-pill>
+                  {% if student.kind == "move" %}Moves
+                  {% elif student.kind == "repeat" %}Repeats
+                  {% elif student.kind == "complete" %}Completes
+                  {% else %}Stays{% endif %}
+                </span>
+                <span data-dest-text>
+                  {% if student.kind == "complete" %}
+                    Leaves the live class
+                  {% else %}
+                    {{ student.dest_label }}{% if student.dest_stream %} · {{ student.dest_stream }}{% endif %}
+                  {% endif %}
+                </span>
+                <span class="promo-reason" data-reason {% if not student.reason %}hidden{% endif %}>{{ student.reason }}</span>
+              </td>
+              <td class="promo-repeat-col">
+                {% if student.can_repeat %}
+                <input
+                  type="checkbox"
+                  class="promo-repeat"
+                  name="repeat_ids"
+                  value="{{ student.id }}"
+                  {% if student.kind == "repeat" %}checked{% endif %}
+                  aria-label="Repeat {{ student.fullname }}"
+                />
+                {% else %}
+                <span class="promo-dash">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+    {% endfor %}
+
+    <div class="promo-save promo-save-end">
+      <div>
+        <strong>Save this promotion</strong>
+        <p>
+          This updates the whole school for {{ plan.from_year }}. Exam marks stay on the year they were sat.
+        </p>
+        <p class="promo-stale" hidden>The school or year changed. Preview again before saving.</p>
+      </div>
+      <button type="button" class="stu-btn stu-btn-primary promo-save-open" data-bs-toggle="modal" data-bs-target="#promoSaveModal">
+        <i class="bi bi-check2-circle"></i>
+        Save promotion
+      </button>
+    </div>
+
+    <div class="modal fade" id="promoSaveModal" tabindex="-1" aria-labelledby="promoSaveTitle" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered promo-save-dialog">
+        <div class="modal-content promo-modal">
+          <button type="button" class="btn-close promo-modal-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <div class="promo-modal-body">
+            <div class="promo-modal-icon" aria-hidden="true">
+              <i class="bi bi-arrow-up-right-circle"></i>
+            </div>
+            <h6 class="promo-modal-title" id="promoSaveTitle">Save this promotion?</h6>
+            <p class="promo-modal-text">
+              Closing {{ plan.from_year }} opens {{ plan.to_year }} for this whole school.
+            </p>
+            <ul class="promo-modal-counts">
+              <li><strong data-modal-count="move">{{ plan.counts.move }}</strong> move</li>
+              <li><strong data-modal-count="repeat">{{ plan.counts.repeat }}</strong> repeat</li>
+              <li><strong data-modal-count="complete">{{ plan.counts.complete }}</strong> complete</li>
+              <li><strong data-modal-count="stay">{{ plan.counts.stay }}</strong> stay</li>
+            </ul>
+          </div>
+          <div class="promo-modal-footer">
+            <button type="button" class="stu-btn stu-btn-outline" data-bs-dismiss="modal">Keep preview</button>
+            <button type="submit" name="action" value="apply" class="stu-btn stu-btn-primary">
+              <i class="bi bi-check2-circle"></i>
+              Save promotion
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="stu-empty-state">
+      <div class="stu-empty-icon"><i class="bi bi-people"></i></div>
+      <h6>No one is waiting to move</h6>
+      <p>Everyone in {{ plan.from_year }} is already in {{ plan.to_year }}, or that year has no learners.</p>
+    </div>
+    {% endif %}
+  {% else %}
+  <div class="stu-empty-state">
+    <div class="stu-empty-icon"><i class="bi bi-arrow-up-right-circle"></i></div>
+    <h6>Preview the whole school first</h6>
+    <p>Choose the year you are closing, then preview. Tick anyone who should repeat before you save.</p>
+  </div>
+  {% endif %}
+</form>
+
+<style>
+  .promo-page {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .promo-page,
+  .stu-page,
+  .stu-filter-card,
+  .stu-empty-state {
+    font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .stu-page {
+    width: 100%;
+    margin-bottom: 0.35rem;
+    padding-top: 0.45rem;
+  }
+
+  .stu-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0 0 0.85rem;
+    color: #4b5563;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .stu-back-link:hover { color: #c24141; }
+
+  .stu-filter-card {
+    background: #fff;
+    border: 1px solid #e8ecef;
+    border-top: 3px solid #ff7979;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+
+  .stu-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.85rem 1rem;
+    margin: 0;
+    padding: 0.85rem 1rem;
+  }
+
+  .stu-filter-intro {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex: 1 1 220px;
+    min-width: 200px;
+    padding-bottom: 0.1rem;
+  }
+
+  .stu-filter-intro-icon {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(255, 121, 121, 0.12);
+    color: #ff7979;
+    font-size: 0.95rem;
+  }
+
+  .stu-filter-title {
+    margin: 0;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #1f2937;
+    letter-spacing: -0.01em;
+  }
+
+  .stu-filter-subtitle {
+    margin: 0.1rem 0 0;
+    font-size: 0.72rem;
+    color: #6b7280;
+    line-height: 1.4;
+  }
+
+  .stu-filter-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.7rem 0.8rem;
+    flex: 1 1 320px;
+  }
+
+  .stu-filter-field {
+    flex: 1 1 160px;
+    min-width: 150px;
+    max-width: 240px;
+  }
+
+  .stu-filter-label {
+    display: block;
+    margin-bottom: 0.28rem;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #4b5563;
+  }
+
+  .stu-filter-field .input-group-text,
+  .promo-search-card .input-group-text {
+    background: #fff5f5;
+    border-color: #e5e7eb;
+    color: #ff7979;
+  }
+
+  .stu-filter-field .form-select,
+  .promo-search-card .form-control {
+    border-color: #e5e7eb;
+    font-size: 0.8rem;
+  }
+
+  .stu-filter-field .input-group:focus-within .input-group-text,
+  .stu-filter-field .input-group:focus-within .form-select,
+  .promo-search-card .input-group:focus-within .input-group-text,
+  .promo-search-card .input-group:focus-within .form-control {
+    border-color: #ff7979;
+    box-shadow: none;
+  }
+
+  .stu-control:focus {
+    border-color: #ff7979;
+    box-shadow: 0 0 0 0.15rem rgba(255, 121, 121, 0.15);
+  }
+
+  .stu-filter-action { flex: 0 0 auto; }
+
+  .stu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 34px;
+    padding: 0.42rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .stu-btn-primary { background: #ff7979; border-color: #ff7979; color: #fff; }
+  .stu-btn-primary:hover { background: #f56868; border-color: #f56868; color: #fff; }
+  .stu-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .stu-btn-outline { background: #fff; border-color: #dde3ea; color: #374151; }
+  .stu-btn-outline:hover { background: #fff8f8; border-color: #ff7979; color: #c24141; }
+
+  .promo-error {
+    margin: 0.28rem 0 0;
+    color: #b42318;
+    font-size: 0.72rem;
+  }
+
+  .promo-year {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin-bottom: 0.85rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid rgba(255, 121, 121, 0.22);
+    border-radius: 12px;
+    background: rgba(255, 121, 121, 0.06);
+    color: #4b5563;
+  }
+
+  .promo-year i { color: #ff7979; margin-top: 0.1rem; }
+  .promo-year p { margin: 0; font-size: 0.78rem; line-height: 1.45; }
+  .promo-year strong { color: #1f2937; }
+
+  .promo-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .promo-stat {
+    background: #fff;
+    border: 1px solid #e8ecef;
+    border-top: 3px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 0.7rem 0.85rem;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  }
+
+  .promo-stat strong {
+    display: block;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #1f2937;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .promo-stat span {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #6b7280;
+  }
+
+  .promo-stat-move { border-top-color: #ff7979; }
+  .promo-stat-move strong { color: #c24141; }
+  .promo-stat-repeat { border-top-color: #9ca3af; }
+  .promo-stat-complete { border-top-color: #2c3e50; }
+  .promo-stat-stay { border-top-color: #d97706; }
+  .promo-stat-stay strong { color: #9a3412; }
+
+  .promo-search-card {
+    margin-bottom: 0.85rem;
+    padding: 0.65rem 0.85rem;
+    background: #fff;
+    border: 1px solid #e8ecef;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  }
+
+  .promo-search-empty {
+    margin: -0.35rem 0 0.85rem;
+    font-size: 0.78rem;
+    color: #6b7280;
+  }
+
+  .promo-class {
+    margin-bottom: 0.75rem;
+    max-width: 100%;
+    background: #fff;
+    border: 1px solid #e8ecef;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+    overflow: hidden;
+  }
+
+  .promo-class-hidden { display: none; }
+
+  .promo-class-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.85rem 1rem;
+    list-style: none;
+    cursor: pointer;
+    background: linear-gradient(180deg, #fff 0%, #fafbfc 100%);
+  }
+
+  .promo-class-summary::-webkit-details-marker { display: none; }
+
+  .promo-class[open] .promo-class-summary { border-bottom: 1px solid #f0f2f4; }
+
+  .promo-continue {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem 0.75rem;
+    padding: 0.75rem 1rem;
+    background: #fff7ed;
+    border-bottom: 1px solid #f3e6d4;
+  }
+
+  .promo-continue label {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #9a3412;
+  }
+
+  .promo-continue-select { max-width: 280px; }
+
+  .promo-continue p {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: 0.7rem;
+    color: #6b7280;
+  }
+
+  .promo-class-chevron {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(255, 121, 121, 0.1);
+    color: #ff7979;
+    transition: transform 0.15s ease;
+  }
+
+  .promo-class[open] .promo-class-chevron { transform: rotate(90deg); }
+
+  .promo-class-copy { min-width: 0; display: flex; flex-direction: column; gap: 0.12rem; }
+  .promo-class-title { font-size: 0.92rem; font-weight: 700; color: #1f2937; }
+  .promo-class-meta { font-size: 0.72rem; color: #6b7280; }
+  .promo-shown {
+    margin-left: auto;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(255, 121, 121, 0.1);
+    color: #c24141;
+    font-size: 0.68rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .stu-table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .stu-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.74rem;
+    color: #374151;
+  }
+
+  .stu-table thead th {
+    padding: 0.48rem 0.85rem;
+    background: #2c3e50;
+    color: #fff;
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .stu-table thead th:first-child,
+  .stu-table tbody td:first-child { padding-left: 1.1rem; }
+  .stu-table thead th:last-child,
+  .stu-table tbody td:last-child { padding-right: 1.1rem; }
+
+  .stu-table tbody td {
+    padding: 0.48rem 0.85rem;
+    border-bottom: 1px solid #edf0f3;
+    vertical-align: middle;
+    line-height: 1.35;
+  }
+
+  .stu-table tbody tr:nth-child(even) { background: #fafbfc; }
+  .stu-table tbody tr:hover { background: rgba(255, 121, 121, 0.05); }
+  .stu-table tbody tr:last-child td { border-bottom: none; }
+  .promo-row-hidden { display: none; }
+
+  .stu-col-index {
+    width: 42px;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  .stu-col-name { width: 24%; }
+
+  .stu-name {
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #1f2937;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .stu-adm {
+    display: inline-block;
+    padding: 0.08rem 0.35rem;
+    border-radius: 5px;
+    background: #f3f4f6;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #374151;
+  }
+
+  .promo-stream-col { width: 72px; }
+  .promo-adm-col { width: 78px; }
+
+  .promo-next {
+    width: 34%;
+    white-space: normal;
+  }
+
+  .promo-pill {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 0.4rem;
+    padding: 0.08rem 0.42rem;
+    border-radius: 999px;
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .promo-pill-move { background: rgba(255, 121, 121, 0.12); color: #c24141; }
+  .promo-pill-repeat { background: #f3f4f6; color: #374151; }
+  .promo-pill-complete { background: #2c3e50; color: #fff; }
+  .promo-pill-stay { background: #fff7ed; color: #9a3412; }
+
+  .promo-reason {
+    display: block;
+    margin-top: 0.15rem;
+    color: #6b7280;
+    font-size: 0.68rem;
+  }
+
+  .promo-repeat-col { width: 72px; text-align: center; }
+
+  .promo-repeat,
+  .promo-repeat-col input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    vertical-align: middle;
+    cursor: pointer;
+    border: 1.5px solid #cfd4dc;
+    border-radius: 4px;
+    background-color: #fff;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 11px 11px;
+  }
+
+  .promo-repeat-col input[type="checkbox"]:hover { border-color: #ff7979; }
+
+  .promo-repeat-col input[type="checkbox"]:checked {
+    background-color: #ff7979;
+    border-color: #ff7979;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+  }
+
+  .promo-repeat-col input[type="checkbox"]:focus { outline: none; }
+  .promo-repeat-col input[type="checkbox"]:focus-visible { box-shadow: 0 0 0 3px rgba(255, 121, 121, 0.28); }
+  .promo-dash { color: #d1d5db; }
+
+  .promo-save {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0 0 0.85rem;
+    padding: 0.85rem 1rem;
+    background: #fff;
+    border: 1px solid #e8ecef;
+    border-top: 3px solid #ff7979;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  }
+
+  .promo-save-end { margin-top: 0.25rem; margin-bottom: 0.25rem; }
+
+  .promo-save strong { display: block; font-size: 0.86rem; color: #1f2937; }
+  .promo-save p { margin: 0.15rem 0 0; font-size: 0.74rem; color: #6b7280; }
+  .promo-stale { color: #9a3412 !important; font-weight: 600; }
+
+  .stu-empty-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    background: #fff;
+    border: 1px dashed #dde3ea;
+    border-radius: 14px;
+    color: #6b7280;
+  }
+
+  .stu-empty-state h6 {
+    margin: 0.65rem 0 0.35rem;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #374151;
+  }
+
+  .stu-empty-state p { margin: 0 auto; max-width: 28rem; font-size: 0.8rem; line-height: 1.45; }
+
+  .stu-empty-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 121, 121, 0.1);
+    color: #ff7979;
+    font-size: 1.35rem;
+  }
+
+  .promo-save-dialog { max-width: 420px; }
+
+  .promo-modal {
+    border: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  }
+
+  .promo-modal-close { position: absolute; top: 0.85rem; right: 0.85rem; }
+
+  .promo-modal-body { padding: 1.35rem 1.25rem 0.4rem; text-align: center; }
+
+  .promo-modal-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 121, 121, 0.1);
+    color: #ff7979;
+    font-size: 1.35rem;
+  }
+
+  .promo-modal-title { margin: 0; font-size: 1rem; font-weight: 700; color: #1f2937; }
+  .promo-modal-text { margin: 0.4rem 0 0.8rem; font-size: 0.8rem; color: #6b7280; }
+
+  .promo-modal-counts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+  }
+
+  .promo-modal-counts li {
+    padding: 0.45rem 0.6rem;
+    border-radius: 8px;
+    background: #fafbfc;
+    border: 1px solid #f0f2f4;
+    font-size: 0.74rem;
+    color: #4b5563;
+  }
+
+  .promo-modal-counts strong { color: #1f2937; font-variant-numeric: tabular-nums; }
+
+  .promo-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.9rem 1.15rem 1.1rem;
+  }
+
+  @media (max-width: 767.98px) {
+    .promo-stats { grid-template-columns: 1fr 1fr; }
+    .stu-filter-field { max-width: none; }
+    .promo-save { align-items: stretch; flex-direction: column; }
+    .promo-save .stu-btn { width: 100%; }
+    .promo-modal-footer { flex-direction: column-reverse; }
+    .promo-modal-footer .stu-btn { width: 100%; }
+  }
+</style>
+
+<script>
+  (function () {
+    const form = document.getElementById("promotionForm");
+    if (!form) return;
+
+    const labels = {
+      move: "Moves",
+      repeat: "Repeats",
+      complete: "Completes",
+      stay: "Stays",
+    };
+
+    function place(label, stream) {
+      if (!label) return "—";
+      return stream ? label + " · " + stream : label;
+    }
+
+    function paintRow(row) {
+      const box = row.querySelector(".promo-repeat");
+      const baseKind = row.dataset.baseKind || "stay";
+      const kind = box && box.checked ? "repeat" : baseKind;
+      row.dataset.kind = kind;
+
+      const pill = row.querySelector("[data-pill]");
+      if (pill) {
+        pill.className = "promo-pill promo-pill-" + kind;
+        pill.textContent = labels[kind] || kind;
+      }
+
+      const dest = row.querySelector("[data-dest-text]");
+      const reason = row.querySelector("[data-reason]");
+      if (kind === "repeat") {
+        if (dest) dest.textContent = place(row.dataset.homeLabel, row.dataset.homeStream);
+        if (reason) {
+          reason.hidden = false;
+          reason.textContent = "Staying behind to repeat.";
+        }
+      } else if (kind === "complete") {
+        if (dest) dest.textContent = "Leaves the live class";
+        if (reason) {
+          reason.hidden = !row.dataset.baseReason;
+          reason.textContent = row.dataset.baseReason || "";
+        }
+      } else {
+        if (dest) dest.textContent = place(row.dataset.moveLabel, row.dataset.moveStream);
+        if (reason) {
+          reason.hidden = !row.dataset.baseReason;
+          reason.textContent = row.dataset.baseReason || "";
+        }
+      }
+    }
+
+    function recount() {
+      const totals = { move: 0, repeat: 0, complete: 0, stay: 0 };
+      form.querySelectorAll(".promo-class").forEach(function (card) {
+        const local = { move: 0, repeat: 0, complete: 0, stay: 0 };
+        const rows = card.querySelectorAll(".promo-row");
+        rows.forEach(function (row) {
+          const kind = row.dataset.kind || "stay";
+          if (local[kind] !== undefined) local[kind] += 1;
+        });
+        const meta = card.querySelector("[data-class-meta]");
+        if (meta) {
+          const count = rows.length;
+          const bits = [count + " learner" + (count === 1 ? "" : "s")];
+          ["move", "repeat", "complete", "stay"].forEach(function (kind) {
+            if (local[kind]) bits.push(local[kind] + " " + kind);
+          });
+          meta.textContent = bits.join(" · ");
+        }
+        Object.keys(totals).forEach(function (kind) {
+          totals[kind] += local[kind];
+        });
+      });
+      Object.keys(totals).forEach(function (kind) {
+        const node = form.querySelector('[data-count="' + kind + '"]');
+        if (node) node.textContent = String(totals[kind]);
+        const modal = form.querySelector('[data-modal-count="' + kind + '"]');
+        if (modal) modal.textContent = String(totals[kind]);
+      });
+    }
+
+    function continuationSignature() {
+      return Array.from(form.querySelectorAll(".promo-continue-select")).map(function (field) {
+        return field.name + "=" + field.value;
+      }).join("&");
+    }
+
+    const loadedContinue = continuationSignature();
+
+    function sourceChanged() {
+      const year = form.querySelector("#from_year");
+      const branch = form.querySelector("#branch_id");
+      const sameYear = !year || String(year.value) === String(form.dataset.loadedYear || "");
+      const sameBranch = !branch || String(branch.value) === String(form.dataset.loadedBranch || "");
+      return !(sameYear && sameBranch);
+    }
+
+    function previewIsCurrent() {
+      return !sourceChanged() && continuationSignature() === loadedContinue;
+    }
+
+    function syncSave() {
+      const stale = !previewIsCurrent();
+      form.querySelectorAll(".promo-save-open").forEach(function (save) {
+        save.disabled = stale;
+      });
+      form.querySelectorAll(".promo-stale").forEach(function (note) {
+        note.hidden = !stale;
+      });
+    }
+
+    form.querySelectorAll(".promo-row").forEach(function (row) {
+      const box = row.querySelector(".promo-repeat");
+      if (!box) return;
+      box.addEventListener("change", function () {
+        paintRow(row);
+        recount();
+      });
+    });
+
+    const search = document.getElementById("promo-search");
+    if (search) {
+      search.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") event.preventDefault();
+      });
+      search.addEventListener("input", function () {
+        const query = search.value.trim().toLowerCase();
+        let any = false;
+        form.querySelectorAll(".promo-class").forEach(function (card) {
+          let visible = 0;
+          card.querySelectorAll(".promo-row").forEach(function (row) {
+            const match = !query || (row.dataset.search || "").indexOf(query) !== -1;
+            row.classList.toggle("promo-row-hidden", !match);
+            if (match) visible += 1;
+          });
+          card.classList.toggle("promo-class-hidden", visible === 0);
+          if (query && visible) card.open = true;
+          if (visible) any = true;
+          const shown = card.querySelector("[data-shown]");
+          if (shown) {
+            shown.hidden = !query;
+            shown.textContent = query ? visible + " shown" : "";
+          }
+        });
+        const empty = document.getElementById("promo-search-empty");
+        if (empty) empty.hidden = !query || any;
+      });
+    }
+
+    const preview = document.getElementById("promo-preview");
+    if (preview) {
+      preview.addEventListener("click", function () {
+        if (!sourceChanged()) return;
+        form.querySelectorAll('input[name="repeat_ids"]').forEach(function (input) {
+          input.disabled = true;
+        });
+      });
+    }
+
+    ["#from_year", "#branch_id"].forEach(function (selector) {
+      const field = form.querySelector(selector);
+      if (field) field.addEventListener("change", syncSave);
+    });
+    form.querySelectorAll(".promo-continue-select").forEach(function (field) {
+      field.addEventListener("change", syncSave);
+    });
+  })();
+</script>
+{% endblock %}

@@ -14,6 +14,14 @@ import os
 from flask import current_app
 from ..services.grading import get_max_points_for_class
 from .grades import live_class_name
+from .promotion import (
+    attach_year_placement,
+    class_year_has_enrollments,
+    cohort_for_exam,
+    enrolled_students_query,
+    live_students_query,
+    uses_current_subjects,
+)
 from PIL import Image
 
 _pdf_image_cache = {}
@@ -383,7 +391,8 @@ def load_class_students_for_report(
     branch_id, class_id, include_student_id=None, exam_id=None
 ):
     """
-    Class-wide printing uses the current class roster.
+    Class-wide printing uses the saved enrollment for the exam year when
+    that year has been promoted. Otherwise it uses the live class.
 
     A single learner's historical card ranks against everyone who sat
     that exam in that class, including classmates who have since moved.
@@ -400,10 +409,18 @@ def load_class_students_for_report(
             .all()
         )
 
+    exam = Exam.query.get(exam_id) if exam_id else None
+    if exam is not None and class_year_has_enrollments(branch_id, class_id, exam.year):
+        students = (
+            enrolled_students_query(branch_id, class_id, exam.year)
+            .options(*query_options)
+            .all()
+        )
+        return attach_year_placement(students, exam.year)
+
     students = (
-        Student.query
+        live_students_query(branch_id, class_id)
         .options(*query_options)
-        .filter_by(branch_id=branch_id, class_id=class_id)
         .all()
     )
     if not include_student_id:
@@ -466,7 +483,7 @@ def compute_cbe_exam_rankings(branch_id, class_id, exam_id, include_student_id=N
         branch_id,
         class_id,
         include_student_id=include_student_id,
-        exam_id=exam_id if include_student_id else None,
+        exam_id=exam_id,
     )
     sitting_streams = (
         sitting_stream_by_student(branch_id, class_id, exam_id)
@@ -585,7 +602,7 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
         branch_id,
         class_id,
         include_student_id=student_id,
-        exam_id=exam_id if student_id else None,
+        exam_id=exam_id,
     )
     sitting_streams = (
         sitting_stream_by_student(branch_id, class_id, exam_id)
@@ -644,6 +661,8 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
             sitting_stream = sitting_streams.get(s.id, "")
             if int(student_id) == s.id and stream not in (None, ""):
                 sitting_stream = stream
+        elif getattr(s, "loaded_from_enrollment", False):
+            sitting_stream = s.roster_stream
         stream_key = sitting_stream if sitting_stream not in (None, "") else ""
 
         if stream is None:
@@ -672,11 +691,12 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
 
         report_subjects = []
         seen_subject_ids = set()
-        for alloc in s.subject_allocations:
-            subject = alloc.subject
-            if subject and subject.id not in seen_subject_ids:
-                report_subjects.append(subject)
-                seen_subject_ids.add(subject.id)
+        if uses_current_subjects(s, class_id):
+            for alloc in s.subject_allocations:
+                subject = alloc.subject
+                if subject and subject.id not in seen_subject_ids:
+                    report_subjects.append(subject)
+                    seen_subject_ids.add(subject.id)
         for student_id_key, subject_id in marks_by_student_subject:
             if student_id_key != s.id or subject_id in seen_subject_ids:
                 continue
@@ -869,11 +889,9 @@ def build_broadsheet_data(branch_id, class_id, exam_id, stream=None):
         branch_name = branch.branch_name if branch else "N/A"
 
         # -------------------- 2. Students --------------------
-        students_query = Student.query.filter_by(branch_id=branch_id, class_id=class_id)
-        if stream:
-            students_query = students_query.filter_by(stream=stream)
-
-        students = students_query.order_by(Student.fullname).all()
+        students, saved_year = cohort_for_exam(
+            branch_id, class_id, exam_id, stream=stream
+        )
         student_ids = [s.id for s in students]
 
         if not students:
@@ -898,24 +916,36 @@ def build_broadsheet_data(branch_id, class_id, exam_id, stream=None):
                 allocation.subject_id
             )
 
-        subject_ids = set(a.subject_id for a in allocations)
+        alloc_subject_ids = {allocation.subject_id for allocation in allocations}
 
-        subjects = Subject.query.filter(Subject.id.in_(subject_ids)).all()
-        subject_map = {s.id: s for s in subjects}
-
-        # -------------------- 4. Exam Papers --------------------
+        # A saved year reads subjects from the exam papers. The live year
+        # still reads them from the current subject list.
         papers_query = ExamPaper.query.filter_by(
             exam_id=exam_id,
             branch_id=branch_id,
-            class_id=class_id
-        ).filter(ExamPaper.subject_id.in_(subject_ids))
-
+            class_id=class_id,
+        )
         if stream:
             papers_query = papers_query.filter_by(stream=stream)
         else:
             papers_query = papers_query.filter(ExamPaper.stream.is_(None))
 
-        papers = papers_query.all()
+        if saved_year:
+            papers = papers_query.all()
+            subject_ids = {paper.subject_id for paper in papers} or alloc_subject_ids
+            papers = [paper for paper in papers if paper.subject_id in subject_ids]
+        else:
+            subject_ids = alloc_subject_ids
+            papers = (
+                papers_query.filter(ExamPaper.subject_id.in_(subject_ids)).all()
+                if subject_ids else []
+            )
+
+        subjects = (
+            Subject.query.filter(Subject.id.in_(subject_ids)).all()
+            if subject_ids else []
+        )
+        subject_map = {s.id: s for s in subjects}
         paper_map = {p.subject_id: p for p in papers}
 
         # -------------------- 5. Marks --------------------

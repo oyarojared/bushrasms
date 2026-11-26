@@ -6,10 +6,10 @@ from flask_login import login_required
 
 from ....modals.branches_db import Branch
 from ....modals.staff_db import Teacher
-from ....modals.students_db import Student
 from .. import admin_bp
 from ..utils import generate_excel_file, get_accessible_branches_query, user_can_access_branch
 from ..utils.route_protect import admin_required
+from ..services.promotion import class_roster
 
 student_fields = [
     "admission_number",
@@ -50,22 +50,14 @@ def sanitize_filename(s):
     return re.sub(r"[^\w\- ]", "_", s)
 
 
-def get_students(branch_id, class_id, stream=None):
+def get_students(branch_id, class_id, stream=None, year=None):
     """
-    Fetch students by branch, grade/form, and optional stream.
+    Fetch students by branch, grade/form, optional stream, and optional year.
     """
     if stream == "":
         stream = None
-    all_students = Student.query.filter(
-        Student.branch_id == branch_id, Student.class_id == class_id
-    ).all()
-
-    if stream is None:
-        return all_students
-
-    # Filter by stream
-    filtered_students = [s for s in all_students if s.stream == stream]
-    return filtered_students
+    students, _year = class_roster(branch_id, class_id, stream=stream, year=year)
+    return students
 
 
 @admin_bp.route("/download_students_excel", methods=["POST", "GET"])
@@ -80,6 +72,7 @@ def download_students_excel():
     stream = request.form.get("stream") or None
     if stream:
         stream = stream.strip()
+    year = request.form.get("enrollment_year", type=int) or None
 
     if not branch_id or not grade_id:
         flash(
@@ -92,7 +85,7 @@ def download_students_excel():
         flash("You cannot export students for this school.", "warning")
         return redirect(url_for("admin.student_dash"))
 
-    students = get_students(branch_id, grade_id, stream=stream)
+    students = get_students(branch_id, grade_id, stream=stream, year=year)
 
     if not students:
         flash(

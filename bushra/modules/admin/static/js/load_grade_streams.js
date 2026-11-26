@@ -137,6 +137,15 @@ if (uploadBranchSelect) {
       }
     });
   }
+
+  const moveStudentModal = document.getElementById("moveStudentModal");
+  if (moveStudentModal) {
+    moveStudentModal.addEventListener("shown.bs.modal", () => {
+      if (uploadBranchSelect.value) {
+        uploadBranchSelect.dispatchEvent(new Event("change"));
+      }
+    });
+  }
 }
 
 function updateUploadAdmStart(branchId) {

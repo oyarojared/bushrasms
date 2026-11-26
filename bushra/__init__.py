@@ -26,10 +26,10 @@ def load_user(user_id):
 
 
 # create app instant
-def create_app():
+def create_app(config_object=None):
     app = Flask(__name__, template_folder="templates")
 
-    app.config.from_object(DevelopmentConfig)
+    app.config.from_object(config_object or DevelopmentConfig)
     app.config["TEMPLATES_AUTO_RELOAD"] = True
 
     # register all blueprints

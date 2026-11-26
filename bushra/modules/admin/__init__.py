@@ -28,4 +28,4 @@ def serve_passport(filename):
 from . import utils
 from .routes import (admin, api, branches, excel_files,
                      school_staff, students, subjects, assessments, my_class,
-                     messages)
+                     messages, promotion)

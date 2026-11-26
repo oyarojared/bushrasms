@@ -15,6 +15,13 @@ class Student(db.Model):
     # If class has streams
     stream = db.Column(db.String(50), nullable=True)
 
+    # active: on the live class list. completed: finished, kept for records.
+    enrollment_status = db.Column(
+        db.String(20), nullable=False, default="active", server_default="active"
+    )
+    # School year the current class_id belongs to.
+    current_year = db.Column(db.Integer, nullable=True)
+
     # --- Student Personal Details ---
     admission_number = db.Column(db.Integer, nullable=False)
     fullname = db.Column(db.String(40), nullable=False)
@@ -53,6 +60,13 @@ class Student(db.Model):
         back_populates="student",
         cascade="all, delete-orphan",
         passive_deletes=True
+    )
+
+    enrollments = db.relationship(
+        "StudentEnrollment",
+        back_populates="student",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     @property
@@ -109,3 +123,42 @@ class StudentSubjectAllocation(db.Model):
 
     def __repr__(self):
         return f"<Allocation Student:{self.student_id} Subject:{self.subject_id}>"
+
+
+class StudentEnrollment(db.Model):
+    """One class placement for one student in one school year."""
+
+    __tablename__ = "student_enrollments"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey("students.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    branch_id = db.Column(
+        db.Integer,
+        db.ForeignKey("branches.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    year = db.Column(db.Integer, nullable=False)
+    class_id = db.Column(
+        db.Integer,
+        db.ForeignKey("branch_classes.id"),
+        nullable=False,
+    )
+    stream = db.Column(db.String(50), nullable=True)
+    # active, repeating, or completed
+    status = db.Column(db.String(20), nullable=False, default="active")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    student = db.relationship("Student", back_populates="enrollments")
+    school_class = db.relationship("BranchClasses")
+
+    __table_args__ = (
+        db.UniqueConstraint("student_id", "year", name="uq_student_enrollment_year"),
+    )
+
+    def __repr__(self):
+        return f"<Enrollment student:{self.student_id} {self.year} class:{self.class_id}>"

@@ -516,8 +516,14 @@ def auto_allocate_subjects(student, previous_class_id=None):
             if alloc.subject_id not in desired_ids:
                 student.subject_allocations.remove(alloc)
 
+    # Read the rows, not the in-memory list. A list loaded before this
+    # call can miss subjects that were just saved.
+    db.session.flush()
     existing_subject_ids = {
-        alloc.subject_id for alloc in student.subject_allocations
+        subject_id
+        for (subject_id,) in db.session.query(StudentSubjectAllocation.subject_id)
+        .filter_by(student_id=student.id)
+        .all()
     }
 
     new_allocations = []

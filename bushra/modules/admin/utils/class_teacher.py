@@ -160,23 +160,22 @@ def get_assignment_for_teacher(teacher, assignment_id):
 def students_for_assignment(assignment):
     if not assignment:
         return []
-    query = Student.query.filter_by(
-        branch_id=assignment.branch_id,
-        class_id=assignment.class_id,
+    from ..services.promotion import live_students_query
+
+    stream = (assignment.stream or "").strip() or None
+    return (
+        live_students_query(assignment.branch_id, assignment.class_id, stream=stream)
+        .order_by(Student.admission_number.asc(), Student.fullname.asc())
+        .all()
     )
-    stream = (assignment.stream or "").strip()
-    if stream:
-        query = query.filter(Student.stream == stream)
-    return query.order_by(
-        Student.admission_number.asc(),
-        Student.fullname.asc(),
-    ).all()
 
 
 def assignment_covers_student(assignment, student):
     if not assignment or not student:
         return False
     if student.branch_id != assignment.branch_id:
+        return False
+    if getattr(student, "enrollment_status", None) == "completed":
         return False
     if student.class_id != assignment.class_id:
         return False

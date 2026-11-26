@@ -616,13 +616,16 @@ def generate_student_report(student: Student, exam: Exam, ctx=None, stream_overr
             ctx["class_teachers_by_stream"], student, lookup_stream
         )
 
+    from .promotion import uses_current_subjects
+
     report_subjects = []
     seen_subject_ids = set()
-    for alloc in student.subject_allocations:
-        subject = alloc.subject
-        if subject and subject.id not in seen_subject_ids:
-            report_subjects.append(subject)
-            seen_subject_ids.add(subject.id)
+    if uses_current_subjects(student, class_.id):
+        for alloc in student.subject_allocations:
+            subject = alloc.subject
+            if subject and subject.id not in seen_subject_ids:
+                report_subjects.append(subject)
+                seen_subject_ids.add(subject.id)
 
     if ctx is not None:
         for student_id_key, subject_id in ctx["marks_by_student_subject"]:
@@ -794,7 +797,7 @@ def generate_class_reports(branch_id, class_id, stream, exam_id, include_student
         branch_id,
         class_id,
         include_student_id=include_student_id,
-        exam_id=exam_id if include_id else None,
+        exam_id=exam_id,
     )
 
     ctx = _build_844_class_context(branch_id, class_id, exam_id, all_students)
@@ -815,6 +818,8 @@ def generate_class_reports(branch_id, class_id, stream, exam_id, include_student
             stream_override = sitting_streams.get(s.id, "")
             if s.id == include_id and rank_stream not in (None, ""):
                 stream_override = rank_stream
+        elif getattr(s, "loaded_from_enrollment", False):
+            stream_override = s.roster_stream or ""
         all_reports.append(
             generate_student_report(s, exam, ctx, stream_override=stream_override)
         )
@@ -868,7 +873,7 @@ def compute_class_exam_rankings(branch_id, class_id, exam_id, include_student_id
         branch_id,
         class_id,
         include_student_id=include_student_id,
-        exam_id=exam_id if include_student_id else None,
+        exam_id=exam_id,
     )
     sitting_streams = (
         sitting_stream_by_student(branch_id, class_id, exam_id)

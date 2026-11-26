@@ -1,25 +1,34 @@
+import os
+import tempfile
+
 import pytest
 
 from ..bushra import create_app
 from ..bushra import db as _db
+from ..bushra.config import DevelopmentConfig
 from ..bushra.modals.branches_db import Branch, BranchClasses
 from ..bushra.modals.staff_db import Teacher
 from ..bushra.modals.students_db import Student
 
 
+class TestConfig(DevelopmentConfig):
+    TESTING = True
+    WTF_CSRF_ENABLED = False
+
+
 @pytest.fixture()
 def app():
-    app = create_app()
-    app.config.update(
-        {
-            "TESTING": 1,
-            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-            "WTF_CSRF_ENABLED": False,
-        }
-    )
+    handle, path = tempfile.mkstemp(suffix=".sqlite")
+    os.close(handle)
+    TestConfig.SQLALCHEMY_DATABASE_URI = "sqlite:///" + path
+    app = create_app(TestConfig)
     with app.app_context():
         _db.create_all()
         yield app
+        _db.session.remove()
+        _db.engine.dispose()
+    if os.path.exists(path):
+        os.remove(path)
 
 
 @pytest.fixture
