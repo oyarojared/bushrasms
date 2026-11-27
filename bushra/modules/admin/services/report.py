@@ -553,6 +553,120 @@ def compute_cbe_exam_rankings(branch_id, class_id, exam_id, include_student_id=N
     return ranking_map
 
 
+_TERM_ORDER = {"I": 1, "II": 2, "III": 3}
+
+
+def _is_secondary_exam_class(grade_form):
+    label = live_class_name(grade_form or "").strip().lower()
+    if "igcse" in label:
+        return True
+    return "form" in label and any(char.isdigit() for char in label)
+
+
+def _exam_chrono(year, term, name, exam_id):
+    return (
+        int(year or 0),
+        _TERM_ORDER.get(term, 0),
+        (name or "").lower(),
+        int(exam_id or 0),
+    )
+
+
+def _mean_mark(total, count):
+    if not count:
+        return None
+    mean = round(float(total) / count, 1)
+    if mean == int(mean):
+        return int(mean)
+    return mean
+
+
+def recent_cbe_exam_summaries(student_ids, current_exam_id, limit=3):
+    """Up to three CBE sittings for each learner, ending with this exam."""
+    if not student_ids or not current_exam_id:
+        return {}
+
+    current = db.session.get(Exam, current_exam_id)
+    if current is None:
+        return {}
+    current_key = _exam_chrono(current.year, current.term, current.name, current.id)
+
+    rows = (
+        db.session.query(StudentExamMark, ExamPaper, Exam, BranchClasses)
+        .join(ExamPaper, StudentExamMark.exam_paper_id == ExamPaper.id)
+        .join(Exam, ExamPaper.exam_id == Exam.id)
+        .join(BranchClasses, ExamPaper.class_id == BranchClasses.id)
+        .filter(StudentExamMark.student_id.in_(list(student_ids)))
+        .all()
+    )
+
+    grouped = {}
+    for mark, paper, exam, school_class in rows:
+        if mark.marks is None or _is_secondary_exam_class(school_class.grade_form):
+            continue
+        sort_key = _exam_chrono(exam.year, exam.term, exam.name, exam.id)
+        if sort_key > current_key:
+            continue
+        bucket = grouped.setdefault(
+            (mark.student_id, exam.id, paper.class_id),
+            {
+                "sort": sort_key,
+                "class_id": paper.class_id,
+                "name": exam.name,
+                "term": exam.term,
+                "year": exam.year,
+                "total": 0.0,
+                "count": 0,
+                "is_current": exam.id == current.id,
+            },
+        )
+        bucket["total"] += float(mark.marks)
+        bucket["count"] += 1
+
+    by_student = defaultdict(list)
+    for (student_id, exam_id, class_id), item in grouped.items():
+        if not item["count"]:
+            continue
+        mean = _mean_mark(item["total"], item["count"])
+        grade = resolve_overall_grade(item["class_id"], mean)
+        by_student[student_id].append(
+            {
+                "sort": item["sort"],
+                "name": item["name"],
+                "term": item["term"],
+                "year": item["year"],
+                "mean": mean,
+                "grade": (grade or {}).get("performance_level") or "—",
+                "is_current": item["is_current"],
+            }
+        )
+
+    chosen = {}
+    for student_id, exams in by_student.items():
+        exams.sort(key=lambda row: row["sort"])
+        latest = exams[-limit:]
+        for row in latest:
+            row.pop("sort", None)
+        chosen[student_id] = latest
+    return chosen
+
+
+def _align_current_exam_with_card(student, class_id):
+    """The latest row uses the same mean as the marks table on this card."""
+    current_rows = [
+        row for row in (student.get("recent_exams") or []) if row.get("is_current")
+    ]
+    subjects = student.get("subjects") or []
+    if not current_rows or not subjects:
+        return
+    total = sum(float(subject.get("marks") or 0) for subject in subjects)
+    percentage = total / (len(subjects) * 100) * 100
+    grade = resolve_overall_grade(class_id, percentage)
+    for row in current_rows:
+        row["mean"] = _mean_mark(percentage, 1)
+        row["grade"] = (grade or {}).get("performance_level") or "—"
+
+
 def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=None):
     """
     Fetch all necessary data to generate a report card PDF,
@@ -800,6 +914,14 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
         ]
     else:
         output_students = overall_students
+
+    recent_exams = recent_cbe_exam_summaries(
+        [student["id"] for student in output_students],
+        exam_id,
+    )
+    for student in output_students:
+        student["recent_exams"] = recent_exams.get(student["id"], [])
+        _align_current_exam_with_card(student, class_id)
 
     # ------------------------------------------------------------------
     # Grading boundaries
