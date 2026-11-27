@@ -581,6 +581,92 @@ def _mean_mark(total, count):
     return mean
 
 
+def _previous_mark_label(marks, marks_out_of):
+    number = float(marks)
+    shown = int(number) if number == int(number) else round(number, 1)
+    out_of = int(marks_out_of or 100)
+    return f"{shown}/{out_of}"
+
+
+def _mark_percent(marks, marks_out_of):
+    out_of = float(marks_out_of or 100) or 100.0
+    return float(marks) / out_of * 100
+
+
+def _change_label(current_marks, current_out_of, previous_percent):
+    """Signed difference in percentage points, so 18/20 and 80/100 can be compared."""
+    if current_marks is None or previous_percent is None:
+        return None
+    delta = int(round(_mark_percent(current_marks, current_out_of) - float(previous_percent)))
+    if delta > 0:
+        return f"+{delta}"
+    return str(delta)
+
+
+def previous_cbe_subject_marks(student_ids, current_exam_id):
+    """The exam just before this one, with each subject's mark as it was entered."""
+    if not student_ids or not current_exam_id:
+        return {}
+
+    current = db.session.get(Exam, current_exam_id)
+    if current is None:
+        return {}
+    current_key = _exam_chrono(current.year, current.term, current.name, current.id)
+
+    rows = (
+        db.session.query(StudentExamMark, ExamPaper, Exam, BranchClasses)
+        .join(ExamPaper, StudentExamMark.exam_paper_id == ExamPaper.id)
+        .join(Exam, ExamPaper.exam_id == Exam.id)
+        .join(BranchClasses, ExamPaper.class_id == BranchClasses.id)
+        .filter(StudentExamMark.student_id.in_(list(student_ids)))
+        .all()
+    )
+
+    best_exam = {}
+    by_subject = {}
+    for mark, paper, exam, school_class in rows:
+        if mark.marks is None or _is_secondary_exam_class(school_class.grade_form):
+            continue
+        sort_key = _exam_chrono(exam.year, exam.term, exam.name, exam.id)
+        if sort_key >= current_key:
+            continue
+        chosen = best_exam.get(mark.student_id)
+        if chosen is None or sort_key > chosen[0]:
+            best_exam[mark.student_id] = (sort_key, exam.id, exam.name)
+        by_subject[(mark.student_id, exam.id, paper.subject_id)] = {
+            "label": _previous_mark_label(mark.marks, paper.marks_out_of),
+            "percent": _mark_percent(mark.marks, paper.marks_out_of),
+            "marks": float(mark.marks),
+            "out_of": int(paper.marks_out_of or 100),
+            "class_id": paper.class_id,
+        }
+
+    chosen = {}
+    for student_id, (_sort_key, exam_id, exam_name) in best_exam.items():
+        subjects = {
+            subject_id: item
+            for (owner_id, sitting_id, subject_id), item in by_subject.items()
+            if owner_id == student_id and sitting_id == exam_id
+        }
+        class_counts = {}
+        for item in subjects.values():
+            class_counts[item["class_id"]] = class_counts.get(item["class_id"], 0) + 1
+        class_id = max(class_counts, key=class_counts.get)
+        mean = _mean_mark(
+            sum(item["percent"] for item in subjects.values()),
+            len(subjects),
+        )
+        grade = resolve_overall_grade(class_id, mean)
+        chosen[student_id] = {
+            "name": exam_name,
+            "grade": (grade or {}).get("performance_level"),
+            "marks": sum(item["marks"] for item in subjects.values()),
+            "out_of": sum(item["out_of"] for item in subjects.values()),
+            "subjects": subjects,
+        }
+    return chosen
+
+
 def recent_cbe_exam_summaries(student_ids, current_exam_id, limit=3):
     """Up to three CBE sittings for each learner, ending with this exam."""
     if not student_ids or not current_exam_id:
@@ -735,6 +821,11 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
         .all()
     )
 
+    previous_by_student = previous_cbe_subject_marks(
+        [learner.id for learner in students],
+        exam_id,
+    )
+
     marks_by_student_subject = {}
     papers_by_stream_subject = {}
     for mark, paper, subject in mark_rows:
@@ -800,7 +891,11 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
             "passport_path": build_pdf_image_data_uri(build_passport_path(s)),
             "class_teacher": teacher_name,
             "subjects": [],
-            "total_marks": 0
+            "total_marks": 0,
+            "previous_exam_name": (previous_by_student.get(s.id) or {}).get("name"),
+            "previous_exam_grade": (previous_by_student.get(s.id) or {}).get("grade"),
+            "previous_exam_marks": (previous_by_student.get(s.id) or {}).get("marks"),
+            "previous_exam_out_of": (previous_by_student.get(s.id) or {}).get("out_of"),
         }
 
         report_subjects = []
@@ -832,12 +927,24 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
                 )
 
             marks = marks_by_student_subject.get((s.id, subject.id))
+            prior_subject = (
+                (previous_by_student.get(s.id) or {}).get("subjects") or {}
+            ).get(subject.id) or {}
+            previous_mark = prior_subject.get("label")
+            current_paper = papers_by_stream_subject.get((stream_key, subject.id))
+            current_out_of = (
+                current_paper.marks_out_of if current_paper is not None else None
+            ) or 100
+            change = _change_label(marks, current_out_of, prior_subject.get("percent"))
             if marks is None:
                 student_data["subjects"].append({
                     "subject_code": subject.code,
                     "subject_name": subject.name,
                     "teacher_initials": teacher_initials,
                     "marks": None,
+                    "marks_out_of": current_out_of,
+                    "previous_mark": previous_mark,
+                    "change": change,
                     "performance_level": None,
                     "points": None,
                     "descriptor": None,
@@ -853,6 +960,9 @@ def get_report_card_data(branch_id, class_id, exam_id, stream=None, student_id=N
                 "subject_name": subject.name,
                 "teacher_initials": teacher_initials,
                 "marks": marks,
+                "marks_out_of": current_out_of,
+                "previous_mark": previous_mark,
+                "change": change,
                 "performance_level": grade_info["performance_level"],
                 "points": grade_info["points"],
                 "descriptor": grade_info["descriptor"]

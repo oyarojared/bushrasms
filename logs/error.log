@@ -1587,3 +1587,147 @@ Traceback (most recent call last):
   File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
     raise SQLAlchemyError("database unavailable")
 sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:16:33,723 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:16:33,723 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:16:33,723 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:16:33,723 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:16:33,723 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:16:33,723 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:16:33,723 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:16:33,723 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:16:33,723 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:19:04,008 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:19:04,008 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:19:04,008 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:19:04,008 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:19:04,008 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:19:04,008 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:19:04,008 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:19:04,008 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
+2026-11-27 12:19:04,008 ERROR: Could not delete sent message 1 for user 1 [in C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py:232]
+Traceback (most recent call last):
+  File "C:\Users\HP_User\Desktop\bushrasms\bushra\modules\admin\services\staff_messages.py", line 229, in delete_sent_message
+    db.session.commit()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\HP_User\Desktop\bushrasms\tests\test_staff_messages.py", line 172, in fail_commit
+    raise SQLAlchemyError("database unavailable")
+sqlalchemy.exc.SQLAlchemyError: database unavailable
