@@ -17,6 +17,12 @@ from ..services.report import (
     broadsheet_excel_filename,
     compute_full_analysis,
 )
+from ..services.subject_marks_excel import (
+    build_subject_marks_workbook,
+    match_subject_mark_rows,
+    parse_subject_marks_workbook,
+    subject_marks_filename,
+)
 from ..services.grades import (
     filter_active_classes,
     is_archived_class_name,
@@ -367,6 +373,44 @@ def api_subjects():
         return jsonify([]), 500
 
 
+def _subject_entry_students(branch_id, class_id, subject_id, exam_id, stream):
+    """The same learners the subject marks screen is showing."""
+    stream = stream or None
+    exam = Exam.query.get(exam_id) if exam_id else None
+    historical = bool(
+        exam and class_year_has_enrollments(branch_id, class_id, exam.year)
+    )
+    if historical:
+        students = enrolled_students_query(
+            branch_id, class_id, exam.year, stream=stream
+        ).all()
+    else:
+        students = (
+            live_students_query(branch_id, class_id, stream=stream)
+            .join(
+                StudentSubjectAllocation,
+                Student.id == StudentSubjectAllocation.student_id,
+            )
+            .filter(StudentSubjectAllocation.subject_id == subject_id)
+            .all()
+        )
+
+    paper = ExamPaper.query.filter_by(
+        exam_id=exam_id,
+        branch_id=branch_id,
+        class_id=class_id,
+        stream=stream,
+        subject_id=subject_id,
+    ).first()
+    marks_map = {}
+    if paper:
+        marks_map = {
+            mark.student_id: mark.marks
+            for mark in StudentExamMark.query.filter_by(exam_paper_id=paper.id)
+        }
+    return students, paper, marks_map
+
+
 @admin_bp.route("/api/exam-students")
 @login_required
 def get_exam_students():
@@ -388,43 +432,9 @@ def get_exam_students():
         return jsonify({"error": "Missing required parameters"}), 400
 
     try:
-        # A saved year lists whoever was in that class. The live year
-        # still lists only learners allocated to this subject.
-        exam = Exam.query.get(exam_id) if exam_id else None
-        historical = bool(
-            exam and class_year_has_enrollments(branch_id, class_id, exam.year)
+        students, paper, marks_map = _subject_entry_students(
+            branch_id, class_id, subject_id, exam_id, stream
         )
-        if historical:
-            students = enrolled_students_query(
-                branch_id, class_id, exam.year, stream=stream
-            ).all()
-        else:
-            students_query = (
-                live_students_query(branch_id, class_id, stream=stream)
-                .join(
-                    StudentSubjectAllocation,
-                    Student.id == StudentSubjectAllocation.student_id,
-                )
-                .filter(StudentSubjectAllocation.subject_id == subject_id)
-            )
-            students = students_query.all()
-
-        # -------------------- 4. Check if an ExamPaper exists --------------------
-        paper = ExamPaper.query.filter_by(
-            exam_id=exam_id,
-            branch_id=branch_id,
-            class_id=class_id,
-            stream=stream,
-            subject_id=subject_id
-        ).first()
-
-        # -------------------- 5. Load pre-existing marks --------------------
-        marks_map = {} 
-        if paper:
-            marks_records = StudentExamMark.query.filter_by(exam_paper_id=paper.id).all()
-            marks_map = {m.student_id: m.marks for m in marks_records}
-            print(marks_map)
-        # -------------------- 6. Build JSON response --------------------
         response = {
             "paper": {
                 "id": paper.id if paper else None,
@@ -569,6 +579,150 @@ def save_exam_marks():
         db.session.rollback()
         current_app.logger.error(f"Saving marks failed: {e}", exc_info=True)
         return jsonify({"error": "Failed to save marks"}), 500
+
+
+def _subject_marks_context(branch_id, class_id, subject_id, exam_id):
+    if not all([branch_id, class_id, subject_id, exam_id]):
+        return None, (jsonify({"error": "Choose the class and subject first."}), 400)
+    if not user_can_access_branch(branch_id):
+        return None, (jsonify({"error": "You cannot open marks for this school."}), 403)
+    exam = Exam.query.get(exam_id)
+    school_class = BranchClasses.query.get(class_id)
+    subject = Subject.query.get(subject_id)
+    if (
+        not exam
+        or exam.is_inactive
+        or not school_class
+        or school_class.branch_id != branch_id
+        or not subject
+    ):
+        return None, (jsonify({"error": "That class or subject is not on this exam."}), 404)
+    return (exam, school_class, subject), None
+
+
+@admin_bp.route("/api/subject-marks/excel")
+@login_required
+def download_subject_marks_excel():
+    branch_id = request.args.get("branch_id", type=int)
+    class_id = request.args.get("class_id", type=int)
+    subject_id = request.args.get("subject_id", type=int)
+    exam_id = request.args.get("exam_id", type=int)
+    stream = request.args.get("stream") or None
+
+    context, error = _subject_marks_context(branch_id, class_id, subject_id, exam_id)
+    if error:
+        return error
+    exam, school_class, subject = context
+
+    try:
+        students, _paper, marks_map = _subject_entry_students(
+            branch_id, class_id, subject_id, exam_id, stream
+        )
+        if not students:
+            return jsonify({"error": "No learners found for this subject."}), 404
+        workbook = build_subject_marks_workbook(students, marks_map)
+        filename = subject_marks_filename(
+            school_class.grade_form, subject.name, exam.name
+        )
+        return send_file(
+            workbook,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True,
+            download_name=filename,
+        )
+    except Exception:
+        current_app.logger.exception("Error downloading subject marks")
+        return jsonify({"error": "Failed to download the marks sheet."}), 500
+
+
+@admin_bp.route("/api/subject-marks/excel", methods=["POST"])
+@login_required
+def upload_subject_marks_excel():
+    branch_id = request.form.get("branch_id", type=int)
+    class_id = request.form.get("class_id", type=int)
+    subject_id = request.form.get("subject_id", type=int)
+    exam_id = request.form.get("exam_id", type=int)
+    stream = request.form.get("stream") or None
+    upload = request.files.get("file")
+
+    context, error = _subject_marks_context(branch_id, class_id, subject_id, exam_id)
+    if error:
+        return error
+    exam, _school_class, _subject = context
+    if exam.is_locked:
+        return jsonify({"error": "This exam is locked. Marks cannot be saved."}), 403
+    if is_deadline_passed(exam_id):
+        return jsonify({"error": "Teachers can no longer save marks. The entry deadline has passed."}), 403
+    if upload is None or not upload.filename:
+        return jsonify({"error": "Choose the Excel sheet to upload."}), 400
+
+    try:
+        rows = parse_subject_marks_workbook(upload)
+        students, paper, _marks_map = _subject_entry_students(
+            branch_id, class_id, subject_id, exam_id, stream
+        )
+        marks_out_of = paper.marks_out_of if paper else request.form.get("marks_out_of", type=int) or 100
+        if marks_out_of < 1:
+            marks_out_of = 100
+        updates, skipped, problems = match_subject_mark_rows(students, rows, marks_out_of)
+        if problems:
+            return jsonify({"error": " ".join(problems[:4])}), 400
+        if not updates:
+            return jsonify({"error": "None of the admission numbers are in this class and subject."}), 400
+
+        if not paper:
+            paper = ExamPaper(
+                exam_id=exam_id,
+                branch_id=branch_id,
+                class_id=class_id,
+                stream=stream,
+                subject_id=subject_id,
+                marks_out_of=marks_out_of,
+            )
+            db.session.add(paper)
+            db.session.flush()
+
+        saved = 0
+        cleared = 0
+        for item in updates:
+            marks = item["marks"]
+            record = StudentExamMark.query.filter_by(
+                exam_paper_id=paper.id,
+                student_id=item["student_id"],
+            ).first()
+            if _mark_is_cleared(marks):
+                if record:
+                    db.session.delete(record)
+                    cleared += 1
+                continue
+            if record:
+                record.marks = float(marks)
+            else:
+                db.session.add(
+                    StudentExamMark(
+                        exam_paper_id=paper.id,
+                        student_id=item["student_id"],
+                        marks=float(marks),
+                    )
+                )
+            saved += 1
+        db.session.commit()
+    except ValueError as error:
+        db.session.rollback()
+        return jsonify({"error": str(error)}), 400
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Error uploading subject marks")
+        return jsonify({"error": "Failed to upload the marks sheet."}), 500
+
+    message = f"Saved {saved} mark{'s' if saved != 1 else ''}."
+    if cleared:
+        message += f" Cleared {cleared}."
+    if skipped:
+        listed = ", ".join(skipped[:8])
+        extra = f" and {len(skipped) - 8} more" if len(skipped) > 8 else ""
+        message += f" Skipped admission {listed}{extra}, not in this class."
+    return jsonify({"success": True, "saved": saved, "cleared": cleared, "message": message})
 
 
 def _normalize_exam_stream(stream):

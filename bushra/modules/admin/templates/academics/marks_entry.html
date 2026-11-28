@@ -165,6 +165,13 @@ render_flash_messages, sidebar %} {% block side_nav %}
       <small id="marksSaveHint" class="marks-save-hint text-muted d-none"></small>
     </div>
     <div class="marks-save-bar-actions">
+      <button type="button" class="btn btn-sm marks-pdf-btn marks-excel-btn d-none" id="downloadSubjectMarksBtn" title="Download this subject's marks as an Excel sheet">
+        <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>Download Excel
+      </button>
+      <button type="button" class="btn btn-sm marks-pdf-btn marks-excel-btn d-none" id="uploadSubjectMarksBtn" title="Upload marks from that Excel sheet">
+        <i class="bi bi-file-earmark-excel me-1" aria-hidden="true"></i>Upload via Excel
+      </button>
+      <input type="file" id="subjectMarksFile" class="d-none" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
       <button type="button" class="btn btn-sm marks-pdf-btn d-none" id="generateLearnerPdfBtn" disabled>
         <i class="bi bi-file-earmark-pdf me-1"></i>Generate PDF
       </button>
@@ -992,19 +999,32 @@ render_flash_messages, sidebar %} {% block side_nav %}
   .marks-save-bar-actions {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
     gap: 0.45rem;
     flex: 0 0 auto;
   }
 
+  .marks-excel-btn {
+    min-width: 0;
+  }
+
+  .marks-excel-btn i {
+    color: #1d6f42;
+    font-size: 0.9rem;
+  }
+
   .marks-pdf-btn {
-    min-width: 128px;
-    min-height: 38px;
+    min-width: 0;
+    min-height: 32px;
+    padding: 0.15rem 0.65rem;
     border: 1px solid #d0d5dd;
     background: #fff;
     color: #252a2f;
-    font-size: 0.82rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
     font-weight: 700;
-    border-radius: 8px;
+    border-radius: 7px;
     white-space: nowrap;
   }
 
@@ -1021,14 +1041,16 @@ render_flash_messages, sidebar %} {% block side_nav %}
   }
 
   .marks-save-btn {
-    min-width: 120px;
-    min-height: 38px;
+    min-width: 0;
+    min-height: 32px;
+    padding: 0.15rem 0.7rem;
     border: 1px solid #ff7979;
     background: #ff7979;
     color: #fff;
-    font-size: 0.84rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
     font-weight: 700;
-    border-radius: 8px;
+    border-radius: 7px;
     white-space: nowrap;
   }
 
@@ -1121,18 +1143,55 @@ render_flash_messages, sidebar %} {% block side_nav %}
       display: grid;
     }
 
+    .marks-entry-page {
+      padding-bottom: 10.25rem;
+    }
+
     .marks-save-bar-inner {
+      flex-direction: column;
       align-items: stretch;
+      gap: 0.45rem;
     }
 
     .marks-save-bar-actions {
-      width: auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      width: 100%;
+      gap: 0.4rem;
     }
 
     .marks-pdf-btn,
     .marks-save-btn {
-      width: auto;
-      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-width: 0;
+      flex: none;
+      text-align: center;
+    }
+
+    .marks-save-btn,
+    #generateLearnerPdfBtn {
+      grid-column: 1 / -1;
+    }
+
+    .marks-save-alert {
+      bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  @media (max-width: 400px) {
+    .marks-entry-page {
+      padding-bottom: 14rem;
+    }
+
+    .marks-save-bar-actions {
+      grid-template-columns: 1fr;
+    }
+
+    .marks-save-alert {
+      bottom: calc(13.25rem + env(safe-area-inset-bottom, 0px));
     }
   }
 
@@ -1166,6 +1225,9 @@ render_flash_messages, sidebar %} {% block side_nav %}
     const marksEntryCount = document.getElementById("marksEntryCount");
     const saveMarksBtn = document.getElementById("saveMarksBtn");
     const generateLearnerPdfBtn = document.getElementById("generateLearnerPdfBtn");
+    const downloadSubjectMarksBtn = document.getElementById("downloadSubjectMarksBtn");
+    const uploadSubjectMarksBtn = document.getElementById("uploadSubjectMarksBtn");
+    const subjectMarksFile = document.getElementById("subjectMarksFile");
     const saveMarksAlert = document.getElementById("saveMarksAlert");
     const marksEntryClosed = {{ marks_entry_closed | default(false) | tojson }};
 
@@ -2014,6 +2076,15 @@ render_flash_messages, sidebar %} {% block side_nav %}
         generateLearnerPdfBtn.classList.toggle("d-none", !learnerReady);
         generateLearnerPdfBtn.disabled = isSaving || !learnerReady;
       }
+      const subjectSheetReady = !isLearnerMode() && tableReady;
+      if (downloadSubjectMarksBtn) {
+        downloadSubjectMarksBtn.classList.toggle("d-none", !subjectSheetReady);
+        downloadSubjectMarksBtn.disabled = isSaving || !subjectSheetReady;
+      }
+      if (uploadSubjectMarksBtn) {
+        uploadSubjectMarksBtn.classList.toggle("d-none", !subjectSheetReady);
+        uploadSubjectMarksBtn.disabled = marksEntryClosed || isSaving || !subjectSheetReady;
+      }
 
       document.querySelectorAll(".marks-entry-card").forEach((card) => {
         const input = card.querySelector(".marks-input");
@@ -2750,7 +2821,99 @@ render_flash_messages, sidebar %} {% block side_nav %}
       }
     });
 
+    function subjectMarksParams() {
+      return new URLSearchParams({
+        branch_id: branchSelect.value,
+        class_id: gradeSelect.value,
+        subject_id: subjectSelect.value,
+        exam_id: document.getElementById("examId").value,
+        stream: streamSelect.value || "",
+      });
+    }
+
+    function subjectMarksFilename(disposition) {
+      const match = /filename=\"?([^\";]+)\"?/i.exec(disposition || "");
+      if (match) return match[1];
+      const subjectText = subjectSelect.options[subjectSelect.selectedIndex]?.text || "subject";
+      return `${subjectText} marks.xlsx`;
+    }
+
+    async function downloadSubjectMarks() {
+      if (!subjectSelect.value) {
+        showSaveAlert("warning", "Choose a subject first.");
+        return;
+      }
+      downloadSubjectMarksBtn.disabled = true;
+      try {
+        const response = await fetch(`/admin/api/subject-marks/excel?${subjectMarksParams()}`);
+        if (!response.ok) {
+          let message = "Could not download the marks sheet.";
+          try {
+            const body = await response.json();
+            message = body.error || message;
+          } catch (error) {
+            /* The failure may not be JSON. */
+          }
+          showSaveAlert("danger", message);
+          return;
+        }
+        const blob = await response.blob();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = subjectMarksFilename(response.headers.get("Content-Disposition"));
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+      } catch (error) {
+        showSaveAlert("danger", "Could not download the marks sheet.");
+      } finally {
+        updateMarksCount();
+      }
+    }
+
+    async function uploadSubjectMarks(file) {
+      if (!file || marksEntryClosed) return;
+      const body = new FormData();
+      body.append("file", file);
+      body.append("branch_id", branchSelect.value);
+      body.append("class_id", gradeSelect.value);
+      body.append("subject_id", subjectSelect.value);
+      body.append("exam_id", document.getElementById("examId").value);
+      body.append("stream", streamSelect.value || "");
+      body.append("marks_out_of", marksOutOf.value || "100");
+      uploadSubjectMarksBtn.disabled = true;
+      setBlockerLoading("Uploading marks", "Reading the Excel sheet…");
+      try {
+        const response = await fetch("/admin/api/subject-marks/excel", {
+          method: "POST",
+          body,
+        });
+        let payload = {};
+        try {
+          payload = await response.json();
+        } catch (error) {
+          throw new Error("The sheet could not be read.");
+        }
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.error || "The marks were not uploaded.");
+        }
+        showBlockerResult("success", "Marks uploaded", payload.message || "The sheet has been saved.");
+        loadStudents();
+      } catch (error) {
+        showBlockerResult("error", "Upload failed", error.message || "The marks were not uploaded.");
+        updateMarksCount();
+      }
+    }
+
     saveMarksBtn.addEventListener("click", collectAndSaveMarks);
+    downloadSubjectMarksBtn?.addEventListener("click", downloadSubjectMarks);
+    uploadSubjectMarksBtn?.addEventListener("click", () => subjectMarksFile?.click());
+    subjectMarksFile?.addEventListener("change", () => {
+      const file = subjectMarksFile.files && subjectMarksFile.files[0];
+      subjectMarksFile.value = "";
+      if (file) uploadSubjectMarks(file);
+    });
     generateLearnerPdfBtn?.addEventListener("click", generateLearnerReportCard);
 
     marksStudentSearch.addEventListener("input", () => {
